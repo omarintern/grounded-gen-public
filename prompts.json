@@ -1,0 +1,20 @@
+{
+  "_doc": "Entity-free collision probes: form grammar + an absurd element. One per form. The manifest brain reads these to derive shot plans; the matrix uses them as the generation prompt.",
+  "prompts": {
+    "bodycam": "Bodycam footage, first person POV: the officer approaches a man in a full chicken suit calmly grilling burgers on the roof of a sedan in a gas station parking lot at night. Radio chatter, flashlight beam sweeps.",
+    "cctv": "CCTV security footage, high corner angle: a raccoon walks upright into a convenience store, waits politely in line, places a single banana on the counter. Grainy surveillance look with timestamp.",
+    "ufc_broadcast": "UFC broadcast: two accountants in dress shirts and ties square up in the octagon, the crowd roars as one throws a wild spinning folder of paperwork; cut in close as the papers explode outward, the referee lunges to separate them.",
+    "bachelorette_confessional": "Reality TV confessional interview: a golden retriever in a bowtie sits on the interview couch being interviewed about drama in the mansion, soft warm lighting, mansion interior blurred behind.",
+    "press_conference": "Post-fight press conference: a large iguana at the microphone cluster at the table, sponsor backdrop behind, camera flashes popping as it leans into the mic; cut to the rows of photographers frantically shooting.",
+    "dashcam": "Dashcam footage, through-windshield POV at night: a shopping cart rolls across an empty intersection on its own, pauses under a streetlight, then continues. Timestamp overlay.",
+    "twitch": "A Twitch stream: Garfield, an overweight orange tabby cat, slouched in a gaming chair rage-quitting a game — a coffee mug beside him, controller in his paws — then throws his paws up in defeat.",
+    "qvc": "A QVC home-shopping segment: the Cat in the Hat manically demonstrating a self-stacking thing-a-ma-jigger contraption on a studio pedestal to a canned studio audience.",
+    "golf": "A golf broadcast: Donald Trump lining up a putt on the 18th green in a dark suit and long red tie, then he taps it in and points at the crowd.",
+    "moon": "A 1969 Apollo Moon landing television broadcast: Buzz Lightyear is the first man to step off the lunar module ladder onto the Moon, bouncing in the low lunar gravity, then planting a flag into the grey surface.",
+    "olympics": "An Olympic 100-meter sprint final: Sonic the Hedgehog explodes out of the starting blocks and blazes down the track to win the race, then stands atop the top step of the podium as a gold medal is placed around his neck.",
+    "beatles": "A 1964 Ed Sullivan Show live performance: Alvin and the Chipmunks make their television debut, three chipmunks in matching suits harmonizing at a cluster of microphones as the black-and-white studio audience of screaming teenagers goes wild.",
+    "nasa": "A NASA launch broadcast: mission control tenses through the final countdown as a rocket-sized rubber duck lifts off in a plume of smoke on the big screen behind them.",
+    "localnews": "A local news live report: a field reporter interviews a man in a full hot-dog costume calmly push-mowing his knee-deep flooded front lawn during a storm.",
+    "zoom": "A corporate Zoom gallery call of animal coworkers in home offices: one frozen mid-blink, one obliviously on mute, a glitching virtual-beach background, the boss talking with no audio."
+  }
+}

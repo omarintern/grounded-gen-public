@@ -1,0 +1,588 @@
+{
+  "_doc": "A form is a REPERTOIRE of vantages (camera positions its grammar can cut between). Top-level queries/accept = the FORM-FIRST path (static, prompt-agnostic). vantages[] = the per-vantage priors the PROMPT-FIRST manifest brain selects from. shot_grammar: single = one relaxed shot; multi = the form cuts across vantages.",
+  "forms": [
+    {
+      "id": "bodycam",
+      "label": "Police bodycam footage",
+      "shot_grammar": "single",
+      "queries": [
+        "police bodycam footage",
+        "bodycam screenshot",
+        "body camera video police night"
+      ],
+      "accept": [
+        "first-person chest-height POV",
+        "wide-angle / fisheye distortion",
+        "visible timestamp, battery or HUD overlay",
+        "authentic compressed video-still look (not a movie scene or stock recreation)",
+        "no watermark, no collage, no text captions added by a website",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "chest_pov",
+          "role": "establishing",
+          "queries": [
+            "police bodycam footage",
+            "body camera video police night",
+            "axon body camera frame"
+          ],
+          "accept": [
+            "first-person chest-height POV, wide-angle/fisheye",
+            "timestamp / battery / Axon HUD overlay",
+            "authentic compressed video-still look",
+            "no watermark, no collage, no faces in close-up"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cctv",
+      "label": "CCTV / security camera footage",
+      "shot_grammar": "single",
+      "queries": [
+        "cctv security camera footage still convenience store",
+        "surveillance camera view screenshot high ceiling angle",
+        "cctv footage frame parking lot night grainy"
+      ],
+      "accept": [
+        "high fixed camera angle looking down",
+        "grainy, compressed, low-color surveillance look",
+        "timestamp / camera-ID overlay visible",
+        "real surveillance still (not a stock photo of a camera itself)",
+        "no watermark, no collage",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "fixed_high",
+          "role": "establishing",
+          "queries": [
+            "cctv security camera footage convenience store",
+            "surveillance camera high angle grainy",
+            "cctv footage timestamp night"
+          ],
+          "accept": [
+            "high fixed angle looking down",
+            "grainy compressed low-color surveillance look",
+            "timestamp / camera-ID burn-in",
+            "real surveillance still, not a photo of a camera; no watermark/collage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ufc_broadcast",
+      "label": "UFC broadcast",
+      "shot_grammar": "multi",
+      "queries": [
+        "ufc octagon broadcast view fight night arena",
+        "ufc fighters exchanging octagon tv broadcast frame",
+        "ufc referee between fighters octagon"
+      ],
+      "accept": [
+        "octagon fence visible",
+        "broadcast lighting: bright canvas, dark crowd",
+        "UFC branding on canvas or fence OK",
+        "broadcast camera angle (not phone-in-crowd)",
+        "no watermark, no collage, no betting-site overlay",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "broadcast_wide",
+          "role": "establishing",
+          "queries": [
+            "ufc octagon broadcast fight night",
+            "ufc fight night arena wide"
+          ],
+          "accept": [
+            "high / overhead angle showing the whole octagon",
+            "sponsor boards + apron + dark crowd",
+            "broadcast lighting; no phone-in-crowd angle; no watermark"
+          ]
+        },
+        {
+          "id": "in_cage_cam",
+          "role": "action",
+          "queries": [
+            "ufc fighters exchanging octagon",
+            "ufc fight cage action"
+          ],
+          "accept": [
+            "fence-level / low angle close to the fighters",
+            "fence mesh in foreground, canvas fills frame",
+            "broadcast look; distant or no clear faces preferred"
+          ]
+        },
+        {
+          "id": "cageside",
+          "role": "detail",
+          "queries": [
+            "ufc referee between fighters",
+            "ufc referee stops fight"
+          ],
+          "accept": [
+            "cageside vantage: referee, corner, or cutman visible",
+            "octagon fence + apron context",
+            "broadcast look; no watermark/collage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bachelorette_confessional",
+      "label": "Bachelorette-style reality TV confessional",
+      "shot_grammar": "single",
+      "queries": [
+        "bachelorette confessional",
+        "the bachelor confessional interview",
+        "reality show confessional cam"
+      ],
+      "accept": [
+        "single subject speaking to just-off-camera interviewer",
+        "soft, warm reality-TV interview lighting",
+        "blurred mansion / decorated interior background",
+        "waist-up or chest-up framing",
+        "no watermark, no lower-third graphics from a recap site",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "confessional",
+          "role": "establishing",
+          "queries": [
+            "bachelorette confessional",
+            "the bachelor confessional interview"
+          ],
+          "accept": [
+            "single seat / couch facing just-off-camera interviewer",
+            "soft warm interview lighting, blurred decorated interior",
+            "waist-up framing; no recap-site lower-thirds; face not required"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "press_conference",
+      "label": "Press conference",
+      "shot_grammar": "multi",
+      "queries": [
+        "post fight press conference",
+        "nfl postgame press conference podium",
+        "press conference room podium microphones media"
+      ],
+      "accept": [
+        "an ACTUAL press-conference scene inside a room — podium or table in use, room context visible",
+        "NOT a product photo of a backdrop/banner for sale, NOT an empty banner in a warehouse",
+        "microphone cluster or table mics",
+        "sponsor / step-and-repeat backdrop behind the speaker position",
+        "pressroom lighting (flash or fluorescent)",
+        "no watermark, no collage",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "podium_front",
+          "role": "establishing",
+          "queries": [
+            "post fight press conference",
+            "ufc press conference podium"
+          ],
+          "accept": [
+            "real presser scene: podium/table in use, room context",
+            "mic cluster + sponsor step-and-repeat behind the seat",
+            "pressroom lighting; NOT a banner product photo; no watermark"
+          ]
+        },
+        {
+          "id": "press_gallery",
+          "role": "reaction",
+          "queries": [
+            "press conference photographers",
+            "sports press conference media row"
+          ],
+          "accept": [
+            "the press side: rows of photographers / seated journalists / cameras",
+            "conference-room context, flashes",
+            "no watermark/collage; faces distant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dashcam",
+      "label": "Dashcam footage",
+      "shot_grammar": "single",
+      "queries": [
+        "dashcam footage",
+        "dashcam video screenshot",
+        "dash cam night driving"
+      ],
+      "accept": [
+        "through-windshield first-person driving POV",
+        "date/time or speed overlay visible",
+        "road and horizon centered, dashboard edge OK",
+        "authentic compressed video-still look",
+        "no watermark, no collage, no youtube play button",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "windshield_pov",
+          "role": "establishing",
+          "queries": [
+            "dashcam footage through windshield road",
+            "dash cam night driving timestamp speed overlay"
+          ],
+          "accept": [
+            "through-windshield first-person driving POV",
+            "date/time / speed / GPS burn-in overlay",
+            "road + horizon centered, dashboard edge OK; no watermark/play-button"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "twitch",
+      "label": "Twitch stream layout",
+      "shot_grammar": "single",
+      "queries": [
+        "twitch stream screenshot overlay",
+        "twitch streamer webcam gameplay chat overlay",
+        "twitch stream layout facecam alerts"
+      ],
+      "accept": [
+        "real twitch stream screenshot: webcam bubble + gameplay + scrolling chat",
+        "visible twitch UI (chat, sub/donation alert, viewer count)",
+        "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "full_layout",
+          "role": "establishing",
+          "queries": [
+            "twitch stream layout webcam gameplay chat overlay",
+            "twitch overlay screenshot alerts"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "just_chatting",
+          "role": "establishing",
+          "queries": [
+            "twitch just chatting webcam fullscreen",
+            "twitch irl just chatting stream screenshot"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "gameplay_fullscreen",
+          "role": "establishing",
+          "queries": [
+            "twitch gameplay fullscreen small webcam corner",
+            "stream gameplay overlay speedrun timer"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qvc",
+      "label": "Home-shopping / QVC channel",
+      "shot_grammar": "single",
+      "queries": [
+        "QVC home shopping tv screenshot price",
+        "home shopping channel product demo price graphic",
+        "tv infomercial product studio 1-800 number"
+      ],
+      "accept": [
+        "home-shopping studio, product on pedestal",
+        "price graphic + 1-800 number lower-third",
+        "bright studio lighting",
+        "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "studio_demo",
+          "role": "establishing",
+          "queries": [
+            "QVC product demo studio pedestal price",
+            "home shopping product presentation broadcast"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "call_in",
+          "role": "establishing",
+          "queries": [
+            "home shopping caller on screen split screen graphic",
+            "QVC phone caller lower third"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "beauty_shot",
+          "role": "establishing",
+          "queries": [
+            "product rotating turntable close up commercial",
+            "product beauty shot studio callouts"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "golf",
+      "label": "Golf broadcast",
+      "shot_grammar": "single",
+      "queries": [
+        "golf broadcast screenshot leaderboard score",
+        "PGA tour tv broadcast green putt graphic",
+        "golf tournament tv coverage lower third"
+      ],
+      "accept": [
+        "golf broadcast with leaderboard / score bug",
+        "fairway or green camera framing",
+        "hushed broadcast graphics",
+        "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "green_putt",
+          "role": "establishing",
+          "queries": [
+            "golf broadcast putting green leaderboard graphic",
+            "PGA tour green camera score bug"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "blimp_aerial",
+          "role": "establishing",
+          "queries": [
+            "golf course aerial blimp broadcast hole",
+            "golf hole overhead yardage graphic"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "studio_desk",
+          "role": "establishing",
+          "queries": [
+            "golf broadcast studio analysts touchscreen desk",
+            "golf channel studio desk graphics"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nasa",
+      "label": "NASA launch broadcast",
+      "shot_grammar": "single",
+      "queries": [
+        "NASA mission control launch broadcast screens",
+        "NASA launch feed telemetry countdown HUD",
+        "mission control room consoles launch"
+      ],
+      "accept": [
+        "mission-control consoles / telemetry HUD",
+        "countdown clock + NASA-style chyron",
+        "authentic broadcast feed look",
+        "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "mission_control",
+          "role": "establishing",
+          "queries": [
+            "NASA mission control room consoles big screen launch",
+            "mission control screens countdown telemetry"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "onboard_cockpit",
+          "role": "establishing",
+          "queries": [
+            "spacecraft cockpit onboard camera fisheye launch",
+            "rocket capsule interior camera telemetry overlay"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "tracking",
+          "role": "establishing",
+          "queries": [
+            "rocket launch tracking camera long lens telemetry",
+            "rocket ascent stage separation broadcast feed"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "localnews",
+      "label": "Local TV news broadcast",
+      "shot_grammar": "single",
+      "queries": [
+        "local news broadcast screenshot lower third chyron",
+        "on location news reporter live bug",
+        "local tv news field report graphic"
+      ],
+      "accept": [
+        "news graphics: LIVE bug, chyron, station logo",
+        "field reporter with mic OR anchor desk",
+        "authentic ENG broadcast look",
+        "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "field_report",
+          "role": "establishing",
+          "queries": [
+            "local news reporter on location live bug chyron",
+            "news field report street microphone"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "anchor_desk",
+          "role": "establishing",
+          "queries": [
+            "news anchor desk broadcast graphics studio",
+            "tv news studio desk over the shoulder graphic"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "weather",
+          "role": "establishing",
+          "queries": [
+            "tv weather forecast green screen map broadcast",
+            "meteorologist weather map temperature bugs"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "traffic_helicopter",
+          "role": "establishing",
+          "queries": [
+            "news helicopter aerial sky bug traffic",
+            "news chopper aerial neighborhood broadcast"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zoom",
+      "label": "Corporate video call (Zoom)",
+      "shot_grammar": "single",
+      "queries": [
+        "zoom call gallery view grid screenshot",
+        "video conference grid mute icons names",
+        "zoom meeting screenshot participants you're on mute"
+      ],
+      "accept": [
+        "zoom/meet gallery grid UI",
+        "mute icons, name labels, 'you're on mute' toast",
+        "screen-recording look",
+        "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+        "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+      ],
+      "vantages": [
+        {
+          "id": "gallery_grid",
+          "role": "establishing",
+          "queries": [
+            "zoom gallery view grid screenshot mute icons",
+            "video call grid participants names"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "shared_screen",
+          "role": "establishing",
+          "queries": [
+            "zoom shared screen presentation slide small thumbnail",
+            "screen share meeting slide deck cursor"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        },
+        {
+          "id": "waiting_room",
+          "role": "establishing",
+          "queries": [
+            "zoom waiting room screen host will let you in",
+            "video call waiting room holding screen"
+          ],
+          "accept": [
+            "authentic screenshot/broadcast look, no watermark, no collage, no website-added text captions",
+            "prefer NO identifiable faces — the form's container/grammar, not people (face media triggers provider consent gates)"
+          ]
+        }
+      ]
+    }
+  ]
+}
