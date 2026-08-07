@@ -68,6 +68,12 @@ export function killshotFails(k, aiCeiling, { requireSubject = true } = {}) {
   // search for is exactly where they cluster: security/dash footage is published BECAUSE something bad
   // happened, bedroom queries reach nudity, street scenes carry plates and house numbers, and interiors carry
   // posters and switched-on televisions that would be re-rendered into the output.
-  if (k.content_flag && k.content_flag !== "none") return true;
+  // ⚠ NO TRUTHINESS GUARD HERE. `k.content_flag && ...` let a MISSING key through: undefined is falsy, so the
+  // whole condition was false and an unscreened frame passed the safety tier — while shows_minor one line up
+  // fails closed on exactly the same shape. The comment above claimed both conventions matched; only one did.
+  // Bare inequality is the fail-closed form: absent, null, "" and any unrecognised value all reject. If the
+  // judge stops returning the field the run fails LOUDLY and completely, which is the correct direction for a
+  // gate whose whole purpose is that the material we deliberately search for is where this content clusters.
+  if (k.content_flag !== "none") return true;
   return k.real_photo !== true || aiSuspect > aiCeiling || (requireSubject && !k.shows_subject);
 }
