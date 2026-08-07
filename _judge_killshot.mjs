@@ -57,6 +57,21 @@ export async function judgeKillshot(filePath, subjectStr, opts = {}) {
 // frame need not show a presented actor (owner 2026-08-06: "white rabbit doesnt need swappable subject" — an ip /
 // arriving actor is RENDERED into the place, no stand-in). Every SAFETY gate below (minors / content / real_photo
 // / ai) still fires regardless; only the shows_subject requirement is waived.
+/** The SAFETY subset only: minors + content flags. No real_photo, no ai_generated.
+ *  ⚠ FOR REFS THAT ARE LEGITIMATELY NOT PHOTOGRAPHS. A style reference, or an IP character-ref, is often a
+ *  drawing, a render or a painting BY DESIGN — running the full gate there rejects the very thing being asked
+ *  for, on a field that is not a safety question. What is absolute stays absolute: minors and content flags are
+ *  mode-independent and fail CLOSED, so a missing judgement, a missing key or an unrecognised value all reject.
+ *  ⚠ EXPORTED BECAUSE IT WAS ALREADY WRITTEN TWICE. An inline copy in _source_entity.mjs guards content_flag with
+ *  `k.content_flag && k.content_flag !== "none"`, which passes a MISSING key — the exact truthiness hole removed
+ *  from killshotFails on 2026-08-07. One address, so a fix lands everywhere instead of in whichever copy the
+ *  reader found. */
+export function safetyOnlyFails(k) {
+  if (!k) return true;                       // no judgement ⇒ unscreened ⇒ reject
+  if (k.shows_minor !== false) return true;  // absolute; undefined rejects
+  return k.content_flag !== "none";          // bare inequality: absent / null / "" / unrecognised all reject
+}
+
 export function killshotFails(k, aiCeiling, { requireSubject = true } = {}) {
   if (!k) return true;                                    // fail CLOSED on a failed judgement
   const ai = Number(k.ai_generated);
