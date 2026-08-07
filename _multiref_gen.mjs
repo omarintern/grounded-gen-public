@@ -36,7 +36,7 @@ async function normaliseRef(p) {
   return fixed;
 }
 const dataUri = (p) => `data:image/jpeg;base64,${readFileSync(join(HERE, p)).toString("base64")}`;
-const env = Object.fromEntries(readFileSync(fileURLToPath(new URL("../../.env.local", import.meta.url)), "utf8").split("\n").map((l) => l.match(/^([A-Z0-9_]+)=(.*)$/)).filter(Boolean).map((m) => [m[1], m[2].replace(/^"|"$/g, "")]));
+
 function signIn() { return ""; }   // the provider's signed sign-in header: left out of this public copy
 
 // PAD_WORLD (NON-© branch — GROUNDED_GEN_WORKFLOW.md rule 12): black-pad the WORLD-REF (refs[0] ONLY,
