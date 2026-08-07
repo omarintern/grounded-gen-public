@@ -10,6 +10,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
 import { scrapeImages } from "./scrape.mjs";
+import { judgeKillshot, killshotFails } from "./_judge_killshot.mjs";   // SHARED minors/content kill-shot — this figure/char-ref sourcer was the ONE ref path that never ran it (the other four do)
 import { fetchImage, isPaidStock } from "./_placeholder_card.mjs";
 import { cacheRead, cacheWrite, characterKey, figureKey, slugify } from "./_ref_cache.mjs";   // shared subject-ref cache: read-before-scrape / write-provisional-then-promote. REF_CACHE=0 disables both halves.
 const dlFails = new Map();   // reason -> count, reported after the download loop so failures are never silent
@@ -118,6 +119,20 @@ const LEGIBLE_FLOOR = 0.6; // a figure ref must READ as the entity — clearer f
 console.log(`\n─── identity-legibility check (${Math.min(cands.length, 12)})${MODE === "ip" ? " [ip: character, illustrations ok]" : ""} ───`);
 const ok = [];
 for (const c of cands.slice(0, 12)) {
+  // SAFETY KILL-SHOT (shared _judge_killshot) — the one ref path that lacked minors/content gating; its own
+  // identity judge asks real_photo / shows_subject / legible and NEVER age or content. shows_minor + content_flag
+  // are ABSOLUTE and mode-independent; fails CLOSED (null / infra → drop, so an outage degrades to a prose-carried
+  // figure, never ships an unscreened frame). "ip" mode may legitimately be a CARTOON, so gate only on the safety
+  // subset there (killshotFails' real_photo/ai would wrongly reject a drawing); "real" mode uses the full
+  // killshotFails, matching the four sibling paths. requireSubject:false — a char-ref SHOWS its subject by design.
+  let ks; try { ks = await judgeKillshot(c.p, shows); } catch { ks = null; }
+  const unsafe = MODE === "ip"
+    ? (!ks || ks.shows_minor !== false || (ks.content_flag && ks.content_flag !== "none"))
+    : killshotFails(ks, Number(process.env.AI_CEILING ?? 0.3), { requireSubject: false });
+  if (unsafe) {
+    console.log(`  ${c.p.split("/").pop()} @${c.host}: KILL-SHOT ✗ ${!ks ? "UNSCREENED" : ks.shows_minor ? "MINOR" : (ks.content_flag && ks.content_flag !== "none") ? String(ks.content_flag).toUpperCase() : "unsafe"} — dropped`);
+    continue;
+  }
   const j = await judge(c.p);
   const legible = Number(j?.legible);
   const lg = Number.isFinite(legible) ? legible : 0;
@@ -162,7 +177,15 @@ if (ok.length) {
   ok.sort((a, b) => (MODE === "ip" ? (a.photo === b.photo ? 0 : a.photo ? -1 : 1) : 0)
     || (MODE === "ip" ? (a.caption === b.caption ? 0 : a.caption ? 1 : -1) : 0) || b.legible - a.legible || b.px - a.px);
   pick = ok[0]; console.log(`  → pick: ${pick.p.split("/").pop()} (${MODE === "ip" ? (pick.photo ? "PHOTO, " : "illustration (no photo in pool), ") : ""}legible=${pick.legible.toFixed(2)}${MODE === "ip" && pick.caption ? ", has caption" : ""})`);
-} else { cands.sort((a, b) => b.px - a.px); pick = cands[0]; console.log(`  ⚠ none passed — highest-res fallback`); }
+} else {
+  // FAIL CLOSED (was: ship the highest-res UNJUDGED frame — an identity + safety bypass; on a provider outage every
+  // judge returned null and this shipped a frame vetted for NOTHING). Nothing cleared the identity + kill-shot
+  // gates, so emit NO figure ref: the figure is carried by PROSE and the gen keeps its world plate — the file's
+  // own non-load-bearing degradation (matching the spend-cap EXIT-0-NO-FILE path above). Never ref-ground on an
+  // unjudged frame. EXIT 0 (not 2): a missing figure-ref must not kill the run — _run guards with existsSync.
+  console.log(`  ✗ none passed identity + safety gates — no figure ref (carried by prose; gen keeps its world plate)`);
+  process.exit(0);
+}
 
 // NO blur (ungated real_entity), NO crop — native aspect, clean jpeg.
 const out = join(OUTDIR, `entity_${slug}.jpg`);
