@@ -76,11 +76,12 @@ export async function judgeKillshot(filePath, subjectStr, opts = {}) {
 // symbols like Nazi"). Absent, null, "" and any unrecognised value still fail CLOSED — that is the truthiness
 // hole closed on 2026-08-07 and it is unrelated to which flags we honour.
 // ⚠⚠ INTERLOCK — NUDITY RE-GATES THE MOMENT THE SCENE HAS CHILDREN IN IT.
-// NSFW-open is safe because two other things hold: shows_minor is absolute at sourcing (no real child's
-// photograph can ever become a reference), and a scene whose cast contains children re-arms this gate for that
-// run. Those are different protections. The first stops a child entering as a REF; the second stops adult
-// material entering the same generation that will RENDER children. Neither substitutes for the other, and the
-// combination they jointly prevent is the one that must never be buildable.
+// Updated 2026-08-08 when the owner allowed children in scrape for stand-ins. shows_minor is NO LONGER an
+// absolute reject, so this gate now carries more weight than it did, not less. NSFW-open stays safe because
+// three things hold together: a minor may appear only in a WORLD-REF, that plate's faces are BLURRED before
+// gen, a minor may never be a CHARACTER-ref, and adult material cannot enter the same generation at all. Each
+// covers a different opening — identity, reproduction, and juxtaposition — and none substitutes for another.
+// The combination they jointly prevent is the one that must never be buildable.
 //
 // _run sets NUDITY_GATE=1 when castHasMinors(prompt) — a classroom, a playground, a school bus. Ordinary
 // prompts are unaffected: nudity stays open exactly as the owner asked.
@@ -95,19 +96,38 @@ export function contentFlagFails(flag) {
   return true;                                          // …unless this run renders children. Plus absent / unrecognised / every other flag.
 }
 
-export function safetyOnlyFails(k) {
+// ── MINORS: FATAL FOR AN IDENTITY REF, SURVIVABLE FOR A STAGE ─────────────────────────────────────────────
+// Owner 2026-08-08: children may be scraped, because the STAND-IN is what stops a gen looking conjured. Two
+// different uses, two different answers, and the difference is what the reference is FOR:
+//   · a WORLD-REF is a stage. It contributes pose, scale and framing, and its faces are blurred before it
+//     reaches the generator (_run sets WORLD_REDACT_FACES with ALLOW_MINOR_PLATE). A blurred child in a plate
+//     carries composition, not identity.
+//   · a CHARACTER-REF exists to carry identity forward. That is its entire function, so no redaction makes it
+//     safe and ALLOW_MINOR_PLATE deliberately does not reach it — a child figure is conjured from the beats.
+// An UNANSWERED shows_minor still rejects everywhere: the waiver is for a KNOWN minor on a stage we are about
+// to blur, never for a frame nobody screened.
+export const minorPlateAllowed = () => process.env.ALLOW_MINOR_PLATE === "1";
+
+export function minorFails(k, { plate = false } = {}) {
+  if (k?.shows_minor === false) return false;               // no minor at all
+  if (k?.shows_minor === true && plate && minorPlateAllowed()) return false;  // known minor, blurred stage
+  return true;                                              // true-without-waiver, or unanswered ⇒ reject
+}
+
+export function safetyOnlyFails(k, { plate = false } = {}) {
   if (!k) return true;                       // no judgement ⇒ unscreened ⇒ reject
-  if (k.shows_minor !== false) return true;  // absolute; undefined rejects
+  if (minorFails(k, { plate })) return true;
   return contentFlagFails(k.content_flag);
 }
 
-export function killshotFails(k, aiCeiling, { requireSubject = true } = {}) {
+export function killshotFails(k, aiCeiling, opts = {}) {
+  const { requireSubject = true } = opts;
   if (!k) return true;                                    // fail CLOSED on a failed judgement
   const ai = Number(k.ai_generated);
   const aiSuspect = Number.isFinite(ai) ? ai : 1;         // unparseable ⇒ suspect, never clean
   // MINORS ARE AN ABSOLUTE REJECT, checked in the CHEAPEST tier so a frame containing a child never reaches
   // the rubric, the requirements judge, the picker or the generator. Fails closed with the rest of this gate.
-  if (k.shows_minor !== false) return true;
+  if (minorFails(k, { plate: opts.plate })) return true;
   // SAFETY FLAGS, same tier and same fail-closed convention. These exist because the material we deliberately
   // search for is exactly where they cluster: security/dash footage is published BECAUSE something bad
   // happened, bedroom queries reach nudity, street scenes carry plates and house numbers, and interiors carry
