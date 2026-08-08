@@ -1,0 +1,20 @@
+{
+  "name": "grounded-gen",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A grounded generation engine: sources a real photograph of the world, gates it, and renders onto it.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "run": "node _run.mjs",
+    "test": "node _vacuum_pure.mjs && node _vacuum_dialogue.mjs && node _vacuum_branch.mjs && node _vacuum_retry.mjs && node _vacuum_world.mjs && node _vacuum_gate.mjs && node _vacuum_form_routing.mjs && node _vacuum_signals.mjs && node _vacuum_candidness.mjs && node _vacuum_safety.mjs && node --import ./_provider_stub_reg.mjs _vacuum_compose.mjs",
+    "preflight": "node _preflight.mjs",
+    "start": "node _preflight.mjs; tail -f /dev/null"
+  },
+  "dependencies": {
+    "postgres": "3.4.9",
+    "sharp": "0.35.3"
+  }
+}
