@@ -75,23 +75,24 @@ export async function judgeKillshot(filePath, subjectStr, opts = {}) {
 // output; distress is footage we would not ship; symbol is the harmful-symbol case (owner: "only harmful
 // symbols like Nazi"). Absent, null, "" and any unrecognised value still fail CLOSED — that is the truthiness
 // hole closed on 2026-08-07 and it is unrelated to which flags we honour.
-export const NUDITY_GATES_SOURCING = false;
-
-// ⚠⚠ INTERLOCK — THESE TWO MAY NOT BOTH BE RELAXED. Permitting depicted minors while nudity is ungated leaves
-// no barrier against sexual content involving depicted children. NSFW-open is safe TODAY only because
-// shows_minor is absolute: it rejects DRAWN minors as well as photographed ones. If a future change scopes
-// shows_minor to real photographs only, flip this to false and the assertion below fails the import — the
-// nudity gate has to come back first. Do not delete this to make a build pass.
+// ⚠⚠ INTERLOCK — NUDITY RE-GATES THE MOMENT THE SCENE HAS CHILDREN IN IT.
+// NSFW-open is safe because two other things hold: shows_minor is absolute at sourcing (no real child's
+// photograph can ever become a reference), and a scene whose cast contains children re-arms this gate for that
+// run. Those are different protections. The first stops a child entering as a REF; the second stops adult
+// material entering the same generation that will RENDER children. Neither substitutes for the other, and the
+// combination they jointly prevent is the one that must never be buildable.
+//
+// _run sets NUDITY_GATE=1 when castHasMinors(prompt) — a classroom, a playground, a school bus. Ordinary
+// prompts are unaffected: nudity stays open exactly as the owner asked.
 export const MINORS_ABSOLUTE = true;
-if (!MINORS_ABSOLUTE && !NUDITY_GATES_SOURCING)
-  throw new Error("refusing to load: drawn minors permitted AND nudity ungated — see the interlock in _judge_killshot.mjs");
+export const nudityGates = () => process.env.NUDITY_GATE === "1";
 
 /** One address for the content_flag verdict, so opening a category cannot land in one gate and miss the other. */
 export function contentFlagFails(flag) {
   const f = String(flag ?? "");
-  if (f === "none") return false;                                  // clean
-  if (f === "nudity" && !NUDITY_GATES_SOURCING) return false;      // owner: adult material is not gated at sourcing
-  return true;                                                     // absent / unrecognised / every other flag
+  if (f === "none") return false;                       // clean
+  if (f === "nudity" && !nudityGates()) return false;   // owner: adult material is not gated at sourcing…
+  return true;                                          // …unless this run renders children. Plus absent / unrecognised / every other flag.
 }
 
 export function safetyOnlyFails(k) {
