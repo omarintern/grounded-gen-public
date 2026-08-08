@@ -10,7 +10,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
 import { scrapeImages } from "./scrape.mjs";
-import { judgeKillshot, killshotFails } from "./_judge_killshot.mjs";   // SHARED minors/content kill-shot — this figure/char-ref sourcer was the ONE ref path that never ran it (the other four do)
+import { judgeKillshot, killshotFails, safetyOnlyFails } from "./_judge_killshot.mjs";   // SHARED minors/content kill-shot — this figure/char-ref sourcer was the ONE ref path that never ran it (the other four do)
 import { fetchImage, isPaidStock } from "./_placeholder_card.mjs";
 import { cacheRead, cacheWrite, characterKey, figureKey, slugify } from "./_ref_cache.mjs";   // shared subject-ref cache: read-before-scrape / write-provisional-then-promote. REF_CACHE=0 disables both halves.
 const dlFails = new Map();   // reason -> count, reported after the download loop so failures are never silent
@@ -127,7 +127,7 @@ for (const c of cands.slice(0, 12)) {
   // killshotFails, matching the four sibling paths. requireSubject:false — a char-ref SHOWS its subject by design.
   let ks; try { ks = await judgeKillshot(c.p, shows); } catch { ks = null; }
   const unsafe = MODE === "ip"
-    ? (!ks || ks.shows_minor !== false || (ks.content_flag && ks.content_flag !== "none"))
+    ? safetyOnlyFails(ks)   // fail-closed on minors AND content — the shared version; a MISSING content_flag key rejects (the old `k.content_flag && …` truthiness let it pass)
     : killshotFails(ks, Number(process.env.AI_CEILING ?? 0.3), { requireSubject: false });
   if (unsafe) {
     console.log(`  ${c.p.split("/").pop()} @${c.host}: KILL-SHOT ✗ ${!ks ? "UNSCREENED" : ks.shows_minor ? "MINOR" : (ks.content_flag && ks.content_flag !== "none") ? String(ks.content_flag).toUpperCase() : "unsafe"} — dropped`);
