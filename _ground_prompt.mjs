@@ -149,6 +149,29 @@ function specDensity(p) {
 }
 const SPEC_DENSE = Number(process.env.SPEC_DENSE ?? 3);
 const _density = specDensity(userPrompt);
+// ── WHO IS BEING SPOKEN TO ──────────────────────────────────────────────────────────────────────────────
+// A form that stages an ELICITED response has an obligatory geometry the beats must state, because the model
+// has no default for it and will fall back to addressing the lens. Camera-address is the grammar of an
+// ADVERTISEMENT; a solicited response is the grammar of documentary and reportage. Measured 2026-08-08: the
+// plan chose a television news segment, the beats named no interviewer and no addressee, and the clip read as
+// an advert — the form was decided and then never expressed.
+//
+// Stated as a general rule, not a worked case: whenever the form implies someone off-frame drew the speech
+// out, that person must EXIST in the beats and the speaker must be oriented to them rather than to us.
+const ELICITED_FORM = /\b(?:interview|news|segment|report(?:er|age)?|broadcast|vox[- ]?pop|documentary|talk[- ]?show|press|podcast)\b/i;
+const addresseeClause = () => {
+  const form = process.env.MEDIA_FORM || "";
+  if (!ELICITED_FORM.test(form)) return "";
+  return "⚠ THIS FORM IS AN ELICITED RESPONSE, AND ITS GEOMETRY IS NOT OPTIONAL. Someone off-frame asked the "
+    + "question, so that person must be PRESENT in the beats and the speech must be directed AT THEM. Put the "
+    + "questioner in the frame the way the form actually shows one — commonly no more than a held microphone "
+    + "entering frame, a shoulder, or an arm — and give the speaker an eyeline that goes to that person, NOT to "
+    + "the camera. A subject who looks down the lens is presenting to an audience, which is the grammar of an "
+    + "advertisement and the exact failure this clause exists to prevent. The camera OBSERVES the exchange; it "
+    + "is never the thing being spoken to. Do not add a spoken question unless the beats have room for one — "
+    + "the microphone and the eyeline carry the form on their own.";
+};
+
 const BEAT_STYLE = process.env.BEAT_STYLE || (_density >= SPEC_DENSE ? "minimal" : "spectacle");
 console.log(`seesaw : spec-density ${_density} (dense at ${SPEC_DENSE}) → ${BEAT_STYLE}${process.env.BEAT_STYLE ? " (env override)" : ""}`);
 if (BEAT_STYLE !== "template") {
@@ -186,7 +209,7 @@ if (BEAT_STYLE !== "template") {
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
     `WHAT THE USER ASKED FOR: "${userPrompt}"\n` +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}\n${comedyClause}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n\n` +
+    `${swapClause}\n${comedyClause}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n\n` +
     `⚠ THE GOAL — THE SHOT MUST READ AS A REAL CAPTURED MOMENT WITH A BEGINNING AND AN END. ` +
     `not a cinematic scene, not a spectacle — someone's camera happened to catch one small COMPLETE thing. We are ` +
     `NOT writing a text-to-video prompt: a text-to-video model's prompt must specify every visual detail, while ` +
