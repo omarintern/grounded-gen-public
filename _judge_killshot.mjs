@@ -66,10 +66,38 @@ export async function judgeKillshot(filePath, subjectStr, opts = {}) {
  *  `k.content_flag && k.content_flag !== "none"`, which passes a MISSING key — the exact truthiness hole removed
  *  from killshotFails on 2026-08-07. One address, so a fix lands everywhere instead of in whichever copy the
  *  reader found. */
+// ── WHICH content_flags REJECT ────────────────────────────────────────────────────────────────────────────
+// Owner 2026-08-08: NSFW IS OPEN. Adult material is not filtered at sourcing — "we're not gonna apply filters
+// on scrape to avoid nsfw, the vlm will handle that anyway". So `nudity` does NOT reject here.
+//
+// The rest still do, and for reasons that are not about taste: personal_data (plates, house numbers, documents)
+// and third_party_media (a poster, a switched-on television) are exposure that would be RE-RENDERED into the
+// output; distress is footage we would not ship; symbol is the harmful-symbol case (owner: "only harmful
+// symbols like Nazi"). Absent, null, "" and any unrecognised value still fail CLOSED — that is the truthiness
+// hole closed on 2026-08-07 and it is unrelated to which flags we honour.
+export const NUDITY_GATES_SOURCING = false;
+
+// ⚠⚠ INTERLOCK — THESE TWO MAY NOT BOTH BE RELAXED. Permitting depicted minors while nudity is ungated leaves
+// no barrier against sexual content involving depicted children. NSFW-open is safe TODAY only because
+// shows_minor is absolute: it rejects DRAWN minors as well as photographed ones. If a future change scopes
+// shows_minor to real photographs only, flip this to false and the assertion below fails the import — the
+// nudity gate has to come back first. Do not delete this to make a build pass.
+export const MINORS_ABSOLUTE = true;
+if (!MINORS_ABSOLUTE && !NUDITY_GATES_SOURCING)
+  throw new Error("refusing to load: drawn minors permitted AND nudity ungated — see the interlock in _judge_killshot.mjs");
+
+/** One address for the content_flag verdict, so opening a category cannot land in one gate and miss the other. */
+export function contentFlagFails(flag) {
+  const f = String(flag ?? "");
+  if (f === "none") return false;                                  // clean
+  if (f === "nudity" && !NUDITY_GATES_SOURCING) return false;      // owner: adult material is not gated at sourcing
+  return true;                                                     // absent / unrecognised / every other flag
+}
+
 export function safetyOnlyFails(k) {
   if (!k) return true;                       // no judgement ⇒ unscreened ⇒ reject
   if (k.shows_minor !== false) return true;  // absolute; undefined rejects
-  return k.content_flag !== "none";          // bare inequality: absent / null / "" / unrecognised all reject
+  return contentFlagFails(k.content_flag);
 }
 
 export function killshotFails(k, aiCeiling, { requireSubject = true } = {}) {
@@ -89,6 +117,9 @@ export function killshotFails(k, aiCeiling, { requireSubject = true } = {}) {
   // Bare inequality is the fail-closed form: absent, null, "" and any unrecognised value all reject. If the
   // judge stops returning the field the run fails LOUDLY and completely, which is the correct direction for a
   // gate whose whole purpose is that the material we deliberately search for is where this content clusters.
-  if (k.content_flag !== "none") return true;
+  // ⚠ WHICH flags reject now lives in contentFlagFails, above — nudity is open per the owner, the rest hold,
+  // and absent/unrecognised still fails closed. Both gates read the same function so a category cannot be
+  // opened in one and left shut in the other.
+  if (contentFlagFails(k.content_flag)) return true;
   return k.real_photo !== true || aiSuspect > aiCeiling || (requireSubject && !k.shows_subject);
 }
