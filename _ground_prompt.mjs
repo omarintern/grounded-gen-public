@@ -149,6 +149,31 @@ function specDensity(p) {
 }
 const SPEC_DENSE = Number(process.env.SPEC_DENSE ?? 3);
 const _density = specDensity(userPrompt);
+// ── THE DIALOGUE IS RE-ATTRIBUTED HERE, BECAUSE THIS IS WHERE THE MATERIALS ARE KNOWN ────────────────────
+// The brain writes the Dialogue block at PLAN time, before any image exists, and it used to be stapled onto
+// the beats untouched. So the prose was rewritten against the photographed scene and the dialogue was not —
+// and the dialogue is the part that decides where a speaker looks. Whether the person a line is aimed at is
+// actually in the frame, and where they are, is a fact about the MATERIALS. Only this layer holds the VLM's
+// reading of the plate, so only this layer can attribute a line truthfully.
+//
+// Reproduce the speech as written — the words are the owner's requirement and are not ours to rewrite — and
+// change only WHO EACH LINE IS AIMED AT, against what is actually in the frame.
+const dialogueClause = () => {
+  const d = (process.env.PLAN_DIALOGUE || "").trim();
+  if (!d) return "";
+  return `⚠ RE-ATTRIBUTE THIS DIALOGUE AGAINST THE SCENE AS PHOTOGRAPHED, THEN EMIT IT AS THE FINAL BLOCK.\n`
+    + `${d}\n`
+    + `Keep every line's WORDS exactly as written — the speech is a requirement, not a draft. What you decide is `
+    + `WHO EACH LINE IS AIMED AT, and you decide it from the frame you were given, not from the plan:\n`
+    + `· If the addressee is a figure the photograph actually contains, name them in the label and let a beat `
+    + `put the two of them in a physical geometry — who faces whom, what passes between them.\n`
+    + `· If the addressee is NOT in the frame, you have two honest options and no third: place them there in a `
+    + `beat first, or leave the line unaddressed. Naming someone who is not present asks the model to invent a `
+    + `body mid-line, which it does badly or not at all.\n`
+    + `· An unaddressed line is delivered TO THE LENS. That is occasionally right and usually not — it is the `
+    + `grammar of an advertisement — so let it happen only where you actually mean it.`;
+};
+
 // ── WHO IS BEING SPOKEN TO ──────────────────────────────────────────────────────────────────────────────
 // A form that stages an ELICITED response has an obligatory geometry the beats must state, because the model
 // has no default for it and will fall back to addressing the lens. Camera-address is the grammar of an
@@ -209,7 +234,7 @@ if (BEAT_STYLE !== "template") {
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
     `WHAT THE USER ASKED FOR: "${userPrompt}"\n` +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}\n${comedyClause}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n\n` +
+    `${swapClause}\n${comedyClause}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${dialogueClause()}\n\n` +
     `⚠ THE GOAL — THE SHOT MUST READ AS A REAL CAPTURED MOMENT WITH A BEGINNING AND AN END. ` +
     `not a cinematic scene, not a spectacle — someone's camera happened to catch one small COMPLETE thing. We are ` +
     `NOT writing a text-to-video prompt: a text-to-video model's prompt must specify every visual detail, while ` +
