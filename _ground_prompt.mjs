@@ -9,7 +9,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
-import { ELEMENTS_FIELD, invokeClause, worldSimClause } from "./_invoke.mjs";   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
+import { ELEMENTS_FIELD, invokeClause, worldSimClause } from "./_invoke.mjs";
+import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const [worldRef, userPrompt, slug = "scene", ...charRefs] = process.argv.slice(2);
@@ -716,6 +717,20 @@ if (BEAT_STYLE !== "template") {
   } else if (spoken.length) {
     console.warn(`[GUARD] dialogue: ${spoken.length} quoted line(s) in the beats ALONGSIDE a Dialogue block — the generator will be told the speech twice. Left as written; inspect ${slug}_beats.txt.`);
   }
+}
+
+// ── AND MEASURE WHETHER THE SPEECH ACTUALLY REACHES THE END ───────────────────────────────────────────────
+// The clip-length rule lives in the instruction above, which makes it a probability. This reports the fact.
+// Advisory ONLY: plot placement legitimately silences parts of a clip, so a gate here would delete correct
+// dialogue. It exists so "the narration cuts early" is measured at write time instead of noticed on playback.
+{
+  const r = speechReach(beatLine, Number(process.env.BEAT_DURATION) || null);
+  if (r.verdict === "cuts-early")
+    console.warn(`[GUARD] speech: last line begins at ${r.last}s of ${process.env.BEAT_DURATION}s (reach ${r.reach.toFixed(2)} < ${SPEECH_REACH_FLOOR}) — the back half of this clip has no voice in it. Legitimate only if the PLOT places the speech there.`);
+  else if (r.verdict === "untimed")
+    console.warn(`[GUARD] speech: the dialogue block carries no [Ns] timings, so its reach cannot be measured — one untimed line is delivered wherever the generator puts it, usually at the top.`);
+  else if (r.verdict === "reaches")
+    console.log(`  \u266a speech reaches ${r.last}s of ${process.env.BEAT_DURATION}s (${(r.reach * 100).toFixed(0)}% in)`);
 }
 
 const outFile = join(HERE, "out/_aspect", `${slug}_beats.txt`);
