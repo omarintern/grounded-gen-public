@@ -197,6 +197,33 @@ const addresseeClause = () => {
     + "the microphone and the eyeline carry the form on their own.";
 };
 
+// ── THE PLATE'S PLANE IS FRAME ZERO TOO ───────────────────────────────────────────────────────────────────
+// When the figure at the action spot is ART PRINTED ON A SURFACE — an illustration on a book page, a poster, a
+// mural, a screen — then "on the page" is a fact the photograph ESTABLISHED, exactly like the room's light or
+// the camera's distance. Beat 0 may hold what the photograph OMITS; it may never hold what the photograph
+// DENIES ([[feedback_frame_zero_rule]]). A dimensional creature standing on the paper denies it.
+//
+// This is the SCENE half of the same call renditionMode() makes on the CHARACTER half in _gate_rules.mjs. That
+// one is scoped to flat-canonical IP, because "flat vs brought-to-life" is an axis only such a character has.
+// This one is scoped to the PLATE and therefore applies to whoever takes that position, IP or not — a swap
+// into a comic panel is page art no matter who is swapped in. They agree on the case that produced both; they
+// are not duplicates, and neither is a safe place to delete the other from.
+//
+// Owner 2026-08-09, on a Ratatouille cookbook plate whose chef is ink on a page: "the anthropomorphic reversal
+// should apply when 2d is implied, and the vlm can see the chef is 2d on paper and not apply the
+// anthropomorphism we usually apply."
+const renditionClause = () =>
+  process.env.PLATE_FLAT_ART !== "1" ? "" :
+  "⚠ THE FIGURE IN THIS PHOTOGRAPH IS FLAT ARTWORK ON A SURFACE, AND WHATEVER REPLACES IT STAYS FLAT ARTWORK ON "
+  + "THAT SURFACE. The occupant of the action spot is printed or drawn ON something the camera can see the edges "
+  + "of — a page, a poster, a screen — not a body standing in the room. So the substituted character is part of "
+  + "that same printed surface: flat ink outlines and flat painted colour, lying in the plane of the page, "
+  + "lit by the room's light falling ACROSS it rather than by light of its own. It may move, gesture and speak "
+  + "as drawings do, and the surface itself may be handled, turned or lifted by someone in the scene. It must "
+  + "NOT gain volume, depth, real fur, real fabric, cast shadows into the room, or rise off the surface — do "
+  + "NOT bring it to life as a three-dimensional creature, which is the DEFAULT for a drawn character and is "
+  + "the wrong call here. The photograph already answered which plane this figure lives in; keep its answer.";
+
 const BEAT_STYLE = process.env.BEAT_STYLE || (_density >= SPEC_DENSE ? "minimal" : "spectacle");
 console.log(`seesaw : spec-density ${_density} (dense at ${SPEC_DENSE}) → ${BEAT_STYLE}${process.env.BEAT_STYLE ? " (env override)" : ""}`);
 if (BEAT_STYLE !== "template") {
@@ -234,7 +261,7 @@ if (BEAT_STYLE !== "template") {
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
     `WHAT THE USER ASKED FOR: "${userPrompt}"\n` +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}\n${comedyClause}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}\n${comedyClause}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     `⚠ THE GOAL — THE SHOT MUST READ AS A REAL CAPTURED MOMENT WITH A BEGINNING AND AN END. ` +
     `not a cinematic scene, not a spectacle — someone's camera happened to catch one small COMPLETE thing. We are ` +
     `NOT writing a text-to-video prompt: a text-to-video model's prompt must specify every visual detail, while ` +
