@@ -370,7 +370,18 @@ if (BEAT_STYLE !== "template") {
             `returning re-anchors the clip to the very thing the sequence was escaping. Each cut must go ` +
             `FURTHER than the one before — further in time, in distance, in ambition — and the LAST image must ` +
             `be the FURTHEST. End out there. A montage that lands back where it started has described a loop, ` +
-            `and a loop has no momentum: the futures are the payoff, so give them the final frame. `
+            `and a loop has no momentum: the futures are the payoff, so give them the final frame. ` +
+            // ⚠ CLOSURE IS NOT CANCELLED, IT MOVES. Owner 2026-08-09: "i understand the return for rule of 3,
+            // but that should apply elsewhere not in terms of returns but rather narrative." The three-beat
+            // shape — set up, develop, pay off — is doing real work and the rule above must not read as "do
+            // not resolve". What is banned is discharging that debt with a LOCATION: cutting home is the lazy
+            // form of closure, and it costs the sequence its momentum to buy something the writing can supply
+            // for free. So keep the payoff and spend it on the furthest image instead.
+            `⚠ CLOSE THE STORY, BUT CLOSE IT IN THE LAST IMAGE — NOT BY GOING BACK. The three-beat shape still ` +
+            `applies and the ending must still LAND; what may not carry it is a change of place. Pay it off ` +
+            `INSIDE the furthest future: echo the opening gesture there, show the thing the speaker promised ` +
+            `now true, let the object from the first beat reappear in that far place changed by the journey. ` +
+            `The audience should feel the circle close WITHOUT the camera travelling back to draw it. `
           : `Returning to the opening ` +
             `place is a legitimate use of one, and when you return show the CONSEQUENCE of what happened while away ` +
             `rather than resetting the room. `) +
