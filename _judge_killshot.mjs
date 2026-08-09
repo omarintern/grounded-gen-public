@@ -70,10 +70,10 @@ export async function judgeKillshot(filePath, subjectStr, opts = {}) {
 // Owner 2026-08-08: NSFW IS OPEN. Adult material is not filtered at sourcing — "we're not gonna apply filters
 // on scrape to avoid nsfw, the vlm will handle that anyway". So `nudity` does NOT reject here.
 //
-// The rest still do, and for reasons that are not about taste: personal_data (plates, house numbers, documents)
-// and third_party_media (a poster, a switched-on television) are exposure that would be RE-RENDERED into the
-// output; distress is footage we would not ship; symbol is the harmful-symbol case (owner: "only harmful
-// symbols like Nazi"). Absent, null, "" and any unrecognised value still fail CLOSED — that is the truthiness
+// The rest still do, and for reasons that are not about taste: personal_data (plates, house numbers,
+// documents) is exposure that would be RE-RENDERED into the output; distress is footage we would not ship;
+// symbol is the harmful-symbol case (owner: "only harmful symbols like Nazi"). third_party_media was retired
+// 2026-08-09 — see contentFlagFails. Absent, null, "" and any unrecognised value still fail CLOSED — that is the truthiness
 // hole closed on 2026-08-07 and it is unrelated to which flags we honour.
 // ⚠⚠ INTERLOCK — NUDITY RE-GATES THE MOMENT THE SCENE HAS CHILDREN IN IT.
 // Updated 2026-08-08 when the owner allowed children in scrape for stand-ins. shows_minor is NO LONGER an
@@ -93,6 +93,15 @@ export function contentFlagFails(flag) {
   const f = String(flag ?? "");
   if (f === "none") return false;                       // clean
   if (f === "nudity" && !nudityGates()) return false;   // owner: adult material is not gated at sourcing…
+  // ⚠ third_party_media RETIRED 2026-08-09. Its rubric is "copyrighted work INSIDE the frame that would be
+  // re-rendered: a poster, wall art, an album cover, or a TV or monitor displaying a film, show or game" —
+  // written for a living-room photo smuggling a poster into the output. It is exactly backwards for SCENE
+  // APPROPRIATION, where the copyrighted work is not incidentally in the frame, it IS the frame: measured the
+  // same day on a Ratatouille scrape, where it killed three genuine film frames including a TV displaying the
+  // film, which is its rubric verbatim. Owner: "get rid of third_party_media because it hasnt helped us at
+  // all." The ©-exposure it was guarding is read at GENERATION by the provider's own output gate, which is the
+  // layer that actually refuses — this one only removed candidates before that layer could judge them.
+  if (f === "third_party_media") return false;
   return true;                                          // …unless this run renders children. Plus absent / unrecognised / every other flag.
 }
 
