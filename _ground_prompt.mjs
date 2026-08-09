@@ -163,7 +163,10 @@ const dialogueClause = () => {
   if (!d) return "";
   return `⚠ RE-ATTRIBUTE THIS DIALOGUE AGAINST THE SCENE AS PHOTOGRAPHED, THEN EMIT IT AS THE FINAL BLOCK.\n`
     + `${d}\n`
-    + `Keep every line's WORDS exactly as written — the speech is a requirement, not a draft. What you decide is `
+    + `Keep every line's WORDS exactly as written — the speech is a requirement, not a draft. You may BREAK a `
+    + `line into several timed lines when it is carried across cuts (see the carried-voice rule below); that is `
+    + `a decision about WHEN each word is heard, not a change to the words, and it is the only division allowed. `
+    + `What you decide is `
     + `WHO EACH LINE IS AIMED AT, and you decide it from the frame you were given, not from the plan:\n`
     + `· If the addressee is a figure the photograph actually contains, name them in the label and let a beat `
     + `put the two of them in a physical geometry — who faces whom, what passes between them.\n`
@@ -208,7 +211,38 @@ const dialogueClause = () => {
         + `across them — "Speaker to Listener [0s]: …" then "Speaker (continuing, over the cuts) [4s]: …". `
         + `The bracketed time says WHEN that fragment is heard, so a single sentence can begin in the anchor `
         + `shot and finish over the last image. Do NOT move speech up into the beat lines and do NOT open a `
-        + `second Dialogue block — one terminal block, several timed lines inside it.`
+        + `second Dialogue block — one terminal block, several timed lines inside it.\n`
+        // ⚠ THE RULE ABOVE READS AS A PROHIBITION ON THIS ONE, WHICH IS WHY IT LOST. Measured 2026-08-09: the
+        // clause reached the writer intact (confirmed in the instruction dump) and the writer still emitted a
+        // single untimed line, because two lines earlier it is told "Keep every line's WORDS exactly as
+        // written — the speech is a requirement, not a draft." Splitting a line LOOKS like altering it, so the
+        // older and more emphatic rule won. Both are right; they were simply never reconciled, and a model
+        // resolving a contradiction picks one — usually the one phrased as an absolute.
+        // Say plainly that splitting is a re-TIMING, so obeying it cannot read as disobeying the other.
+        // ⚠ THE SLOP METER WAS NEVER THE LEVER FOR THIS. Owner 2026-08-09: "i dont think the slop meter
+        // wouldve been the lever for prolonged speech. but a general rule would be speech not cutting short,
+        // instead using the length of a video unless prompted." Density (words per second) and REACH (does the
+        // speech still arrive at the end) are different properties: a line can sit at a perfect 3 wps and be
+        // over in the first three seconds of a twelve-second clip. The meter measures the first and says
+        // nothing about the second, so no meter target could ever have produced a line that lasts.
+        // ⚠ AND IT IS SUBORDINATE TO PLOT, WHICH IS THE OLDER RULE. Owner, same message: a subject who walks
+        // into a hall and only meets the people they address in a later time block SHOULD start speaking in
+        // that block — arriving silent is correct, because the geometry says nobody is there to hear them yet.
+        // Reach is the DEFAULT, not an override: fill the clip unless the story says where the speech belongs.
+        + `⚠ THE SPEECH USES THE LENGTH OF THE CLIP. This is a ${process.env.BEAT_DURATION || "4"}-second video, `
+        + `and by default speech should still be ARRIVING near the end of it — a line that finishes in the first `
+        + `third leaves the rest silent, and silence after a voice reads as the clip having ended early. Spread `
+        + `the words across the time you have rather than delivering them all at once and then stopping. `
+        + `⚠ UNLESS THE PLOT PLACES THEM. Where the story has the speaker ARRIVE — walk in, reach the people `
+        + `they are addressing, get to the room where the exchange happens — the speech belongs in THAT time `
+        + `block and the earlier blocks are rightly silent, because there is nobody there to be spoken to yet. `
+        + `Plot placement always wins; filling the clip is what you do when the story does not say otherwise.\n`
+        + `⚠ SPLITTING IS NOT REWRITING, AND IT DOES NOT BREAK THE KEEP-THE-WORDS RULE ABOVE. The words and `
+        + `their order stay EXACTLY as given — you are choosing only where the sentence BREAKS and when each `
+        + `part is heard. Add no word, remove no word, reorder nothing. If you find yourself keeping the line `
+        + `whole because you were told not to alter it, that is the misreading this paragraph exists to correct: `
+        + `a line kept whole in the anchor shot is speech that ends before the first cut, which is the exact `
+        + `failure the carried-voice rule was written to prevent.`
       : "");
 };
 
@@ -399,6 +433,29 @@ if (BEAT_STYLE !== "template") {
           : `Returning to the opening ` +
             `place is a legitimate use of one, and when you return show the CONSEQUENCE of what happened while away ` +
             `rather than resetting the room. `) +
+        (process.env.STYLE_PARTICULAR
+          // ⚠ SCOPED TO APPROPRIATION, NOT TO MONTAGE. First written inside the montage branch — too
+          // narrow, by exactly the mistake this file keeps repeating: a rule parked under the branch it
+          // was first noticed in. A scene that takes ONE cut leaves its world as completely as one that
+          // takes three. Gate on the appropriation, which is what makes a form worth preserving at all.
+          ? // ⚠⚠ PERSISTENCE OF FORM. Owner 2026-08-09: "the plot should carry in the world (persistence
+          // of form), remaining in a pixar world or whatever the form of ratatouille lives in." When a scene
+          // is appropriated from a named work, that work's FORM — its animation, its rendering, the kind of
+          // world it is — is part of what was appropriated, not just its staging. Measured the same day: a
+          // Ratatouille cookbook opening cut to a photoreal restaurant kitchen, a photoreal loft and a
+          // photoreal laboratory. Each cut was individually fine and the sequence was incoherent, because
+          // the boy left the film he was in. The rule the CUT clause already carries — "the second place
+          // belongs to the SAME PREMISES the photograph establishes, one reference grounds one world" — is
+          // about GEOGRAPHY. This is the same thought about MEDIUM, and it had no clause.
+          `⚠⚠ EVERY CUT STAYS IN THE WORLD THE PHOTOGRAPH CAME FROM. This opening frame belongs to a `
+          + `particular made world, with its own way of being drawn, lit and rendered. That form was `
+          + `appropriated along with the staging and it must survive every cut: the later places are `
+          + `elsewhere in THAT world, not their real-life equivalents. A cut from an animated kitchen to a `
+          + `photographed one is a cut to a DIFFERENT FILM, and it reads as an error even when each shot is `
+          + `good on its own. Carry the rendering, the palette, the density of detail and the physical `
+          + `logic of the opening frame all the way to the last image — the subject travels, the world does `
+          + `not change medium underneath them.\n`
+          : "") +
         `⚠ A CUT IS NOT AN ESCAPE FROM A DIFFICULT FRAME: if the action will not fit the photograph that is a ` +
         `sourcing fault, and cutting around it hides the fault.\n` +
         `⚠⚠ (4) AFTER A CUT THERE IS NO PHOTOGRAPH, SO THE SCALE MUST NOT CHANGE. Before the cut the reference ` +
@@ -604,6 +661,42 @@ if (BEAT_STYLE !== "template") {
       if (e?.name === "ProviderInfraError") throw e;
       console.warn(`[GUARD] beats: retry errored (${String(e.message).slice(0, 60)}) — shipping the original`);
     }
+  }
+}
+
+// ── SPEECH THAT ENDED UP IN THE BEATS IS A DUPLICATION BUG, NOT A STYLE CHOICE ────────────────────────────
+// The dialogue contract is: words live in ONE terminal "Dialogue:" block, beats describe only what is SEEN.
+// Asking for carried voice pushed the writer to narrate speech inline instead ("...as the Rabbit, continuing
+// over the cuts, says: '...'"), which reads naturally and breaks three things at once:
+//   · slop_meter's spokenWords() returns NULL — there is no block, so density cannot be measured at all;
+//   · applyAudioFill sees no Dialogue:/Sound: line and appends ROOM TONE over a scene that has speech;
+//   · worst, _run.mjs re-attaches the PLAN's dialogue block only when the beats carry none — so the same
+//     line ships TWICE, once inline and once appended, and the generator is asked to say it two ways.
+// A rule in a prompt is a probability; this is the mechanical backstop, in the same spirit as the
+// fine-detail guard above. Deterministic repair rather than a re-ask: the words are MOVED, never rewritten,
+// so the keep-the-words rule is preserved exactly and it costs nothing.
+{
+  const QUOTED = /[:,]?\s*(?:\b(?:say(?:s|ing)?|tell(?:s|ing)?|call(?:s|ing)? out|continu\w*[^:"]*)\b[^:"]*)?[:,]?\s*"([^"]{2,})"/g;
+  const bl = beatLine.split("\n");
+  const hasBlock = /(^|\n)\s*(?:Dialogue|Sound)\s*:/i.test(beatLine);
+  const spoken = [];
+  const cleaned = bl.map((line) => {
+    if (/^\s*(?:Dialogue|Sound)\s*:/i.test(line)) return line;
+    const at = (line.match(/^\s*\[(\d+)s\]/) || [])[1];
+    let out = line;
+    for (const m of [...line.matchAll(QUOTED)]) { spoken.push({ at, text: m[1] }); out = out.replace(m[0], ""); }
+    return out.replace(/\s{2,}/g, " ").replace(/\s+([.,;])/g, "$1").replace(/[,:;]\s*$/, ".").trimEnd();
+  });
+  if (spoken.length && !hasBlock) {
+    const who = (process.env.PLAN_DIALOGUE || "").match(/\n\s*([^:\n]{1,80}?)\s*:/);
+    const speaker = who ? who[1].trim() : "Speaker";
+    const block = "Dialogue:\n" + spoken.map((q, i) =>
+      `${speaker}${i ? " (continuing, over the cuts)" : ""}${q.at != null ? ` [${q.at}s]` : ""}: "${q.text}"`).join("\n");
+    beatLine = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n\n" + block;
+    console.warn(`[GUARD] dialogue: ${spoken.length} spoken line(s) were narrated INSIDE the beats and no Dialogue block existed — MOVED into one terminal block, timings preserved (doctrine drifting; fix the root).`);
+    console.warn(`[GUARD] dialogue: left in place they would have shipped TWICE — _run re-attaches the plan's block whenever the beats carry none.`);
+  } else if (spoken.length) {
+    console.warn(`[GUARD] dialogue: ${spoken.length} quoted line(s) in the beats ALONGSIDE a Dialogue block — the generator will be told the speech twice. Left as written; inspect ${slug}_beats.txt.`);
   }
 }
 
