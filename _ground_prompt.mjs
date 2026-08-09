@@ -194,7 +194,21 @@ const dialogueClause = () => {
         + `carries INTO and THROUGH the new images rather than finishing before the first cut — a montage whose `
         + `speech ended in the shot before it has nothing holding one image to the next, and it reads as a `
         + `slideshow. The anchor is mandatory: a voice that never appeared on screen is narration to nobody, `
-        + `which is the advertisement read above.`
+        + `which is the advertisement read above.\n`
+        // ⚠ SAY HOW, OR IT CANNOT BE SAID AT ALL. Measured 2026-08-09: this clause reached the writer intact
+        // and the writer still emitted ONE line, because the surrounding instruction says the dialogue is
+        // "THE FINAL BLOCK" and a final block has no per-beat position. "Split the words across the beats" had
+        // nowhere to land — the rule was expressible in English and not in the output shape, which is the same
+        // failure as a gate reading a field that answers a different question. The block STAYS terminal (audio
+        // detection and the slop meter both key on a trailing `Dialogue:` section, and the label-strip regex is
+        // line-anchored, so a bracketed time inside the label survives it). What changes is that its LINES may
+        // now carry their own timings.
+        + `· HOW TO WRITE A CARRIED LINE, because the block itself stays at the end: keep ONE "Dialogue:" `
+        + `section as the final block, but give its lines their own timings in brackets and break the speech `
+        + `across them — "Speaker to Listener [0s]: …" then "Speaker (continuing, over the cuts) [4s]: …". `
+        + `The bracketed time says WHEN that fragment is heard, so a single sentence can begin in the anchor `
+        + `shot and finish over the last image. Do NOT move speech up into the beat lines and do NOT open a `
+        + `second Dialogue block — one terminal block, several timed lines inside it.`
       : "");
 };
 
