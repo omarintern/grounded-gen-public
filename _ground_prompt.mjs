@@ -617,7 +617,25 @@ if (BEAT_STYLE !== "template") {
     lines = text.split("\n").map((l) => l.trim().replace(/^\[\d+s\]\s*/, ""))
       .filter((l) => l && !/^(beats?|shot script|prose)\s*:?\s*$/i.test(l));
   }
-  if (lines.length) { beatLine = lines.join("\n"); mode += " + NARRATIVE"; }
+  // ⚠⚠ THE DIALOGUE BLOCK SURVIVES THE BEAT FILTER. Both branches above keep only lines the parser recognises
+  // as BEATS — the timestamped branch requires /^\[\d+s\]/ outright. A "Dialogue:" section matches neither, so
+  // the writer was told to "EMIT IT AS THE FINAL BLOCK" and the block was then DELETED by construction, on every
+  // run, silently. That is the root cause of three separate carried-voice failures chased across two days: the
+  // clause was present in the instruction every time and its output could never reach the file. It also explains
+  // why the model kept narrating speech INLINE inside beat lines — inline is the only place speech survived, so
+  // the model was right and the parser was wrong.
+  // Captured from the RAW text before filtering and re-attached after, so the beat parser keeps its strict
+  // contract and the speech stops being thrown away. _run re-attaches the plan's block only when none is
+  // present, so a surviving block now correctly suppresses that fallback instead of duplicating against it.
+  const emittedDialogue = (text.match(/(^|\n)\s*Dialogue\s*:[\s\S]*?(?=\n\s*(?:Sound\s*:|$))/i) || [""])[0].trim();
+  if (lines.length) {
+    beatLine = lines.join("\n");
+    if (emittedDialogue) {
+      beatLine += "\n\n" + emittedDialogue;
+      console.log(`  \u266a dialogue block kept from the writer (${emittedDialogue.split("\n").length - 1} line(s)) — it used to be dropped by the beat filter`);
+    }
+    mode += " + NARRATIVE";
+  }
   else console.error(" (narrative beats failed to parse — keeping the minimal beat)");
 
   // ⚠⚠ DETERMINISTIC GUARD — POST-CUT BEATS MAY NOT NAME FINE DETAIL.
