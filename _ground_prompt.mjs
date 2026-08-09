@@ -359,9 +359,21 @@ if (BEAT_STYLE !== "template") {
         `has room for at most ${process.env.CUT_BUDGET || 1}. That number is derived from how many places the ` +
         `story visits, so it is a CEILING and never a target: use ONLY the cuts the story's own movement ` +
         `requires and no more. Never cut for variety, for emphasis, or to show something better — a cut spent ` +
-        `on anything but a change of place is what turns a short story into a montage. Returning to the opening ` +
-        `place is a legitimate use of one, and when you return show the CONSEQUENCE of what happened while away ` +
-        `rather than resetting the room. ` +
+        `on anything but a change of place is what turns a short story into a montage. ` +
+        (process.env.MONTAGE === "1"
+          // ⚠ A MONTAGE DEPARTS AND DOES NOT COME HOME. Validated by two independent authors writing the same
+          // ending — see MONTAGE_RE in _gate_rules.mjs. The generic return-to-opening licence below is right
+          // for a story that travels and comes back, and exactly wrong for a sequence of imagined futures.
+          ? `⚠⚠ THIS REQUEST IS A MONTAGE, SO THE SEQUENCE DEPARTS AND NEVER COMES HOME. Do NOT cut back to the ` +
+            `opening place at the end, and do not intercut with it between the futures — the framing device ` +
+            `(the book, the window, the narrator) has done its job the moment the first cut leaves it, and ` +
+            `returning re-anchors the clip to the very thing the sequence was escaping. Each cut must go ` +
+            `FURTHER than the one before — further in time, in distance, in ambition — and the LAST image must ` +
+            `be the FURTHEST. End out there. A montage that lands back where it started has described a loop, ` +
+            `and a loop has no momentum: the futures are the payoff, so give them the final frame. `
+          : `Returning to the opening ` +
+            `place is a legitimate use of one, and when you return show the CONSEQUENCE of what happened while away ` +
+            `rather than resetting the room. `) +
         `⚠ A CUT IS NOT AN ESCAPE FROM A DIFFICULT FRAME: if the action will not fit the photograph that is a ` +
         `sourcing fault, and cutting around it hides the fault.\n` +
         `⚠⚠ (4) AFTER A CUT THERE IS NO PHOTOGRAPH, SO THE SCALE MUST NOT CHANGE. Before the cut the reference ` +
