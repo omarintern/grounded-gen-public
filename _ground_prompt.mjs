@@ -167,11 +167,35 @@ const dialogueClause = () => {
     + `WHO EACH LINE IS AIMED AT, and you decide it from the frame you were given, not from the plan:\n`
     + `· If the addressee is a figure the photograph actually contains, name them in the label and let a beat `
     + `put the two of them in a physical geometry — who faces whom, what passes between them.\n`
-    + `· If the addressee is NOT in the frame, you have two honest options and no third: place them there in a `
-    + `beat first, or leave the line unaddressed. Naming someone who is not present asks the model to invent a `
-    + `body mid-line, which it does badly or not at all.\n`
+    + `· If the addressee is NOT in the frame, place them there in a beat first. Naming someone who is not `
+    + `present asks the model to invent a body mid-line, which it does badly or not at all.\n`
     + `· An unaddressed line is delivered TO THE LENS. That is occasionally right and usually not — it is the `
-    + `grammar of an advertisement — so let it happen only where you actually mean it.`;
+    + `grammar of an advertisement — so let it happen only where you actually mean it.`
+    // ── THE THIRD OPTION: A VOICE MAY OUTLAST THE SHOT IT WAS ANCHORED IN ──────────────────────────────────
+    // This clause used to say "two honest options and no third", which foreclosed the one thing a montage
+    // needs. Camera-address and carried voice get confused because neither shows a listener, but they are
+    // OPPOSITE geometries: camera-address has the speaker IN frame addressing the lens (advert grammar, still
+    // banned); carried voice has the speaker NOT IN FRAME AT ALL, already established, while the picture has
+    // moved on. A speaker cannot address the lens from a shot they are absent from.
+    // The anchor is what separates them, and it is a requirement, not a preference: the line must BEGIN in a
+    // beat where speaker and addressee are both present and oriented to each other. Only then may the picture
+    // cut away with the voice still running. An unanchored voice over images is narration to nobody, which is
+    // the ad-read this whole clause exists to prevent — so the escape hatch opens only after the geometry has
+    // been shown once.
+    // Owner 2026-08-09, on a montage that died at its last cut: "we'd want narration to prolong into the
+    // montage." Withholding all the speech for the anchor shot is what makes a montage read as a slideshow —
+    // the voice is the only thing tying cut to cut, and the cuts are where the meaning accumulates.
+    + (process.env.ALLOW_CUTS === "1"
+      ? `\n· ⚠ A LINE MAY RUN ACROSS CUTS, AND WHEN THE CUTS ARE A MONTAGE THE SPEECH SETS OFF, IT SHOULD. `
+        + `Once a line is ANCHORED — begun in a beat where the speaker and the person addressed are both present `
+        + `and turned to each other — the picture may cut away while that voice keeps going. The speaker is then `
+        + `not in frame at all, which is the OPPOSITE of addressing the lens, not a version of it: nobody can `
+        + `present to a camera from a shot they are absent from. Split the words across the beats so the voice `
+        + `carries INTO and THROUGH the new images rather than finishing before the first cut — a montage whose `
+        + `speech ended in the shot before it has nothing holding one image to the next, and it reads as a `
+        + `slideshow. The anchor is mandatory: a voice that never appeared on screen is narration to nobody, `
+        + `which is the advertisement read above.`
+      : "");
 };
 
 // ── WHO IS BEING SPOKEN TO ──────────────────────────────────────────────────────────────────────────────
