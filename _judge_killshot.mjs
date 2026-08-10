@@ -52,6 +52,65 @@ export async function judgeKillshot(filePath, subjectStr, opts = {}) {
   }
 }
 
+// ── GRID KILL-SHOT: ONE IMAGE CHARGE FOR N CANDIDATES ─────────────────────────────────────────────────────
+// The measured cost driver is JUDGE CALLS, not adapt rounds — sampled 2026-08-10 across four prompts, one of
+// which settled in a SINGLE round and still cost $… because it judged 24 candidates. Material-gathering
+// averaged $… against a $… all-in COGS ceiling, so this leg is what breaks a fixed price.
+//
+// The lever is already documented at the top of this file: a provider image costs a FLAT ~1,000 input tokens per
+// call REGARDLESS OF SIZE. That is why adding a cheap tier saved less than expected — every candidate paid an
+// image charge. Tiling N candidates into ONE image inverts it: one image charge for the whole window.
+//
+// ⚠ SCOPED TO THE KILL-SHOT, DELIBERATELY. This tier asks near-categorical questions (real_photo, ai_generated,
+// shows_subject + the safety flags). The FULL 12-field rubric stays per-image: its graded fields already
+// collapse under multi-field crowding — that is what forced `degradation` and `subject_scale` into their own
+// calls — and a grid adds spatial crowding on top. Cheap categorical work grids; calibrated graded work does not.
+//
+// ⚠ THE CLAUSES ARE STILL IMPORTED, NOT RETYPED. gateClauses() is the single source shared with the full rubric;
+// a paraphrase here would let the two gates drift, and the ai_generated clause is safety-critical.
+//
+// ⚠ FAILS CLOSED PER CELL. A short array, a missing index, an unparseable cell — each becomes null for THAT
+// candidate, which killshotFails() already treats as elimination. A grid must never let one bad cell pass a
+// frame nobody judged, and must never let one bad cell condemn the whole window either.
+export async function judgeKillshotGrid(filePaths, subjectStr, opts = {}) {
+  const files = Array.from(filePaths || []);
+  if (!files.length) return [];
+  const sceneIntent = opts.sceneIntent ?? process.env.SCENE_INTENT ?? "";
+  const cellPx = Number(opts.cellPx ?? process.env.GRID_CELL_PX ?? 384);
+  const cols = Math.ceil(Math.sqrt(files.length));
+  const rows = Math.ceil(files.length / cols);
+  try {
+    // Each cell is letterboxed onto a fixed tile so the model sees a clean lattice; a numbered strip is drawn
+    // above each so the answer can be keyed by position rather than by the model describing what it sees.
+    const tiles = await Promise.all(files.map(async (f, i) => {
+      const img = await sharp(f).resize(cellPx, cellPx, { fit: "contain", background: { r: 20, g: 20, b: 20 } }).toBuffer();
+      const label = Buffer.from(
+        `<svg width="${cellPx}" height="34"><rect width="100%" height="100%" fill="#000"/>` +
+        `<text x="8" y="25" font-family="sans-serif" font-size="26" fill="#fff">${i + 1}</text></svg>`);
+      return sharp({ create: { width: cellPx, height: cellPx + 34, channels: 3, background: { r: 0, g: 0, b: 0 } } })
+        .composite([{ input: label, top: 0, left: 0 }, { input: img, top: 34, left: 0 }]).png().toBuffer();
+    }));
+    const cellH = cellPx + 34;
+    const sheet = await sharp({ create: { width: cols * cellPx, height: rows * cellH, channels: 3, background: { r: 0, g: 0, b: 0 } } })
+      .composite(tiles.map((input, i) => ({ input, left: (i % cols) * cellPx, top: Math.floor(i / cols) * cellH })))
+      .jpeg({ quality: 82 }).toBuffer();
+    const out = await providerJson([
+      textPart(`This image is a CONTACT SHEET of ${files.length} SEPARATE candidate photographs, tiled in a ${cols}x${rows} grid and NUMBERED 1 to ${files.length} in white at the top-left of each cell, reading left to right then top to bottom. ` +
+        `Judge EACH numbered cell INDEPENDENTLY, as if it were the only image you had been shown. The cells are unrelated to one another: they are different candidates for the same slot, NOT frames of one scene, NOT a sequence, and NOT a composite. ` +
+        `⚠ The lattice itself is an artefact of this sheet — the black gutters and the number strips are NOT part of any candidate, and a cell being one panel of this grid does NOT make it a split-screen or a composite. Judge only what is inside each cell. ` +
+        `Return ONLY JSON {"cells":[{"n":1,"real_photo":bool,"ai_generated":0..1,"shows_minor":bool,"content_flag":"none|nudity|distress|personal_data|third_party_media|symbol","shows_subject":bool}, …]} with EXACTLY ${files.length} entries, one per cell, in cell order. ` +
+        gateClauses(subjectStr, sceneIntent)),
+      imagePart("image/jpeg", sheet.toString("base64")),
+    ], { maxTokens: 400 + files.length * 260, temperature: 0.1 });
+    const cells = Array.isArray(out?.cells) ? out.cells : [];
+    // Key by the model's own `n` when present, else by position — then fail closed on anything missing.
+    return files.map((_, i) => cells.find((c) => Number(c?.n) === i + 1) ?? cells[i] ?? null);
+  } catch (e) {
+    if (e?.name === "ProviderInfraError") throw e;   // infra is not a verdict — same contract as the single judge
+    return files.map(() => null);
+  }
+}
+
 /** Does this kill-shot verdict eliminate the candidate? Mirrors the full gate's logic for these three fields. */
 // requireSubject=false on the PLACE-ONLY rung (actor dropped/conjured) — the place IS the subject there, so a
 // frame need not show a presented actor (owner 2026-08-06: "white rabbit doesnt need swappable subject" — an ip /
