@@ -48,10 +48,16 @@ const worldBlock = WORLD_MODE
     + `body, costume, markings, tail, limbs, everything that makes the design identifiable, to its outline. Do NOT `
     + `preserve its signatures here: on this surface the signatures ARE the copyrighted design, and nothing `
     + `downstream needs them, because a different character is being written into that position.\n`
-    + `⚠⚠ PROMINENT MEANS THE FIGURE THE SHOT IS OF — a large or foreground occupant, rendered dimensionally in `
-    + `the scene's own space, that a viewer would name as being in this picture. LEAVE EVERY OTHER OWNED FIGURE `
-    + `COMPLETELY UNTOUCHED: small background characters, incidental illustrations printed on a page or poster, `
-    + `figures in a diagram, a secondary or tertiary character the shot is not about. Do NOT box them at all.\n`
+    + `⚠⚠ ASK FLAT-OR-DIMENSIONAL FIRST, AND ONLY THEN ASK PROMINENCE. A figure qualifies for a box ONLY if it is `
+    + `rendered DIMENSIONALLY IN THE SCENE'S OWN SPACE — a body occupying the room, lit by the room's light, `
+    + `castable in shadow. A figure that is FLAT ARTWORK ON A SURFACE — printed on a page, poster, screen, label, `
+    + `packaging, mural or fabric — is NEVER boxed, and this holds NO MATTER HOW LARGE IT IS OR HOW MUCH OF THE `
+    + `FRAME IT FILLS. Do not reason "it is big and in front, so it must be the figure the shot is of": when the `
+    + `plate is a photograph OF a printed surface, the artwork on it is large and foreground BY CONSTRUCTION, and `
+    + `it is still artwork. Flatness DECIDES; size and position do not get a vote.\n`
+    + `⚠⚠ AMONG DIMENSIONAL FIGURES ONLY, prominent means the one the shot is of — a large or foreground occupant `
+    + `a viewer would name as being in this picture. Leave every other owned figure COMPLETELY UNTOUCHED: small `
+    + `background characters, figures in a diagram, a secondary or tertiary character the shot is not about.\n`
     + `⚠ THE REASON IS NOT COST, IT IS THAT COVERING THEM DESTROYS THE SHOT. Flat printed art on a surface is the `
     + `PLANE the replacement character inherits — blur it and the generator has no flat occupant to diffuse into, `
     + `so it renders a dimensional creature standing in the scene instead of artwork on the page. Measured: with `
