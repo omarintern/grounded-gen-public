@@ -16,6 +16,28 @@ const FILES = readdirSync(refsDir).filter((f) => /\.(jpe?g|png)$/i.test(f)).sort
 // detection bench (out/_probe/detect_bench.json): flash + this prompt boxes the face only.
 const PROMPT = readFileSync(new URL("./detect_prompt.txt", import.meta.url), "utf8");
 
+// ── SCENE CONTEXT: THE ONE VLM CALL IN THIS PIPELINE THAT WAS ASKED TO GUESS ──────────────────────────────
+// judgeIdentity gets subjectStr + SCENE_INTENT + REQUIRED_FORM; judgeKillshot gets subjectStr + sceneIntent.
+// This detector got a static prompt and a picture, and nothing else — so on every call it had to rediscover
+// from pixels alone whether the frame belongs to an owned property at all, and which figures in it carry the
+// design. That is why it swung between ZERO regions and nine anonymous brigade-diagram staff on the same
+// plate: not a badly tuned rubric, a call with no presupposition.
+// The information already exists one stage earlier. resolveEntities() runs at PLAN time and returns the work
+// ("a 2007 Disney-Pixar animated comedy film"), and world_clearance.entities carries the resolved list — then
+// it is dropped before this runs. Threading it turns the question from "find anything ownable" into "this
+// frame is from <work>; box the owned characters in it", which also makes the anonymous-staff case decidable
+// instead of a judgement call: a NAMED character is boxed, generic staff are not.
+// ⚠ ADDITIVE, NEVER NARROWING. The context says what IS known to be here; it must not become a whitelist that
+// suppresses an owned character the resolver happened not to name. Absent context ⇒ the original behaviour.
+const SCENE_WORK = process.env.REDACT_WORK || "";
+const SCENE_CHARS = process.env.REDACT_CHARACTERS || "";
+const contextBlock = (SCENE_WORK || SCENE_CHARS)
+  ? `\n\nSCENE CONTEXT — established upstream, authoritative over your own reading of the pixels:\n`
+    + (SCENE_WORK ? `• This frame is taken from: ${SCENE_WORK}. Its characters and designs are OWNED, so any of them appearing here is a copyright match at any size or sharpness.\n` : "")
+    + (SCENE_CHARS ? `• Owned characters known to be in this scene: ${SCENE_CHARS}. Box the face of every one you can find.\n` : "")
+    + `⚠ This context is ADDITIVE, not a whitelist. If you can identify an owned character that is NOT listed, box it too. If a figure is generic and unnamed — an anonymous extra, a background worker, a role in a diagram — it is not an owned character and you must NOT box it.`
+  : "";
+
 console.log(`form=${form}  refs=${FILES.length}: ${FILES.join(", ")}\n`);
 const results = [];
 for (const f of FILES) {
@@ -23,7 +45,7 @@ for (const f of FILES) {
   const mime = f.endsWith(".png") ? "image/png" : "image/jpeg";
   process.stdout.write(`[redact] ${f} … `);
   try {
-    const out = await providerJson([textPart(PROMPT), imagePart(mime, b64)], { maxTokens: 6000, temperature: 0.1 });
+    const out = await providerJson([textPart(PROMPT + contextBlock), imagePart(mime, b64)], { maxTokens: 6000, temperature: 0.1 });
     const regions = Array.isArray(out.regions) ? out.regions : [];
     results.push({ file: f, regions });
     const nS = regions.filter((r) => r.kind === "symbol").length;
