@@ -729,7 +729,14 @@ if (BEAT_STYLE !== "template") {
     console.warn(`[GUARD] dialogue: ${spoken.length} spoken line(s) were narrated INSIDE the beats and no Dialogue block existed — MOVED into one terminal block, timings preserved (doctrine drifting; fix the root).`);
     console.warn(`[GUARD] dialogue: left in place they would have shipped TWICE — _run re-attaches the plan's block whenever the beats carry none.`);
   } else if (spoken.length) {
-    console.warn(`[GUARD] dialogue: ${spoken.length} quoted line(s) in the beats ALONGSIDE a Dialogue block — the generator will be told the speech twice. Left as written; inspect ${slug}_beats.txt.`);
+    // ⚠ SPEECH IN BOTH PLACES SHIPS IT TWICE — REPAIR, DO NOT MERELY WARN. Measured across three consecutive
+    // writer runs on one prompt: one emitted a block, one narrated inline, and one did BOTH. That third case
+    // used to warn and pass through, which hands the generator the same line in two forms and asks it to say
+    // them both. The terminal block is the canonical location — it carries the timings, and it is what
+    // applyAudioFill and the slop meter read — so the block STAYS and the inline copies come out of the beats.
+    // The words are removed, never rewritten: nothing is lost that the block does not already hold.
+    beatLine = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
+    console.warn(`[GUARD] dialogue: ${spoken.length} quoted line(s) appeared in the beats ALONGSIDE a Dialogue block — STRIPPED from the beats, block kept (it holds the timings). Left in place the generator would have been told the same speech twice.`);
   }
 }
 
