@@ -111,6 +111,83 @@ export async function judgeKillshotGrid(filePaths, subjectStr, opts = {}) {
   }
 }
 
+// ── PRE-FILTER GRID: REJECT-ONLY, TWO BOOLEANS, NEVER THE LAST WORD ───────────────────────────────────────
+// The full grid above is CLOSED as a negative — 32-candidate agreement sample: 75% agreement, and 2 of the 8
+// disagreements were UNSAFE (the grid PASSED what per-image REJECTED, on a tier that gates minors). Half the
+// cells came back unanswered, so it cost more than baseline. Do not build on it.
+//
+// This is the salvage, and its safety comes from SHAPE rather than from accuracy. Two changes:
+//
+//   1. IT ASKS ONLY TWO PLAIN BOOLEANS — real_photo and shows_subject. Both are categorical: "is this a
+//      photograph", "is the subject in it". Neither is checked against a tuned threshold, so neither can DRIFT
+//      under a new prompting — which is the failure this codebase has measured repeatedly (DEGRADE_FLOOR set
+//      from a copied prompt, subject_scale collapsing, degradation forced into its own call). ai_generated is
+//      excluded ON PURPOSE: it is graded 0..1 against AI_CEILING, so it is exactly the kind of field that
+//      shifts. shows_minor and content_flag are excluded because they are safety.
+//
+//   2. IT CAN ONLY REJECT, NEVER PASS. A cell it condemns is dropped; a cell it clears still goes to the FULL
+//      per-image kill-shot including every safety field. So a false PASS costs nothing — the real judge catches
+//      it — and the unsafe-disagreement class becomes structurally impossible rather than merely unlikely.
+//      Only a false REJECT costs anything, and it costs one candidate, not a safety hole.
+//
+// WHY IT PAYS: this file's own header measured 70 of 122 candidates (57%) dying on real_photo / ai_generated /
+// shows_subject ALONE. Eliminating that majority for ONE image charge, instead of one charge each, is the
+// difference between a ~$… material leg and something near $….
+//
+// ⚠ UNANSWERED IS NOT A REJECT HERE. Unlike the full grid, an unparseable or missing cell returns UNDECIDED and
+// the candidate proceeds to the per-image judge. Failing closed would be wrong on a pre-filter: it would let an
+// infra blip discard candidates the scrape already paid for, which is the exact defect the window fallback was
+// added to fix.
+export async function prefilterGrid(filePaths, subjectStr, opts = {}) {
+  const files = Array.from(filePaths || []);
+  if (!files.length) return [];
+  const undecided = () => files.map(() => null);          // null ⇒ "no opinion" ⇒ send to the real judge
+  const cellPx = Number(opts.cellPx ?? process.env.GRID_CELL_PX ?? 384);
+  const cols = Math.ceil(Math.sqrt(files.length));
+  const rows = Math.ceil(files.length / cols);
+  try {
+    const tiles = await Promise.all(files.map(async (f, i) => {
+      const img = await sharp(f).resize(cellPx, cellPx, { fit: "contain", background: { r: 20, g: 20, b: 20 } }).toBuffer();
+      const label = Buffer.from(
+        `<svg width="${cellPx}" height="34"><rect width="100%" height="100%" fill="#000"/>` +
+        `<text x="8" y="25" font-family="sans-serif" font-size="26" fill="#fff">${i + 1}</text></svg>`);
+      return sharp({ create: { width: cellPx, height: cellPx + 34, channels: 3, background: { r: 0, g: 0, b: 0 } } })
+        .composite([{ input: label, top: 0, left: 0 }, { input: img, top: 34, left: 0 }]).png().toBuffer();
+    }));
+    const cellH = cellPx + 34;
+    const sheet = await sharp({ create: { width: cols * cellPx, height: rows * cellH, channels: 3, background: { r: 0, g: 0, b: 0 } } })
+      .composite(tiles.map((input, i) => ({ input, left: (i % cols) * cellPx, top: Math.floor(i / cols) * cellH })))
+      .jpeg({ quality: 82 }).toBuffer();
+    const out = await providerJson([
+      textPart(`This image is a CONTACT SHEET of ${files.length} SEPARATE candidate photographs, tiled in a ${cols}x${rows} grid and NUMBERED 1 to ${files.length} in white at the top-left of each cell, left to right then top to bottom. ` +
+        `The cells are unrelated candidates for the same slot — NOT frames of one scene, NOT a sequence. The black gutters and number strips are artefacts of this sheet and belong to no candidate; a cell being one panel here does NOT make it a split-screen or composite. ` +
+        `Answer TWO questions about EACH cell, independently:\n` +
+        `real_photo = is the content of this cell a photograph made by a REAL CAMERA pointed at a REAL SCENE THAT PHYSICALLY EXISTED? FALSE for a cartoon, illustration, render, graphic, or an image synthesised by a model. ⚠ Judge only what is INSIDE the cell.\n` +
+        `shows_subject = does this cell clearly show: ${subjectStr}?\n` +
+        `⚠ WHEN YOU ARE UNSURE ABOUT A CELL, ANSWER null FOR THAT FIELD. A wrong FALSE discards a usable candidate; null simply sends it for a closer look, which costs little. Guessing helps nobody.\n` +
+        `Return ONLY JSON {"cells":[{"n":1,"real_photo":bool|null,"shows_subject":bool|null}, …]} with EXACTLY ${files.length} entries in cell order.`),
+      imagePart("image/jpeg", sheet.toString("base64")),
+      // ⚠ GENEROUS CEILING, FOR THE REASON THIS FILE ALREADY RECORDS TWICE: max_tokens is billed on ACTUAL
+      // output, so a high ceiling is FREE when unused and a low one TRUNCATES — and a truncated response is
+      // unparseable, which becomes null, which a reader then mistakes for "the model had no opinion".
+      // Measured 2026-08-10: at 200 + 90/cell (=560 for a 4-cell sheet) TWO OF THREE POOLS returned 8/8
+      // undecided, and I read that as model unreliability rather than my own ceiling. the provider's model emits
+      // ~700-1000 reasoning+JSON tokens before the answer even starts.
+    ], { maxTokens: 1200 + files.length * 120, temperature: 0.1 });
+    const cells = Array.isArray(out?.cells) ? out.cells : [];
+    return files.map((_, i) => {
+      const c = cells.find((x) => Number(x?.n) === i + 1) ?? cells[i];
+      if (!c) return null;
+      // ONLY an explicit false rejects. true and null both mean "let the real judge decide".
+      const dead = c.real_photo === false || c.shows_subject === false;
+      return dead ? { reject: true, why: c.real_photo === false ? "not-a-photo" : "off-subject" } : null;
+    });
+  } catch (e) {
+    if (e?.name === "ProviderInfraError") return undecided();   // infra is NOT a verdict, and never a rejection
+    return undecided();
+  }
+}
+
 /** Does this kill-shot verdict eliminate the candidate? Mirrors the full gate's logic for these three fields. */
 // requireSubject=false on the PLACE-ONLY rung (actor dropped/conjured) — the place IS the subject there, so a
 // frame need not show a presented actor (owner 2026-08-06: "white rabbit doesnt need swappable subject" — an ip /
