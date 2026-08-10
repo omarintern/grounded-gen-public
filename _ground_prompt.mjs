@@ -238,6 +238,19 @@ const dialogueClause = () => {
         + `they are addressing, get to the room where the exchange happens — the speech belongs in THAT time `
         + `block and the earlier blocks are rightly silent, because there is nobody there to be spoken to yet. `
         + `Plot placement always wins; filling the clip is what you do when the story does not say otherwise.\n`
+        // ⚠ MEASURED DISTRIBUTION, 11 SAMPLES ON ONE PROMPT (2026-08-10). The writer reads "split across the
+        // cut" as "split at the FIRST cut and stop": the last stamp was <= 4s in six of eight runs that wrote
+        // speech, clustering at reach 0.53, and only one of eight cleared the floor. It reliably produces TWO
+        // fragments no matter how many cuts the clip has. So the instruction needed the END named explicitly —
+        // "carries into and through" was read as "crosses one boundary", which it does, and then it stops.
+        + `⚠ SPREAD THE FRAGMENTS ACROSS ALL THE CUTS, NOT JUST THE FIRST ONE. Two fragments is the reflex and `
+        + `it is wrong for anything longer than one cut: it lands the last words a third of the way in and `
+        + `leaves the rest of the clip silent. Give roughly ONE fragment per cut, and make the LAST fragment `
+        + `begin in the FINAL THIRD of the clip — for a ${process.env.BEAT_DURATION || "4"}-second video that `
+        + `means the closing words start at about ${Math.round((Number(process.env.BEAT_DURATION) || 4) * 0.7)}s, `
+        + `not at the first cut. Break the sentence at its own natural clause boundaries to get there; if it is `
+        + `too short to divide that many ways, place the fragments you do have LATE rather than early, so the `
+        + `voice is still going when the last image arrives.\n`
         + `⚠ SPLITTING IS NOT REWRITING, AND IT DOES NOT BREAK THE KEEP-THE-WORDS RULE ABOVE. The words and `
         + `their order stay EXACTLY as given — you are choosing only where the sentence BREAKS and when each `
         + `part is heard. Add no word, remove no word, reorder nothing. If you find yourself keeping the line `
