@@ -44,11 +44,19 @@ const PROMPT = readFileSync(new URL("./detect_prompt.txt", import.meta.url), "ut
 const WORLD_MODE = process.env.REDACT_MODE === "world";
 const worldBlock = WORLD_MODE
   ? `\n\n⚠⚠ WORLD-REF MODE — THIS IMAGE IS SCENERY, AND ANY OWNED CHARACTER IN IT IS BEING REPLACED, NOT COPIED FROM.\n`
-    + `For an OWNED CHARACTER only, OVERRIDE the face-core instruction above and box the ENTIRE FIGURE — head, body, `
-    + `costume, markings, tail, limbs, everything that makes the design identifiable, to its outline. Do NOT preserve `
-    + `its signatures here: on this surface the signatures ARE the copyrighted design, and nothing downstream needs `
-    + `them, because a different character is being written into that position. Include a character rendered as `
-    + `printed art on a page, a poster or a screen inside the scene.\n`
+    + `For a PROMINENT owned character, OVERRIDE the face-core instruction above and box the ENTIRE FIGURE — head, `
+    + `body, costume, markings, tail, limbs, everything that makes the design identifiable, to its outline. Do NOT `
+    + `preserve its signatures here: on this surface the signatures ARE the copyrighted design, and nothing `
+    + `downstream needs them, because a different character is being written into that position.\n`
+    + `⚠⚠ PROMINENT MEANS THE FIGURE THE SHOT IS OF — a large or foreground occupant, rendered dimensionally in `
+    + `the scene's own space, that a viewer would name as being in this picture. LEAVE EVERY OTHER OWNED FIGURE `
+    + `COMPLETELY UNTOUCHED: small background characters, incidental illustrations printed on a page or poster, `
+    + `figures in a diagram, a secondary or tertiary character the shot is not about. Do NOT box them at all.\n`
+    + `⚠ THE REASON IS NOT COST, IT IS THAT COVERING THEM DESTROYS THE SHOT. Flat printed art on a surface is the `
+    + `PLANE the replacement character inherits — blur it and the generator has no flat occupant to diffuse into, `
+    + `so it renders a dimensional creature standing in the scene instead of artwork on the page. Measured: with `
+    + `the page art left sharp the substitute rendered FLAT and the gate passed; with it blurred the gate also `
+    + `passed but the substitute came out three-dimensional. Blurring more is not safer here, it is worse.\n`
     + `⚠ REAL HUMANS ARE UNCHANGED — keep their TIGHT face core only. A real person's likeness is hedged by the face `
     + `and by size, and blurring their body would destroy the pose and scale this plate exists to supply.`
   : "";
