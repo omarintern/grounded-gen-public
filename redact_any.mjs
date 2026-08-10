@@ -29,6 +29,30 @@ const PROMPT = readFileSync(new URL("./detect_prompt.txt", import.meta.url), "ut
 // instead of a judgement call: a NAMED character is boxed, generic staff are not.
 // ⚠ ADDITIVE, NEVER NARROWING. The context says what IS known to be here; it must not become a whitelist that
 // suppresses an owned character the resolver happened not to name. Absent context ⇒ the original behaviour.
+// ── WORLD-REF MODE: BOX THE WHOLE FIGURE, NOT THE FACE CORE ──────────────────────────────────────────────
+// The base prompt boxes the FACE and preserves the character's signatures — costume, markings, silhouette —
+// because on a CHARACTER-REF the model diffuses a transformative version FROM those signatures, and covering
+// them leaves it nothing to work from (it then reproduces the character from its NAME and trips anyway).
+// A WORLD-REF is the opposite surface. There the character is being REPLACED, not diffused from: the rabbit
+// takes the chef's place, so the chef's signatures are not an asset, they are the copyrighted design itself.
+// Measured 2026-08-10 on a Ratatouille plate: face-core boxes on Remy and Gusteau TRIPPED seedance, while two
+// earlier hand blurs covering the WHOLE figures both passed. Owner: "it has to be whole figure then."
+// So the same detector serves both surfaces with opposite box sizes, and the reason is what the reference is
+// FOR — the same distinction that governs blur everywhere else in this pipeline.
+// ⚠ Still not the body of a REAL PERSON: their likeness is hedged by the tight face core and by SIZE, and
+// blurring a real person's whole body would destroy the stand-in pose the plate exists to provide.
+const WORLD_MODE = process.env.REDACT_MODE === "world";
+const worldBlock = WORLD_MODE
+  ? `\n\n⚠⚠ WORLD-REF MODE — THIS IMAGE IS SCENERY, AND ANY OWNED CHARACTER IN IT IS BEING REPLACED, NOT COPIED FROM.\n`
+    + `For an OWNED CHARACTER only, OVERRIDE the face-core instruction above and box the ENTIRE FIGURE — head, body, `
+    + `costume, markings, tail, limbs, everything that makes the design identifiable, to its outline. Do NOT preserve `
+    + `its signatures here: on this surface the signatures ARE the copyrighted design, and nothing downstream needs `
+    + `them, because a different character is being written into that position. Include a character rendered as `
+    + `printed art on a page, a poster or a screen inside the scene.\n`
+    + `⚠ REAL HUMANS ARE UNCHANGED — keep their TIGHT face core only. A real person's likeness is hedged by the face `
+    + `and by size, and blurring their body would destroy the pose and scale this plate exists to supply.`
+  : "";
+
 const SCENE_WORK = process.env.REDACT_WORK || "";
 const SCENE_CHARS = process.env.REDACT_CHARACTERS || "";
 const contextBlock = (SCENE_WORK || SCENE_CHARS)
@@ -45,7 +69,7 @@ for (const f of FILES) {
   const mime = f.endsWith(".png") ? "image/png" : "image/jpeg";
   process.stdout.write(`[redact] ${f} … `);
   try {
-    const out = await providerJson([textPart(PROMPT + contextBlock), imagePart(mime, b64)], { maxTokens: 6000, temperature: 0.1 });
+    const out = await providerJson([textPart(PROMPT + worldBlock + contextBlock), imagePart(mime, b64)], { maxTokens: 6000, temperature: 0.1 });
     const regions = Array.isArray(out.regions) ? out.regions : [];
     results.push({ file: f, regions });
     const nS = regions.filter((r) => r.kind === "symbol").length;
