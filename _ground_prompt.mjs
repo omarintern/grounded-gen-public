@@ -10,7 +10,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
+import { speechReach, SPEECH_REACH_FLOOR, dialogueStamps } from "./_gate_rules.mjs";   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const [worldRef, userPrompt, slug = "scene", ...charRefs] = process.argv.slice(2);
@@ -54,6 +54,7 @@ let charSig = "";
 // 7-second clip was explicitly instructed to stop at 4 seconds — no amount of "span the full duration" elsewhere
 // could win against a literal format spec. Every 2s, last stamp at least 2s before the end.
 const BEAT_SECS = Math.max(2, Math.round(Number(process.env.BEAT_DURATION || 4)));
+const DIALOGUE_STAMPS = dialogueStamps(Number(process.env.BEAT_DURATION) || 4, Number(process.env.CUT_BUDGET) || 0);
 const BEAT_STAMPS = Array.from({ length: Math.max(2, Math.ceil(BEAT_SECS / 2)) }, (_, i) => i * 2)
   .filter((t) => t < BEAT_SECS); // any stamp BEFORE the end — reproduces the validated patterns:
                                    // rabbit 8s = [0,2,4,6] (owner: perfect), porch 5s = [0,2,4] (near perfect)
@@ -243,14 +244,16 @@ const dialogueClause = () => {
         // speech, clustering at reach 0.53, and only one of eight cleared the floor. It reliably produces TWO
         // fragments no matter how many cuts the clip has. So the instruction needed the END named explicitly —
         // "carries into and through" was read as "crosses one boundary", which it does, and then it stops.
-        + `⚠ SPREAD THE FRAGMENTS ACROSS ALL THE CUTS, NOT JUST THE FIRST ONE. Two fragments is the reflex and `
-        + `it is wrong for anything longer than one cut: it lands the last words a third of the way in and `
-        + `leaves the rest of the clip silent. Give roughly ONE fragment per cut, and make the LAST fragment `
-        + `begin in the FINAL THIRD of the clip — for a ${process.env.BEAT_DURATION || "4"}-second video that `
-        + `means the closing words start at about ${Math.round((Number(process.env.BEAT_DURATION) || 4) * 0.7)}s, `
-        + `not at the first cut. Break the sentence at its own natural clause boundaries to get there; if it is `
-        + `too short to divide that many ways, place the fragments you do have LATE rather than early, so the `
-        + `voice is still going when the last image arrives.\n`
+        // ⚠ A LITERAL STAMP SPEC, NOT A DESCRIPTION — the lesson BEAT_STAMPS already learned, applied one
+        // field along. Prose asking for spread lost 6 times in 8: "no amount of 'span the full duration'
+        // elsewhere could win against a literal format spec" (see BEAT_STAMPS above). So compute the seconds
+        // and hand them over, exactly as the beats get theirs.
+        + `⚠ USE THESE EXACT TIMINGS FOR THE DIALOGUE LINES: ${DIALOGUE_STAMPS.map((t) => `[${t}s]`).join(" ")} `
+        + `— one fragment per stamp, in order, breaking the sentence at its own natural clause boundaries. `
+        + `Two fragments at the top is the reflex and it is wrong: it lands the last words a third of the way `
+        + `in and leaves the rest of the clip silent. The final stamp is deliberately late so the voice is `
+        + `still going when the last image arrives. If the line genuinely cannot divide that many ways, use `
+        + `FEWER fragments but keep the LAST one on the LAST stamp — never bunch them at the start.\n`
         + `⚠ SPLITTING IS NOT REWRITING, AND IT DOES NOT BREAK THE KEEP-THE-WORDS RULE ABOVE. The words and `
         + `their order stay EXACTLY as given — you are choosing only where the sentence BREAKS and when each `
         + `part is heard. Add no word, remove no word, reorder nothing. If you find yourself keeping the line `
