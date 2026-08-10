@@ -628,7 +628,21 @@ if (BEAT_STYLE !== "template") {
   // Captured from the RAW text before filtering and re-attached after, so the beat parser keeps its strict
   // contract and the speech stops being thrown away. _run re-attaches the plan's block only when none is
   // present, so a surviving block now correctly suppresses that fallback instead of duplicating against it.
-  const emittedDialogue = (text.match(/(^|\n)\s*Dialogue\s*:[\s\S]*?(?=\n\s*(?:Sound\s*:|$))/i) || [""])[0].trim();
+  // ⚠ DUMP THE WRITER'S RAW OUTPUT, FOR THE SAME REASON THE INSTRUCTION IS DUMPED. Until now only the PARSED
+  // beats were inspectable, so when a Dialogue block failed to appear there was no way to tell whether the
+  // writer never wrote one or the parser threw it away — two very different bugs with one symptom, and two days
+  // were spent fixing the wrong layer because of it. The instruction dump answers "what did we ask for"; this
+  // answers "what did it actually say". Cheap, written every run, next to its instruction.
+  try { writeFileSync(join(HERE, "out/_aspect", `${slug}_raw.txt`), text); } catch {}
+
+  // ⚠ THE `\n` MUST NOT BIND TO THE END-OF-STRING ALTERNATIVE. Written as `(?=\n\s*(?:Sound\s*:|$))`, BOTH
+  // branches required a preceding newline — so a block that runs to the very end of the model's output, with no
+  // trailing newline, never matched. That is the normal case: the raw dump shows the writer emitting a correct
+  // timed, carried Dialogue block as its LAST line, and this regex silently returned "". One layer down from
+  // the beat filter, same symptom, and it is the third bug in this family today (`$` under /m in slop_meter,
+  // the `[\d+s]` beat filter, now this) — an end-of-input assumption that holds for every input except the
+  // real one. Lift the `\n` into the Sound branch only.
+  const emittedDialogue = (text.match(/(^|\n)\s*Dialogue\s*:[\s\S]*?(?=\n\s*Sound\s*:|$)/i) || [""])[0].trim();
   if (lines.length) {
     beatLine = lines.join("\n");
     if (emittedDialogue) {
