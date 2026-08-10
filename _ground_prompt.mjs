@@ -756,6 +756,43 @@ if (BEAT_STYLE !== "template") {
   }
 }
 
+// ── IF THE WRITER OMITTED THE SPEECH, BUILD THE BLOCK OURSELVES ───────────────────────────────────────────
+// ⚠⚠ MEASURED REGRESSION, AND THE REASON THIS IS DETERMINISTIC. Handing the writer a literal stamp list made
+// things WORSE, not better: no-speech went from 3-of-11 to 4-of-6, and the two runs that did write dialogue
+// ignored the given stamps entirely (one reused the BEAT stamps, one wrote a single [0s]). More instruction
+// text bought less compliance — the crowding effect, one field over from where it is already documented.
+// The mistake was diagnostic. BEAT_STAMPS does not work because it is a literal spec; it works because a
+// VALIDATOR RE-ASKS when the stamps come back wrong. Copying the spec without the enforcement copied the half
+// that was never doing the work.
+// So stop asking. The plan's dialogue already exists, dialogueStamps() already knows where the fragments
+// belong, and splitting a sentence at clause boundaries is arithmetic. Build it. This cannot fail to comply,
+// costs nothing, and makes every prior "writer dropped the speech" outcome impossible rather than unlikely.
+// The writer's own block still wins whenever it produces one — this is a floor, not a replacement.
+if (!/(^|\n)\s*Dialogue\s*:/i.test(beatLine) && (process.env.PLAN_DIALOGUE || "").trim()) {
+  const raw = process.env.PLAN_DIALOGUE.replace(/^\s*Dialogue\s*:\s*/i, "").trim();
+  const speaker = (raw.match(/^([^:\n]{1,80}?)\s*:/) || [, "Speaker"])[1].trim();
+  const words = raw.replace(/^[^:\n]{1,80}?\s*:\s*/, "").replace(/^["'“]|["'”]$/g, "").trim();
+  // ⚠ SENTENCES FIRST, COMMAS ONLY IF THAT IS NOT ENOUGH. Splitting on every clause mark at once produced
+  // "boy." as its own fragment — a vocative comma is a breath, not a place to hold speech for three seconds.
+  // Take the strong boundaries, and subdivide on weaker ones only while more fragments are still needed.
+  let parts = words.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter(Boolean);
+  // ⚠ DO NOT MANUFACTURE FRAGMENTS. Asking for more pieces than the line has sentences forced a split at a
+  // vocative comma and stranded "boy." on its own stamp. Natural sentence count wins; subdivide ONLY when the
+  // line is a single sentence and would otherwise occupy one instant. Fewer, well-placed fragments beat more.
+  const want = Math.max(2, Math.min(DIALOGUE_STAMPS.length, parts.length));
+  while (parts.length < want) {                       // subdivide the LONGEST fragment at its weakest seam
+    const li = parts.reduce((b, p, i, a) => (p.length > a[b].length ? i : b), 0);
+    const seam = [...parts[li].matchAll(/[,;]\s+/g)].map((m) => m.index).pop();
+    if (seam == null) break;
+    parts.splice(li, 1, parts[li].slice(0, seam + 1).trim(), parts[li].slice(seam + 1).trim());
+  }
+  while (parts.length > DIALOGUE_STAMPS.length) { const i = parts.length - 2; parts.splice(i, 2, `${parts[i]} ${parts[i + 1]}`); }
+  const stamps = DIALOGUE_STAMPS.slice(-parts.length);   // keep the LATE stamps when there are fewer fragments
+  beatLine += "\n\nDialogue:\n" + parts.map((t, i) =>
+    `${speaker}${i ? " (continuing, over the cuts)" : ""} [${stamps[i]}s]: "${t.replace(/^["'“]|["'”]$/g, "")}"`).join("\n");
+  console.warn(`[GUARD] dialogue: the writer emitted no speech — SYNTHESISED a timed block from the plan's line across ${stamps.map((x) => `${x}s`).join(", ")} (deterministic; the writer's own block always wins when it produces one).`);
+}
+
 // ── AND MEASURE WHETHER THE SPEECH ACTUALLY REACHES THE END ───────────────────────────────────────────────
 // The clip-length rule lives in the instruction above, which makes it a probability. This reports the fact.
 // Advisory ONLY: plot placement legitimately silences parts of a clip, so a gate here would delete correct
