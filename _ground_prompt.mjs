@@ -420,7 +420,14 @@ if (BEAT_STYLE !== "template") {
         `label and never as a shot list. Three rules bind it. (1) NEVER AT THE FIRST BEAT: the opening frame is ` +
         `the photograph and must play from that camera untouched. (2) THE SECOND PLACE BELONGS TO THE SAME ` +
         `PREMISES the photograph establishes - one reference grounds one world, so name the relationship rather ` +
-        `than inventing an unrelated location. (3) EVERY CUT MUST BE AN ACTUAL CHANGE OF PLACE, and this story ` +
+        `than inventing an unrelated location. ⚠ ONE EXCEPTION: A REMEMBERED OR IMAGINED SCENE THE REQUEST ` +
+        `ITSELF ASKS TO SHOW - a memory, a flashback, a vision. That departure is legitimate and is NOT bound ` +
+        `to the premises: the request chose where it goes. It is ONE cut, never a montage. It fires INSIDE the ` +
+        `timestamped beat of the EVENT the request ties it to - when the request says the memory comes AT a ` +
+        `moment, the cut lands at that moment's beat, not before it and not after it. And it goes FULL-FRAME: ` +
+        `do not demote the departure into a reflection, an inset, or an image on a surface - the request asked ` +
+        `to GO there, and a scene shown inside an object is not a cut, it is set dressing. The return licence ` +
+        `below still applies afterward. (3) EVERY CUT MUST BE AN ACTUAL CHANGE OF PLACE, and this story ` +
         `has room for at most ${process.env.CUT_BUDGET || 1}. That number is derived from how many places the ` +
         `story visits, so it is a CEILING and never a target: use ONLY the cuts the story's own movement ` +
         `requires and no more. Never cut for variety, for emphasis, or to show something better — a cut spent ` +
