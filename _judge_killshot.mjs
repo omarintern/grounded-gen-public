@@ -250,16 +250,11 @@ export async function prefilterGrid(filePaths, subjectStr, opts = {}) {
 // 2026-08-09 — see contentFlagFails. Absent, null, "" and any unrecognised value still fail CLOSED — that is the truthiness
 // hole closed on 2026-08-07 and it is unrelated to which flags we honour.
 // ⚠⚠ INTERLOCK — NUDITY RE-GATES THE MOMENT THE SCENE HAS CHILDREN IN IT.
-// Updated 2026-08-08 when the owner allowed children in scrape for stand-ins. shows_minor is NO LONGER an
-// absolute reject, so this gate now carries more weight than it did, not less. NSFW-open stays safe because
-// three things hold together: a minor may appear only in a WORLD-REF, that plate's faces are BLURRED before
-// gen, a minor may never be a CHARACTER-ref, and adult material cannot enter the same generation at all. Each
-// covers a different opening — identity, reproduction, and juxtaposition — and none substitutes for another.
-// The combination they jointly prevent is the one that must never be buildable.
-//
 // _run sets NUDITY_GATE=1 when castHasMinors(prompt) — a classroom, a playground, a school bus. Ordinary
-// prompts are unaffected: nudity stays open exactly as the owner asked.
-export const MINORS_ABSOLUTE = true;
+// prompts are unaffected: nudity stays open exactly as the owner asked. And because a plate may now carry
+// children on ANY prompt (a family venue's crowd — see minorFails below), the interlock also holds by
+// CO-PRESENCE, independent of the prompt: a verdict reporting a minor AND nudity in the SAME frame rejects
+// in every context — enforced in safetyOnlyFails/killshotFails, the two places both fields are in hand.
 export const nudityGates = () => process.env.NUDITY_GATE === "1";
 
 /** One address for the content_flag verdict, so opening a category cannot land in one gate and miss the other. */
@@ -279,27 +274,30 @@ export function contentFlagFails(flag) {
   return true;                                          // …unless this run renders children. Plus absent / unrecognised / every other flag.
 }
 
-// ── MINORS: FATAL FOR AN IDENTITY REF, SURVIVABLE FOR A STAGE ─────────────────────────────────────────────
-// Owner 2026-08-08: children may be scraped, because the STAND-IN is what stops a gen looking conjured. Two
-// different uses, two different answers, and the difference is what the reference is FOR:
-//   · a WORLD-REF is a stage. It contributes pose, scale and framing, and its faces are blurred before it
-//     reaches the generator (_run sets WORLD_REDACT_FACES with ALLOW_MINOR_PLATE). A blurred child in a plate
-//     carries composition, not identity.
-//   · a CHARACTER-REF exists to carry identity forward. That is its entire function, so no redaction makes it
-//     safe and ALLOW_MINOR_PLATE deliberately does not reach it — a child figure is conjured from the beats.
-// An UNANSWERED shows_minor still rejects everywhere: the waiver is for a KNOWN minor on a stage we are about
-// to blur, never for a frame nobody screened.
-export const minorPlateAllowed = () => process.env.ALLOW_MINOR_PLATE === "1";
-
+// ── MINORS: A STAGE'S POPULATION IS SCENERY; AN IDENTITY REF IS NOT (owner 2026-08-11) ────────────────────
+// A WORLD-REF is a stage: it contributes pose, scale and framing, and a family venue's candid frames carry
+// children the way any public place does — as background population. Rejecting on them made every family
+// venue unsourceable: measured on a SeaWorld show pool, real and on-subject frame after frame all killed for
+// the splash-zone crowd, $… of scrape spent discovering a frame that could not exist (the original clip
+// only ever delivered because the WRONG venue — a ballpark — has adult crowds). So a minor in a PLATE is not
+// a rejection, unconditionally — no waiver env, no prompt trigger; the old ALLOW_MINOR_PLATE waiver is gone
+// because the prompt cannot see a venue's incidental population. Identity is held off by SIZE and framing
+// (FACE_CEIL on the world path), never by blur — blur discs render INTO the frame (owner 2026-08-08).
+// A CHARACTER-REF exists to carry one person's identity forward. That is its entire function, no redaction
+// makes it safe for a child, and this ruling deliberately does not reach it: a child figure is conjured from
+// the beats, never scraped. Unanswered still rejects there — a frame nobody screened is never an identity.
 export function minorFails(k, { plate = false } = {}) {
+  if (plate) return false;                                  // a stage's population is scenery, never a verdict
   if (k?.shows_minor === false) return false;               // no minor at all
-  if (k?.shows_minor === true && plate && minorPlateAllowed()) return false;  // known minor, blurred stage
-  return true;                                              // true-without-waiver, or unanswered ⇒ reject
+  return true;                                              // identity ref: true or unanswered ⇒ reject
 }
 
 export function safetyOnlyFails(k, { plate = false } = {}) {
   if (!k) return true;                       // no judgement ⇒ unscreened ⇒ reject
   if (minorFails(k, { plate })) return true;
+  // CO-PRESENCE INTERLOCK: a minor and nudity in the SAME frame rejects in every context, plate included —
+  // the one combination that must never be buildable, held here where both fields are in hand.
+  if (k?.shows_minor === true && String(k?.content_flag) === "nudity") return true;
   return contentFlagFails(k.content_flag);
 }
 
@@ -308,9 +306,10 @@ export function killshotFails(k, aiCeiling, opts = {}) {
   if (!k) return true;                                    // fail CLOSED on a failed judgement
   const ai = Number(k.ai_generated);
   const aiSuspect = Number.isFinite(ai) ? ai : 1;         // unparseable ⇒ suspect, never clean
-  // MINORS ARE AN ABSOLUTE REJECT, checked in the CHEAPEST tier so a frame containing a child never reaches
-  // the rubric, the requirements judge, the picker or the generator. Fails closed with the rest of this gate.
+  // MINORS: scenery on a plate, fatal for an identity ref — see minorFails. The co-presence interlock
+  // (minor + nudity in one frame) rejects in every context, same as safetyOnlyFails.
   if (minorFails(k, { plate: opts.plate })) return true;
+  if (k?.shows_minor === true && String(k?.content_flag) === "nudity") return true;
   // SAFETY FLAGS, same tier and same fail-closed convention. These exist because the material we deliberately
   // search for is exactly where they cluster: security/dash footage is published BECAUSE something bad
   // happened, bedroom queries reach nudity, street scenes carry plates and house numbers, and interiors carry
