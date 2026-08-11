@@ -6,6 +6,16 @@ import { join } from "node:path";
 import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
 import { OUT } from "./lib.mjs";
 
+// ── THE GROUNDER IS AN EXPLICIT CHOICE, NOT A DEFAULT'S SHADOW (owner audit, 2026-08-12) ─────────────────
+// Boxes come back in the fast model's native 0-1000 [ymin,xmin,ymax,xmax] convention, and the bench validated THIS
+// prompt on the fast model. When the judges moved to the vision model (PROVIDER_VLM_MODEL), this detector kept the fast model only
+// because providerJson's model default happens to be PROVIDER_LLM_MODEL — a TEXT dial; anyone cost-tuning it
+// would silently swap the blur grounder. Measured K=2 on the bench, same prompt: the vision model nominally passes the
+// bands but boxes the IP head at 27% AREA vs the fast model's 8.6% (3× over-box — the cathvar black-silhouette
+// direction) and MISSED an incidental face on the symbol plate (an under-detect is a blur LEAK). So the
+// grounder is pinned by its own name; move it only by measuring detect_bench first.
+const DETECT_MODEL = process.env.PROVIDER_DETECT_MODEL || "fast-model";
+
 const form = process.argv[2] || "trump_nascar_v2plan";
 const refsDir = join(OUT, form, "refs");
 const FILES = readdirSync(refsDir).filter((f) => /\.(jpe?g|png)$/i.test(f)).sort();
@@ -83,7 +93,7 @@ for (const f of FILES) {
   const mime = f.endsWith(".png") ? "image/png" : "image/jpeg";
   process.stdout.write(`[redact] ${f} … `);
   try {
-    const out = await providerJson([textPart(PROMPT + worldBlock + contextBlock), imagePart(mime, b64)], { maxTokens: 6000, temperature: 0.1 });
+    const out = await providerJson([textPart(PROMPT + worldBlock + contextBlock), imagePart(mime, b64)], { maxTokens: 6000, temperature: 0.1, model: DETECT_MODEL });
     const regions = Array.isArray(out.regions) ? out.regions : [];
     results.push({ file: f, regions });
     const nS = regions.filter((r) => r.kind === "symbol").length;
