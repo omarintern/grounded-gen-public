@@ -72,39 +72,89 @@ export async function judgeKillshot(filePath, subjectStr, opts = {}) {
 // ⚠ FAILS CLOSED PER CELL. A short array, a missing index, an unparseable cell — each becomes null for THAT
 // candidate, which killshotFails() already treats as elimination. A grid must never let one bad cell pass a
 // frame nobody judged, and must never let one bad cell condemn the whole window either.
+// ── THE CONTACT SHEET, BUILT ONCE ─────────────────────────────────────────────────────────────────────────
+// Both grid judges assembled their own identical copy of this. Every duplicate in this codebase began as a
+// reasonable local copy, and the two had already drifted apart in cell size; a sheet whose geometry differs
+// between the prefilter and the full judge means the two see different pictures of the same candidates.
+//
+// ⚠ THE PROMPT DESCRIBED GUTTERS THAT DID NOT EXIST. Tiles were composited flush — width exactly cellPx at
+// left = i*cellPx — so horizontally adjacent cells TOUCHED. Each cell is letterboxed with near-black padding
+// and the sheet background was also near-black, so the boundary between two candidates was a seam between two
+// identical darks, and the model was told to trust "the black gutters" to separate them. It had only the
+// number strips. A real gap in an unmistakably non-photographic colour costs a few hundred pixels and makes
+// the segmentation unambiguous — the model should never have to infer where one candidate ends.
+//
+// ⚠ AND THE CELL WAS SMALLER THAN THE SINGLE-IMAGE PATH. 384 against VIEW_PX 512: the prefilter, whose whole
+// job is to decide what deserves a closer look, was looking at LESS than the judge it feeds. A prefilter may
+// be cheaper; it must not be blinder, or it discards what it merely could not see. Matched to 512.
+export const GRID_GAP = 12;
+export const GRID_GUTTER = { r: 255, g: 0, b: 255 };   // magenta: no photograph contains it, so it cannot read as content
+async function buildContactSheet(files, cellPx) {
+  const cols = Math.ceil(Math.sqrt(files.length));
+  const rows = Math.ceil(files.length / cols);
+  const labelH = 34, cellH = cellPx + labelH;
+  const tiles = await Promise.all(files.map(async (f, i) => {
+    const img = await sharp(f).resize(cellPx, cellPx, { fit: "contain", background: { r: 20, g: 20, b: 20 } }).toBuffer();
+    const label = Buffer.from(
+      `<svg width="${cellPx}" height="${labelH}"><rect width="100%" height="100%" fill="#000"/>` +
+      `<text x="8" y="25" font-family="sans-serif" font-size="26" fill="#fff">${i + 1}</text></svg>`);
+    return sharp({ create: { width: cellPx, height: cellH, channels: 3, background: { r: 0, g: 0, b: 0 } } })
+      .composite([{ input: label, top: 0, left: 0 }, { input: img, top: labelH, left: 0 }]).png().toBuffer();
+  }));
+  const sheet = await sharp({ create: {
+    width: cols * cellPx + (cols + 1) * GRID_GAP,
+    height: rows * cellH + (rows + 1) * GRID_GAP,
+    channels: 3, background: GRID_GUTTER,
+  } })
+    .composite(tiles.map((input, i) => ({
+      input,
+      left: GRID_GAP + (i % cols) * (cellPx + GRID_GAP),
+      top: GRID_GAP + Math.floor(i / cols) * (cellH + GRID_GAP),
+    })))
+    .jpeg({ quality: 82 }).toBuffer();
+  return { sheet, cols, rows };
+}
+
+/** Map the model's cells back onto the input files BY ITS OWN `n`, and never by position.
+ *  ⚠⚠ THE POSITIONAL FALLBACK ATTACHED A VERDICT TO THE WRONG CANDIDATE. `cells.find(n === i+1) ?? cells[i]`
+ *  reads as a harmless default and is not one: if the model omits `n`, reorders, or skips a cell, then cells[i]
+ *  is some OTHER candidate's answer, and in the prefilter that answer can be a REJECTION. So a usable frame is
+ *  discarded for something another image did, while the image that actually failed is passed through. It is the
+ *  borrowed-field failure with the borrowing done in code, and it makes grid results look randomly wrong rather
+ *  than systematically wrong — which is exactly how it stayed unexplained.
+ *  Unmatched now yields null, which every caller already treats as "no opinion, send it to the real judge".
+ *  Losing a cheap opinion costs one closer look; guessing costs the wrong candidate. */
+export function mapCellsByNumber(cells, count) {
+  const out = new Array(count).fill(null);
+  let unmatched = 0;
+  for (let i = 0; i < count; i++) {
+    const c = (cells || []).find((x) => Number(x?.n) === i + 1);
+    if (c) out[i] = c; else unmatched++;
+  }
+  if (unmatched) console.warn(`  [grid] ${unmatched}/${count} cell(s) had no matching "n" — those go to the per-image judge rather than borrowing another cell's verdict`);
+  return out;
+}
+
 export async function judgeKillshotGrid(filePaths, subjectStr, opts = {}) {
   const files = Array.from(filePaths || []);
   if (!files.length) return [];
   const sceneIntent = opts.sceneIntent ?? process.env.SCENE_INTENT ?? "";
-  const cellPx = Number(opts.cellPx ?? process.env.GRID_CELL_PX ?? 384);
-  const cols = Math.ceil(Math.sqrt(files.length));
-  const rows = Math.ceil(files.length / cols);
+  const cellPx = Number(opts.cellPx ?? process.env.GRID_CELL_PX ?? 512);
   try {
-    // Each cell is letterboxed onto a fixed tile so the model sees a clean lattice; a numbered strip is drawn
-    // above each so the answer can be keyed by position rather than by the model describing what it sees.
-    const tiles = await Promise.all(files.map(async (f, i) => {
-      const img = await sharp(f).resize(cellPx, cellPx, { fit: "contain", background: { r: 20, g: 20, b: 20 } }).toBuffer();
-      const label = Buffer.from(
-        `<svg width="${cellPx}" height="34"><rect width="100%" height="100%" fill="#000"/>` +
-        `<text x="8" y="25" font-family="sans-serif" font-size="26" fill="#fff">${i + 1}</text></svg>`);
-      return sharp({ create: { width: cellPx, height: cellPx + 34, channels: 3, background: { r: 0, g: 0, b: 0 } } })
-        .composite([{ input: label, top: 0, left: 0 }, { input: img, top: 34, left: 0 }]).png().toBuffer();
-    }));
-    const cellH = cellPx + 34;
-    const sheet = await sharp({ create: { width: cols * cellPx, height: rows * cellH, channels: 3, background: { r: 0, g: 0, b: 0 } } })
-      .composite(tiles.map((input, i) => ({ input, left: (i % cols) * cellPx, top: Math.floor(i / cols) * cellH })))
-      .jpeg({ quality: 82 }).toBuffer();
+    // Each cell is letterboxed onto a fixed tile with a numbered strip above it, so the answer is keyed by the
+    // model's own cell number rather than by it describing what it saw. Geometry is shared with the prefilter —
+    // see buildContactSheet: two copies had already drifted to different cell sizes, which meant the prefilter
+    // and the judge it feeds were looking at different pictures of the same candidates.
+    const { sheet, cols, rows } = await buildContactSheet(files, cellPx);
     const out = await providerJson([
       textPart(`This image is a CONTACT SHEET of ${files.length} SEPARATE candidate photographs, tiled in a ${cols}x${rows} grid and NUMBERED 1 to ${files.length} in white at the top-left of each cell, reading left to right then top to bottom. ` +
         `Judge EACH numbered cell INDEPENDENTLY, as if it were the only image you had been shown. The cells are unrelated to one another: they are different candidates for the same slot, NOT frames of one scene, NOT a sequence, and NOT a composite. ` +
-        `⚠ The lattice itself is an artefact of this sheet — the black gutters and the number strips are NOT part of any candidate, and a cell being one panel of this grid does NOT make it a split-screen or a composite. Judge only what is inside each cell. ` +
+        `⚠ EACH CELL IS BOUNDED BY A BRIGHT MAGENTA BORDER. Everything inside one magenta frame belongs to ONE candidate; nothing crosses it. The magenta and the number strips are artefacts of this sheet and are NOT part of any candidate, and a cell being one panel of this grid does NOT make it a split-screen or a composite. Judge only what is inside each cell. ` +
         `Return ONLY JSON {"cells":[{"n":1,"real_photo":bool,"ai_generated":0..1,"shows_minor":bool,"content_flag":"none|nudity|distress|personal_data|third_party_media|symbol","shows_subject":bool}, …]} with EXACTLY ${files.length} entries, one per cell, in cell order. ` +
         gateClauses(subjectStr, sceneIntent)),
       imagePart("image/jpeg", sheet.toString("base64")),
     ], { maxTokens: 400 + files.length * 260, temperature: 0.1 });
-    const cells = Array.isArray(out?.cells) ? out.cells : [];
-    // Key by the model's own `n` when present, else by position — then fail closed on anything missing.
-    return files.map((_, i) => cells.find((c) => Number(c?.n) === i + 1) ?? cells[i] ?? null);
+    return mapCellsByNumber(Array.isArray(out?.cells) ? out.cells : [], files.length);
   } catch (e) {
     if (e?.name === "ProviderInfraError") throw e;   // infra is not a verdict — same contract as the single judge
     return files.map(() => null);
@@ -142,25 +192,12 @@ export async function prefilterGrid(filePaths, subjectStr, opts = {}) {
   const files = Array.from(filePaths || []);
   if (!files.length) return [];
   const undecided = () => files.map(() => null);          // null ⇒ "no opinion" ⇒ send to the real judge
-  const cellPx = Number(opts.cellPx ?? process.env.GRID_CELL_PX ?? 384);
-  const cols = Math.ceil(Math.sqrt(files.length));
-  const rows = Math.ceil(files.length / cols);
+  const cellPx = Number(opts.cellPx ?? process.env.GRID_CELL_PX ?? 512);
   try {
-    const tiles = await Promise.all(files.map(async (f, i) => {
-      const img = await sharp(f).resize(cellPx, cellPx, { fit: "contain", background: { r: 20, g: 20, b: 20 } }).toBuffer();
-      const label = Buffer.from(
-        `<svg width="${cellPx}" height="34"><rect width="100%" height="100%" fill="#000"/>` +
-        `<text x="8" y="25" font-family="sans-serif" font-size="26" fill="#fff">${i + 1}</text></svg>`);
-      return sharp({ create: { width: cellPx, height: cellPx + 34, channels: 3, background: { r: 0, g: 0, b: 0 } } })
-        .composite([{ input: label, top: 0, left: 0 }, { input: img, top: 34, left: 0 }]).png().toBuffer();
-    }));
-    const cellH = cellPx + 34;
-    const sheet = await sharp({ create: { width: cols * cellPx, height: rows * cellH, channels: 3, background: { r: 0, g: 0, b: 0 } } })
-      .composite(tiles.map((input, i) => ({ input, left: (i % cols) * cellPx, top: Math.floor(i / cols) * cellH })))
-      .jpeg({ quality: 82 }).toBuffer();
+    const { sheet, cols, rows } = await buildContactSheet(files, cellPx);
     const out = await providerJson([
       textPart(`This image is a CONTACT SHEET of ${files.length} SEPARATE candidate photographs, tiled in a ${cols}x${rows} grid and NUMBERED 1 to ${files.length} in white at the top-left of each cell, left to right then top to bottom. ` +
-        `The cells are unrelated candidates for the same slot — NOT frames of one scene, NOT a sequence. The black gutters and number strips are artefacts of this sheet and belong to no candidate; a cell being one panel here does NOT make it a split-screen or composite. ` +
+        `The cells are unrelated candidates for the same slot — NOT frames of one scene, NOT a sequence. ⚠ EACH CELL IS BOUNDED BY A BRIGHT MAGENTA BORDER: everything inside one magenta frame belongs to ONE candidate and nothing crosses it. The magenta and the number strips are artefacts of this sheet and belong to no candidate; a cell being one panel here does NOT make it a split-screen or composite. ` +
         `Answer TWO questions about EACH cell, independently:\n` +
         `real_photo = is the content of this cell a photograph made by a REAL CAMERA pointed at a REAL SCENE THAT PHYSICALLY EXISTED? FALSE for a cartoon, illustration, render, graphic, or an image synthesised by a model. ⚠ Judge only what is INSIDE the cell.\n` +
         `shows_subject = does this cell clearly show: ${subjectStr}?\n` +
@@ -174,9 +211,8 @@ export async function prefilterGrid(filePaths, subjectStr, opts = {}) {
       // undecided, and I read that as model unreliability rather than my own ceiling. the provider's model emits
       // ~700-1000 reasoning+JSON tokens before the answer even starts.
     ], { maxTokens: 1200 + files.length * 120, temperature: 0.1 });
-    const cells = Array.isArray(out?.cells) ? out.cells : [];
-    return files.map((_, i) => {
-      const c = cells.find((x) => Number(x?.n) === i + 1) ?? cells[i];
+    const mapped = mapCellsByNumber(Array.isArray(out?.cells) ? out.cells : [], files.length);
+    return mapped.map((c) => {
       if (!c) return null;
       // ONLY an explicit false rejects. true and null both mean "let the real judge decide".
       const dead = c.real_photo === false || c.shows_subject === false;
