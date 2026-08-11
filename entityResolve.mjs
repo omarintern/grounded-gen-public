@@ -24,7 +24,26 @@ import { fileURLToPath } from "node:url";
 import { providerJson, textPart } from "./provider-llm.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const STORE = join(HERE, "out", "_entities", "remember.json");
+// Paths are env-overridable so the seed/store merge can be exercised against real files in a test
+// rather than asserted by grepping this source — the weakness that let two defects through today.
+const STORE = process.env.ENTITY_STORE || join(HERE, "out", "_entities", "remember.json");
+// ⚠ THE LEARNED STORE NEVER REACHED PRODUCTION, AND A COLD CACHE IS INVISIBLE. remember.json lives under
+// out/, which is gitignored AND excluded from the deploy upload — and the deploy path is
+// monorepo → `git subtree split` → grounded-gen → `deploy`, so ONLY GIT-TRACKED FILES SURVIVE. An
+// untracked cache cannot reach the checkout that ships, whatever .railwayignore says about it. So every
+// container run re-probed from scratch against LIVE WEB SEARCH — the one input that changes on its own —
+// and two identical prompts could resolve differently for no reason the logs would show.
+// (Same reasoning .railwayignore already gives for success_store/ ref_cache/ canonical_refs/: "a cold cache
+// looks exactly like a subject nobody has sourced yet." Those are untracked too, so that exemption is inert
+// and they do not ship either — worth fixing the same way.)
+//
+// ⚠ AND SHIPPING IT INSIDE out/ WOULD NOT HAVE WORKED. The runtime volume mounts at /app/out, so anything the
+// image carries there is MASKED at boot. The seed therefore lives at the engine ROOT, where the image keeps it.
+//
+// Two files, two jobs: SEED is tracked, ships, and is read-only at runtime; STORE is the volume-backed store
+// the run writes. Reads merge seed-then-store so a learned verdict always beats a shipped one; writes only
+// ever touch STORE, so a deploy can never clobber what production learned.
+const SEED = process.env.ENTITY_SEED || join(HERE, "entity_seed.json");
 const norm = (s) => String(s || "").toLowerCase().trim().replace(/\s+/g, " ");
 /** Entries the OLD thrown-probe path wrote, which are indistinguishable from a verdict except by SHAPE.
  *  ⚠ THE FIX FORWARD DOES NOT UNDO THE DAMAGE ALREADY PERSISTED. Before 2026-08-11 a thrown probe was
@@ -42,20 +61,55 @@ export const isPoisonedEntry = (v) =>
   !!(v && typeof v === "object" && v.specific_entity_found === false && Object.keys(v).length < 2);
 
 let storeHealed = false;   // set when loadStore drops a thrown-probe entry, so the heal is PERSISTED
-const loadStore = () => {
+const readJson = (p) => { try { return JSON.parse(readFileSync(p, "utf8")); } catch { return {}; } };
+
+export const loadStore = () => {
   storeHealed = false;
-  try {
-    const raw = JSON.parse(readFileSync(STORE, "utf8"));
-    const bad = Object.keys(raw).filter((k) => isPoisonedEntry(raw[k]));
-    if (bad.length) {
-      for (const k of bad) delete raw[k];
-      storeHealed = true;   // force a save even if this run probes nothing, or the poison survives to the next run
-      console.warn(`[resolve] ⚠ dropped ${bad.length} cached entr${bad.length === 1 ? "y" : "ies"} written by a THROWN probe, not a verdict (${bad.map((k) => `"${k}"`).join(", ")}) — they will be re-probed`);
-    }
-    return raw;
-  } catch { return {}; }
+  // Seed first, learned store second, so a verdict production actually probed always beats the shipped one.
+  // The seed is never written back — see SEED above.
+  const seed = readJson(SEED), live = readJson(STORE);
+  const raw = { ...seed, ...live };
+  const seedOnly = Object.keys(seed).filter((k) => !(k in live)).length;
+  if (seedOnly) console.log(`[resolve] seed supplied ${seedOnly} entr${seedOnly === 1 ? "y" : "ies"} this run would otherwise have re-probed`);
+  const bad = Object.keys(raw).filter((k) => isPoisonedEntry(raw[k]));
+  if (bad.length) {
+    for (const k of bad) delete raw[k];
+    storeHealed = true;   // force a save even if this run probes nothing, or the poison survives to the next run
+    console.warn(`[resolve] ⚠ dropped ${bad.length} cached entr${bad.length === 1 ? "y" : "ies"} written by a THROWN probe, not a verdict (${bad.map((k) => `"${k}"`).join(", ")}) — they will be re-probed`);
+  }
+  return raw;
 };
-const saveStore = (s) => { mkdirSync(dirname(STORE), { recursive: true }); writeFileSync(STORE, JSON.stringify(s, null, 2)); };
+// ⚠ NEVER WRITE THE SEED BACK INTO THE LIVE STORE. loadStore returns seed+live merged, so saving that object
+// verbatim would copy every shipped entry into the volume — and because live overrides seed on read, a later
+// CORRECTION to the seed could then never take effect: the stale copy would win forever. Persist only what
+// this machine actually learned, i.e. entries the seed does not already hold identically.
+export const saveStore = (s) => {
+  const seed = readJson(SEED);
+  const learned = {};
+  for (const [k, v] of Object.entries(s)) {
+    if (JSON.stringify(seed[k]) === JSON.stringify(v)) continue;   // identical to the shipped answer — not ours to keep
+    learned[k] = v;
+  }
+  mkdirSync(dirname(STORE), { recursive: true });
+  writeFileSync(STORE, JSON.stringify(learned, null, 2));
+};
+
+/** Build the shipped seed from what this machine has learned. The seed is TRACKED, so this is how a warm
+ *  cache reaches production at all — an untracked file cannot survive the subtree split into grounded-gen.
+ *  Poisoned entries are refused rather than baked in: shipping a thrown-probe verdict would make it permanent
+ *  on every container at once, which is the same bug with a wider blast radius.
+ *    node entityResolve.mjs --build-seed */
+export function buildSeed() {
+  const live = readJson(STORE), seed = readJson(SEED);
+  const merged = { ...seed, ...live };
+  const out = {}, refused = [];
+  for (const [k, v] of Object.entries(merged)) {
+    if (isPoisonedEntry(v)) { refused.push(k); continue; }
+    out[k] = v;
+  }
+  writeFileSync(SEED, JSON.stringify(out, null, 2));
+  return { written: Object.keys(out).length, refused };
+}
 
 // Stage 1 — candidate named subjects (web-search OFF). Generic scene/action words are NOT candidates.
 /** EXPORTED FOR AUDIT. This is the input the branch router gates on: candidateCount === 0 is the ONE
@@ -229,6 +283,12 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
 // ── CLI ──
 if (process.argv[1] && process.argv[1].endsWith("entityResolve.mjs")) {
   const p = process.argv.slice(2).join(" ");
-  if (!p) { console.error('usage: node entityResolve.mjs "<user prompt>"'); process.exit(1); }
+  if (process.argv.includes("--build-seed")) {
+    const { written, refused } = buildSeed();
+    console.log(`✓ entity_seed.json — ${written} entr${written === 1 ? "y" : "ies"} written${refused.length ? `; REFUSED ${refused.length} thrown-probe entr${refused.length === 1 ? "y" : "ies"} (${refused.map((k) => `"${k}"`).join(", ")})` : ""}`);
+    console.log(`  commit it: this is a TRACKED file, and an untracked cache cannot survive the subtree split into grounded-gen.`);
+    process.exit(0);
+  }
+  if (!p) { console.error('usage: node entityResolve.mjs "<user prompt>"   |   node entityResolve.mjs --build-seed'); process.exit(1); }
   console.log(JSON.stringify(await resolveEntities(p), null, 2));
 }
