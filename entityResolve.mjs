@@ -280,7 +280,45 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
     if (r?.specific_entity_found && (Number(r.confidence) || 0) >= minConfidence) resolved.push({ term, ...r });
   }
   if (dirty) saveStore(store);
+  // ── RESOLVE WHAT IDENTIFIES THE MATERIAL, NOT ONLY WHAT MIGHT BE COPYRIGHTED ──────────────────────────────
+  // ⚠ THE GOOD QUERY WAS AN ACCIDENT OF THE BRAIN'S MEMORY. Measured across two identical container runs:
+  //   run 1 → "Ratatouille Gusteau cookbook scene"   (correct: names the chef whose page it is)
+  //   run 2 → "Ratatouille cookbook scene"            (same prompt, same code, Gusteau simply absent)
+  // Gusteau appears in NEITHER resolver output, because on this phrasing the chef is never an extracted term —
+  // so he is never probed and no canonical for him exists anywhere in the run. Whether the query names him was
+  // left to whether the brain happened to recall him. That is the reported inconsistency, exactly.
+  //
+  // Comprehension already answers this and nothing consumed it: `identifies_material` is the model saying THIS
+  // IS HOW YOU FIND THE PLATE. Extraction asks a different question — what might be a protected subject — and
+  // the two do not have the same answer. A figure can identify the material without being a copyright risk
+  // (the chef), and vice versa.
+  //
+  // ⚠ KEPT OFF candidateCount, DELIBERATELY. That count is the copyright signal: branchOf compares it against
+  // resolved.length and fails CLOSED when they differ. Folding material-identifiers into it would route to celeb
+  // whenever a location failed to verify, which is an expensive answer to a question nobody asked. Extraction
+  // decides the BRANCH; comprehension decides the QUERY. Separate inputs, separate consumers.
+  const already = new Set(terms.map(norm));
+  const idTerms = (intent?.subjects || [])
+    .filter((s) => s?.identifies_material === true && String(s?.term || "").trim())
+    .map((s) => String(s.term).trim())
+    .filter((t) => !already.has(norm(t)));
+  const materialIdentifiers = [];
+  for (const term of idTerms) {
+    const key = norm(term);
+    let r = store[key];
+    if (process.env.FRESH_PROBE === "1") r = undefined;
+    if (r === undefined) {
+      r = await probe(term);
+      if (!r || r.probeFailed) continue;          // same contract as above: a thrown probe is never cached
+      store[key] = r; dirty = true;
+    }
+    if (r?.specific_entity_found && (Number(r.confidence) || 0) >= minConfidence) materialIdentifiers.push({ term, ...r });
+  }
+  if (materialIdentifiers.length) console.log(`[resolve] material identifiers: ${materialIdentifiers.map((e) => `${e.term}→${e.canonical_name}`).join(", ")}`);
+  if (dirty) saveStore(store);
+
   resolved.candidateCount = terms.length;
+  resolved.materialIdentifiers = materialIdentifiers;   // drives the world QUERY, never the branch
   resolved.intent = intent;              // null when comprehension could not run — see comprehend()
   return resolved;
 }
