@@ -26,7 +26,35 @@ import { providerJson, textPart } from "./provider-llm.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const STORE = join(HERE, "out", "_entities", "remember.json");
 const norm = (s) => String(s || "").toLowerCase().trim().replace(/\s+/g, " ");
-const loadStore = () => { try { return JSON.parse(readFileSync(STORE, "utf8")); } catch { return {}; } };
+/** Entries the OLD thrown-probe path wrote, which are indistinguishable from a verdict except by SHAPE.
+ *  ⚠ THE FIX FORWARD DOES NOT UNDO THE DAMAGE ALREADY PERSISTED. Before 2026-08-11 a thrown probe was
+ *  coalesced to `{specific_entity_found:false}` and written to the store, where a cache hit short-circuits
+ *  the probe forever — so those terms stay wrong for every future run on this volume. They are recognisable:
+ *  the failure path could only ever write that ONE key, while a real generic verdict comes back carrying
+ *  what_it_is / kind / confidence / defining_signatures. Measured across 63 resolved entries: genuine
+ *  generics carried 5-12 fields; exactly one entry (`world cup trophy`) had the bare 1-field shape.
+ *  Dropping it costs one re-probe; keeping it costs a permanently wrong answer, so the asymmetry is clear.
+ *  A real verdict that happens to arrive minimal is also dropped — same cheap cost, and it will be re-asked. */
+export const isPoisonedEntry = (v) =>
+  // Boolean-coerced deliberately: `v && …` returns v itself for null, so the predicate answered `null` rather
+  // than false. Harmless inside .filter(), wrong for anything that compares the result — and a gate whose
+  // answer is not the type it claims is how a truthiness check drifts from an identity one.
+  !!(v && typeof v === "object" && v.specific_entity_found === false && Object.keys(v).length < 2);
+
+let storeHealed = false;   // set when loadStore drops a thrown-probe entry, so the heal is PERSISTED
+const loadStore = () => {
+  storeHealed = false;
+  try {
+    const raw = JSON.parse(readFileSync(STORE, "utf8"));
+    const bad = Object.keys(raw).filter((k) => isPoisonedEntry(raw[k]));
+    if (bad.length) {
+      for (const k of bad) delete raw[k];
+      storeHealed = true;   // force a save even if this run probes nothing, or the poison survives to the next run
+      console.warn(`[resolve] ⚠ dropped ${bad.length} cached entr${bad.length === 1 ? "y" : "ies"} written by a THROWN probe, not a verdict (${bad.map((k) => `"${k}"`).join(", ")}) — they will be re-probed`);
+    }
+    return raw;
+  } catch { return {}; }
+};
 const saveStore = (s) => { mkdirSync(dirname(STORE), { recursive: true }); writeFileSync(STORE, JSON.stringify(s, null, 2)); };
 
 // Stage 1 — candidate named subjects (web-search OFF). Generic scene/action words are NOT candidates.
@@ -119,7 +147,24 @@ async function probe(term) {
     return await providerJson([textPart(
       `Search the web for "${term}". Is it a GENUINELY RECOGNIZABLE, real, SPECIFIC entity — a real individual; a CAST / BAND / TEAM of real people (a TV/film cast, a music group, a sports team — a recognizable GROUP shown as people); a specific real animal; a WELL-KNOWN named fictional character; a product; or a viral internet meme/sensation? Check recent viral content (2024-2026). ⚠ DEFAULT TO GENERIC. Return specific_entity_found=true ONLY when you can ACTUALLY VERIFY from the web that a real, specific, widely-recognizable entity goes by this exact name. DO NOT invent, guess, or infer a plausible-sounding identity for an unfamiliar name — a random / obscure / made-up name (an ordinary "Greg Dolan the plumber", "Margaret Voss the bookshop owner") is GENERIC, NOT a niche character to conjure. If the name is obscure or ambiguous, or you are relying on inference rather than verification, answer generic. confidence = how WELL-ATTESTED + widely-recognizable the entity is: reserve ≥0.8 for genuinely famous / verifiable entities, and use <0.5 whenever you are guessing or the name is obscure — a confident-sounding GUESS is still a guess, score it LOW. IMPORTANT: a TV show / film / band / team NAME, when it names PEOPLE to depict (its cast/members), is an ENSEMBLE — classify it \`ensemble\`, NOT \`product\`. Reserve \`product\` for an actual non-person good and \`generic\` when nothing specific verifiably matches. For an ensemble, defining_signatures = the group's collective recognizable look (era, wardrobe, lineup) so it can be scraped as a cast group photo. canonical_name = the SHORT COMMON NAME this entity is normally called, and nothing else: "Lionel Messi", "Central Perk", "Santa Claus", "Ring Video Doorbell", "Friends cast". ⚠ IT MUST BE THE SAME STRING EVERY TIME THIS ENTITY IS ASKED ABOUT, however the question was phrased — it is an identity label, not a description, so give the name a reference work would use as its title. NO sentences, NO explanation, NO parentheticals, NO qualifiers, NO article unless the name genuinely carries one ("The Beatles"). If the term is generic, repeat the term as given. carries_real_people = TRUE if PHOTOGRAPHS OF THIS ENTITY CHARACTERISTICALLY CONTAIN IDENTIFIABLE REAL PEOPLE — a TV show's set shot with its host or panel in it, a stadium with its players, a red carpet with its attendees, a talk-show desk with its guests. FALSE when the thing is normally photographed WITHOUT recognizable individuals: a product, a building, a landmark, a fictional character, an ordinary venue. ⚠ ASK WHETHER THE PEOPLE COME WITH THE PICTURE, not whether people could ever be near it — a supermarket has shoppers but no identifiable ones, so FALSE; the Shark Tank set is photographed with its judges, so TRUE. This decides whether a reference image sourced for this entity will arrive carrying faces that must be kept small, and it matters even when the video's own subject is nobody famous. chain_venue = TRUE only for a CHAIN or FRANCHISE with MANY near-identical locations that ordinary people walk into and photograph incidentally: McDonald's, Starbucks, Subway, Tesco, a petrol-station brand, a bank branch. FALSE for a SINGULAR place people travel to and photograph deliberately - the Louvre, Wembley Stadium, Grand Central, a named hotel, a specific stadium or museum - and FALSE for anything that is not a venue at all. WHY: a chain interior is photographed by customers who are not trying to make a picture, so plain search reaches genuine ordinary interiors. A destination is photographed by people showing off the place, so the same search returns showpieces. The two want different queries. FAIL CLOSED: unsure -> FALSE, because the chain treatment REPLACES the scene query and getting that wrong on a landmark loses the scene. broadcast_only = TRUE when images of this thing exist ONLY as PROFESSIONAL BROADCAST OR PRESS OUTPUT, because no ordinary person with a phone can capture it: a TV show set or panel (the Shark Tank set), a televised sporting event (the 1986 World Cup final), a film scene, a stage a camera crew owns. FALSE whenever a CIVILIAN CAPTURE LAYER exists - anywhere the public walks in and photographs freely: a shop, a chain, a street, a museum or landmark tourists visit, an ordinary venue. WHY: you cannot get candidness out of a broadcast, so broadcast targets want the well-indexed general index, while anything with a civilian layer wants the user-upload corpora where the amateur frames actually live. ASK WHO HELD THE CAMERA, not whether the thing is famous - the Louvre is world-famous and photographed by millions of tourists, so FALSE. Unsure -> FALSE. drawn = TRUE when this entity's own imagery is DRAWN OR RENDERED rather than PHOTOGRAPHED — an animated series or film, a comic, a video game, an illustrated property. FALSE for anything shot with a camera, including live-action film and television, and including a real person however often they are caricatured. ⚠ ANSWER ABOUT THE ENTITY'S OWN MEDIUM, not about the scene being asked for: a real person placed INTO a cartoon is still drawn=FALSE, because the person is photographed; it is the CARTOON that is drawn. ⚠ WHY IT MATTERS: a drawn world has NO PHOTOGRAPH OF ITSELF, so everything downstream inverts — the plate is sourced from the general index rather than the civilian layer, it may not be reframed by an image model, and the usual photo gates would reject the only usable material. Getting this wrong is silent: the search runs, returns the wrong medium, and every candidate dies with no indication that the question was misread. is_set = TRUE when this entity HAS a RECOGNIZABLE PRODUCED SET / VENUE with DISTINCT FUNCTIONAL ZONES a scene is staged across - a TV or film show with an iconic set (Shark Tank, Friends' Central Perk), a broadcast event with a signature venue (UFC / the octagon, a game-show stage), a studio. ⚠ ORTHOGONAL TO the kind field: a title you classified as an ensemble (its cast) STILL HAS a set, so is_set is TRUE for it too - the cast and the set are two ASPECTS of the same title, and a scene staged in that place needs the SET, not the people. Such a place is best rendered by ASSEMBLING several shots of its zones, not one found photo, so it triggers the multi-component world-build path. ⚠ PRODUCED / BROADCAST ONLY: FALSE for an ordinary real place however large or famous - a generic cafe, a bar, a street, a shop, AND real public places like a museum, an airport, a mall, a landmark (the Louvre, Grand Central): those are ONE world-ref, source a single plate. FALSE also for a bare product / prop or a person. ASK: is this a PRODUCED environment (a show set, a broadcast venue) whose scene is STAGED across named areas a camera cuts between? Unsure -> FALSE (the single-ref path is the safe default). set_zones = when is_set, 2-4 of the set's SIGNATURE FUNCTIONAL ZONES as short plain noun phrases a camera could frame WIDE (Central Perk -> ["the orange couch and coffee table","the counter and menu board","the front entrance"]; a UFC arena -> ["the octagon from the crowd","the walkout tunnel","the announce desk"]). WIDE / establishing areas, NEVER close-ups. Empty [] when is_set is false. public_domain = TRUE only when this figure may be NAMED OUTRIGHT in a generated video because it is not anyone's protected property: folklore, myth, fairy tale, or a work whose copyright has expired. Santa Claus, Sinterklaas, Robin Hood, Dracula, King Arthur, the Easter Bunny, Baba Yaga are TRUE. A character owned by a studio or a company is FALSE however famous - Mario, Ronald McDonald, the Cat in the Hat, Mickey Mouse, Bugs Bunny, Spider-Man. FALSE for anything that is not a fictional character at all. WHY IT MATTERS: a public-domain figure is BETTER prompted by name - a video model resolves "Santa Claus" instantly, while describing him by signatures ("a heavyset bearded man in a red suit") is a strictly worse prompt AND loses the reading. A protected character must be de-named and carried by its signatures instead. FAIL CLOSED: when the status is contested or you are unsure, answer FALSE. Several famous cases are genuinely contested (Sherlock Holmes, Winnie-the-Pooh, early Mickey), and the costs are not symmetric - de-naming a public-domain figure only costs a clumsier prompt, while naming a protected one can trip the output gate and lose the whole generation. Return ONLY JSON {"specific_entity_found":bool,"canonical_name":"string","what_it_is":"string","kind":"real_person|ensemble|real_animal|ip_character|product|meme|generic","carries_real_people":bool,"public_domain":bool,"chain_venue":bool,"broadcast_only":bool,"drawn":bool,"is_set":bool,"set_zones":["..."],"defining_signatures":"string","confidence":0-1}.`
     )], { maxTokens: 900, temperature: 0.1, webSearch: "on" });
-  } catch { return null; }
+  } catch (e) {
+    // ⚠⚠ A THROWN PROBE IS NOT A VERDICT, AND IT USED TO BECOME A PERMANENT ONE. This catch returned null, the
+    // caller coalesced it to {specific_entity_found:false}, and that object was written to remember.json — so a
+    // 429, a timeout or a malformed body became a durable "this name is generic", never re-probed because a
+    // store hit short-circuits the probe (only FRESH_PROBE=1 bypasses it). Every later run replayed the outage
+    // as fact. Hard evidence found 2026-08-11: of 63 resolved entries, exactly ONE was the bare 1-field shape
+    // this path writes — `world cup trophy` — while every genuine generic verdict carried 5-12 fields.
+    // Worse than the transient version of this bug elsewhere, because it survives the process.
+    //
+    // ⚠ AND THE BARE CATCH SWALLOWED THE TYPED ERRORS TOO. ProviderInfraError exists precisely so an outage is
+    // not read as content (provider-llm.mjs:24), and every sibling judge re-throws it to reach exit 5; a ledger
+    // cap is a budget fact the run must stop on. Both were being converted into "generic" here.
+    if (e?.name === "ProviderInfraError" || e?.ledgerCap) throw e;
+    // Anything else: mark the failure so the caller can tell it from an answer. Returning a plain null would
+    // be indistinguishable from a probe that ran and found nothing.
+    console.warn(`[resolve] ⚠ PROBE FAILED for "${term}" (${String(e?.message || e).slice(0, 80)}) — NOT cached; the term stays UNVERIFIED, which keeps the full doctrine`);
+    return { probeFailed: true };
+  }
 }
 
 /** Resolve the named entities in a prompt (probe→remember). Returns the ones that resolved to a
@@ -148,7 +193,7 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   if (terms.failed) { const unknown = []; unknown.extractionFailed = true; unknown.intent = intent; return unknown; }   // candidateCount left UNSET on purpose
   if (!terms.length) { const none = []; none.candidateCount = 0; none.intent = intent; return none; }
   const store = loadStore();
-  let dirty = false;
+  let dirty = storeHealed;
   const resolved = [];
   for (const term of terms) {
     const key = norm(term);
@@ -161,7 +206,13 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
     // so a validation run also refreshes the store rather than leaving it stale.
     if (process.env.FRESH_PROBE === "1") r = undefined;
     if (r === undefined) {                                   // never seen → probe once (web search), then remember
-      r = (await probe(term)) ?? { specific_entity_found: false };
+      r = await probe(term);
+      // ⚠ NEVER PERSIST A VERDICT THE PROBE DID NOT GIVE. This is the whole fix: a failed probe is skipped
+      // rather than cached, so the next run asks again instead of replaying an outage forever. The term is
+      // left UNRESOLVED, which is the honest state — it is still counted in candidateCount, so branchOf sees
+      // resolved.length < candidateCount and keeps the full copyright doctrine (1bb84c4). Paying for one
+      // re-probe next run is the cheap error; a permanent wrong "generic" is the expensive one.
+      if (!r || r.probeFailed) continue;
       store[key] = r; dirty = true;
       console.log(`[resolve] probe "${term}" → ${r.specific_entity_found ? `${r.what_it_is} (conf ${r.confidence})` : "generic"}`);
     } else {
