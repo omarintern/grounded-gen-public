@@ -57,6 +57,60 @@ export async function extractCandidates(userPrompt) {
   }
 }
 
+// Stage 0 — COMPREHENSION. Runs BEFORE extraction, and exists because nothing used to.
+// ⚠ WHY THIS IS FIRST. Until now the first question ever asked of a prompt was a narrow mechanical one
+// ("which phrases name something specific?"), and its answer selected the doctrine every later stage reads.
+// guardUserInput is a regex, extractCandidates is asked only about names, and probe() receives a term with no
+// prompt attached at all — so the branch was committed by two context-free calls before anything read the
+// REQUEST. Measured consequence (owner, 2026-08-11): "the chef in Ratatouille … but the chef is instead the
+// white rabbit" resolved the chef as a figure to GROUND, and the char-ref loop sourced the character the
+// prompt had just said was being replaced. No stage held the fact that a figure can be displaced; the whole
+// chain only knew actor-vs-incidental, so a vacated slot sailed through as a performer.
+// The fix is not another rule downstream — it is asking what the prompt MEANS before deciding what it IS.
+//
+// ⚠ TWO INDEPENDENT QUESTIONS, NOT A LIST OF INTENT TYPES. Enumerating intents ("appropriation", "swap",
+// "montage") would sample at its edges exactly as the extractor's list of kinds did (see d5d9485). So this
+// asks a TEST of every named thing instead: does the video SHOW it, and does naming it tell us what to FIND.
+// Those are orthogonal — a thing can identify the material without appearing in it, which is precisely the
+// case that had no representation.
+export async function comprehend(userPrompt) {
+  try {
+    return await providerJson([textPart(
+      `Return ONLY JSON {"reads":"string","subjects":[{"term":"string","renders":bool,"identifies_material":bool,"replaced_by":"string"}]}. For EVERY thing this video prompt NAMES, answer two INDEPENDENT questions.\n\nreads = one plain sentence describing what the finished video shows.\n\nrenders = will this thing BE IN the finished video? TRUE if a viewer watching it would see this thing.\n\nidentifies_material = does NAMING it tell us what footage or scene to GO AND FIND? TRUE when the name pins down a particular place, work, staging or moment that must be sourced rather than invented.\n\n⚠ THESE TWO ARE INDEPENDENT. Both can be true, both can be false, and either can be true alone. A thing can identify the material without ever appearing in it, and a thing can appear without identifying anything.\n\nreplaced_by = when the prompt puts SOMETHING ELSE in this thing's place — substituting it, swapping it, or saying it is instead something else — give that other thing's term, copied exactly as the user wrote it. Empty string when nothing displaces it.\n\n⚠ A DISPLACED THING STILL MATTERS AND MUST STILL BE LISTED. It will not be seen, but it usually identifies the material, because the scene is found by what was originally in it.\n\nCopy every term exactly as the user phrased it. Do not list generic scene or action words. Return an empty subjects array if the prompt names nothing.\n\nPROMPT:\n"""${userPrompt}"""`
+    )], { maxTokens: 700, temperature: 0.1 });
+  } catch (e) {
+    // ⚠ FAILS TO TODAY'S BEHAVIOUR, NEVER TO "NO SPECIAL INTENT". A null here means we could not look, and the
+    // callers below treat that as "every named thing is an ordinary candidate" — which is exactly what the
+    // pipeline did before this function existed. Returning a confident empty structure instead would let an
+    // outage silently assert that nothing is displaced, which is the borrowed-field failure in a new place.
+    console.warn(`[comprehend] ⚠ FAILED (${String(e?.message || e).slice(0, 80)}) — proceeding without intent; every named thing stays an ordinary candidate`);
+    return null;
+  }
+}
+
+/** Is this resolved term a figure the video will NOT render because the prompt displaces it?
+ *  ⚠ CONJUNCTION, DELIBERATELY. Suppressing a figure is the expensive direction — a false positive deletes a
+ *  subject the user asked for and costs the whole generation. So it takes BOTH an explicit renders===false AND
+ *  a named replacement that the prompt actually contains. One field alone never turns a figure off, and an
+ *  absent or unparsed field leaves it on. */
+export function displacedByPrompt(intent, term, userPrompt = "") {
+  // ⚠ THE TWO STAGES DO NOT AGREE ON THE STRING, AND AN EXACT MATCH SILENTLY NEVER FIRES. Comprehension names
+  // the thing as the sentence does ("the chef"); extraction applies the qualifier rule and returns "the chef in
+  // Ratatouille". Keyed on equality this function would return false forever and read as "nothing is ever
+  // displaced" — a gate that never fires looks exactly like a gate that always passes. Match on whole-word
+  // containment in either direction, padded so a token boundary is required and "a boy" cannot match "boyhood".
+  const t = norm(term), pad = (x) => ` ${x} `;
+  const s = (intent?.subjects || []).find((x) => {
+    const c = norm(x?.term);
+    return c && (c === t || pad(t).includes(pad(c)) || pad(c).includes(pad(t)));
+  });
+  if (!s) return false;
+  if (s.renders !== false) return false;
+  const by = String(s.replaced_by || "").trim();
+  if (!by) return false;
+  return String(userPrompt).toLowerCase().includes(by.toLowerCase());
+}
+
 // Stage 2 — identity probe (web-search ON), framed to HUNT for a specific entity by this name.
 // kind `ensemble` per GROUNDED_GEN_WORKFLOW.md: a show/film cast, band, or team is a GROUP OF PEOPLE
 // (grounded as one cast group photo), NEVER an object — do not flatten it to `product`.
@@ -72,6 +126,15 @@ async function probe(term) {
  *  specific entity at confidence ≥ minConfidence: [{term, what_it_is, kind, defining_signatures, ...}].
  *  Never throws — degrades to [] so a gen is never blocked. */
 export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) {   // raised 0.6→0.7: filter borderline confabulations (the probe now scores guesses <0.5)
+  // ⚠ COMPREHENSION RUNS FIRST, AND ITS FAILURE IS NOT A VERDICT. Attached as a property like candidateCount
+  // so every existing caller that treats this as a plain array is unaffected. A null intent means "we could
+  // not read the request", which leaves every named thing an ordinary candidate — the behaviour that shipped
+  // before this existed. It must never be allowed to mean "nothing is displaced".
+  const intent = await comprehend(userPrompt);
+  if (intent?.subjects?.length) {
+    const displaced = intent.subjects.filter((s) => s?.renders === false && String(s?.replaced_by || "").trim());
+    console.log(`[comprehend] ${intent.subjects.length} named · ${displaced.length} displaced${displaced.length ? ` (${displaced.map((s) => `${s.term}→${s.replaced_by}`).join(", ")})` : ""}`);
+  }
   const terms = await extractCandidates(userPrompt);
   // ⚠ THE CANDIDATE COUNT IS PART OF THE ANSWER, NOT AN INTERNAL DETAIL. This function returns only the
   // entities it could VERIFY, so an empty result means two very different things: "the prompt names nothing
@@ -82,8 +145,8 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   // so every existing caller that treats this as a plain array keeps working unchanged.
   // ⚠ ORDER MATTERS: a FAILED extraction is not an EMPTY one. Only a clean look that found nothing may set
   // candidateCount = 0, because that value is the single condition under which the copyright doctrine is dropped.
-  if (terms.failed) { const unknown = []; unknown.extractionFailed = true; return unknown; }   // candidateCount left UNSET on purpose
-  if (!terms.length) { const none = []; none.candidateCount = 0; return none; }
+  if (terms.failed) { const unknown = []; unknown.extractionFailed = true; unknown.intent = intent; return unknown; }   // candidateCount left UNSET on purpose
+  if (!terms.length) { const none = []; none.candidateCount = 0; none.intent = intent; return none; }
   const store = loadStore();
   let dirty = false;
   const resolved = [];
@@ -108,6 +171,7 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   }
   if (dirty) saveStore(store);
   resolved.candidateCount = terms.length;
+  resolved.intent = intent;              // null when comprehension could not run — see comprehend()
   return resolved;
 }
 
