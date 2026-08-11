@@ -21,7 +21,7 @@
 // (reference_vlm_prompt_crowding), and DEGRADE_FLOOR=0.6 is calibrated against that rubric's exact current
 // wording, so appending a field there would risk silently re-scoring degrade. Own call, own question.
 import sharp from "sharp";
-import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
+import { providerJson, textPart, imagePart, PROVIDER_VLM_MODEL } from "./provider-llm.mjs";
 
 async function view(fp, px) {
   return (await sharp(fp).resize(px, px, { fit: "inside", withoutEnlargement: true })
@@ -76,7 +76,7 @@ export async function judgeFrameZero(filePath, action, opts = {}) {
           : ``)
       ),
       imagePart("image/jpeg", b64),
-    ], { maxTokens: 1200, temperature: 0.1 });
+    ], { maxTokens: 1200, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
   } catch (e) {
     if (e?.name === "ProviderInfraError") throw e;   // infra is not a verdict (see provider-llm.mjs)
     return null;

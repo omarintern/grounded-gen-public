@@ -18,7 +18,7 @@
 // rubric — a paraphrased copy would let the two gates drift, and the ai_generated clause is safety-critical
 // (owner: "No AI images ... a hard no go") and deliberately fails CLOSED. Never inline a shortened version here.
 import sharp from "sharp";
-import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
+import { providerJson, textPart, imagePart, PROVIDER_VLM_MODEL } from "./provider-llm.mjs";
 import { gateClauses } from "./_judge_identity.mjs";
 
 async function smallViewAt(fp, px) {
@@ -42,7 +42,9 @@ export async function judgeKillshot(filePath, subjectStr, opts = {}) {
       // GENEROUS ceiling for the same reason as the other judges: max_tokens is billed on ACTUAL output, so a
       // high ceiling is free when unused, while too low a ceiling truncates and providerJson's ladder re-bills the
       // WHOLE call (measured: a 300 ceiling cost 2.4x on the quality judge, invisibly, all HTTP 200).
-    ], { maxTokens: 1200, temperature: 0.1 });
+      // model is a passthrough so a bakeoff can drive THIS function rather than a copy of its prompt —
+      // the prompt text is the thing under test and a reimplementation would not be testing it.
+    ], { maxTokens: 1200, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
   } catch (e) {
     // INFRA IS NOT A VERDICT. A null return means "judged and unreadable" and fails CLOSED, which is
     // right. But a provider 402/429/5xx means we never judged at all - flattening that to null made the
@@ -153,7 +155,7 @@ export async function judgeKillshotGrid(filePaths, subjectStr, opts = {}) {
         `Return ONLY JSON {"cells":[{"n":1,"real_photo":bool,"ai_generated":0..1,"shows_minor":bool,"content_flag":"none|nudity|distress|personal_data|third_party_media|symbol","shows_subject":bool}, …]} with EXACTLY ${files.length} entries, one per cell, in cell order. ` +
         gateClauses(subjectStr, sceneIntent)),
       imagePart("image/jpeg", sheet.toString("base64")),
-    ], { maxTokens: 400 + files.length * 260, temperature: 0.1 });
+    ], { maxTokens: 400 + files.length * 260, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
     return mapCellsByNumber(Array.isArray(out?.cells) ? out.cells : [], files.length);
   } catch (e) {
     if (e?.name === "ProviderInfraError") throw e;   // infra is not a verdict — same contract as the single judge
@@ -210,7 +212,7 @@ export async function prefilterGrid(filePaths, subjectStr, opts = {}) {
       // Measured 2026-08-10: at 200 + 90/cell (=560 for a 4-cell sheet) TWO OF THREE POOLS returned 8/8
       // undecided, and I read that as model unreliability rather than my own ceiling. the provider's model emits
       // ~700-1000 reasoning+JSON tokens before the answer even starts.
-    ], { maxTokens: 1200 + files.length * 120, temperature: 0.1 });
+    ], { maxTokens: 1200 + files.length * 120, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
     const mapped = mapCellsByNumber(Array.isArray(out?.cells) ? out.cells : [], files.length);
     return mapped.map((c) => {
       if (!c) return null;

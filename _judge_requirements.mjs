@@ -12,7 +12,7 @@
 // Owner 2026-07-31: "we must abandon cheapness for results. cost cutting is a final measure but post-launch."
 // So this asks about EACH requirement SEPARATELY and returns a per-feature verdict, rather than one summary bool.
 import sharp from "sharp";
-import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
+import { providerJson, textPart, imagePart, PROVIDER_VLM_MODEL } from "./provider-llm.mjs";
 
 async function view(fp, px) {
   return (await sharp(fp).resize(px, px, { fit: "inside", withoutEnlargement: true })
@@ -50,7 +50,7 @@ export async function judgeRequirements(filePath, requirements, opts = {}) {
         `this frame, so a false answer is far more useful to us than a generous one.`
       ),
       imagePart("image/jpeg", b64),
-    ], { maxTokens: 900, temperature: 0.1 });
+    ], { maxTokens: 900, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
 
     const raw = Array.isArray(j?.verdicts) ? j.verdicts : [];
     const verdicts = reqs.map((feature, i) => {
