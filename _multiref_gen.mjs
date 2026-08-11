@@ -64,8 +64,25 @@ for (let i = 0; i < refs.length; i++) refs[i] = await normaliseRef(refs[i]);
 const payload = { model: ENDPOINT, prompt: promptText, duration, resolution: "480p", aspect_ratio: aspect, reference_image_urls: refs.map(dataUri) };
 
 const submit = () => fetch(`${PROVIDER}/video/queue`, { method: "POST", headers: { "Content-Type": "application/json", "SIGN-IN-WITH-X": signIn() }, body: JSON.stringify(payload) });
-let res = await submit();
-if (res.status === 409) { console.log(`[multiref] 409 consent → attest + resubmit`); payload.consents = { seedance: { confirmed_terms_and_privacy: true, confirmed_legal_right: true, confirmed_screening_acknowledged: true } }; res = await submit(); }
+// ⚠ A BUDGET STOP IS NOT A COPYRIGHT VERDICT, AND IT MUST NOT BUY A SECOND ENGINE.
+// The ledger throws LedgerCapExceeded from inside the fetch when the cap refuses to queue the video.
+// Unhandled at top level that is an unhandled rejection, so node exits 1 — and _run.mjs reads any exit
+// that is not 2 or 5 as "seedance tripped the OUTPUT © GATE" and falls through to the fallback video model. So running out
+// of lane was reported as a clearance failure and answered by a second call, on the fallback engine,
+// at the exact moment the run had established the lane was empty. Measured live: material
+// cap refused seedance, and the fallback video model then ran on top.
+// _run.mjs ALREADY has the correct guard and says so at length — it keys on exit 4, and nothing here
+// ever produced a 4. The reasoning was right; the code that feeds it was missing.
+const capGuard = async (fn) => {
+  try { return await fn(); }
+  catch (e) {
+    if (!e?.ledgerCap) throw e;
+    console.error(`[multiref] ${slug}: BUDGET CAP — ${e.message}`);
+    process.exit(4);
+  }
+};
+let res = await capGuard(submit);
+if (res.status === 409) { console.log(`[multiref] 409 consent → attest + resubmit`); payload.consents = { seedance: { confirmed_terms_and_privacy: true, confirmed_legal_right: true, confirmed_screening_acknowledged: true } }; res = await capGuard(submit); }
 if (!res.ok) { console.log(`[multiref] ${slug}: REJECTED (${res.status})\n${(await res.text()).slice(0, 300)}`); process.exit(2); }
 const { queue_id, id } = await res.json(); const qid = queue_id ?? id;
 console.log(`[multiref] ${slug}: ACCEPTED queue_id=${qid} — polling…`);
