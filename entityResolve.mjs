@@ -33,9 +33,14 @@ const STORE = process.env.ENTITY_STORE || join(HERE, "out", "_entities", "rememb
 // untracked cache cannot reach the checkout that ships, whatever .railwayignore says about it. So every
 // container run re-probed from scratch against LIVE WEB SEARCH — the one input that changes on its own —
 // and two identical prompts could resolve differently for no reason the logs would show.
-// (Same reasoning .railwayignore already gives for success_store/ ref_cache/ canonical_refs/: "a cold cache
-// looks exactly like a subject nobody has sourced yet." Those are untracked too, so that exemption is inert
-// and they do not ship either — worth fixing the same way.)
+// (Same reasoning .railwayignore already gives for the ref caches: "a cold cache looks exactly like a subject
+// nobody has sourced yet." ⚠ CORRECTED 2026-08-11, verified on the container: success_store/ IS tracked, 19/19
+// since 4a14f2c, and all 19 files ARE present on the container — it does not have this problem. The two that
+// do are ref_cache/ (0 tracked) and canonical_refs/ (0 tracked), both confirmed absent at runtime, for whom
+// the .railwayignore exemption is inert because they were never in the checkout to exclude. They differ in
+// KIND, so they want different fixes: canonical_refs is curated, so it should be TRACKED on the same reasoning
+// as success_store; ref_cache is runtime-accumulated and persists on the volume, so it warms itself after the
+// first runs and a seed there is an optimisation, not a correctness fix.)
 //
 // ⚠ AND SHIPPING IT INSIDE out/ WOULD NOT HAVE WORKED. The runtime volume mounts at /app/out, so anything the
 // image carries there is MASKED at boot. The seed therefore lives at the engine ROOT, where the image keeps it.
