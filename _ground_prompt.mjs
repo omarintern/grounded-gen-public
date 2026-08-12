@@ -392,7 +392,7 @@ if (BEAT_STYLE !== "template") {
     `nothing the photograph shows, and the generator, faithful to the photograph, defers it and then CUTS to go ` +
     `find it. So beat zero PLACES it at a NAMED thing the photograph actually contains \u2014 at the spot and SCALE of ` +
     `a visible occupant ("exactly where the trainer stands, at that person's scale") or hard against a visible ` +
-    `landmark ("at the near end of the stage, beside the rail"). Position and scale are borrowed; identity never is.\n` +
+    `landmark ("at the near end of the stage, beside the rail"). Position and scale are borrowed; identity never is. ⚠⚠ AND THE SEAT GRANTS POSITION IN THE WORLD, NEVER A FRAMING. Frame zero's framing IS the photograph's — a seated subject is written at the SIZE that vantage gives it ("small on the platform, seen across the pool"), never as the shot's close subject: a reference-detailed character pulls the render toward a close-up, and stating its smallness at the photograph's distance is what holds the frame. Write no camera language for this; any approach toward the subject happens DURING later motion, only if the story needs it.\n` +
     `\u26a0 SO: put EVERY actor and EVERY prop the story needs into beat zero, however little of it the ` +
     `photograph shows. Spend the remaining beats CHANGING them. Never drop what the user asked for, and never ` +
     `hold a subject back as a reveal.\n\n` +
@@ -419,7 +419,7 @@ if (BEAT_STYLE !== "template") {
     `action is outside the frame, "we dont know whats happening" until the consequence arrives — so the sound must ` +
     `tell us. Author DIEGETIC sound that does narrative work: an approach heard before it is seen, a bell or an ` +
     `engine locating something off-frame, an impact heard rather than shown, sound STOPPING to mark an event. Name ` +
-    `sound in the beat that needs it. ⚠ NEVER ask for MUSIC or a score — this is found footage, music breaks the ` +
+    `sound in the beat that needs it. ⚠ AUTHOR THE SOUNDSCAPE — DO NOT LEAVE THE AUDIO SLOT TO THE FALLBACK. End the beats with a Sound: line naming the DIEGETIC ambience of each world the clip visits, in order, specific to what is on screen (water, a crowd, a mechanism, wind), closing with "no music". A specific soundscape crowds out the generator's urge to score; a generic room-tone fallback invites it. ⚠ NEVER ask for MUSIC or a score — this is found footage, music breaks the ` +
     `realism AND the provider REFUSES generations whose invented soundtrack trips a copyright check (a warehouse ` +
     `clip was rejected outright on exactly that). Ambient and diegetic only.\n\n` +
     `\u26a0\u26a0 THIS RULE IS ROUTINELY IGNORED - CHECK YOUR OWN OUTPUT BEFORE RETURNING IT. Re-read every beat for 'as' / 'while' / 'and then' and split any that joins an act to its result. A beat may hold a concurrent STATE; it may not hold an act and that act's consequence. `+
