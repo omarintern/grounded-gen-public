@@ -15,6 +15,11 @@ const CREDS = join(CFG, "creds.json");
 const REG_EMAIL = process.env.LIBRARY_EMAIL || "dev@example.com";
 
 async function creds() {
+  // The REGISTERED app (grounded-sourcer, admin@example.com, 2026-08-13 — verified tier: 100/min,
+  // 10k/day) rides env so it survives container swaps; the file cache and auto-registration remain the
+  // local/fallback path. Env creds are the ONLY way the container keeps the verified tier.
+  if (process.env.LIBRARY_CLIENT_ID && process.env.LIBRARY_CLIENT_SECRET)
+    return { client_id: process.env.LIBRARY_CLIENT_ID, client_secret: process.env.LIBRARY_CLIENT_SECRET };
   if (existsSync(CREDS)) return JSON.parse(readFileSync(CREDS, "utf8"));
   // one-time auto-registration → client_id/secret (issued immediately, no verification for basic use)
   const res = await fetch(`${API}/auth_tokens/register/`, {
