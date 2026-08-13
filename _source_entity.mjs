@@ -38,7 +38,13 @@ const isAI = (it) => { const s = JSON.stringify(it).toLowerCase(); return AI.som
 // the query goes exactly as written (a candour suffix pulls for DEGRADED captures of the very thing that has
 // to be seen clearly — this file's own rule, stated at the top, is "No iphone bias").
 // Named rather than assembled from flags, so a future retune of the SCENE routing cannot silently reach in here.
-async function scrape(q, n = 24) {
+// ── FIGURE-REF ROW BUDGET (owner 2026-08-13: "it should only do like 5 rows for figure-refs. because how many
+// times do we ever pass the 5th row") — web bills PER ROW ($… start + $…/row), so the old n=24 paid
+// $…/search for a pool the judge below slices to 12 anyway (rows 13-24 were unreachable padding). Default 8,
+// not 5 literal: downloads die pre-judge (404/tiny eat 1-2 rows) and the one measured deep winner sat at
+// position 6 (b27's _e5), so 8 raw ≈ 5-6 judged — the owner's intent with the deaths absorbed. $…/search,
+// a 62% cut, and the celeb branch pays the same rates so it cuts both sides. ENTITY_ROWS overrides.
+async function scrape(q, n = Number(process.env.ENTITY_ROWS || 8)) {
   return await scrapeImages(q, n, "identity");
 }
 // ⚠ USES THE SHARED HARDENED FETCH. This was a bare fetch() with no UA/Referer, no content-type gate and no
@@ -77,7 +83,7 @@ if (hits.length) {
 // carries non-performing figures by PROSE ALONE. So the degradation is: no figure ref, the figure is prompted,
 // the gen still ships ref-grounded on its world plate. Aborting the whole run to save $… would be the
 // pay-the-ceiling-deliver-nothing failure in miniature.
-const ENTITY_RESERVE = Number(process.env.ENTITY_COST_USD || 0.25);   // web rows + a full 12-judge pass, rounded up
+const ENTITY_RESERVE = Number(process.env.ENTITY_COST_USD || 0.12);   // 8 web rows ($…) + a full ≤8-judge pass, rounded up (was 0.25 at n=24/12 judges — resized with the ENTITY_ROWS cut, owner 2026-08-13)
 const ENTITY_CAP = Number(process.env.SPEND_CAP_USD || 0);
 if (ENTITY_CAP > 0) {
   const { wouldExceed, report } = await import("./_spend.mjs");
