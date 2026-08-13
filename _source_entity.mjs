@@ -104,7 +104,7 @@ for (const [i, it] of clean.entries()) {
   let meta; try { meta = await sharp(p).metadata(); } catch { continue; }
   const W = meta.width ?? 0, H = meta.height ?? 0;
   if (Math.min(W, H) < 300) continue;
-  cands.push({ p, host: host(it.imageUrl), px: W * H, W, H });
+  cands.push({ p, row: i, host: host(it.imageUrl), px: W * H, W, H });   // row = scrape position — pick telemetry for the ENTITY_ROWS budget (8-vs-6 settles on data)
 }
 // ⚠ REPORT DOWNLOAD FAILURES. A thin entity pool and a BLOCKED entity pool look identical downstream - both
 // arrive as "few candidates" - and the second is a fetch problem wearing a content problem's clothes.
@@ -196,4 +196,4 @@ if (ok.length) {
 // NO blur (ungated real_entity), NO crop — native aspect, clean jpeg.
 const out = join(OUTDIR, `entity_${slug}.jpg`);
 await sharp(pick.p).jpeg({ quality: 92 }).toFile(out);
-console.log(`\n✓ picked ${pick.host} (${pick.W}x${pick.H}, un-blurred, native aspect) → ${out}`);
+console.log(`\n✓ picked ${pick.host} row=${pick.row ?? "?"} (${pick.W}x${pick.H}, un-blurred, native aspect) → ${out}`);
