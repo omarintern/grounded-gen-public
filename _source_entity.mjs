@@ -38,13 +38,14 @@ const isAI = (it) => { const s = JSON.stringify(it).toLowerCase(); return AI.som
 // the query goes exactly as written (a candour suffix pulls for DEGRADED captures of the very thing that has
 // to be seen clearly — this file's own rule, stated at the top, is "No iphone bias").
 // Named rather than assembled from flags, so a future retune of the SCENE routing cannot silently reach in here.
-// ── FIGURE-REF ROW BUDGET (owner 2026-08-13: "it should only do like 5 rows for figure-refs. because how many
-// times do we ever pass the 5th row") — web bills PER ROW ($… start + $…/row), so the old n=24 paid
-// $…/search for a pool the judge below slices to 12 anyway (rows 13-24 were unreachable padding). Default 8,
-// not 5 literal: downloads die pre-judge (404/tiny eat 1-2 rows) and the one measured deep winner sat at
-// position 6 (b27's _e5), so 8 raw ≈ 5-6 judged — the owner's intent with the deaths absorbed. $…/search,
-// a 62% cut, and the celeb branch pays the same rates so it cuts both sides. ENTITY_ROWS overrides.
-async function scrape(q, n = Number(process.env.ENTITY_ROWS || 8)) {
+// ── FIGURE-REF ROW BUDGET (owner 2026-08-13, SUPERSEDING the same-day flat 8: "lets max at 12 for characters,
+// but can it scrape to 5 then decide if it must go beyond? this acts like a control.") — the raise is forced by
+// data: every reconstructable historical pick sat PAST row 5 (b8=7th, b9=10th, b27=8th, mined from rerun logs;
+// shallow rows are the reposted/captioned crops the judge rejects), so a flat 8 would have missed or last-rowed
+// all three. the web index bills PER ROW ($… + $…/row) and takes NO offset — a literal two-stage scrape re-bills
+// rows 1-5 ($… vs $…) — so the SCRAPE is one call at 12 ($…, still 47% under the old 24-row $…)
+// and the owner's 5-then-decide control lives at the JUDGE layer below, where extending is free to have skipped.
+async function scrape(q, n = Number(process.env.ENTITY_ROWS || 12)) {
   return await scrapeImages(q, n, "identity");
 }
 // ⚠ USES THE SHARED HARDENED FETCH. This was a bare fetch() with no UA/Referer, no content-type gate and no
@@ -83,7 +84,7 @@ if (hits.length) {
 // carries non-performing figures by PROSE ALONE. So the degradation is: no figure ref, the figure is prompted,
 // the gen still ships ref-grounded on its world plate. Aborting the whole run to save $… would be the
 // pay-the-ceiling-deliver-nothing failure in miniature.
-const ENTITY_RESERVE = Number(process.env.ENTITY_COST_USD || 0.12);   // 8 web rows ($…) + a full ≤8-judge pass, rounded up (was 0.25 at n=24/12 judges — resized with the ENTITY_ROWS cut, owner 2026-08-13)
+const ENTITY_RESERVE = Number(process.env.ENTITY_COST_USD || 0.16);   // 12 web rows ($…) + a worst-case 12-judge pass, rounded up (owner 2026-08-13: 12-max with the 5-then-decide judge control; shallow settle spends ~5 judges)
 const ENTITY_CAP = Number(process.env.SPEND_CAP_USD || 0);
 if (ENTITY_CAP > 0) {
   const { wouldExceed, report } = await import("./_spend.mjs");
@@ -124,7 +125,7 @@ async function judge(fp) {
 const LEGIBLE_FLOOR = 0.6; // a figure ref must READ as the entity — clearer floor than a scene ref
 console.log(`\n─── identity-legibility check (${Math.min(cands.length, 12)})${MODE === "ip" ? " [ip: character, illustrations ok]" : ""} ───`);
 const ok = [];
-for (const c of cands.slice(0, 12)) {
+async function judgeOne(c) {
   // SAFETY KILL-SHOT (shared _judge_killshot) — the one ref path that lacked minors/content gating; its own
   // identity judge asks real_photo / shows_subject / legible and NEVER age or content. shows_minor + content_flag
   // are ABSOLUTE and mode-independent; fails CLOSED (null / infra → drop, so an outage degrades to a prose-carried
@@ -137,7 +138,7 @@ for (const c of cands.slice(0, 12)) {
     : killshotFails(ks, Number(process.env.AI_CEILING ?? 0.3), { requireSubject: false });
   if (unsafe) {
     console.log(`  ${c.p.split("/").pop()} @${c.host}: KILL-SHOT ✗ ${!ks ? "UNSCREENED" : ks.shows_minor ? "MINOR" : (ks.content_flag && ks.content_flag !== "none") ? String(ks.content_flag).toUpperCase() : "unsafe"} — dropped`);
-    continue;
+    return null;
   }
   const j = await judge(c.p);
   const legible = Number(j?.legible);
@@ -147,7 +148,23 @@ for (const c of cands.slice(0, 12)) {
     : (j && j.real_photo && j.shows_subject && !j.has_text_or_watermark_or_logo && lg >= LEGIBLE_FLOOR);
   const info = j ? (MODE === "ip" ? `char=${j.shows_character} photo=${j.real_photo} brand=${j.has_brand_or_watermark} caption=${j.has_editorial_caption} legible=${lg.toFixed(2)}` : `real=${j.real_photo} subj=${j.shows_subject} text=${j.has_text_or_watermark_or_logo} legible=${lg.toFixed(2)}`) : "judge-failed";
   console.log(`  ${c.p.split("/").pop()} @${c.host} (${c.W}x${c.H}): ${info} ${pass ? "✓" : "✗"}`);
-  if (pass) ok.push({ ...c, legible: lg, caption: MODE === "ip" ? !!j.has_editorial_caption : false, photo: MODE === "ip" ? !!j.real_photo : true });
+  return pass ? { ...c, legible: lg, caption: MODE === "ip" ? !!j.has_editorial_caption : false, photo: MODE === "ip" ? !!j.real_photo : true } : null;
+}
+// ── THE 5-THEN-DECIDE CONTROL (owner 2026-08-13) — one scrape, judged in TRANCHES. Rows 1-5 first; SETTLE
+// when a CLEAN passer exists, else extend to 6-12. Clean = pass plus, in ip mode, PHOTO and caption-free —
+// exactly the two axes the pick sort prefers below: settling on a demoted illustration would buy back ~$…
+// of judges by fixing in a worse ref class, and a drawn-only character (no photo exists) extends ONCE, then
+// its ref-cache entry retires the whole cost. The row=N stamp on the pick is the control's own report card:
+// it tells us over time how often tranche 2 fires and where winners actually sit.
+const JUDGE_T1 = 5;
+const pool = cands.slice(0, 12);
+const cleanPass = (e) => (MODE === "ip" ? e.photo && !e.caption : true);
+for (const c of pool.slice(0, JUDGE_T1)) { const e = await judgeOne(c); if (e) ok.push(e); }
+if (ok.some(cleanPass)) {
+  console.log(`  ── settled in the first ${Math.min(JUDGE_T1, pool.length)} (clean passer) — ${Math.max(0, pool.length - JUDGE_T1)} deeper row(s) unjudged ──`);
+} else if (pool.length > JUDGE_T1) {
+  console.log(`  ── no clean passer in the first ${Math.min(JUDGE_T1, pool.length)} — extending to ${pool.length} ──`);
+  for (const c of pool.slice(JUDGE_T1)) { const e = await judgeOne(c); if (e) ok.push(e); }
 }
 
 // ── REF CACHE (write) ───────────────────────────────────────────────────────────────────────────────
