@@ -15,6 +15,8 @@ import { OUT } from "./lib.mjs";
 // direction) and MISSED an incidental face on the symbol plate (an under-detect is a blur LEAK). So the
 // grounder is pinned by its own name; move it only by measuring detect_bench first.
 const DETECT_MODEL = process.env.PROVIDER_DETECT_MODEL || "fast-model";
+// ⚠ _face_geometry.mjs shares this pin but NOT this prompt — ITS prompt boxes the FULL face (band math),
+// THIS one boxes the eyes-nose-mouth CORE (blur law). Two prompts by design; do not deduplicate.
 
 const form = process.argv[2] || "trump_nascar_v2plan";
 const refsDir = join(OUT, form, "refs");
