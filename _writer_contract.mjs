@@ -69,7 +69,7 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
 
 /** The writer's instruction under WRITER_FACTS: labeled fact lines + a SHORT rule contract. Everything the old
  *  paragraph said three ways is either a FACT here or a predicate in goldenViolations — never both, never prose. */
-export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16 }) {
+export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [] }) {
   const art = /^[aeiou8]/.test(lens) ? "an" : "a";
   return `You are writing beats for a video staged across ${cutCount} ordered photographs the generator conditions on and cuts between.
 VIDEO: "${userPrompt}"
@@ -77,7 +77,7 @@ VIDEO: "${userPrompt}"
 FACTS — data, not suggestions:
 SUBJECT LOOK: ${subjectLook || "(as the reference shows)"} — this phrase IS the subject, plus "matching the reference". Never any name.
 LENS LINE: end every cut with "Shot on ${art} ${lens} lens."
-${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
+${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
 ${cutList}
 
 RULES — each is checked mechanically after you write:
