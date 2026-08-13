@@ -57,7 +57,15 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   // as the button) and deliberately does NOT score funny — the payoff-transform bet, extended to conversation.
   // durationSec=0 disables (back-compat); partiesNamed comes from the CALLER's knowledge (the measured plate
   // people / the premise), never re-derived from text that may already have omitted the second party.
-  if (durationSec) for (const d of dialogueShape(t, durationSec, { partiesNamed })) v.push({ rule: d.rule, cut: null, detail: d.figure });
+  // ⚠ ONLY THE WORD FLOOR IS LAW (owner 2026-08-13: "i dont see why the exchange must end on a short terminal
+  // sentence. and i dont see why both must actually speak, this all depends on prompt. and Word floor is very
+  // important"). exchange-floor and button-position were style observations promoted too far — whether a second
+  // party speaks and how a line ends belong to the PROMPT, not a validator. They are DEMOTED here: never
+  // violations, never re-asks. dialogue-underfilled stays LAW — dead air after the voice dies is a defect in
+  // every prompt.
+  if (durationSec) for (const d of dialogueShape(t, durationSec, { partiesNamed })) {
+    if (d.rule === "dialogue-underfilled") v.push({ rule: d.rule, cut: null, detail: d.figure });
+  }
   if (lines.length > maxLines) v.push({ rule: "too-long", cut: null, detail: `${lines.length}/${maxLines} lines` });
   if (t.length > maxChars) v.push({ rule: "too-long", cut: null, detail: `${t.length}/${maxChars} chars` });
   const dlgIdx = lines.findIndex((l) => /^dialogue:$/i.test(l));
