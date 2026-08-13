@@ -17,7 +17,9 @@ export const cutLinesOf = (text) => String(text || "").split("\n").map((l) => l.
 
 /** The MJ golden properties as violations. [] = the text IS the shape. Each violation carries the rule name and
  *  (where per-cut) the 1-indexed cut, so the caller's re-ask can name EXACTLY what to fix and nothing else. */
-export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1400 } = {}) {
+const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly where the [\w\s'-]{1,30}(?:stands|sits|waits|works)|(?:at|onto|into) the [\w\s'-]{1,30}(?:'s)? (?:mark|spot|position)\b)/i;
+
+export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1400, requireSwap = false } = {}) {
   const t = String(text || "");
   const v = [];
   const cuts = cutLinesOf(t);
@@ -42,6 +44,13 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     if (new RegExp(`\\b${String(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(t)) { v.push({ rule: "name", cut: null, detail: n }); break; }
   }
   if (ANCHOR.test(t)) v.push({ rule: "anchor", cut: null });
+  // ── SWAP GRAMMAR (owner 2026-08-13, C2a/C2b post-mortem) — when the plate MEASURES people, placement
+  // language is not enough: "stands at the podium" makes the model ADD a fresh likeness beside the plate's own
+  // bodies, and a conjured celebrity is what the output gate reads hardest. Every validated clear carried
+  // REPLACEMENT grammar ("where the presenter stands — same position and size"); both C2 rung-0 trips lacked
+  // it. requireSwap is set by the caller from the MEASURED face count (sourcing-time geometry), never from a
+  // post-widen re-ask.
+  if (requireSwap && !SWAP_GRAMMAR.test(t)) v.push({ rule: "swap-missing", cut: null });
   if (lines.length > maxLines) v.push({ rule: "too-long", cut: null, detail: `${lines.length}/${maxLines} lines` });
   if (t.length > maxChars) v.push({ rule: "too-long", cut: null, detail: `${t.length}/${maxChars} chars` });
   const dlgIdx = lines.findIndex((l) => /^dialogue:$/i.test(l));
@@ -61,7 +70,7 @@ VIDEO: "${userPrompt}"
 FACTS — data, not suggestions:
 SUBJECT LOOK: ${subjectLook || "(as the reference shows)"} — this phrase IS the subject, plus "matching the reference". Never any name.
 LENS LINE: end every cut with "Shot on ${art} ${lens} lens."
-${swap ? `SWAP: ${swap}\n` : ""}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
+${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
 ${cutList}
 
 RULES — each is checked mechanically after you write:
