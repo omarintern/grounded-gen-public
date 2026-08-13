@@ -394,6 +394,10 @@ if (BEAT_STYLE !== "template") {
     (process.env.PLATE_OCCUPANTS_LINE ? `\u26a0 ${process.env.PLATE_OCCUPANTS_LINE}\n` : "") +
     (process.env.VALIDATOR_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT VIOLATED THE CAST LEDGER: ${process.env.VALIDATOR_FEEDBACK}. Rewrite the beats obeying the ledger exactly \u2014 do not drop any figure; move each violation to its declared beat.\n` : "") +
     `\u26a0 BEAT ZERO IS AN ACTION, NOT A DESCRIPTION \u2014 its subject is MID-DOING from the first frame; a line that only says what the subject IS or WEARS lets the frame drift. `+
+    // Owner 2026-08-13, restored from the golden gens (capybara ski counter, raccoon kiosk, fox hob, badger
+    // tarp, capybara beer tap): every one staged beat zero ON the plate's named objects/occupants with THE.
+    // The anti-scenery rule was over-read into dropping plate contact; adjectives stay banned, contact returns.
+    `\u26a0 AND BEAT ZERO STAGES THAT ACTION ON THE PHOTOGRAPH \u2014 name the reference image's visible objects and occupants the subject touches ("behind the counter", "at the stove", "toward the customer"), with THE: every noun in beat zero should be findable in the picture. A noun the picture does not show belongs to a later beat or a cut. This is CONTACT, not scenery \u2014 look/lighting/mood adjectives stay banned. `+
     `\u26a0 SO: put EVERY actor and EVERY prop the story needs into beat zero, however little of it the ` +
     `photograph shows. Spend the remaining beats CHANGING them. Never drop what the user asked for, and never ` +
     `hold a subject back as a reveal.\n\n` +
