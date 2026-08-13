@@ -57,8 +57,12 @@ export async function libraryImages(query, n = 40) {
   // — rows here are FREE and unmetered (no addApify; 100/min · 10k/day), so the ASK is liberal regardless of
   // how few the caller wants: a wide free pool costs nothing, and the paid meter — VLM JUDGING — is bounded
   // downstream by the shortlist + early-stop, which this deliberately does not touch.
+  // OWNER 2026-08-13: the free library never receives the paid engines' APPENDAGES — "iphone footage" and the
+  // "footage" bias are web/scoped levers; on the free library they narrow a metadata search that thrives on bare
+  // nouns. Strip trailing bias tokens at this choke point so every caller is covered.
+  const _clean = _q.replace(/\s+(?:iphone\s+)?(?:footage|video)\s*$/i, "").trim() || _q;
   const ask = Math.min(Math.max(n, Number(process.env.OV_FREE_N || 40)), 100);
-  const url = `${API}/images/?q=${encodeURIComponent(query)}&page_size=${ask}&mature=false`;
+  const url = `${API}/images/?q=${encodeURIComponent(_clean)}&page_size=${ask}&mature=false`;
   const get = async (tok) => fetch(url, { headers: { "User-Agent": UA, Accept: "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) }, signal: AbortSignal.timeout(20000) });
   try {
     let tok = await token();
