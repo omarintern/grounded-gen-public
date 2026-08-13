@@ -91,6 +91,7 @@ ${cutList}
 RULES — each is checked mechanically after you write:
 1. One line per cut: "Cut N: A wide shot of <the place as photographed>. <subject look> <does the action>. Shot on ${art} ${lens} lens."
 2. The subject appears in EVERY cut; no cut belongs to anyone else. The set's other people stay exactly where the photographs show them.
+2b. CONTACT, not scenery (the plate-contact law): each cut's action stages ON that photograph's own objects and people, by DEFINITE ARTICLE — "the ropes", "the counter", "the judges' desk" — and every noun you write must be FINDABLE in that photograph. No invented props, no scenery adjectives.
 3. No size words (small / tiny / distant / far) — the photographs own size. No camera words (pan / zoom / push / tilt) — each cut's camera is fixed.
 4. The LAST cut lands one payoff, transformed from something already in that photograph; each element pays off once; real-world brand surfaces render blank.
 5. Speech goes under "Dialogue:", every line labeled "Name/Role:", aimed at someone in the frame; one short voice-description line above it is allowed.
