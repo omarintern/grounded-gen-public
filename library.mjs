@@ -46,7 +46,12 @@ async function token(force = false) {
 
 /** Search the free library for `query`; return up to `n` real photo results. Refreshes token once on 401/403. */
 export async function libraryImages(query, n = 40) {
-  const url = `${API}/images/?q=${encodeURIComponent(query)}&page_size=${Math.min(n, 100)}&mature=false`;
+  // OWNER 2026-08-13 (verified tier confirmed live): "we dont need a min scrapes when it comes to the free library"
+  // — rows here are FREE and unmetered (no addApify; 100/min · 10k/day), so the ASK is liberal regardless of
+  // how few the caller wants: a wide free pool costs nothing, and the paid meter — VLM JUDGING — is bounded
+  // downstream by the shortlist + early-stop, which this deliberately does not touch.
+  const ask = Math.min(Math.max(n, Number(process.env.OV_FREE_N || 40)), 100);
+  const url = `${API}/images/?q=${encodeURIComponent(query)}&page_size=${ask}&mature=false`;
   const get = async (tok) => fetch(url, { headers: { "User-Agent": UA, Accept: "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) }, signal: AbortSignal.timeout(20000) });
   try {
     let tok = await token();
@@ -59,7 +64,7 @@ export async function libraryImages(query, n = 40) {
       if (r.url && /^https?:\/\//.test(r.url) && !seen.has(r.url)) {
         seen.add(r.url);
         out.push({ imageUrl: r.url, sourceUrl: r.foreign_landing_url || "", title: r.title || "", provider: r.source || "" });
-        if (out.length >= n) break;
+        if (out.length >= ask) break;   // return the full FREE pool — downstream caps (ladder want, shortlist, judge stop) do the trimming; the spares absorb URL-dedupe and download deaths
       }
     }
     return out;
