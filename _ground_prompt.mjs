@@ -76,7 +76,12 @@ if (charPaths.length) {
     const cs = await providerJson(parts, { maxTokens: 700, temperature: 0.2 });
     const sig = (cs?.signatures || []).filter(Boolean);
     if (sig.length) charSig = sig.join("; ");
-    if (cs?.carried && !/^none$/i.test(cs.carried)) charSig += `${charSig ? " | " : ""}CARRIES: ${cs.carried}`;
+    if (cs?.carried && !/^none$/i.test(cs.carried)) {
+      charSig += `${charSig ? " | " : ""}CARRIES: ${cs.carried}`;
+      // sidecar for the parent's prop-continuity validator (owner 2026-08-13): a carried item must be
+      // visible from its carrier's first beat or arrive by staged retrieval — never materialize mid-story
+      try { writeFileSync(join(HERE, "out/_aspect", `${slug}_carried.txt`), String(cs.carried)); } catch {}
+    }
     if (charSig) console.log(`charref : ${charSig}`);
   } catch {}
 }
