@@ -196,10 +196,22 @@ try {
 // Santa, in costume, in parades, in every shopping centre on earth — yields photos and takes them; a drawn-only
 // character yields none and keeps its illustration. No extra classification call needed; the pool decides.
 let pick;
-if (ok.length) {
-  ok.sort((a, b) => (MODE === "ip" ? (a.photo === b.photo ? 0 : a.photo ? -1 : 1) : 0)
-    || (MODE === "ip" ? (a.caption === b.caption ? 0 : a.caption ? 1 : -1) : 0) || b.legible - a.legible || b.px - a.px);
-  pick = ok[0]; console.log(`  → pick: ${pick.p.split("/").pop()} (${MODE === "ip" ? (pick.photo ? "PHOTO, " : "illustration (no photo in pool), ") : ""}legible=${pick.legible.toFixed(2)}${MODE === "ip" && pick.caption ? ", has caption" : ""})`);
+// ── CAPTION IS ABSOLUTE (owner 2026-08-13: "that requirement should persist and not let it settle on a
+// captioned one, so lets establish that") — caption-free was the tranche-1 SETTLE criterion; it is now a HARD
+// GATE on the WIN. A captioned passer may never be picked even when tranche 2 exhausts at 12: fixing a
+// captioned frame into the gen — and into the cache rotation via the provisional write — is worse than no
+// figure ref at all. The run prose-carries (this file's own non-load-bearing degradation below), and the
+// banked captioned entries stay AUDIT-ONLY (the cache's serve side excludes caption===true, _ref_cache:134).
+// PHOTO stays a PREFERENCE — a drawn-only character legitimately wins with a clean illustration. NOTE no
+// same-query re-scrape is attempted here: web takes no offset, so the identical rows come back re-billed;
+// the useful retry belongs to the CALLER (a different query, or prose-carry + the engine ladder).
+const winnable = ok.filter((e) => !e.caption);   // caption sort key retired — nothing captioned can win
+if (ok.length && !winnable.length)
+  console.log(`  ✗ ${ok.length} passer(s), ALL captioned — caption is ABSOLUTE: no figure ref rather than a captioned one`);
+if (winnable.length) {
+  winnable.sort((a, b) => (MODE === "ip" ? (a.photo === b.photo ? 0 : a.photo ? -1 : 1) : 0)
+    || b.legible - a.legible || b.px - a.px);
+  pick = winnable[0]; console.log(`  → pick: ${pick.p.split("/").pop()} (${MODE === "ip" ? (pick.photo ? "PHOTO, " : "illustration (no photo in pool), ") : ""}legible=${pick.legible.toFixed(2)})`);
 } else {
   // FAIL CLOSED (was: ship the highest-res UNJUDGED frame — an identity + safety bypass; on a provider outage every
   // judge returned null and this shipped a frame vetted for NOTHING). Nothing cleared the identity + kill-shot
