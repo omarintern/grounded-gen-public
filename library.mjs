@@ -46,6 +46,13 @@ async function token(force = false) {
 
 /** Search the free library for `query`; return up to `n` real photo results. Refreshes token once on 401/403. */
 export async function libraryImages(query, n = 40) {
+  // owner 2026-08-13: a clause is not an identification — refuse before the engine (free here, but a
+  // clause matches nothing anywhere; the loud refusal points at the producer). Mirrors scrape.mjs's guard.
+  const _q = String(query || "").trim();
+  if (!_q || /,\s*(?:where|who|which|while|as|returning|and then)\b/i.test(_q) || _q.split(/\s+/).length > 14) {
+    console.log(`  [GUARD] query is a CLAUSE, not an identification — REFUSED before the free library ("${_q.slice(0, 70)}…"); fix the producer.`);
+    return [];
+  }
   // OWNER 2026-08-13 (verified tier confirmed live): "we dont need a min scrapes when it comes to the free library"
   // — rows here are FREE and unmetered (no addApify; 100/min · 10k/day), so the ASK is liberal regardless of
   // how few the caller wants: a wide free pool costs nothing, and the paid meter — VLM JUDGING — is bounded
