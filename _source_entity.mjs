@@ -12,7 +12,8 @@ import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
 import { scrapeImages } from "./scrape.mjs";
 import { judgeKillshot, killshotFails, safetyOnlyFails } from "./_judge_killshot.mjs";   // SHARED minors/content kill-shot — this figure/char-ref sourcer was the ONE ref path that never ran it (the other four do)
 import { fetchImage, isPaidStock } from "./_placeholder_card.mjs";
-import { cacheRead, cacheWrite, characterKey, figureKey, slugify } from "./_ref_cache.mjs";   // shared subject-ref cache: read-before-scrape / write-provisional-then-promote. REF_CACHE=0 disables both halves.
+import { cacheRead, cacheWrite, characterKey, figureKey, slugify } from "./_ref_cache.mjs";
+import { bgCutout } from "./_plate_sane.mjs";   // owner 2026-08-14: char-refs keep their background — flattened cutouts reject   // shared subject-ref cache: read-before-scrape / write-provisional-then-promote. REF_CACHE=0 disables both halves.
 const dlFails = new Map();   // reason -> count, reported after the download loop so failures are never silent
 
 const OUTDIR = join(process.cwd(), "out", "_aspect");
@@ -105,6 +106,12 @@ for (const [i, it] of clean.entries()) {
   let meta; try { meta = await sharp(p).metadata(); } catch { continue; }
   const W = meta.width ?? 0, H = meta.height ?? 0;
   if (Math.min(W, H) < 300) continue;
+  // ── NO CUTOUTS (owner 2026-08-14: "we keep the background on them even though just character is used") —
+  // a flattened promo/transparent asset conditions the gen like a STICKER (x2's "immovable character") and
+  // sits closest to the canonical owned design (©-pull). Mechanical gate, both modes; a natural dark studio
+  // backdrop passes (uniformity-of-fill, not darkness, is the test — Tyson's press black measures 81%, passes).
+  const co = await bgCutout(p);
+  if (co.cutout) { console.log(`  skip ${host(it.imageUrl)} (CUTOUT: ${co.why} — the character must live IN a scene)`); continue; }
   cands.push({ p, row: i, host: host(it.imageUrl), px: W * H, W, H });   // row = scrape position — pick telemetry for the ENTITY_ROWS budget (8-vs-6 settles on data)
 }
 // ⚠ REPORT DOWNLOAD FAILURES. A thin entity pool and a BLOCKED entity pool look identical downstream - both
