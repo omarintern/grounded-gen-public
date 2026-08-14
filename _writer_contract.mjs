@@ -145,7 +145,10 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
 
 /** The writer's instruction under WRITER_FACTS: labeled fact lines + a SHORT rule contract. Everything the old
  *  paragraph said three ways is either a FACT here or a predicate in goldenViolations — never both, never prose. */
-export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "" }) {
+// lawBlocks (substitution merge, owner 2026-08-15): the adopted _beat_law/_invoke instruction blocks arrive as
+// STRINGS composed by the caller — this module stays PURE (no env, no imports of env-reading modules); the
+// blocks sit between the CUTS list and the mechanical RULES. stamps engage the ratified HYBRID output shape.
+export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "", lawBlocks = [], stamps = [] }) {
   const art = /^[aeiou8]/.test(lens) ? "an" : "a";
   // Identity mechanism (ratified law 7, celeb instantiation): full look + "matching the reference" in the
   // subject's FIRST cut; the HANDLE carries every later cut. Without a handle the legacy shape stands.
@@ -157,16 +160,17 @@ VIDEO: "${userPrompt}"
 
 FACTS — data, not suggestions:
 ${lookFact}
-${register ? `REGISTER: ${register} — given, not chosen.\n` : ""}LENS LINE: end every cut with "Shot on ${art} ${lens} lens."
+${register ? `REGISTER: ${register} — given, not chosen.\n` : ""}${stamps.length ? `LENS: every cut's capture sentence carries ", shot on ${art} ${lens} lens." — its one lawful home; no lens or framing words anywhere else.` : `LENS LINE: end every cut with "Shot on ${art} ${lens} lens."`}
 ${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""}\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
 ${cutList}
-
+${lawBlocks.length ? `\n${lawBlocks.filter(Boolean).join("\n")}` : ""}
 RULES — each is checked mechanically after you write:
-1. One line per cut: "Cut N: A wide shot of <the place as photographed>. <subject look> <does the action>. Shot on ${art} ${lens} lens."
+${stamps.length
+    ? `1. One line per cut: "[Ns] CUT N — A wide shot of <the place as photographed>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
+    : `1. One line per cut: "Cut N: A wide shot of <the place as photographed>. <subject look> <does the action>. Shot on ${art} ${lens} lens."`}
 2. The subject acts in EVERY cut; no cut belongs to anyone else. The set's other people stay exactly where the photographs show them.
 2b. CONTACT, not scenery: each cut's action stages ON that photograph's own objects and people, by DEFINITE ARTICLE — and every noun you write must be FINDABLE in that photograph.
-3. The LAST cut lands one payoff, transformed from something already in that photograph; each element pays off once; real-world brand surfaces render blank.
-4. Speech goes under "Dialogue:", every line labeled "Name/Role:", aimed at someone in the frame; one short voice-description line above it is allowed.
-5. Nothing else — no opener line, no scene prose outside the cut lines, at most ${maxLines} lines.
+${lawBlocks.length ? "" : `3. The LAST cut lands one payoff, transformed from something already in that photograph; each element pays off once; real-world brand surfaces render blank.\n`}${lawBlocks.length ? "3" : "4"}. Speech goes under "Dialogue:", every line labeled "Name/Role:", aimed at someone in the frame; one short voice-description line above it is allowed.
+${lawBlocks.length ? "4" : "5"}. Nothing else — no opener line, no scene prose outside the cut lines, at most ${maxLines} lines.
 Return ONLY the lines described.`;
 }
