@@ -20,6 +20,7 @@ const OUTDIR = join(process.cwd(), "out", "_aspect");
 mkdirSync(OUTDIR, { recursive: true });
 
 const [query, slug = "entity", shows = query] = process.argv.slice(2);
+import { spawnSync } from "node:child_process";   // judge-exhaustion backfill: one self-re-exec on the scoped tier
 if (!query) { console.error('usage: node _source_entity.mjs "<query>" <slug> "<what it must show>"'); process.exit(1); }
 // MODE: "real" (default) = a real_entity (viral animal/object) → source a REAL PHOTO (drop illustrations as AI).
 // "ip" = a fictional CHARACTER (e.g. a meme rabbit) → the ref SHOULD be an illustration / cartoon / official
@@ -47,7 +48,9 @@ const isAI = (it) => { const s = JSON.stringify(it).toLowerCase(); return AI.som
 // rows 1-5 ($… vs $…) — so the SCRAPE is one call at 12 ($…, still 47% under the old 24-row $…)
 // and the owner's 5-then-decide control lives at the JUDGE layer below, where extending is free to have skipped.
 async function scrape(q, n = Number(process.env.ENTITY_ROWS || 12)) {
-  return await scrapeImages(q, n, "identity");
+  // ENTITY_TRANSPORT: the judge-exhaustion backfill's engine override (owner 2026-08-15) — the QUERY never
+  // changes (bare-name law), only the index. Default = the identity route (web-led general indexes).
+  return await scrapeImages(q, n, process.env.ENTITY_TRANSPORT || "identity");
 }
 // ⚠ USES THE SHARED HARDENED FETCH. This was a bare fetch() with no UA/Referer, no content-type gate and no
 // placeholder-card rejection - so publisher hosts 403'd it (measured 75% vs 95% success with headers), HTML
@@ -123,7 +126,7 @@ async function judge(fp) {
   try {
     const b64 = readFileSync(fp).toString("base64");
     const prompt = MODE === "ip"
-      ? `Return ONLY JSON {"shows_character":bool,"real_photo":bool,"has_brand_or_watermark":bool,"has_editorial_caption":bool,"editorial_composite":bool,"legible":0..1}. editorial_composite = is this an ARTICLE-HEADER / EDITORIAL GRAPHIC rather than a single depiction — multiple depictions or characters TILED or PASTED together, a collage of panels, glow-outlined cutouts arranged on a DESIGNED background (starburst, pop-art, gradient card, side-by-side comparison)? A single scene containing several characters TOGETHER IN THAT SCENE (one comic panel, one film still) is NOT a composite — judge whether the IMAGE is one depiction or an assembly of several. shows_character = the image clearly depicts THIS character: ${shows}. An illustration / cartoon / drawing is ALLOWED (some characters exist only as art) but it is NOT preferred — see real_photo. real_photo = an actual PHOTOGRAPH of something physically in the world: a person in costume, a figurine, a statue, a parade float, a shop display. FALSE for vector art, clipart, cartoon, digital illustration, drawing, 3D render, or a flat graphic sitting on a plain flat background. has_brand_or_watermark = TRUE if ANY of: (a) COMMERCIAL BRAND or product branding appears on or around the figure — a soft-drink or retailer logo, packaging, advertising copy, a promotional sign (a Coca-Cola Santa standee is the canonical example: the pose is fine, the branding makes it UNUSABLE); (b) a STOCK-LIBRARY preview mark or house style — Vecteezy, Shutterstock, PIXTA, Getty, Alamy, iStock, Dreamstime, imgbin, 123RF; (c) a PHOTOGRAPHER'S signature or credit line burned into the frame. Judge marks ON THE IMAGE, not the subject's own clothing. has_editorial_caption = a meme caption or added headline TEXT is overlaid on it. legible = how CLEARLY and RECOGNIZABLY the character + its signature look reads — sharp, unambiguous, the whole figure visible (1.0) vs tiny / cropped / occluded / ambiguous (0.0).`
+      ? `Return ONLY JSON {"shows_character":bool,"real_photo":bool,"has_brand_or_watermark":bool,"has_editorial_caption":bool,"editorial_composite":bool,"subject_title_art":bool,"third_party_watermark":bool,"legible":0..1}. editorial_composite = is this an ARTICLE-HEADER / EDITORIAL GRAPHIC rather than a single depiction — multiple depictions or characters TILED or PASTED together, a collage of panels, glow-outlined cutouts arranged on a DESIGNED background (starburst, pop-art, gradient card, side-by-side comparison)? A single scene containing several characters TOGETHER IN THAT SCENE (one comic panel, one film still) is NOT a composite — judge whether the IMAGE is one depiction or an assembly of several. shows_character = the image clearly depicts THIS character: ${shows}. An illustration / cartoon / drawing is ALLOWED (some characters exist only as art) but it is NOT preferred — see real_photo. real_photo = an actual PHOTOGRAPH of something physically in the world: a person in costume, a figurine, a statue, a parade float, a shop display. FALSE for vector art, clipart, cartoon, digital illustration, drawing, 3D render, or a flat graphic sitting on a plain flat background. has_brand_or_watermark = TRUE if ANY of: (a) COMMERCIAL BRAND or product branding appears on or around the figure — a soft-drink or retailer logo, packaging, advertising copy, a promotional sign (a Coca-Cola Santa standee is the canonical example: the pose is fine, the branding makes it UNUSABLE); (b) a STOCK-LIBRARY preview mark or house style — Vecteezy, Shutterstock, PIXTA, Getty, Alamy, iStock, Dreamstime, imgbin, 123RF; (c) a PHOTOGRAPHER'S signature or credit line burned into the frame. Judge marks ON THE IMAGE, not the subject's own clothing. has_editorial_caption = a meme caption or added headline TEXT is overlaid on it. legible = how CLEARLY and RECOGNIZABLY the character + its signature look reads — sharp, unambiguous, the whole figure visible (1.0) vs tiny / cropped / occluded / ambiguous (0.0). subject_title_art = the franchise's OWN title treatment is part of the image: the character's/show's/film's NAME or logo lockup rendered as a designed element (cover art, poster, DVD/streaming art, title card, box art) — TRUE even when the artwork is otherwise clean; a ref must show the CHARACTER, never its packaging. third_party_watermark = a website URL, site name, channel handle, or repost mark overlaid by a party OTHER than the franchise owner (fan site, wallpaper site, news site) — any size, any corner; distinct from the stock-library list above.`
       : `Return ONLY JSON {"real_photo":bool,"shows_subject":bool,"has_text_or_watermark_or_logo":bool,"legible":0..1}. real_photo = an actual photograph (NOT a cartoon/illustration/collage/graphic/meme-with-caption). shows_subject = the image clearly shows: ${shows}. has_text_or_watermark_or_logo = ANY overlaid caption, channel name, timestamp, watermark, or logo. legible = how CLEARLY and RECOGNIZABLY the subject reads — sharp, well-lit, the identity + its signature plainly visible (1.0) vs blurry/tiny/occluded/ambiguous (0.0).`;
     return await providerJson([textPart(prompt), imagePart("image/jpeg", b64)], { maxTokens: 200, temperature: 0.1 });
   } catch { return null; }
@@ -153,9 +156,9 @@ async function judgeOne(c) {
   const pass = MODE === "ip"
     ? (j && j.shows_character && !j.has_brand_or_watermark && j.editorial_composite !== true && lg >= LEGIBLE_FLOOR)   // ip: character + reads clearly + NO brand/stock mark + NOT an editorial composite (owner by-eye 2026-08-14: article-header collages dominate bare-name results for famous IP and are paste-in class; caption only demotes)
     : (j && j.real_photo && j.shows_subject && !j.has_text_or_watermark_or_logo && lg >= LEGIBLE_FLOOR);
-  const info = j ? (MODE === "ip" ? `char=${j.shows_character} photo=${j.real_photo} brand=${j.has_brand_or_watermark} composite=${j.editorial_composite === true} caption=${j.has_editorial_caption} legible=${lg.toFixed(2)}` : `real=${j.real_photo} subj=${j.shows_subject} text=${j.has_text_or_watermark_or_logo} legible=${lg.toFixed(2)}`) : "judge-failed";
+  const info = j ? (MODE === "ip" ? `char=${j.shows_character} photo=${j.real_photo} brand=${j.has_brand_or_watermark} composite=${j.editorial_composite === true} title=${j.subject_title_art === true} mark=${j.third_party_watermark === true} caption=${j.has_editorial_caption} legible=${lg.toFixed(2)}` : `real=${j.real_photo} subj=${j.shows_subject} text=${j.has_text_or_watermark_or_logo} legible=${lg.toFixed(2)}`) : "judge-failed";
   console.log(`  ${c.p.split("/").pop()} @${c.host} (${c.W}x${c.H}): ${info} ${pass ? "✓" : "✗"}`);
-  return pass ? { ...c, legible: lg, caption: MODE === "ip" ? !!j.has_editorial_caption : false, photo: MODE === "ip" ? !!j.real_photo : true } : null;
+  return pass ? { ...c, legible: lg, caption: MODE === "ip" ? !!j.has_editorial_caption : false, titleArt: MODE === "ip" ? j.subject_title_art === true : false, thirdMark: MODE === "ip" ? j.third_party_watermark === true : false, photo: MODE === "ip" ? !!j.real_photo : true } : null;
 }
 // ── THE 5-THEN-DECIDE CONTROL (owner 2026-08-13) — one scrape, judged in TRANCHES. Rows 1-5 first; SETTLE
 // when a CLEAN passer exists, else extend to 6-12. Clean = pass plus, in ip mode, PHOTO and caption-free —
@@ -165,7 +168,7 @@ async function judgeOne(c) {
 // it tells us over time how often tranche 2 fires and where winners actually sit.
 const JUDGE_T1 = 5;
 const pool = cands.slice(0, 12);
-const cleanPass = (e) => (MODE === "ip" ? e.photo && !e.caption : true);
+const cleanPass = (e) => (MODE === "ip" ? e.photo && !e.caption && !e.titleArt && !e.thirdMark : true);
 for (const c of pool.slice(0, JUDGE_T1)) { const e = await judgeOne(c); if (e) ok.push(e); }
 if (ok.some(cleanPass)) {
   console.log(`  ── settled in the first ${Math.min(JUDGE_T1, pool.length)} (clean passer) — ${Math.max(0, pool.length - JUDGE_T1)} deeper row(s) unjudged ──`);
@@ -212,14 +215,27 @@ let pick;
 // PHOTO stays a PREFERENCE — a drawn-only character legitimately wins with a clean illustration. NOTE no
 // same-query re-scrape is attempted here: web takes no offset, so the identical rows come back re-billed;
 // the useful retry belongs to the CALLER (a different query, or prose-carry + the engine ladder).
-const winnable = ok.filter((e) => !e.caption);   // caption sort key retired — nothing captioned can win
+const winnable = ok.filter((e) => !e.caption && !e.titleArt && !e.thirdMark);   // caption-ABSOLUTE shape ×3 (owner 2026-08-14): title/cover art and third-party site marks are the e4/gap-3 classes — banked for audit, never a win
 if (ok.length && !winnable.length)
-  console.log(`  ✗ ${ok.length} passer(s), ALL captioned — caption is ABSOLUTE: no figure ref rather than a captioned one`);
+  console.log(`  ✗ ${ok.length} passer(s), ALL flagged (caption/title-art/third-party mark) — the absolute gates hold: no figure ref rather than a flagged one`);
 if (winnable.length) {
   winnable.sort((a, b) => (MODE === "ip" ? (a.photo === b.photo ? 0 : a.photo ? -1 : 1) : 0)
     || b.legible - a.legible || b.px - a.px);
   pick = winnable[0]; console.log(`  → pick: ${pick.p.split("/").pop()} (${MODE === "ip" ? (pick.photo ? "PHOTO, " : "illustration (no photo in pool), ") : ""}legible=${pick.legible.toFixed(2)})`);
 } else {
+  // ⭐ JUDGE-EXHAUSTION BACKFILL (owner 2026-08-15, approved after two zero-yield Garfield rounds): when the
+  // general index's layer is CLASS-rejected wholesale (composites, title-art, captions, brand marks — the
+  // article-header stratum that dominates bare-name results for famous subjects), exhaustion escalates the
+  // ENGINE, never the query — one scoped-reddit round (search scoped to the fan-upload corpus, where
+  // natural-scene character material actually lives), then honest prose-carry. Amends this file's own older
+  // "not even worth backfilling" assumption, which was written for real-person LEGIBILITY picks on general
+  // indexes — the class-reject case is a different failure. ONE self-re-exec with the engine swapped: the
+  // entire judged pipeline (killshot, cutout, composite, caption-absolute, cache write) reuses verbatim.
+  if (!process.env.ENTITY_BACKFILL) {
+    console.log(`  ↯ JUDGE-EXHAUSTION → scoped-reddit backfill (same bare query, engine escalation only — owner 2026-08-15)`);
+    const r = spawnSync("node", [process.argv[1], query, slug, shows], { stdio: "inherit", env: { ...process.env, ENTITY_BACKFILL: "1", ENTITY_TRANSPORT: "scoped", REF_CACHE_NO_READ: "1" } });
+    process.exit(r.status ?? 0);
+  }
   // FAIL CLOSED (was: ship the highest-res UNJUDGED frame — an identity + safety bypass; on a provider outage every
   // judge returned null and this shipped a frame vetted for NOTHING). Nothing cleared the identity + kill-shot
   // gates, so emit NO figure ref: the figure is carried by PROSE and the gen keeps its world plate — the file's
