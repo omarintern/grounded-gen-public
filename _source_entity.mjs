@@ -232,10 +232,24 @@ if (winnable.length) {
   // "not even worth backfilling" assumption, which was written for real-person LEGIBILITY picks on general
   // indexes — the class-reject case is a different failure. ONE self-re-exec with the engine swapped: the
   // entire judged pipeline (killshot, cutout, composite, caption-absolute, cache write) reuses verbatim.
-  if (!process.env.ENTITY_BACKFILL) {
-    console.log(`  ↯ JUDGE-EXHAUSTION → scoped-reddit backfill (same bare query, engine escalation only — owner 2026-08-15)`);
-    const r = spawnSync("node", [process.argv[1], query, slug, shows], { stdio: "inherit", env: { ...process.env, ENTITY_BACKFILL: "1", ENTITY_TRANSPORT: "scoped", REF_CACHE_NO_READ: "1" } });
-    process.exit(r.status ?? 0);
+  // ENGINE LADDER (owner 2026-08-15: "if the free library, scoped-reddit and web failed, then only fallback left is
+  // scoped raw"): web/identity → scoped-reddit (fan layer) → the free library (FREE rows; never previously tried on
+  // this route — CC corpora are inherently thin for protected characters, but zero-cost is zero-downside) →
+  // scoped RAW (SCOPED_SITE="" = unscoped search, the TERMINAL fallback per the owner). The QUERY never changes
+  // at any stage (bare-name law); each stage is one self-re-exec so the entire judged pipeline reuses verbatim.
+  {
+    const STAGES = [
+      { transport: "scoped", env: {}, label: "scoped-reddit (fan layer)" },
+      { transport: "library", env: {}, label: "the free library (CC corpus, free rows)" },
+      { transport: "scoped", env: { SCOPED_SITE: "" }, label: "scoped RAW (unscoped search — terminal fallback)" },
+    ];
+    const stage = Number(process.env.ENTITY_BACKFILL || 0);
+    if (stage < STAGES.length) {
+      const s = STAGES[stage];
+      console.log(`  ↯ JUDGE-EXHAUSTION → engine ladder ${stage + 1}/${STAGES.length}: ${s.label} — same bare query (owner 2026-08-15)`);
+      const r = spawnSync("node", [process.argv[1], query, slug, shows], { stdio: "inherit", env: { ...process.env, ENTITY_BACKFILL: String(stage + 1), ENTITY_TRANSPORT: s.transport, ...s.env, REF_CACHE_NO_READ: "1" } });
+      process.exit(r.status ?? 0);
+    }
   }
   // FAIL CLOSED (was: ship the highest-res UNJUDGED frame — an identity + safety bypass; on a provider outage every
   // judge returned null and this shipped a frame vetted for NOTHING). Nothing cleared the identity + kill-shot
