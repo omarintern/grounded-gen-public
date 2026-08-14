@@ -148,7 +148,10 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
 // lawBlocks (substitution merge, owner 2026-08-15): the adopted _beat_law/_invoke instruction blocks arrive as
 // STRINGS composed by the caller — this module stays PURE (no env, no imports of env-reading modules); the
 // blocks sit between the CUTS list and the mechanical RULES. stamps engage the ratified HYBRID output shape.
-export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "", lawBlocks = [], stamps = [] }) {
+// freeCuts (owner 2026-08-15, single-world multi-cut): the writer chooses the cut count by SCENE DEMAND and
+// REGISTER — no floor, and "no more than that which robs scene's intent and effectiveness" (no padding). Only
+// the celeb/ip/crossover lane enters here (the double-gate); each cut still carries the full hybrid capture.
+export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "", lawBlocks = [], stamps = [], freeCuts = false, durationSec = 0 }) {
   const art = /^[aeiou8]/.test(lens) ? "an" : "a";
   // Identity mechanism (ratified law 7, celeb instantiation): full look + "matching the reference" in the
   // subject's FIRST cut; the HANDLE carries every later cut. Without a handle the legacy shape stands.
@@ -161,11 +164,13 @@ VIDEO: "${userPrompt}"
 FACTS — data, not suggestions:
 ${lookFact}
 ${register ? `REGISTER: ${register} — given, not chosen.\n` : ""}${stamps.length ? `LENS: every cut's capture sentence carries ", shot on ${art} ${lens} lens." — its one lawful home; no lens or framing words anywhere else.` : `LENS LINE: end every cut with "Shot on ${art} ${lens} lens."`}
-${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""}\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
+${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""} It speaks when the scene calls for it — write its lines IN CHARACTER${c.nameable ? "" : ", labeled by its role noun"}; if its canon is wordless, write its response-turn in its own register. The WORDS are yours; the voice and mannerism are the model's.\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
 ${cutList}
 ${lawBlocks.length ? `\n${lawBlocks.filter(Boolean).join("\n")}` : ""}
 RULES — each is checked mechanically after you write:
-${stamps.length
+${freeCuts
+    ? `1. Each cut: "[Ns] CUT N — A wide shot of <the place as photographed>, shot on ${art} ${lens} lens. <the subject> <does the action>." YOU choose the cut count — as many as the scene's intent needs and no more (padding robs the scene; one cut is a full answer when the scene wants one). Stamp cuts ascending from [0s], spread across the ${durationSec || 6}-second clip. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
+    : stamps.length
     ? `1. One line per cut: "[Ns] CUT N — A wide shot of <the place as photographed>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
     : `1. One line per cut: "Cut N: A wide shot of <the place as photographed>. <subject look> <does the action>. Shot on ${art} ${lens} lens."`}
 2. The subject acts in EVERY cut; no cut belongs to anyone else. The set's other people stay exactly where the photographs show them.
