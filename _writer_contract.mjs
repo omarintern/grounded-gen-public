@@ -27,7 +27,13 @@ const QUALITY_WORDS = /\b(cinematic|beautiful|stunning|gorgeous|high[- ]?quality
 // only the role noun computes). SWAP_GRAMMAR matches it by construction.
 export const ipSwapClause = (role) => `takes the place of ${role} at the action spot — same position, distance and size`;   // role arrives WITH its article ("the sparring partner")
 
-export const cutLinesOf = (text) => String(text || "").split("\n").map((l) => l.trim()).filter((l) => /^cut \d+\s*:/i.test(l));
+// HYBRID SHAPE RATIFIED (owner 2026-08-15, verbatim: "i want timeblocks. ([0s] CUT 1 — a WIDE shot…, shot on
+// an 85mm lens) is correct shape where lens and wide prompted for each cut") — the Jul-26 record's own hybrid:
+// stamps + CUT-N + per-cut capture sentence. Both shapes parse; the stamp consistency check below fires only
+// on stamped texts, so legacy callers are byte-identical.
+export const CUT_LINE = /^(?:\[\d+(?:\.\d+)?s\]\s*)?cut \d+\s*[:—-]/i;
+export const cutLinesOf = (text) => String(text || "").split("\n").map((l) => l.trim()).filter((l) => CUT_LINE.test(l));
+const STAMPED_CUT = /^\[\d+(?:\.\d+)?s\]\s*cut \d+/i;
 
 /** The MJ golden properties as violations. [] = the text IS the shape. Each violation carries the rule name and
  *  (where per-cut) the 1-indexed cut, so the caller's re-ask can name EXACTLY what to fix and nothing else. */
@@ -41,12 +47,17 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
   if (wantCuts && cuts.length !== wantCuts) v.push({ rule: "cut-count", cut: null, detail: `${cuts.length}/${wantCuts}` });
   // per-cut: wide framing, lens termination, subject presence, size words, camera words
-  const lensEnd = new RegExp(`Shot on an? ${lens.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} lens\\.$`, "i");
+  const lensEsc = lens.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const lensEnd = new RegExp(`Shot on an? ${lensEsc} lens\\.$`, "i");
+  const lensInline = new RegExp(`shot on an? ${lensEsc} lens`, "i");   // hybrid: the capture sentence carries the lens inline ("…, shot on an 85mm lens. <action>…")
+  const stamped = cuts.some((c) => STAMPED_CUT.test(c));
   const subjToks = subjectLook ? [...new Set(ledgerToks(subjectLook))] : [];
   const handleLc = handle.trim().toLowerCase();
   cuts.forEach((c, i) => {
     if (!/\ba wide shot\b/i.test(c)) v.push({ rule: "wide", cut: i + 1 });
-    if (!lensEnd.test(c)) v.push({ rule: "lens", cut: i + 1 });
+    if (!(stamped ? lensInline : lensEnd).test(c)) v.push({ rule: "lens", cut: i + 1 });
+    // stamp consistency: a stamped text stamps EVERY cut, ascending — one shape per prompt, never a mix
+    if (stamped && !STAMPED_CUT.test(c)) v.push({ rule: "stamp-missing", cut: i + 1 });
     if (SIZE_WORDS.test(c)) v.push({ rule: "size-word", cut: i + 1 });
     if (CAMERA_WORDS.test(c)) v.push({ rule: "camera-word", cut: i + 1 });
     if (QUALITY_WORDS.test(c)) v.push({ rule: "quality-word", cut: i + 1 });
@@ -70,6 +81,11 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
       if (!hit) v.push({ rule: "restaging", cut: i + 1 });
     }
   });
+  if (stamped) {
+    const times = cuts.map((c) => Number((c.match(/^\[(\d+(?:\.\d+)?)s\]/) || [])[1])).filter(Number.isFinite);
+    if (times.length >= 2 && times.some((t2, i2) => i2 && t2 <= times[i2 - 1])) v.push({ rule: "stamps-not-ascending", cut: null });
+    if (times.length && times[0] !== 0) v.push({ rule: "stamps-not-ascending", cut: null, detail: `first stamp [${times[0]}s]` });
+  }
   // matching-the-reference: exactly ONCE when the handle mechanism is engaged (the de-name shape's clause —
   // zero = the ref is unanchored, two+ = re-description).
   if (handleLc) {
