@@ -13,7 +13,8 @@ import { scrapeImages } from "./scrape.mjs";
 import { judgeKillshot, killshotFails, safetyOnlyFails } from "./_judge_killshot.mjs";   // SHARED minors/content kill-shot — this figure/char-ref sourcer was the ONE ref path that never ran it (the other four do)
 import { fetchImage, isPaidStock } from "./_placeholder_card.mjs";
 import { cacheRead, cacheWrite, characterKey, figureKey, slugify } from "./_ref_cache.mjs";
-import { bgCutout } from "./_plate_sane.mjs";   // owner 2026-08-14: char-refs keep their background — flattened cutouts reject   // shared subject-ref cache: read-before-scrape / write-provisional-then-promote. REF_CACHE=0 disables both halves.
+import { bgCutout } from "./_plate_sane.mjs";
+import { judgeQuality } from "./_judge_quality.mjs";   // owner 2026-08-14 degradation-floor test: the CALIBRATED capture-quality instrument, imported not copied (its file carries the measured law: subject-blind capture-side prompt; separate-call because crowding flattens graded scores 0.40→0.10; whole-frame view; units — endorsed iphone register ≈0.65-0.70, too-clean ≤0.45, noise ±0.05)   // owner 2026-08-14: char-refs keep their background — flattened cutouts reject   // shared subject-ref cache: read-before-scrape / write-provisional-then-promote. REF_CACHE=0 disables both halves.
 const dlFails = new Map();   // reason -> count, reported after the download loop so failures are never silent
 
 const OUTDIR = join(process.cwd(), "out", "_aspect");
@@ -26,7 +27,8 @@ if (!query) { console.error('usage: node _source_entity.mjs "<query>" <slug> "<w
 // "ip" = a fictional CHARACTER (e.g. a meme rabbit) → the ref SHOULD be an illustration / cartoon / official
 // render, so KEEP illustrations and judge "shows the character" instead of "real_photo". Set via ENTITY_MODE.
 const MODE = (process.env.ENTITY_MODE || "real").toLowerCase();
-const ENSEMBLE = process.env.ENTITY_ENSEMBLE === "1";   // gap-4 exemption: the CALLER casts an ensemble (from the plan's cast) — never inferred from the image; absent = single-character law
+const ENSEMBLE = process.env.ENTITY_ENSEMBLE === "1";
+const DEGRADE_FLOOR = process.env.ENTITY_DEGRADE_FLOOR !== undefined && process.env.ENTITY_DEGRADE_FLOOR !== "" ? Number(process.env.ENTITY_DEGRADE_FLOOR) : null;   // owner 2026-08-14 (Sonic-on-bodycam anchor): heavy capture degradation may hide the crisp canonical render the ©-gate matches — OPT-IN floor, unset = zero effect   // gap-4 exemption: the CALLER casts an ensemble (from the plan's cast) — never inferred from the image; absent = single-character law
 
 const AI = ["clipart", "vector", "illustration", "cartoon", "drawing", "vecteezy", "ai-generated", "ai generated", "aiart", "3d render", "cgi", "artstation", "deviantart"];
 const host = (u) => (u || "").replace(/^https?:\/\//, "").split("/")[0];
@@ -179,8 +181,17 @@ async function judgeOne(c) {
     ? (j && j.shows_character && !j.has_brand_or_watermark && j.editorial_composite !== true && lg >= LEGIBLE_FLOOR)   // ip: character + reads clearly + NO brand/stock mark + NOT an editorial composite (owner by-eye 2026-08-14: article-header collages dominate bare-name results for famous IP and are paste-in class; caption only demotes)
     : (j && j.real_photo && j.shows_subject && !j.has_text_or_watermark_or_logo && lg >= LEGIBLE_FLOOR);
   const info = j ? (MODE === "ip" ? `char=${j.shows_character} photo=${j.real_photo} brand=${j.has_brand_or_watermark} composite=${j.editorial_composite === true} title=${j.subject_title_art === true} mark=${j.third_party_watermark === true} co=${j.other_characters === true} caption=${j.has_editorial_caption} legible=${lg.toFixed(2)}` : `real=${j.real_photo} subj=${j.shows_subject} text=${j.has_text_or_watermark_or_logo} legible=${lg.toFixed(2)}`) : "judge-failed";
-  console.log(`  ${c.p.split("/").pop()} @${c.host} (${c.W}x${c.H}): ${info} ${pass ? "✓" : "✗"}`);
-  return pass ? { ...c, legible: lg, caption: MODE === "ip" ? !!j.has_editorial_caption : false, titleArt: MODE === "ip" ? j.subject_title_art === true : false, thirdMark: MODE === "ip" ? j.third_party_watermark === true : false, coChars: MODE === "ip" ? j.other_characters === true : false, photo: MODE === "ip" ? !!j.real_photo : true } : null;
+  // DEGRADATION FLOOR (owner 2026-08-14, opt-in): measured ONLY on passers — the floor is an ADDITIONAL
+  // requirement after every screen, never a substitute (a degraded composite is still a composite). null =
+  // could-not-measure and FAILS the floor (closed within the opt-in feature; unset floor = untouched path).
+  let degrade = null;
+  if (pass && DEGRADE_FLOOR != null) {
+    let q = null; try { q = await judgeQuality(c.p); } catch { q = null; }
+    degrade = Number.isFinite(Number(q?.degradation)) ? Number(q.degradation) : null;
+  }
+  const degInfo = DEGRADE_FLOOR != null && pass ? ` degrade=${degrade == null ? "n/a" : degrade.toFixed(2)}${degrade != null && degrade >= DEGRADE_FLOOR ? "≥" : "<"}${DEGRADE_FLOOR}` : "";
+  console.log(`  ${c.p.split("/").pop()} @${c.host} (${c.W}x${c.H}): ${info}${degInfo} ${pass ? "✓" : "✗"}`);
+  return pass ? { ...c, legible: lg, degrade, caption: MODE === "ip" ? !!j.has_editorial_caption : false, titleArt: MODE === "ip" ? j.subject_title_art === true : false, thirdMark: MODE === "ip" ? j.third_party_watermark === true : false, coChars: MODE === "ip" ? j.other_characters === true : false, photo: MODE === "ip" ? !!j.real_photo : true } : null;
 }
 // ── THE 5-THEN-DECIDE CONTROL (owner 2026-08-13) — one scrape, judged in TRANCHES. Rows 1-5 first; SETTLE
 // when a CLEAN passer exists, else extend to 6-12. Clean = pass plus, in ip mode, PHOTO and caption-free —
@@ -190,7 +201,7 @@ async function judgeOne(c) {
 // it tells us over time how often tranche 2 fires and where winners actually sit.
 const JUDGE_T1 = 5;
 const pool = cands.slice(0, 12);
-const cleanPass = (e) => (MODE === "ip" ? e.photo && !e.caption && !e.titleArt && !e.thirdMark && (ENSEMBLE || !e.coChars) : true);
+const cleanPass = (e) => (DEGRADE_FLOOR == null || (e.degrade != null && e.degrade >= DEGRADE_FLOOR)) && (MODE === "ip" ? e.photo && !e.caption && !e.titleArt && !e.thirdMark && (ENSEMBLE || !e.coChars) : true);
 for (const c of pool.slice(0, JUDGE_T1)) { const e = await judgeOne(c); if (e) ok.push(e); }
 if (ok.some(cleanPass)) {
   console.log(`  ── settled in the first ${Math.min(JUDGE_T1, pool.length)} (clean passer) — ${Math.max(0, pool.length - JUDGE_T1)} deeper row(s) unjudged ──`);
@@ -237,9 +248,12 @@ let pick;
 // PHOTO stays a PREFERENCE — a drawn-only character legitimately wins with a clean illustration. NOTE no
 // same-query re-scrape is attempted here: web takes no offset, so the identical rows come back re-billed;
 // the useful retry belongs to the CALLER (a different query, or prose-carry + the engine ladder).
-const winnable = ok.filter((e) => !e.caption && !e.titleArt && !e.thirdMark && (ENSEMBLE || !e.coChars));   // caption-ABSOLUTE shape ×4 (owner 2026-08-14): title art, third-party marks, and CO-FIGURES (gap-4: "single character or ensemble if ensemble is used") — banked for audit, never a win; ENSEMBLE (caller-cast) waives only the co-figure law
+const winnable = ok.filter((e) => !e.caption && !e.titleArt && !e.thirdMark && (ENSEMBLE || !e.coChars) && (DEGRADE_FLOOR == null || (e.degrade != null && e.degrade >= DEGRADE_FLOOR)));   // caption-ABSOLUTE shape ×4 (owner 2026-08-14): title art, third-party marks, and CO-FIGURES (gap-4: "single character or ensemble if ensemble is used") — banked for audit, never a win; ENSEMBLE (caller-cast) waives only the co-figure law
 if (ok.length && !winnable.length)
-  console.log(`  ✗ ${ok.length} passer(s), ALL flagged (caption/title-art/third-party mark/co-figures) — the absolute gates hold: no figure ref rather than a flagged one`);
+  {
+  const floorDead = DEGRADE_FLOOR != null ? ok.filter((e) => !(e.degrade != null && e.degrade >= DEGRADE_FLOOR)).length : 0;
+  console.log(`  ✗ ${ok.length} passer(s), none winnable${floorDead ? ` (${floorDead} below degradation floor ${DEGRADE_FLOOR})` : " — ALL flagged (caption/title-art/third-party mark/co-figures)"}: the absolute gates hold — no figure ref rather than a flagged one`);
+}
 if (winnable.length) {
   winnable.sort((a, b) => (MODE === "ip" ? (a.photo === b.photo ? 0 : a.photo ? -1 : 1) : 0)
     || b.legible - a.legible || b.px - a.px);
