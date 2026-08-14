@@ -408,6 +408,11 @@ export const payoffLaw = () => (
     `let the characters react to it. Something happening off-frame may still be HEARD rather than chased.\n\n`
 );
 
+// ⚠ ANIMAL EXCLUSION IS CONDITIONAL (owner 2026-08-14, verbatim: «the animal exclusion applies only when
+// the user didn't ask or imply»). User wrote speech → their words (unchanged law). User asks/IMPLIES a
+// talking creature without supplying words → the writer WRITES the speech. No ask, no implication → mute.
+// "Imply" is intent-sensitivity, not explicit-ask-only. Single-world non-IP cut law untouched by the
+// parallel multi-cut ruling (celeb/ip/crossover only — orchestrator relay, same date).
 export const seesawLaw = (BEAT_STYLE) => (
 `⚠⚠ THE SEESAW - HOW MUCH OF THE STORY IS YOURS TO WRITE. Ported from src/composer/seesaw.ts, whose law is ` +
     `"broad prompts get populated; heavily detailed prompts get nothing they didn't invite". Judge TWO things ` +
@@ -417,7 +422,8 @@ export const seesawLaw = (BEAT_STYLE) => (
     `gave only a situation, invent the turn - and give it a real arc, not a token gesture. `+
     `(2) DIALOGUE - did anyone speak in their prompt? If they wrote speech, use THEIR words. If nobody speaks ` +
     `but the scene contains a plausible SPEAKER and a moment that invites speech, WRITE THE SPEECH. If there is ` +
-    `no one who could speak (only animals, an empty room), write none. `+
+    `no one who could speak (only animals, an empty room), write none — UNLESS the request asks for or IMPLIES `+
+    `the creature speaking: a subject the user gave a voice is a plausible speaker, so WRITE THE SPEECH. `+
     `⚠ THE BUDGET IS TIME, NOT A COUNT. Do not ration yourself to one line or one turn - fill the beats you ` +
     `have at a speakable pace (roughly two words per second of clip, so a 7s shot carries a short exchange, not ` +
     `a monologue). Speech is DIEGETIC and in-scene; never a voiceover, never narration, never music. `+
