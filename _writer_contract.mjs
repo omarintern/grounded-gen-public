@@ -14,23 +14,14 @@ const CAMERA_WORDS = /\b(pans?|panning|zooms?|zooming|push(?:es)?[- ]?in|tilts?|
 const ANCHOR = /\boriginal (broadcast|stream|footage|recording|clip)\b/i;   // retired 2026-08-12 — its absence is now a golden property
 const QUALITY_WORDS = /\b(cinematic|beautiful|stunning|gorgeous|high[- ]?quality|4k|8k|ultra[- ]?(?:hd|realistic)|masterpiece|professional(?:ly)?[- ]?(?:shot|lit|graded)?)\b/i;   // the polished-stock manifold reads AI (candid-not-quality)
 
-// ── THE WRITING LAW (methodology adoption, owner-ratified 2026-08-15) — the non-IP branch's anti-diffusion
-// core, v2 text VERBATIM (their draft, my merge; capture-shape content deliberately absent — the celeb
-// non-negotiables are carried mechanically by FACTS + RULES, never restated). LEAK-SAFE BY CONSTRUCTION:
-// the text contains zero banned tokens (no apparatus nouns, no pace/register/quality words), so a sentence
-// leaked verbatim into output prose violates nothing — the battery TESTS this property (regexes vs law = no
-// match); preserve it through any future edit. Rule map: 1 frame-zero · 2 restaging · 3 elements/details ·
-// 4 simulation-not-description · 5 register continuity + candid-not-quality · 6 apparatus-once/no-static ·
-// 7 identity-once-then-HANDLE · 8 sound channel.
-export const WRITING_LAW = `WRITING LAW
-1. The photograph is the first frame. Write only what it does not show: motion, sound, and what happens next.
-2. Every action must fit the photograph as it stands; an action that needs what it does not hold is the wrong action.
-3. Name what is present freely; say how it looks only when the action cannot be read without it.
-4. Write what happens, never what is.
-5. The register is given; keep it. No words about the footage's quality or style — the photograph has decided both.
-6. Beyond its capture sentence, nothing about how the scene is seen. A fixed view is silence; the view moves only while a subject travels.
-7. Describe a figure's look once, at first action; afterwards their role name carries them.
-8. The scene's own sounds carry its life; no music. An empty moment gains a sound, not a detail.`;
+// ── METHODOLOGY ADOPTION COURSE-CORRECTION (owner 2026-08-15, verbatim: "nonip already has infra so we
+// should adopt it how it is instead of fixing what isnt broken") — the freshly-written 8-law distillation
+// NEVER LANDED: a new, never-run instrument. The adoption base is _ground_prompt.mjs's EXISTING gen-validated
+// instruction text VERBATIM, with ONLY the celeb-mechanical deltas swapped in (time-blocks→Cut-N/per-cut
+// capture; celeb clause stack incl. the coFigures swap encode below; register bound to the route-derived
+// FACT). Same law as the image-model insert wording: validated instruction text is settled tech, never
+// rewritten. The mechanical validators added alongside (handle/restaging/quality/slots/cofig/continuity)
+// SURVIVE as dormant opt-in enforcement — model-invisible, falsy-safe, engaged by the wiring only.
 
 // IP replacement clause (owner-locked via x23's validated scrub wording, 2594ba2 lineage — do NOT reword;
 // only the role noun computes). SWAP_GRAMMAR matches it by construction.
@@ -153,8 +144,6 @@ ${lookFact}
 ${register ? `REGISTER: ${register} — given, not chosen.\n` : ""}LENS LINE: end every cut with "Shot on ${art} ${lens} lens."
 ${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""}\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
 ${cutList}
-
-${WRITING_LAW}
 
 RULES — each is checked mechanically after you write:
 1. One line per cut: "Cut N: A wide shot of <the place as photographed>. <subject look> <does the action>. Shot on ${art} ${lens} lens."
