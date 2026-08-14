@@ -123,19 +123,21 @@ for (const [i, it] of clean.entries()) {
 // ⚠ REPORT DOWNLOAD FAILURES. A thin entity pool and a BLOCKED entity pool look identical downstream - both
 // arrive as "few candidates" - and the second is a fetch problem wearing a content problem's clothes.
 if (dlFails.size) console.log(`  ⚠ ${[...dlFails.values()].reduce((a, b) => a + b, 0)} download(s) rejected: ${[...dlFails].map(([k, v]) => `${k}×${v}`).join(" ")}`);
-// ENGINE LADDER (owner 2026-08-15: "if the free library, scoped-reddit and web failed, then only fallback left is
-// scoped raw"): web/identity → scoped-reddit (fan layer) → the free library (FREE rows; CC corpora are thin for
-// protected characters, but zero-cost is zero-downside) → scoped RAW (SCOPED_SITE="" = unscoped search, the
-// TERMINAL fallback per the owner). The QUERY never changes at any stage (bare-name law); each stage is one
-// self-re-exec so the entire judged pipeline reuses verbatim. ⚠ CALLED FROM EVERY CONTENT-EXHAUSTION EXIT —
-// the empty-pool exit AND the judged-all-rejected exit (rebank4 bug: the ladder hooked only the judge branch,
-// so a stage whose pool died at download — scoped-reddit's 2 too-small thumbnails — killed the whole chain with
-// exit 2 instead of walking to the free library). Infra errors still throw past this: an outage is not exhaustion.
+// ENGINE LADDER: web/identity → scoped-reddit (fan layer) → the free library (FREE rows; CC corpora are thin for
+// protected characters, but zero-cost is zero-downside — the TERMINAL stage). The QUERY never changes at any
+// stage (bare-name law); each stage is one self-re-exec so the entire judged pipeline reuses verbatim.
+// ⛔ SCOPED RAW REMOVED FROM THE LADDER (owner 2026-08-15: "we should scrap scoped raw as an option in scrape
+// immediately" — superseding the same-day terminal-fallback ruling). The measured record that killed it:
+// Garfield raw round = top crust hotlink-blocks (8/12 placeholder cards, 1 junk survivor); Sonic raw rounds =
+// wallpaper/pinterest slop, nothing the cleaner tiers hadn't already served. Raw search's head results are
+// either unfetchable or junk-class for character work — do not re-add without a new owner ruling.
+// ⚠ CALLED FROM EVERY CONTENT-EXHAUSTION EXIT — the empty-pool exit AND the judged-all-rejected exit
+// (rebank4 bug: the ladder hooked only the judge branch, so a stage whose pool died at download killed the
+// whole chain with exit 2 instead of walking on). Infra errors still throw past this: an outage is not exhaustion.
 function escalateEngine(reason) {
   const STAGES = [
     { transport: "scoped", env: {}, label: "scoped-reddit (fan layer)" },
-    { transport: "library", env: {}, label: "the free library (CC corpus, free rows)" },
-    { transport: "scoped", env: { SCOPED_SITE: "" }, label: "scoped RAW (unscoped search — terminal fallback)" },
+    { transport: "library", env: {}, label: "the free library (CC corpus, free rows — terminal stage)" },
   ];
   const stage = Number(process.env.ENTITY_BACKFILL || 0);
   if (stage >= STAGES.length) return false;   // terminal stage — the caller proceeds to its own honest exit
