@@ -110,10 +110,12 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   // ⭐⭐ THE HANDLE IS SELF-DECLARED (owner 2026-08-15: multi-cut must «not produce doubles and trip»). The swap
   // FACT is generic — "the ONE person at the action spot" — but the WRITER names the role in its own first cut
   // ("takes the place of the boxer"). That noun IS the handle, so no scene-roles census is needed to unlock it.
-  // WHY IT MATTERS NOW: handle-less identity law demands ≥2 look tokens in EVERY cut, so a multi-cut script
-  // repeats the full look phrase per cut — which this file's own comment calls a repaint instruction, and which
-  // is what x30 shipped (three cuts, three "stocky bald man with a distinctive facial tattoo") before tripping
-  // all four rungs. Deriving the handle turns that requirement off for cuts 2+ and makes multi-cut survivable.
+  // ⚠ SUPERSEDED IN PART, KEPT DELIBERATELY (coherence audit 2026-08-16): this was written when the identity law
+  // demanded look tokens in EVERY cut, and deriving a handle was how multi-cut survived. The law has since been
+  // RELAXED TO THE RECORD — later cuts may omit the subject entirely — so the derivation no longer turns a
+  // requirement off. What it still does is give a later cut a SECOND lawful way to carry him ("the boxer"
+  // satisfies presence exactly as a trait subset does), and it gates the once-only "matching the reference"
+  // check. It composes with the record's carrier rather than competing with it; neither is load-bearing alone.
   const _declared = cuts.length > 1 && !handle.trim()
     ? (cuts[0].match(/takes? the place of the ([a-z][a-z ]{2,24}?)(?=\s*[—,.]|\s+at\b|\s+in\b|\s+on\b|$)/i) || [])[1]
     : null;
@@ -342,7 +344,7 @@ RULES — each is checked mechanically after you write:
 ${freeCuts
     ? `1. Each cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." YOU choose the cut count — as many as the scene's intent needs and no more (padding robs the scene; one cut is a full answer when the scene wants one). Stamp cuts ascending from [0s], spread across the ${durationSec || 6}-second clip. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
     : stamps.length
-    ? `1. One line per cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
+    ? `1. ${cutCount === 1 ? `One line per BEAT, every one of them inside the SAME cut: "[Ns] CUT 1 — A wide shot of <the place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per beat: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is that beat's moment. ONE plate means ONE vantage, so every line is CUT 1; what changes between them is what HAPPENS, never where the camera is.` : `One line per cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time.`} The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
     : `1. One line per cut: "Cut N: A wide shot of <that cut given place>. <subject look> <does the action>. Shot on ${art} ${lens} lens."`}
 2. The subject acts in EVERY cut; no cut belongs to anyone else. The set's other people stay exactly where the photographs show them.
 2b. CONTACT, not scenery: each cut's action stages ON that photograph's own objects and people, by DEFINITE ARTICLE — and every noun you write must be FINDABLE in that photograph.
