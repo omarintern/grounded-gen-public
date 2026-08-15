@@ -5,6 +5,7 @@
 // Unlike _source_scene.mjs this optimizes IDENTITY LEGIBILITY, not candor/stage: pick the CLEAREST real
 // photo that shows the entity + its signature. No iphone bias, no usable_stage gate, no crop, no blur.
 //   node _source_entity.mjs "<entity search query>" <slug> "<what the photo must show>"
+import "./_meter_boot.mjs";   // ledger rides EVERY orchestration (owner, x26e) — self-boots if _run's bootstrap was bypassed
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
