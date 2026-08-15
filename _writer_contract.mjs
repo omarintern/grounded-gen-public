@@ -94,7 +94,7 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // texts run STRUCTURALLY longer — the moment sentence (~90) + two swap clauses (~130) + a legit free-cut
 // (~180) put the measured legit ceiling ≈1650 over the mcgregor max; 1750 = that + margin, still tight
 // enough that paragraph bloat flags. CONTRACT CONSTANT — flagged to the owner's eye at landing.
-export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, handle = "", plateNouns = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
+export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
   const t = String(text || "");
   const v = [];
   const cuts = cutLinesOf(t);
@@ -136,6 +136,29 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     if (Array.isArray(plateNouns) && Array.isArray(plateNouns[i]) && plateNouns[i].length) {
       const hit = plateNouns[i].some((n) => n && c.toLowerCase().includes(String(n).toLowerCase()));
       if (!hit) v.push({ rule: "restaging", cut: i + 1 });
+    }
+    // ⭐⭐ NO ADJECTIVES ON PLATE NOUNS (owner 2026-08-15: «adjectives on plate nouns are banned, character
+    // description stays… what it does to plate nouns is wrong. thats the difference»). WHY the two halves
+    // differ: the CHARACTER is conjured, so describing it is how it gets rendered at all; the PLATE already
+    // EXISTS, so describing it hands the model a second authority for something the photograph already owns —
+    // the drift the whole moat is built to prevent (x27d: "elasticized ropes", "padded turnbuckle").
+    // ⚠ CLOSED ALLOWLIST, NOT AN ADJECTIVE BANLIST — adjectives are open-class and a banlist would need a new
+    // entry every run (the payoff-import lesson, 0-for-3). The authority for what a plate noun may carry is
+    // THE PLATE READ ITSELF: a modifier the photograph's own description supplied ("the red trunks", where the
+    // read said red) is the plate's and passes; one the writer invented is dressing and flags. The other legal
+    // predecessors are a small closed set of articles/prepositions/possessives, plus another plate word (so a
+    // compound the read supplied — "the canvas floor" — stays whole).
+    if (Array.isArray(plateWords) && Array.isArray(plateWords[i]) && plateWords[i].length) {
+      const owned = new Set(plateWords[i].map((w) => String(w).toLowerCase()));
+      const LEGAL = new Set(["the","a","an","his","her","its","their","our","this","that","these","those","and","or","of","on","at","in","into","onto","near","by","against","through","over","under","beside","behind","along","across","from","toward","towards","off","up","down","with","two","three","four"]);
+      const toks = c.toLowerCase().match(/[a-z][a-z-]*/g) || [];
+      for (let k = 1; k < toks.length; k++) {
+        if (!owned.has(toks[k])) continue;                     // only plate nouns are governed
+        const prev = toks[k - 1];
+        if (LEGAL.has(prev) || owned.has(prev)) continue;      // article/preposition, or plate-supplied word
+        v.push({ rule: "plate-dressing", cut: i + 1, detail: `${prev} ${toks[k]}` });
+        break;                                                 // one report per cut — the re-ask fixes the class
+      }
     }
   });
   if (stamped) {
