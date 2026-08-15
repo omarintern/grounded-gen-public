@@ -156,7 +156,15 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // material and killed the writer). Closed-class spatial/relational words are ENUMERABLE and never an
     // imported OBJECT; excluding them leaves open-class noun-weight tokens as the import signal.
     const ART_STOP = new Set(["behind", "through", "across", "toward", "towards", "beneath", "around", "against", "between", "inside", "outside", "beyond", "underneath", "before", "beside", "within", "without", "during", "upward", "upwards", "downward", "downwards", "forward", "forwards", "backward", "backwards", "together", "overhead", "alongside"]);
-    const fresh = [...new Set(ledgerToks(lastAction))].filter((tok) => !matSet.has(tok) && !/^\d+s?$/.test(tok) && tok.length >= 6 && !ART_STOP.has(tok));
+    // SECOND ARTICULATION CLASS (x26g: "[shoulder straining]" flagged): BODY-PART tokens are articulation on
+    // ESTABLISHED bodies, never imported objects — closed class, always excluded. A GERUND is excluded ONLY
+    // when it rides a body part (pair-context: "shoulder straining", "fist clenching") — a gerund on a
+    // genuinely-new OBJECT still counts ("juggling chainsaws" flags), which the fixture pins both ways.
+    const BODY_PARTS = new Set(["shoulder", "shoulders", "elbow", "elbows", "forearm", "forearms", "wrist", "wrists", "knuckle", "knuckles", "knee", "knees", "fist", "fists", "torso", "haunches", "shoulderblade", "shoulderblades", "hamstring", "hamstrings", "bicep", "biceps", "tricep", "triceps"]);
+    const seq = ledgerToks(lastAction);
+    const gerundOnBody = new Set();
+    for (let gi = 0; gi < seq.length; gi++) if (/ing$/.test(seq[gi]) && (BODY_PARTS.has(seq[gi - 1] || "") || BODY_PARTS.has(seq[gi + 1] || ""))) gerundOnBody.add(seq[gi]);
+    const fresh = [...new Set(seq)].filter((tok) => !matSet.has(tok) && !/^\d+s?$/.test(tok) && tok.length >= 6 && !ART_STOP.has(tok) && !BODY_PARTS.has(tok) && !gerundOnBody.has(tok));
     if (fresh.length >= 2) v.push({ rule: "payoff-import", cut: cuts.length, detail: fresh.slice(0, 4).join(" ") });
     // context-spend: when the venue's own nouns rode in as facts, at least one must surface in the text —
     // spoken or handled; harvested material the writer never touches is the contract failing silently.
