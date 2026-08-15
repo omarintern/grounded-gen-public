@@ -100,7 +100,7 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // texts run STRUCTURALLY longer — the moment sentence (~90) + two swap clauses (~130) + a legit free-cut
 // (~180) put the measured legit ceiling ≈1650 over the mcgregor max; 1750 = that + margin, still tight
 // enough that paragraph bloat flags. CONTRACT CONSTANT — flagged to the owner's eye at landing.
-export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
+export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
   const t = String(text || "");
   const v = [];
   const cuts = cutLinesOf(t);
@@ -300,7 +300,7 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   // party speaks and how a line ends belong to the PROMPT, not a validator. They are DEMOTED here: never
   // violations, never re-asks. dialogue-underfilled stays LAW — dead air after the voice dies is a defect in
   // every prompt.
-  if (durationSec) for (const d of dialogueShape(t, durationSec, { partiesNamed })) {
+  if (durationSec) for (const d of dialogueShape(t, durationSec, { partiesNamed, dialogueWords })) {
     if (d.rule === "dialogue-underfilled") v.push({ rule: d.rule, cut: null, detail: d.figure });
   }
   if (lines.length > maxLines) v.push({ rule: "too-long", cut: null, detail: `${lines.length}/${maxLines} lines` });
