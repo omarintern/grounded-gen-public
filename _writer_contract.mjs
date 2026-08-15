@@ -38,6 +38,33 @@ export const COMEDY_LAW = `COMEDY LAW
 6. When the request carries its own joke, deliver theirs — these laws serve it, never replace it.`;
 const COMMENT_ADVERBS = /\b(hilarious(?:ly)?|comically|absurdly|jokingly|ridiculous(?:ly)?|wacky|zany|goofily|amusingly|farcical(?:ly)?)\b/i;   // straight-face law's validator-side face — the writer COMMENTING on the joke breaks rule 5; the model never sees this list
 
+// ── PLACE-NOUN EXTRACTION (owner-ratified slot fix, x27: «the nonip agent is exactly right») — the capture
+// sentence place is a FACT read off the plate census, never a composition. THE + the census noun AT PLATE
+// GRAIN; a CONTAINER (arena/stadium-class) is never the place — containers instruct the model to build a
+// world bigger than the photograph shows (x26h2 bug), and when the census clause itself leads with one, the
+// extraction takes the CONTAINED place instead. The definite article IS the video-lane operator for "this
+// particular place you can see" — the as-photographed phrasing is image-model/apparatus vocabulary, DELETED
+// from the template (x27 proved it leaks verbatim into the emitted prompt).
+const PLACE_MARKER = /\s+(?:surrounded by|encircled by|ringed by|framed by|set in|packed with|filled with|in front of|inside|within|beneath|under|amid|amidst|overlooking|beside|against|before|at|in|with)\s+/;
+const PLACE_CONTAINER = /\b(?:arena|stadium|hall|venue|coliseum|colosseum|amphitheatre?|complex|center|centre|facility|building)s?\s*$/;
+export function extractPlaceNoun(clause) {
+  let c = String(clause || "").toLowerCase().replace(/[.,;].*$/, " ").trim();
+  if (!c) return "";
+  // the census may LEAD with the camera's own position ("beside an outdoor boxing ring" — caught by the
+  // mandatory live proof on the ring2 plate): strip leading prepositions before anything else reads the head.
+  for (let guard = 0; guard < 3; guard++) c = c
+    .replace(/^(?:in front of|next to|beside|inside|within|beneath|underneath|under|amidst|amid|overlooking|against|before|behind|around|outside|atop|above|below|near|by|at|in)\s+/, "")
+    .replace(/^(?:the\s+)?(?:edge|corner|side|front|back|center|centre|middle|interior|end|top|bottom|foot|base|view) of\s+(?:an|a|the)?\s*/, "");   // part-of prefixes are the camera's position, not the place ("edge of an outdoor boxing ring" — third live shape)
+  const seg = (t) => String(t).split(PLACE_MARKER)[0].replace(/^\s*(?:a|an|the)\s+/, "").trim();
+  let head = seg(c);
+  if (PLACE_CONTAINER.test(head)) {
+    const after = c.slice(c.indexOf(head) + head.length);
+    const inner = after.match(/\b(?:with|holding|containing|featuring|centered on|centred on|around)\s+(?:a|an|the)?\s*([^,.;]+)/);
+    if (inner) { const innerSeg = seg(inner[1]); if (innerSeg && !PLACE_CONTAINER.test(innerSeg)) head = innerSeg; }
+  }
+  return head ? `the ${head}` : "";
+}
+
 // IP replacement clause (owner-locked via x23's validated scrub wording, 2594ba2 lineage — do NOT reword;
 // only the role noun computes). SWAP_GRAMMAR matches it by construction.
 export const ipSwapClause = (role) => `takes the place of ${role} at the action spot — same position, distance and size`;   // role arrives WITH its article ("the sparring partner")
@@ -165,7 +192,13 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     const gerundOnBody = new Set();
     for (let gi = 0; gi < seq.length; gi++) if (/ing$/.test(seq[gi]) && (BODY_PARTS.has(seq[gi - 1] || "") || BODY_PARTS.has(seq[gi + 1] || ""))) gerundOnBody.add(seq[gi]);
     const fresh = [...new Set(seq)].filter((tok) => !matSet.has(tok) && !/^\d+s?$/.test(tok) && tok.length >= 6 && !ART_STOP.has(tok) && !BODY_PARTS.has(tok) && !gerundOnBody.has(tok));
-    if (fresh.length >= 2) v.push({ rule: "payoff-import", cut: cuts.length, detail: fresh.slice(0, 4).join(" ") });
+    // ⚠ ADVISORY ONLY (owner 2026-08-16: «lets go advisory on payoff-import») — 0-for-3 in production: every
+    // real firing was a false positive (spatial → body-part → bare verb+gerund), three writes killed incl.
+    // the series' best. The rule-4 LAW still teaches the writer; this heuristic REPORTS loudly and never
+    // re-asks, never kills. Post-freeze option (owner's later call): ONE cheap semantic call — "does the last
+    // cut introduce a physical THING absent earlier?" (~$…) — could earn enforcement back; a regex is
+    // structurally unable to tell an imported thing from an articulating verb.
+    if (fresh.length >= 2) console.warn(`  ⚠ payoff-import ADVISORY (cut ${cuts.length}): ${fresh.slice(0, 4).join(" ")} — reported, not enforced`);
     // context-spend: when the venue's own nouns rode in as facts, at least one must surface in the text —
     // spoken or handled; harvested material the writer never touches is the contract failing silently.
     const vv = (context.venueVocabulary || []).map((n) => ledgerToks(n)).filter((a) => a.length);
@@ -209,7 +242,7 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
 // context (owner 2026-08-15, materials-conditioned recall): {subjectContext:[], venueVocabulary:[], collision:[]}
 // — per-gen harvested FACTS. De-named visual clauses with physics + the venue's own speakable/handleable
 // nouns. Data the laws can point at; never law text itself.
-export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "", lawBlocks = [], stamps = [], freeCuts = false, durationSec = 0, context = null }) {
+export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "", lawBlocks = [], stamps = [], freeCuts = false, durationSec = 0, context = null, places = [] }) {
   const art = /^[aeiou8]/.test(lens) ? "an" : "a";
   // Identity mechanism (ratified law 7, celeb instantiation): full look + "matching the reference" in the
   // subject's FIRST cut; the HANDLE carries every later cut. Without a handle the legacy shape stands.
@@ -222,18 +255,18 @@ VIDEO: "${userPrompt}"
 FACTS — data, not suggestions:
 ${lookFact}
 ${register ? `REGISTER: ${register} — given, not chosen.\n` : ""}${stamps.length ? `LENS: every cut's capture sentence carries ", shot on ${art} ${lens} lens." — its one lawful home; no lens or framing words anywhere else.` : `LENS LINE: end every cut with "Shot on ${art} ${lens} lens."`}
-${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""} It speaks when the scene calls for it — write its lines IN CHARACTER${c.nameable ? "" : ", labeled by its role noun"}; if its canon is wordless, write its response-turn in its own register. The WORDS are yours; the voice and mannerism are the model's.\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${context?.subjectContext?.length ? `SUBJECT CONTEXT — the subject's signatures as PHYSICS, deployable as the manner of ordinary actions: ${context.subjectContext.join("; ")}.\n` : ""}${context?.venueVocabulary?.length ? `VENUE VOCABULARY — this place's own nouns, for DIALOGUE and ACTION only (spoken or handled, never written on anything): ${context.venueVocabulary.join(", ")}.\n` : ""}${context?.collision?.length ? `COLLISION MATERIAL: ${context.collision.join("; ")}.\n` : ""}${context?.moment ? `THE MOMENT — script THIS, the particular not the general: ${context.moment}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
+${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""} It speaks when the scene calls for it — write its lines IN CHARACTER${c.nameable ? "" : ", labeled by its role noun"}; if its canon is wordless, write its response-turn in its own register. The WORDS are yours; the voice and mannerism are the model's.\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${context?.subjectContext?.length ? `SUBJECT CONTEXT — the subject's signatures as PHYSICS, deployable as the manner of ordinary actions: ${context.subjectContext.join("; ")}.\n` : ""}${context?.venueVocabulary?.length ? `VENUE VOCABULARY — this place's own nouns, for DIALOGUE and ACTION only (spoken or handled, never written on anything): ${context.venueVocabulary.join(", ")}.\n` : ""}${context?.collision?.length ? `COLLISION MATERIAL: ${context.collision.join("; ")}.\n` : ""}${context?.moment ? `THE MOMENT — script THIS, the particular not the general: ${context.moment}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}${(places || []).filter(Boolean).length ? `CUT PLACES — from the photograph itself, use VERBATIM as each capture sentence place: ${places.map((pl, pi) => `Cut ${pi + 1} = ${pl}`).join("; ")}.\n` : ""}CUTS, IN ORDER:
 ${cutList}
 ${lawBlocks.length ? `\n${lawBlocks.filter(Boolean).join("\n")}` : ""}
 RULES — each is checked mechanically after you write:
 ${freeCuts
-    ? `1. Each cut: "[Ns] CUT N — A wide shot of <the place as photographed>, shot on ${art} ${lens} lens. <the subject> <does the action>." YOU choose the cut count — as many as the scene's intent needs and no more (padding robs the scene; one cut is a full answer when the scene wants one). Stamp cuts ascending from [0s], spread across the ${durationSec || 6}-second clip. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
+    ? `1. Each cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." YOU choose the cut count — as many as the scene's intent needs and no more (padding robs the scene; one cut is a full answer when the scene wants one). Stamp cuts ascending from [0s], spread across the ${durationSec || 6}-second clip. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
     : stamps.length
-    ? `1. One line per cut: "[Ns] CUT N — A wide shot of <the place as photographed>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
-    : `1. One line per cut: "Cut N: A wide shot of <the place as photographed>. <subject look> <does the action>. Shot on ${art} ${lens} lens."`}
+    ? `1. One line per cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
+    : `1. One line per cut: "Cut N: A wide shot of <that cut given place>. <subject look> <does the action>. Shot on ${art} ${lens} lens."`}
 2. The subject acts in EVERY cut; no cut belongs to anyone else. The set's other people stay exactly where the photographs show them.
 2b. CONTACT, not scenery: each cut's action stages ON that photograph's own objects and people, by DEFINITE ARTICLE — and every noun you write must be FINDABLE in that photograph.
-${lawBlocks.length ? "" : `3. The LAST cut lands one payoff, transformed from something already in that photograph; each element pays off once; real-world brand surfaces render blank.\n`}${lawBlocks.length ? "3" : "4"}. Speech goes under "Dialogue:", every line labeled "Name/Role:", aimed at someone in the frame; one short voice-description line above it is allowed.
+${lawBlocks.length ? "" : `3. The LAST cut lands one payoff, transformed from something already in that photograph; each element pays off once; real-world brand surfaces render blank.\n`}${lawBlocks.length ? "3" : "4"}. Speech goes under "Dialogue:", every line labeled "Name/Role:", aimed at someone in the frame.
 ${lawBlocks.length ? "4" : "5"}. Nothing else — no opener line, no scene prose outside the cut lines, at most ${maxLines} lines.
 Return ONLY the lines described.`;
 }
