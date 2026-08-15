@@ -313,6 +313,7 @@ ${freeCuts
 2. The subject acts in EVERY cut; no cut belongs to anyone else. The set's other people stay exactly where the photographs show them.
 2b. CONTACT, not scenery: each cut's action stages ON that photograph's own objects and people, by DEFINITE ARTICLE — and every noun you write must be FINDABLE in that photograph.
 ${lawBlocks.length ? "" : `3. The LAST cut lands one payoff, transformed from something already in that photograph; each element pays off once; real-world brand surfaces render blank.\n`}${lawBlocks.length ? "3" : "4"}. Speech goes under "Dialogue:", every line labeled "Name/Role:", aimed at someone in the frame.
+${lawBlocks.length ? "4" : "5"}. Adjectives belong to what you CONJURE, never to what the photograph already shows — name its things bare ("the arena", never "the bright arena"): the picture already carries how they look. And never write how FAST something happens; write what happens.
 ${lawBlocks.length ? "4" : "5"}. Nothing else — no opener line, no scene prose outside the cut lines, at most ${maxLines} lines.
 Return ONLY the lines described.`;
 }
