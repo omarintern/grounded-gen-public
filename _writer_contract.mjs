@@ -128,18 +128,27 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     if (TEMPO_WORDS.test(c)) v.push({ rule: "tempo-word", cut: i + 1 });   // speed is DELIVERY — the law's own words, now enforced
     if (QUALITY_WORDS.test(c)) v.push({ rule: "quality-word", cut: i + 1 });
     if (COMMENT_ADVERBS.test(c)) v.push({ rule: "comment-adverb", cut: i + 1 });   // rule 5's face: play it straight — describe the act, never the comedy of it
-    // IDENTITY: without a handle, the legacy law (≥2 look tokens EVERY cut). With a handle (the ratified
-    // identity-once-then-HANDLE mechanism): the FIRST cut carries the full look (≥2 tokens); later cuts carry
-    // the HANDLE, and a later cut that re-describes the full look (≥4 distinct tokens) is a repaint
-    // instruction — flagged, because re-description re-triggers render attention on what the ref already owns.
+    // ⭐ IDENTITY, RELAXED TO THE RECORD (owner 2026-08-16: «yes your subject-missing validator is stricter
+    // than the record»). The cleared multi-cut corpus, read off the prompts: MJ 3 cuts / McGregor 4 / Tysonfeud
+    // 3 — and TWO of the three contain a cut with NO subject at all (McGregor's panel-only Cut 3, Tysonfeud's
+    // survey-board Cut 2), both DELIVERED. So subject-in-EVERY-cut is MJ's golden SHAPE, never a gate law.
+    // WHAT SURVIVES AS LAW: the FIRST cut carries the subject — universal across all three clears, and the
+    // frame-zero/swap law needs the likeness established at frame zero. LATER CUTS MAY OMIT HIM: a reaction
+    // cut, an object cut, or a beat carried by pronoun all read as "no look tokens" and are lawful; absence is
+    // REPORTED (the golden prefers presence) and never a violation. Re-description in a later cut still flags —
+    // the record's own carry is a definite-article trait SUBSET, never the full phrase again.
     const tokHits = subjToks.filter((tok) => c.toLowerCase().includes(tok)).length;
-    if (!handleLc) {
-      if (subjToks.length >= 2 && tokHits < 2) v.push({ rule: "subject-missing", cut: i + 1 });
-    } else if (i === 0) {
-      if (subjToks.length >= 2 && tokHits < 2) v.push({ rule: "subject-missing", cut: i + 1 });
+    const subjectThin = subjToks.length >= 2 && tokHits < 2 && (!handleLc || !c.toLowerCase().includes(handleLc));
+    if (i === 0) {
+      if (subjectThin) v.push({ rule: "subject-missing", cut: 1 });
     } else {
-      if (!c.toLowerCase().includes(handleLc)) v.push({ rule: "subject-missing", cut: i + 1, detail: `handle "${handle}"` });
-      if (subjToks.length >= 4 && tokHits >= 4) v.push({ rule: "identity-redescribed", cut: i + 1 });
+      if (subjectThin) console.warn(`  ⚠ subject absent from cut ${i + 1} — lawful (McGregor/Tysonfeud both cleared with one), reported because the golden prefers presence`);
+      // ⚠ VERBATIM ONLY (caught by the golden itself: a ≥4-shared-token test flagged MJ's own cuts 2-3,
+      // which ARE the record's carry — 7 of 10 look tokens in a legal SUBSET). The distinguishing fact is not
+      // how many traits repeat but whether the WHOLE phrase returns: a subset is the law, the full sequence
+      // again is the repaint. Article-insensitive token-sequence containment; zero false positives by
+      // construction, and it catches x30's actual behaviour (the full look restated per cut).
+      if (subjToks.length >= 3 && ledgerToks(c).join(" ").includes(subjToks.join(" "))) v.push({ rule: "identity-redescribed", cut: i + 1 });
     }
     // RESTAGING (law 2's mechanical face): when this cut's plate CONTENTS are known, the beat must touch them —
     // ≥1 census noun in the cut line. Absent census = skip (fail-open; the wiring supplies it write-after-plate).
@@ -309,9 +318,17 @@ export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens,
   const art = /^[aeiou8]/.test(lens) ? "an" : "a";
   // Identity mechanism (ratified law 7, celeb instantiation): full look + "matching the reference" in the
   // subject's FIRST cut; the HANDLE carries every later cut. Without a handle the legacy shape stands.
+  // ⭐ THE CARRY, TAKEN FROM THE CLEARED RECORD (owner 2026-08-16; the role-noun handle proposal WITHDRAWN):
+  // all three multi-cut clears do one thing — first appearance INDEFINITE + the full look, every later
+  // appearance DEFINITE + a 2-3 signature-trait subset. MJ: «A slim man in a white fedora, a red jacket, and
+  // a single gold sequined glove» → «The slim man in the white fedora and single sequined glove». McGregor:
+  // 4 traits → «The muscular athletic man with a short beard and chest tattoos». Tysonfeud: → «the same
+  // muscular bald man». NEVER a pronoun, NEVER a role noun, NEVER the full phrase twice. (x30 restated the
+  // whole look ×3 because THIS FACT LINE said the phrase IS the subject with no once-only bound — the writer
+  // obeyed my text.) An explicit HANDLE, when the caller supplies one, is the same law with the subset named.
   const lookFact = handle
-    ? `SUBJECT LOOK: ${subjectLook || "(as the reference shows)"} — this phrase IS the subject in their FIRST cut, plus "matching the reference" there and nowhere else. Never any name.\nHANDLE: from their second cut on, "${handle}" carries the subject — the look is never re-described.`
-    : `SUBJECT LOOK: ${subjectLook || "(as the reference shows)"} — this phrase IS the subject, plus "matching the reference". Never any name.`;
+    ? `SUBJECT LOOK: ${subjectLook || "(as the reference shows)"} — this full phrase IS the subject at their FIRST appearance, with "a"/"an", plus "matching the reference" there and nowhere else. Never any name.\nHANDLE: every later appearance carries him as "${handle}" — never the full look again.`
+    : `SUBJECT LOOK: ${subjectLook || "(as the reference shows)"} — this full phrase IS the subject at their FIRST appearance, with "a"/"an", plus "matching the reference" there. Never any name.\nCARRY HIM ON: later appearances use "the" + two or three of those same traits — never the full phrase again.`;
   return `You are writing beats for a video staged across ${cutCount} ordered photographs the generator conditions on and cuts between.
 VIDEO: "${userPrompt}"
 
