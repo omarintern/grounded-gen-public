@@ -148,12 +148,19 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // read said red) is the plate's and passes; one the writer invented is dressing and flags. The other legal
     // predecessors are a small closed set of articles/prepositions/possessives, plus another plate word (so a
     // compound the read supplied — "the canvas floor" — stays whole).
-    if (Array.isArray(plateWords) && Array.isArray(plateWords[i]) && plateWords[i].length) {
+    // ⚠ TWO SETS, TWO JOBS (fixed after x29 flagged "[cut a]" and killed the write): the GOVERNED tokens are
+    // the plate's CONTENT nouns (plateNouns — length-filtered, stop-listed), because only a thing can be
+    // dressed; the ALLOWED predecessors are EVERY word the read used (plateWords), because a modifier the
+    // photograph's own description supplied is the plate's. Governing on plateWords made the article "a" a
+    // plate noun, so the contract's own shape — "CUT 1 — A wide shot of…" — flagged on every single cut.
+    if (Array.isArray(plateWords) && Array.isArray(plateWords[i]) && plateWords[i].length
+        && Array.isArray(plateNouns) && Array.isArray(plateNouns[i])) {
+      const governed = new Set(plateNouns[i].map((w) => String(w).toLowerCase()));
       const owned = new Set(plateWords[i].map((w) => String(w).toLowerCase()));
       const LEGAL = new Set(["the","a","an","his","her","its","their","our","this","that","these","those","and","or","of","on","at","in","into","onto","near","by","against","through","over","under","beside","behind","along","across","from","toward","towards","off","up","down","with","two","three","four"]);
       const toks = c.toLowerCase().match(/[a-z][a-z-]*/g) || [];
       for (let k = 1; k < toks.length; k++) {
-        if (!owned.has(toks[k])) continue;                     // only plate nouns are governed
+        if (!governed.has(toks[k])) continue;                  // only the plate's CONTENT nouns are governed
         const prev = toks[k - 1];
         if (LEGAL.has(prev) || owned.has(prev)) continue;      // article/preposition, or plate-supplied word
         v.push({ rule: "plate-dressing", cut: i + 1, detail: `${prev} ${toks[k]}` });
