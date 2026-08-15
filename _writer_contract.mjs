@@ -33,7 +33,7 @@ export const COMEDY_LAW = `COMEDY LAW
 1. A signature arrives as the MANNER of an ordinary action — the way the task gets done, never the thing the scene is about. Nobody remarks on it.
 2. The scene's business is done with the venue's own things, in PARTICULARS — the specific configuration, never the general item; what this place calls its objects is what gets handled and said.
 3. The subject speaks in their own register; every line could only be theirs.
-4. The payoff is the same material one step further — the commitment deepens; nothing new enters for the ending.
+4. The payoff is the same material one step further — the commitment deepens.
 5. Everyone plays it straight. The world answers the situation, never the fame.
 6. When the request carries its own joke, deliver theirs — these laws serve it, never replace it.`;
 const COMMENT_ADVERBS = /\b(hilarious(?:ly)?|comically|absurdly|jokingly|ridiculous(?:ly)?|wacky|zany|goofily|amusingly|farcical(?:ly)?)\b/i;   // straight-face law's validator-side face — the writer COMMENTING on the joke breaks rule 5; the model never sees this list
@@ -196,6 +196,12 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // real firing was a false positive (spatial → body-part → bare verb+gerund), three writes killed incl.
     // the series' best. The rule-4 LAW still teaches the writer; this heuristic REPORTS loudly and never
     // re-asks, never kills.
+    // ⚠⚠⚠ DOUBLY DEAD (owner 2026-08-16, second refinement): rule 4's "nothing new enters" clause is DELETED
+    // from the law itself — an invented GAG OBJECT in a cut payoff is lawful (his example: MJ running off
+    // with a buggy absent from frame0, arriving in the cut payoff). So this heuristic enforced the wrong
+    // TEST (novelty vs establishment) of a clause that no longer EXISTS. The boundary lives where it always
+    // belonged: the beat-zero block's hard-cut clause (a prop in a CUT-TO world, established in that cut's
+    // first beat, same premises) + materialise-vs-route for the continuous shot.
     // ⚠⚠ THE PREMISE ITSELF WAS WRONG, independent of the regex (owner doctrine 2026-08-16): a payoff is «a
     // moment… a potential that can encompass many elements that are permitted in our architecture… it can be
     // in a continous action, a cut, anything permitted». The REAL constraint is ESTABLISHMENT/ROUTE, never
