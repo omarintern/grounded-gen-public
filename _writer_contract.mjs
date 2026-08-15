@@ -54,7 +54,12 @@ const STAMPED_CUT = /^\[\d+(?:\.\d+)?s\]\s*cut \d+/i;
  *  (where per-cut) the 1-indexed cut, so the caller's re-ask can name EXACTLY what to fix and nothing else. */
 export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly where the [\w\s'-]{1,30}(?:stands|sits|waits|works)|(?:at|onto|into) the [\w\s'-]{1,30}(?:'s)? (?:mark|spot|position)\b)/i;
 
-export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1400, requireSwap = false, durationSec = 0, partiesNamed = 0, handle = "", plateNouns = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
+// maxChars 1400→1750 (x26, the comedy law's first live contact): the old cap was sized against the
+// pre-comedy record (golden 1077 · mcgregor 1252 · c1-old's 1410 bloat flagged just over it). Six-rule
+// texts run STRUCTURALLY longer — the moment sentence (~90) + two swap clauses (~130) + a legit free-cut
+// (~180) put the measured legit ceiling ≈1650 over the mcgregor max; 1750 = that + margin, still tight
+// enough that paragraph bloat flags. CONTRACT CONSTANT — flagged to the owner's eye at landing.
+export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, handle = "", plateNouns = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
   const t = String(text || "");
   const v = [];
   const cuts = cutLinesOf(t);
@@ -147,7 +152,11 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // stallion through pyrotechnic fountains backstage" → 4 FLAGS. Loud detail: a false positive costs one
     // targeted re-ask naming the tokens, never a kill.
     const lastAction = cuts[cuts.length - 1].replace(/^\[\d+(?:\.\d+)?s\]\s*cut \d+\s*[—:-]\s*/i, "");
-    const fresh = [...new Set(ledgerToks(lastAction))].filter((tok) => !matSet.has(tok) && !/^\d+s?$/.test(tok) && tok.length >= 6);
+    // ARTICULATION FILTER (x26 false positive: "shudders behind" — a verb + a preposition read as imported
+    // material and killed the writer). Closed-class spatial/relational words are ENUMERABLE and never an
+    // imported OBJECT; excluding them leaves open-class noun-weight tokens as the import signal.
+    const ART_STOP = new Set(["behind", "through", "across", "toward", "towards", "beneath", "around", "against", "between", "inside", "outside", "beyond", "underneath", "before", "beside", "within", "without", "during", "upward", "upwards", "downward", "downwards", "forward", "forwards", "backward", "backwards", "together", "overhead", "alongside"]);
+    const fresh = [...new Set(ledgerToks(lastAction))].filter((tok) => !matSet.has(tok) && !/^\d+s?$/.test(tok) && tok.length >= 6 && !ART_STOP.has(tok));
     if (fresh.length >= 2) v.push({ rule: "payoff-import", cut: cuts.length, detail: fresh.slice(0, 4).join(" ") });
     // context-spend: when the venue's own nouns rode in as facts, at least one must surface in the text —
     // spoken or handled; harvested material the writer never touches is the contract failing silently.
