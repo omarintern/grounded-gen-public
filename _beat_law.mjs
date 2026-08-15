@@ -233,6 +233,13 @@ export const proseFiguresBlock = () => (
       : "")
 );
 
+// ⚠ POLES RECONCILED WITH THE MIDDLE (owner-ratified 2026-08-15; his flag verbatim: «its a real issue to
+// say NEVER INTRODUCE A SUBJECT AFTER BEAT ZERO», and «beat0 establishes frame0 does it not»). The middle
+// (materialising-vs-arriving, the reveal rule, the hard-cut reset, THE TEST) was always the coherent system;
+// the old headline absolute and the old closer ("put EVERY actor... never hold a subject back as a reveal")
+// contradicted it from the two highest-salience positions. Headline now bans POP-IN in the middle's own
+// vocabulary + re-attributes the sleeping-lady to the FRAME-0 CENSUS (her true violation: she was IN the
+// photograph). Closer now restates THE TEST. Middle clauses byte-identical, every scar intact.
 export const beatZeroLaw = () => (
 `\u26a0\u26a0 BEAT ZERO ESTABLISHES THE WHOLE SCENE - INCLUDING WHAT THE PHOTOGRAPH LACKS. The picture is ` +
     `the STARTING FRAME, not a limit on what may exist. If the story needs something the photo does not show, ` +
@@ -241,11 +248,12 @@ export const beatZeroLaw = () => (
     `a near-perfect clip because beat one simply stated the cat was sitting in the snow.\n` +
     `\u26a0 BUT BEAT ZERO CANNOT HOLD WHAT THE PLATE CONTRADICTS. It may add what the photograph merely OMITS (an occupant off to one side, a prop that could already be there); it may NOT add something the photograph ACTIVELY SHOWS OTHERWISE - a display already lit with one picture, a wall already bare. Such an element ENTERS at the moment its change is plausible, by TRANSFORMING what the frame already contains (a screen resolves to a new picture, a panel lifts to reveal): that transformation IS its visible route. Forced into beat zero it fights the plate; introduced with no route the generator cuts.\n` +
     `\u26a0 ENTERING IS ALLOWED, AND IS PART OF BEAT ZERO. "Established at beat zero" does NOT mean "standing still at beat zero" - if the request says the subject ENTERS, then beat zero SHOWS IT ENTERING (walking in from the frame edge, coming through a doorway) and settling into place. Do not silently convert an entrance into a static arrangement; the entrance is an action the user asked for. What is forbidden is a subject FIRST APPEARING in a LATER beat.\n` +
-    `\u26a0\u26a0 NEVER INTRODUCE A SUBJECT AFTER BEAT ZERO. Later beats may only CHANGE what already exists - ` +
-    `move it, turn it, wake it, break it. A subject first appearing at [2s] or [4s] is one the camera has been ` +
-    `treating as absent, so the generator CUTS to go and find it, and a cut is the one thing we never want. ` +
-    `A subject the story needs but the beats leave unmentioned until midway is one the camera has been treating as absent, so the render cuts away to find it. Had beat zero said "a woman is asleep in the bed" while the cats filed in, she ` +
-    `would have been present throughout and the waking could happen in place.\n` +
+    `\u26a0\u26a0 NOTHING MATERIALISES AFTER BEAT ZERO \u2014 a subject that simply BEGINS TO EXIST, with no ` +
+    `visible route, is the violation. A subject popping into [2s] or [4s] out of nowhere is one the camera has ` +
+    `been treating as absent, so the generator CUTS to go and find it, and a cut is the one thing we never want. ` +
+    `\u26a0 AND BEAT ZERO IS THE CENSUS OF FRAME ZERO: whoever and whatever the PHOTOGRAPH already contains is ` +
+    `present from the first frame, and beat zero holds them. Had beat zero said "a woman is asleep in the bed" while the cats filed in, she ` +
+    `would have been present throughout and the waking could happen in place \u2014 she was IN the photograph; leaving her unwritten denies the frame.\n` +
     `\u26a0\u26a0 BEAT ZERO LEADS WITH THE SCENE'S ACTUAL SUBJECT. Whoever or whatever the user's request is ABOUT is the grammatical subject of beat zero; anyone else present is CONTEXT and belongs in a subordinate clause or a following sentence, never in front. This is a writing rule first - a cat-choir joke that opens on a sleeping woman has its emphasis backwards - and it has a second, harder consequence. Promoting a vulnerable or unaware person to the opening subject of a covert-capture frame reads as surveillance of that person, and providers refuse it on content policy; the identical scene passes when the real subject leads. Do not soften or remove what happens - reorder so the real subject is in front and the person is present as context. `+
     `\u26a0\u26a0 BUT THE BAN IS ON MATERIALISING, NOT ON ARRIVING. A subject may appear at ANY beat PROVIDED the beat shows it ARRIVE by a route the frame already contains - through a door that opens, in from the edge of shot, up from behind furniture, down the stairs. What the generator cannot do is find a subject that simply BEGINS TO EXIST somewhere it was not: that is when it cuts. Ask which one you are writing. `+
     `\u26a0 AND SOME SUBJECTS MUST *NOT* BE IN BEAT ZERO. If the story's point is that someone is revealed - a door opens at the end and a person is behind it - then putting that person in frame at [0s] is a RED FLAG, not compliance: it spoils the reveal and contradicts the geometry, because a person behind a closed door is not in the room. The rule protects against POP-IN, not against entrances. Likewise a group that ENTERS need not all be in beat zero - the cats may file in at [2s] if the beat shows them coming through the doorway. `+
@@ -262,9 +270,10 @@ export const beatZeroLaw = () => (
     // tarp, capybara beer tap): every one staged beat zero ON the plate's named objects/occupants with THE.
     // The anti-scenery rule was over-read into dropping plate contact; adjectives stay banned, contact returns.
     `\u26a0 AND BEAT ZERO STAGES THAT ACTION ON THE PHOTOGRAPH \u2014 name the reference image's visible objects and occupants the subject touches ("behind the counter", "at the stove", "toward the customer"), with THE: every noun in beat zero should be findable in the picture. A noun the picture does not show belongs to a later beat or a cut. This is CONTACT, not scenery \u2014 look/lighting/mood adjectives stay banned. `+
-    `\u26a0 SO: put EVERY actor and EVERY prop the story needs into beat zero, however little of it the ` +
-    `photograph shows. Spend the remaining beats CHANGING them. Never drop what the user asked for, and never ` +
-    `hold a subject back as a reveal.\n\n`
+    `\u26a0 SO, THE SUMMARY IS THE TEST: for every actor and prop the story needs, ask whether the viewer can ` +
+    `SEE WHERE IT CAME FROM in the beat that introduces it \u2014 yes means it may arrive at that moment (an ` +
+    `entrance, a transformation, a cut); no means it belongs in beat zero. Whatever the photograph already ` +
+    `contains is in beat zero by census. Never drop what the user asked for.\n\n`
 );
 
 export const trappingsLaw = () => (
