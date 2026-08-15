@@ -23,6 +23,21 @@ const QUALITY_WORDS = /\b(cinematic|beautiful|stunning|gorgeous|high[- ]?quality
 // rewritten. The mechanical validators added alongside (handle/restaging/quality/slots/cofig/continuity)
 // SURVIVE as dormant opt-in enforcement — model-invisible, falsy-safe, engaged by the wiring only.
 
+// ── THE COMEDY LAW (owner-ratified 2026-08-15 verbatim: «comedy wording looks great» — six rules WITH the
+// rule-2 particularity amendment, exactly as sampled). Lane-neutral BY DESIGN: celeb / ip-persona / crossover
+// differ by their FACTS (recall clauses, guises + canon register, collision material), never by law text.
+// LEAK-SAFE, tested in the battery: the rules carry no size/camera/quality/anchor vocabulary and never name
+// the joke — only the title says COMEDY. FUNNY stays validator-unowned: the validators below check
+// commitment-to-a-reading (imports, straight face, context spend), never score the joke.
+export const COMEDY_LAW = `COMEDY LAW
+1. A signature arrives as the MANNER of an ordinary action — the way the task gets done, never the thing the scene is about. Nobody remarks on it.
+2. The scene's business is done with the venue's own things, in PARTICULARS — the specific configuration, never the general item; what this place calls its objects is what gets handled and said.
+3. The subject speaks in their own register; every line could only be theirs.
+4. The payoff is the same material one step further — the commitment deepens; nothing new enters for the ending.
+5. Everyone plays it straight. The world answers the situation, never the fame.
+6. When the request carries its own joke, deliver theirs — these laws serve it, never replace it.`;
+const COMMENT_ADVERBS = /\b(hilarious(?:ly)?|comically|absurdly|jokingly|ridiculous(?:ly)?|wacky|zany|goofily|amusingly|farcical(?:ly)?)\b/i;   // straight-face law's validator-side face — the writer COMMENTING on the joke breaks rule 5; the model never sees this list
+
 // IP replacement clause (owner-locked via x23's validated scrub wording, 2594ba2 lineage — do NOT reword;
 // only the role noun computes). SWAP_GRAMMAR matches it by construction.
 export const ipSwapClause = (role) => `takes the place of ${role} at the action spot — same position, distance and size`;   // role arrives WITH its article ("the sparring partner")
@@ -39,7 +54,7 @@ const STAMPED_CUT = /^\[\d+(?:\.\d+)?s\]\s*cut \d+/i;
  *  (where per-cut) the 1-indexed cut, so the caller's re-ask can name EXACTLY what to fix and nothing else. */
 export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly where the [\w\s'-]{1,30}(?:stands|sits|waits|works)|(?:at|onto|into) the [\w\s'-]{1,30}(?:'s)? (?:mark|spot|position)\b)/i;
 
-export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1400, requireSwap = false, durationSec = 0, partiesNamed = 0, handle = "", plateNouns = null, swapSlots = 0, coGuises = [], ledger = null } = {}) {
+export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1400, requireSwap = false, durationSec = 0, partiesNamed = 0, handle = "", plateNouns = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
   const t = String(text || "");
   const v = [];
   const cuts = cutLinesOf(t);
@@ -61,6 +76,7 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     if (SIZE_WORDS.test(c)) v.push({ rule: "size-word", cut: i + 1 });
     if (CAMERA_WORDS.test(c)) v.push({ rule: "camera-word", cut: i + 1 });
     if (QUALITY_WORDS.test(c)) v.push({ rule: "quality-word", cut: i + 1 });
+    if (COMMENT_ADVERBS.test(c)) v.push({ rule: "comment-adverb", cut: i + 1 });   // rule 5's face: play it straight — describe the act, never the comedy of it
     // IDENTITY: without a handle, the legacy law (≥2 look tokens EVERY cut). With a handle (the ratified
     // identity-once-then-HANDLE mechanism): the FIRST cut carries the full look (≥2 tokens); later cuts carry
     // the HANDLE, and a later cut that re-describes the full look (≥4 distinct tokens) is a repaint
@@ -115,6 +131,28 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   if (needSlots) {
     const found = (t.match(new RegExp(SWAP_GRAMMAR.source, "gi")) || []).length;
     if (found < needSlots) v.push({ rule: "swap-missing", cut: null, detail: `${found}/${needSlots} replacement clauses` });
+  }
+  // ── COMEDY-LAW VALIDATORS (owner-ratified round) — ACTIVE ONLY when context facts ride (legacy calls
+  // unchanged; the golden predates harvested context and must keep scoring zero). Commitment is validated,
+  // the joke is never scored.
+  if (context && cuts.length) {
+    // hyphenated material expands to its parts ("ten-count" also banks "ten" + "count") so the writer's
+    // natural re-articulation of the SAME noun never reads as an import.
+    const matSet = new Set(ledgerToks([subjectLook, handle, ...(context.subjectContext || []), ...(context.venueVocabulary || []), ...(context.collision || []), context.moment || "", ...coGuises, ...cuts.slice(0, -1), ...(Array.isArray(plateNouns) ? plateNouns.flat() : [])].join(" ")).flatMap((tok) => tok.includes("-") ? [tok, ...tok.split("-")] : [tok]));
+    // rule 4's face: the last cut escalates the SAME material. Scaffolding is stripped (the stamp/CUT-N
+    // prefix would read fresh every time), and freshness counts only NOUN-WEIGHT tokens (≥6 chars — the
+    // register's articulation words run short: holds/line/waits; its imported OBJECTS run long: stallion/
+    // pyrotechnic/fountains). ≥2 fresh noun-weight tokens = an imported element. Fixture-calibrated BOTH
+    // directions: "holds the rope through the count as the line waits" → 1 (through) PASSES; "rides a white
+    // stallion through pyrotechnic fountains backstage" → 4 FLAGS. Loud detail: a false positive costs one
+    // targeted re-ask naming the tokens, never a kill.
+    const lastAction = cuts[cuts.length - 1].replace(/^\[\d+(?:\.\d+)?s\]\s*cut \d+\s*[—:-]\s*/i, "");
+    const fresh = [...new Set(ledgerToks(lastAction))].filter((tok) => !matSet.has(tok) && !/^\d+s?$/.test(tok) && tok.length >= 6);
+    if (fresh.length >= 2) v.push({ rule: "payoff-import", cut: cuts.length, detail: fresh.slice(0, 4).join(" ") });
+    // context-spend: when the venue's own nouns rode in as facts, at least one must surface in the text —
+    // spoken or handled; harvested material the writer never touches is the contract failing silently.
+    const vv = (context.venueVocabulary || []).map((n) => ledgerToks(n)).filter((a) => a.length);
+    if (vv.length && !vv.some((toks) => toks.some((tok) => t.toLowerCase().includes(tok)))) v.push({ rule: "context-unspent", cut: null });
   }
   // CONTINUITY (shared machinery, never reinvented): when the caller supplies a cast ledger, the shared
   // beat-vs-ledger validator folds in — carried props, cut-resume, unledgered figures.
