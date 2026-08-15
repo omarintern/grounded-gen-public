@@ -127,7 +127,16 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     ? (cuts[0].match(/takes? the place of the ([a-z][a-z ]{2,24}?)(?=\s*[—,.]|\s+at\b|\s+in\b|\s+on\b|$)/i) || [])[1]
     : null;
   const handleLc = (handle.trim() || (_declared || "").trim()).toLowerCase();
+  // ⭐ PLATE INDEX ≠ LINE ORDINAL (2026-08-16, the other half of the x31 fix). `cuts` is beat LINES; plateNouns
+  // and plateWords are built ONE PER PLATE by the caller (reads.map). Under the ratified shape — several beats
+  // inside CUT 1 off one plate — indexing them by the line ordinal made plateNouns[1..n] undefined, so the
+  // Array.isArray guards short-circuited and RESTAGING + PLATE-DRESSING silently skipped on every beat after the
+  // first: the moat enforced on one line in three, reporting clean. On a genuine multi-plate run it was worse —
+  // a lawful beat scored against the WRONG plate's census. The cut NUMBER is the plate index; the line's
+  // position is not. cutNumbersOf got this conversion when x31 was fixed; these two call sites did not.
+  const plateIdxOf = (line) => Math.max(0, (Number((String(line).match(/\bCUT\s*(\d+)/i) || [])[1]) || 1) - 1);
   cuts.forEach((c, i) => {
+    const pi = plateIdxOf(c);
     if (!/\ba wide shot\b/i.test(c)) v.push({ rule: "wide", cut: i + 1 });
     if (!(stamped ? lensInline : lensEnd).test(c)) v.push({ rule: "lens", cut: i + 1 });
     // stamp consistency: a stamped text stamps EVERY cut, ascending — one shape per prompt, never a mix
@@ -161,8 +170,8 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     }
     // RESTAGING (law 2's mechanical face): when this cut's plate CONTENTS are known, the beat must touch them —
     // ≥1 census noun in the cut line. Absent census = skip (fail-open; the wiring supplies it write-after-plate).
-    if (Array.isArray(plateNouns) && Array.isArray(plateNouns[i]) && plateNouns[i].length) {
-      const hit = plateNouns[i].some((n) => n && c.toLowerCase().includes(String(n).toLowerCase()));
+    if (Array.isArray(plateNouns) && Array.isArray(plateNouns[pi]) && plateNouns[pi].length) {
+      const hit = plateNouns[pi].some((n) => n && c.toLowerCase().includes(String(n).toLowerCase()));
       if (!hit) v.push({ rule: "restaging", cut: i + 1 });
     }
     // ⭐⭐ NO ADJECTIVES ON PLATE NOUNS (owner 2026-08-15: «adjectives on plate nouns are banned, character
@@ -181,10 +190,10 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // dressed; the ALLOWED predecessors are EVERY word the read used (plateWords), because a modifier the
     // photograph's own description supplied is the plate's. Governing on plateWords made the article "a" a
     // plate noun, so the contract's own shape — "CUT 1 — A wide shot of…" — flagged on every single cut.
-    if (Array.isArray(plateWords) && Array.isArray(plateWords[i]) && plateWords[i].length
-        && Array.isArray(plateNouns) && Array.isArray(plateNouns[i])) {
-      const governed = new Set(plateNouns[i].map((w) => String(w).toLowerCase()));
-      const owned = new Set(plateWords[i].map((w) => String(w).toLowerCase()));
+    if (Array.isArray(plateWords) && Array.isArray(plateWords[pi]) && plateWords[pi].length
+        && Array.isArray(plateNouns) && Array.isArray(plateNouns[pi])) {
+      const governed = new Set(plateNouns[pi].map((w) => String(w).toLowerCase()));
+      const owned = new Set(plateWords[pi].map((w) => String(w).toLowerCase()));
       const LEGAL = new Set(["the","a","an","his","her","its","their","our","this","that","these","those","and","or","of","on","at","in","into","onto","near","by","against","through","over","under","beside","behind","along","across","from","toward","towards","off","up","down","with","two","three","four"]);
       const toks = c.toLowerCase().match(/[a-z][a-z-]*/g) || [];
       for (let k = 1; k < toks.length; k++) {
