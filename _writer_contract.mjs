@@ -11,15 +11,14 @@ import { ledgerToks, dialogueShape, validateBeatsAgainstLedger } from "./_gate_r
 
 const SIZE_WORDS = /\b(small|tiny|distant|far away|faraway|in the distance|at a distance|speck)\b/i;
 const CAMERA_WORDS = /\b(pans?|panning|zooms?|zooming|push(?:es)?[- ]?in|tilts?|tilting|dolly|camera)\b/i;
-// ⭐ TEMPO IS A DELIVERY DETAIL, NOT AN ACTION (owner 2026-08-15, on x27d's "a slow swing" / "a slow, looping
-// arc" rendering as slow motion). The shared law already forbids it — «Write WHAT IS SAID and WHAT HAPPENS;
-// never how it is shot, lit or DELIVERED» — but enforcement only ever covered camera MOVES, so speed words
-// walked straight through. A punch is an action; a SLOW punch is a direction to the renderer.
-// ⚠ NARROWED BY ITS OWN FIXTURE: a bare /slow/ flagged the VALIDATED doorman sample's "unclips the velvet rope
-// on a slow ten-count", which is DIEGETIC — a count that happens in the world, not a rendering speed. So the
-// rule fires on explicit slow-motion terms, or on "slow" attached to a MOTION noun (the x27d defect), and
-// leaves the pace of an in-world event alone. Both directions are fixtured.
-const TEMPO_WORDS = /\b(?:slo-?mo(?:tion)?|slow[- ]motion|time-?lapse|sped[- ]up|speed(?:ed)?[- ]up)\b|\bslow(?:ly)?\b[^.]{0,24}?\b(?:swing|swipe|punch|jab|hook|arc|motion|movement|step|stride|walk|turn|spin|fall|drop|kick|throw|glide|lunge|reach)\b/i;
+// ⭐ TEMPO IS DELIVERY, NOT ACTION — GENERAL RULE (owner 2026-08-15). The shared law already says it: «Write
+// WHAT IS SAID and WHAT HAPPENS; never how it is shot, lit or DELIVERED». Enforcement only ever covered camera
+// MOVES, so speed words walked through and x27d rendered in slow motion off "a slow swing" / "a slow, looping
+// arc". ⚠ THE RULE IS THE WHOLE SPEED FAMILY, NOT A LIST OF MOTIONS IT MAY MODIFY: an earlier draft narrowed
+// it to "slow" + motion nouns so a battery fixture would keep passing, which is case-law shaped around one
+// sample — the owner's standing preference is a general ruling, and the fixture changes to match the law, not
+// the reverse. A beat states that a punch lands; how fast it lands is the renderer's, not the writer's.
+const TEMPO_WORDS = /\b(?:slow(?:ly|er|est)?|slo-?mo(?:tion)?|fast(?:er|est)?|quick(?:ly|er)?|rapid(?:ly)?|swift(?:ly)?|time-?lapse|sped[- ]?up)\b/i;
 const ANCHOR = /\boriginal (broadcast|stream|footage|recording|clip)\b/i;   // retired 2026-08-12 — its absence is now a golden property
 const QUALITY_WORDS = /\b(cinematic|beautiful|stunning|gorgeous|high[- ]?quality|4k|8k|ultra[- ]?(?:hd|realistic)|masterpiece|professional(?:ly)?[- ]?(?:shot|lit|graded)?)\b/i;   // the polished-stock manifold reads AI (candid-not-quality)
 
