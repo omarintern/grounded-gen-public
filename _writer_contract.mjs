@@ -195,9 +195,17 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // ⚠ ADVISORY ONLY (owner 2026-08-16: «lets go advisory on payoff-import») — 0-for-3 in production: every
     // real firing was a false positive (spatial → body-part → bare verb+gerund), three writes killed incl.
     // the series' best. The rule-4 LAW still teaches the writer; this heuristic REPORTS loudly and never
-    // re-asks, never kills. Post-freeze option (owner's later call): ONE cheap semantic call — "does the last
-    // cut introduce a physical THING absent earlier?" (~$…) — could earn enforcement back; a regex is
-    // structurally unable to tell an imported thing from an articulating verb.
+    // re-asks, never kills.
+    // ⚠⚠ THE PREMISE ITSELF WAS WRONG, independent of the regex (owner doctrine 2026-08-16): a payoff is «a
+    // moment… a potential that can encompass many elements that are permitted in our architecture… it can be
+    // in a continous action, a cut, anything permitted». The REAL constraint is ESTABLISHMENT/ROUTE, never
+    // NOVELTY — already law in the shared beat-zero block (materialise-vs-arrive, THE TEST, hard-cut-resets):
+    // a new element is lawful in frame0, established in the first beat, or arriving by a route the frame
+    // contains — and a CUT is itself a lawful route (the MJ parking-lot payoff introduces whole new scenery
+    // lawfully). The owner's observed defect was a table thrown-onto that was NEVER established — awkward
+    // invocation, not novelty. Post-freeze option (his later call): ONE cheap semantic call asking «is this
+    // element ESTABLISHED, or does it arrive by a route the frame contains?» (~$…) — never "is this word
+    // new"; a regex is structurally unable to answer either question.
     if (fresh.length >= 2) console.warn(`  ⚠ payoff-import ADVISORY (cut ${cuts.length}): ${fresh.slice(0, 4).join(" ")} — reported, not enforced`);
     // context-spend: when the venue's own nouns rode in as facts, at least one must surface in the text —
     // spoken or handled; harvested material the writer never touches is the contract failing silently.
