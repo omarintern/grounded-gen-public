@@ -83,6 +83,12 @@ export const ipSwapClause = (role) => `takes the place of ${role} at the action 
 // on stamped texts, so legacy callers are byte-identical.
 export const CUT_LINE = /^(?:\[\d+(?:\.\d+)?s\]\s*)?cut \d+\s*[:—-]/i;
 export const cutLinesOf = (text) => String(text || "").split("\n").map((l) => l.trim()).filter((l) => CUT_LINE.test(l));
+/** DISTINCT cut NUMBERS, not cut LINES — cuts are VANTAGES, beats are moments, and the law admits many beats
+ *  inside one vantage ("One line per BEAT, every one of them inside the SAME cut"). Counting LINES made the law
+ *  and this check MUTUALLY UNSATISFIABLE the moment a scene wanted several beats off one plate: x31 asked for
+ *  3 beats on 1 sourced ref, scored cut-count [3/1], and no re-ask could ever satisfy both — the writer was
+ *  punished for obeying its own contract. _ground_shotset counted distinctly already; this is the other half. */
+export const cutNumbersOf = (text) => new Set(cutLinesOf(text).map((l) => ((l.match(/\bCUT\s*(\d+)/i) || [])[1]) ?? "1")).size;
 const STAMPED_CUT = /^\[\d+(?:\.\d+)?s\]\s*cut \d+/i;
 
 /** The MJ golden properties as violations. [] = the text IS the shape. Each violation carries the rule name and
@@ -100,7 +106,8 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   const cuts = cutLinesOf(t);
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
-  if (wantCuts && cuts.length !== wantCuts) v.push({ rule: "cut-count", cut: null, detail: `${cuts.length}/${wantCuts}` });
+  const cutNums = cutNumbersOf(t);
+  if (wantCuts && cutNums !== wantCuts) v.push({ rule: "cut-count", cut: null, detail: `${cutNums}/${wantCuts}` });
   // per-cut: wide framing, lens termination, subject presence, size words, camera words
   const lensEsc = lens.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const lensEnd = new RegExp(`Shot on an? ${lensEsc} lens\\.$`, "i");
