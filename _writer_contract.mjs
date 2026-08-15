@@ -151,7 +151,10 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
 // freeCuts (owner 2026-08-15, single-world multi-cut): the writer chooses the cut count by SCENE DEMAND and
 // REGISTER — no floor, and "no more than that which robs scene's intent and effectiveness" (no padding). Only
 // the celeb/ip/crossover lane enters here (the double-gate); each cut still carries the full hybrid capture.
-export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "", lawBlocks = [], stamps = [], freeCuts = false, durationSec = 0 }) {
+// context (owner 2026-08-15, materials-conditioned recall): {subjectContext:[], venueVocabulary:[], collision:[]}
+// — per-gen harvested FACTS. De-named visual clauses with physics + the venue's own speakable/handleable
+// nouns. Data the laws can point at; never law text itself.
+export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "", lawBlocks = [], stamps = [], freeCuts = false, durationSec = 0, context = null }) {
   const art = /^[aeiou8]/.test(lens) ? "an" : "a";
   // Identity mechanism (ratified law 7, celeb instantiation): full look + "matching the reference" in the
   // subject's FIRST cut; the HANDLE carries every later cut. Without a handle the legacy shape stands.
@@ -164,7 +167,7 @@ VIDEO: "${userPrompt}"
 FACTS — data, not suggestions:
 ${lookFact}
 ${register ? `REGISTER: ${register} — given, not chosen.\n` : ""}${stamps.length ? `LENS: every cut's capture sentence carries ", shot on ${art} ${lens} lens." — its one lawful home; no lens or framing words anywhere else.` : `LENS LINE: end every cut with "Shot on ${art} ${lens} lens."`}
-${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""} It speaks when the scene calls for it — write its lines IN CHARACTER${c.nameable ? "" : ", labeled by its role noun"}; if its canon is wordless, write its response-turn in its own register. The WORDS are yours; the voice and mannerism are the model's.\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
+${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale".\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""} It speaks when the scene calls for it — write its lines IN CHARACTER${c.nameable ? "" : ", labeled by its role noun"}; if its canon is wordless, write its response-turn in its own register. The WORDS are yours; the voice and mannerism are the model's.\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${context?.subjectContext?.length ? `SUBJECT CONTEXT — the subject's signatures as PHYSICS, deployable as the manner of ordinary actions: ${context.subjectContext.join("; ")}.\n` : ""}${context?.venueVocabulary?.length ? `VENUE VOCABULARY — this place's own nouns, for DIALOGUE and ACTION only (spoken or handled, never written on anything): ${context.venueVocabulary.join(", ")}.\n` : ""}${context?.collision?.length ? `COLLISION MATERIAL: ${context.collision.join("; ")}.\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}CUTS, IN ORDER:
 ${cutList}
 ${lawBlocks.length ? `\n${lawBlocks.filter(Boolean).join("\n")}` : ""}
 RULES — each is checked mechanically after you write:
