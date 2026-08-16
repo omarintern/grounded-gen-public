@@ -117,7 +117,16 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   const labelled = cutLinesOf(t);
   const bareBeats = labelled.length ? [] : lines.filter((l) => STAMP_ONLY.test(l));
   const bareSingle = !labelled.length && bareBeats.length > 0;
-  const cuts = bareSingle ? bareBeats : labelled;
+  // ⭐ PROSE IS A SHAPE THE RECORD CLEARED WITH (replay, 2026-08-16). THREE delivered celeb scripts carry no cut
+  // label and no stamp at all — the x32-era Tyson ("Shot on a 200mm lens. A wide shot. In the boxing ring from
+  // the photograph, a bald, stocky man…") and both Trump clears. Every one of them scored the FATAL `no-cuts`
+  // under this checker, so the writer producing the shape that cleared BEST would have been killed at the desk.
+  // no-cuts must mean "nothing renderable", not "no marker": a capture sentence declares a vantage whether or
+  // not anyone labelled it. Pure prose with no capture still fires, which is the case the rule was written for.
+  const _lensEsc0 = lens.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const proseCapture = !labelled.length && !bareBeats.length
+    && /\ba wide shot\b/i.test(t) && new RegExp(`shot on an? ${_lensEsc0} lens`, "i").test(t);
+  const cuts = bareSingle ? bareBeats : labelled.length ? labelled : proseCapture ? [t.replace(/\n/g, " ")] : [];
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
   const cutNums = bareSingle ? 1 : cutNumbersOf(t);
   // ⚠ ADVISORY, DELIBERATELY NOT FATAL. The law and the re-ask both now instruct the bare shape, so a labelled
@@ -132,7 +141,11 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   const lensEsc = lens.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const lensEnd = new RegExp(`Shot on an? ${lensEsc} lens\\.$`, "i");
   const lensInline = new RegExp(`shot on an? ${lensEsc} lens`, "i");   // hybrid: the capture sentence carries the lens inline ("…, shot on an 85mm lens. <action>…")
-  const stamped = bareSingle ? true : cuts.some((c) => STAMPED_CUT.test(c));   // bare beats are stamped by construction
+  // "stamped" selects the INLINE lens test over the end-of-line one. Bare beats and PROSE both carry the capture
+  // mid-line — the x32-era clear opens "Shot on a 200mm lens. A wide shot. In the boxing ring…" — so requiring
+  // the line to END with the lens flags a script whose lens is right there in the first sentence. Same
+  // shape-coupling as everything else this week: the predicate encoded one layout as the only layout.
+  const stamped = (bareSingle || proseCapture) ? true : cuts.some((c) => STAMPED_CUT.test(c));
   const subjToks = subjectLook ? [...new Set(ledgerToks(subjectLook))] : [];
   let censusHit = false;   // bare-single restaging: did ANY beat touch the plate census (asked once, after the loop)
   // ⭐⭐ THE HANDLE IS SELF-DECLARED (owner 2026-08-15: multi-cut must «not produce doubles and trip»). The swap
