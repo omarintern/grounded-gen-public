@@ -103,16 +103,39 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
   const t = String(text || "");
   const v = [];
-  const cuts = cutLinesOf(t);
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
+  // ⭐⭐ A CUT IS NAMED ONLY WHEN THERE IS MORE THAN ONE, AND ONLY AT THE MOMENT IT HAPPENS (owner 2026-08-16,
+  // holding up the seaworld-rabbit script as the shape: "[0s] White Rabbit … stands balanced on the orca's
+  // back" / "[4s] Hard cut to the … meme" — bare stamped beats, the cut spoken in the PROSE where it occurs,
+  // never a label on every line). x35 emitted "CUT 1 — A wide shot of the boxing ring, shot on a 200mm lens."
+  // THREE TIMES because the law told it to and these validators required it per line. The label was noise on a
+  // single-vantage script, and the capture sentence tripled the identity surface handed to the © gate.
+  // So a script may be BARE-STAMPED: beats carry [Ns] and no cut label at all. That is ONE cut by definition.
+  // ⚠ The MULTI-cut shape is untouched — the MJ golden's "Cut 1: / Cut 2: / Cut 3:" genuinely has three cuts,
+  // and naming each AT its moment is exactly the owner's rule, not an exception to it.
+  const STAMP_ONLY = /^\[\d+(?:\.\d+)?s\]/;
+  const labelled = cutLinesOf(t);
+  const bareBeats = labelled.length ? [] : lines.filter((l) => STAMP_ONLY.test(l));
+  const bareSingle = !labelled.length && bareBeats.length > 0;
+  const cuts = bareSingle ? bareBeats : labelled;
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
-  const cutNums = cutNumbersOf(t);
+  const cutNums = bareSingle ? 1 : cutNumbersOf(t);
+  // ⚠ ADVISORY, DELIBERATELY NOT FATAL. The law and the re-ask both now instruct the bare shape, so a labelled
+  // single-cut script means the writer ignored an explicit instruction — worth SEEING, not worth killing a
+  // $… run over, and promoting it to a violation would risk exactly the unsatisfiable-gate class that has
+  // cost three runs this session. If the record shows the writer complying, this stays advisory forever; if it
+  // shows the label surviving the instruction, that is the evidence for promoting it.
+  // ⚠ THE CONVENTION IS console.warn AND NEVER PUSH (payoff-import, ~:316). Nothing downstream filters an
+  // `advisory` FLAG — _ground_shotset treats any non-empty return as violations, re-asks twice and exits 3 —
+  // so pushing an "advisory" entry would BE a fatal rule wearing the wrong label. Caught before landing.
+  if (labelled.length && wantCuts === 1)
+    console.warn(`  ⚠ cut-label-on-single ADVISORY: ${labelled.length} labelled line(s) on a one-cut script — the law says name a cut only when there is more than one; reported, not enforced`);
   if (wantCuts && cutNums !== wantCuts) v.push({ rule: "cut-count", cut: null, detail: `${cutNums}/${wantCuts}` });
   // per-cut: wide framing, lens termination, subject presence, size words, camera words
   const lensEsc = lens.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const lensEnd = new RegExp(`Shot on an? ${lensEsc} lens\\.$`, "i");
   const lensInline = new RegExp(`shot on an? ${lensEsc} lens`, "i");   // hybrid: the capture sentence carries the lens inline ("…, shot on an 85mm lens. <action>…")
-  const stamped = cuts.some((c) => STAMPED_CUT.test(c));
+  const stamped = bareSingle ? true : cuts.some((c) => STAMPED_CUT.test(c));   // bare beats are stamped by construction
   const subjToks = subjectLook ? [...new Set(ledgerToks(subjectLook))] : [];
   // ⭐⭐ THE HANDLE IS SELF-DECLARED (owner 2026-08-15: multi-cut must «not produce doubles and trip»). The swap
   // FACT is generic — "the ONE person at the action spot" — but the WRITER names the role in its own first cut
@@ -137,10 +160,15 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   const plateIdxOf = (line) => Math.max(0, (Number((String(line).match(/\bCUT\s*(\d+)/i) || [])[1]) || 1) - 1);
   cuts.forEach((c, i) => {
     const pi = plateIdxOf(c);
-    if (!/\ba wide shot\b/i.test(c)) v.push({ rule: "wide", cut: i + 1 });
-    if (!(stamped ? lensInline : lensEnd).test(c)) v.push({ rule: "lens", cut: i + 1 });
+    // THE CAPTURE IS STATED ONCE. On a bare-stamped single-cut script the framing + lens ride the FIRST beat
+    // only; repeating them on every line is the noise the owner struck out, and it is what tripled the identity
+    // surface in x35. On a labelled multi-cut script each cut still declares its own capture, unchanged.
+    if (!bareSingle || i === 0) {
+      if (!/\ba wide shot\b/i.test(c)) v.push({ rule: "wide", cut: i + 1 });
+      if (!(stamped ? lensInline : lensEnd).test(c)) v.push({ rule: "lens", cut: i + 1 });
+    }
     // stamp consistency: a stamped text stamps EVERY cut, ascending — one shape per prompt, never a mix
-    if (stamped && !STAMPED_CUT.test(c)) v.push({ rule: "stamp-missing", cut: i + 1 });
+    if (stamped && !(bareSingle ? STAMP_ONLY : STAMPED_CUT).test(c)) v.push({ rule: "stamp-missing", cut: i + 1 });
     if (SIZE_WORDS.test(c)) v.push({ rule: "size-word", cut: i + 1 });
     if (CAMERA_WORDS.test(c)) v.push({ rule: "camera-word", cut: i + 1 });
     if (TEMPO_WORDS.test(c)) v.push({ rule: "tempo-word", cut: i + 1 });   // speed is DELIVERY — the law's own words, now enforced
@@ -379,7 +407,7 @@ RULES — each is checked mechanically after you write:
 ${freeCuts
     ? `1. Each cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." YOU choose the cut count — as many as the scene's intent needs and no more (padding robs the scene; one cut is a full answer when the scene wants one). Stamp cuts ascending from [0s], spread across the ${durationSec || 6}-second clip. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
     : stamps.length
-    ? `1. ${cutCount === 1 ? `One line per BEAT, every one of them inside the SAME cut: "[Ns] CUT 1 — A wide shot of <the place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per beat: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is that beat's moment. ONE plate means ONE vantage, so every line is CUT 1; what changes between them is what HAPPENS, never where the camera is.` : `One line per cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time.`} The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
+    ? `1. ${cutCount === 1 ? `One line per BEAT and NO cut label anywhere — a cut is named only when there is more than one, and only at the moment it happens. The FIRST beat states the capture once: "[${stamps[0] ?? 0}s] A wide shot of <the place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Every later beat is just "[Ns] <who> <does what>." — no framing, no lens, no "CUT". Use these stamps in order, one per beat: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is that beat's moment. ONE plate means ONE vantage, so every line is CUT 1; what changes between them is what HAPPENS, never where the camera is.` : `One line per cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time.`} The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
     : `1. One line per cut: "Cut N: A wide shot of <that cut given place>. <subject look> <does the action>. Shot on ${art} ${lens} lens."`}
 2. The subject acts in EVERY cut; no cut belongs to anyone else. The set's other people stay exactly where the photographs show them.
 2b. CONTACT, not scenery: each cut's action stages ON that photograph's own objects and people, by DEFINITE ARTICLE — and every noun you write must be FINDABLE in that photograph.
