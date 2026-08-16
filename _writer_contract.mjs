@@ -134,6 +134,7 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   const lensInline = new RegExp(`shot on an? ${lensEsc} lens`, "i");   // hybrid: the capture sentence carries the lens inline ("…, shot on an 85mm lens. <action>…")
   const stamped = bareSingle ? true : cuts.some((c) => STAMPED_CUT.test(c));   // bare beats are stamped by construction
   const subjToks = subjectLook ? [...new Set(ledgerToks(subjectLook))] : [];
+  let censusHit = false;   // bare-single restaging: did ANY beat touch the plate census (asked once, after the loop)
   // ⭐⭐ THE HANDLE IS SELF-DECLARED (owner 2026-08-15: multi-cut must «not produce doubles and trip»). The swap
   // FACT is generic — "the ONE person at the action spot" — but the WRITER names the role in its own first cut
   // ("takes the place of the boxer"). That noun IS the handle, so no scene-roles census is needed to unlock it.
@@ -197,7 +198,14 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // ≥1 census noun in the cut line. Absent census = skip (fail-open; the wiring supplies it write-after-plate).
     if (Array.isArray(plateNouns) && Array.isArray(plateNouns[pi]) && plateNouns[pi].length) {
       const hit = plateNouns[pi].some((n) => n && c.toLowerCase().includes(String(n).toLowerCase()));
-      if (!hit) v.push({ rule: "restaging", cut: i + 1 });
+      // ⭐ RESTAGING IS PER CUT, AND A BARE-STAMPED SCRIPT IS ONE CUT (x36, caught live). Per-BEAT was only ever
+      // passing because the old shape repeated "A wide shot of the boxing ring…" on every line — "boxing ring"
+      // is itself a census noun, so the capture sentence was satisfying the check, not the beat's own content.
+      // Removing that repetition made restaging fire on nearly every bare beat and killed the writer after two
+      // re-asks. The law is "each CUT's action stages on that photograph's own objects"; with one cut that is
+      // one question, asked of the whole script.
+      if (bareSingle) censusHit = censusHit || hit;
+      else if (!hit) v.push({ rule: "restaging", cut: i + 1 });
     }
     // ⭐⭐ NO ADJECTIVES ON PLATE NOUNS (owner 2026-08-15: «adjectives on plate nouns are banned, character
     // description stays… what it does to plate nouns is wrong. thats the difference»). WHY the two halves
@@ -334,6 +342,9 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   // party speaks and how a line ends belong to the PROMPT, not a validator. They are DEMOTED here: never
   // violations, never re-asks. dialogue-underfilled stays LAW — dead air after the voice dies is a defect in
   // every prompt.
+  // the one-cut restaging verdict (see the per-cut note above): the SCRIPT must touch the photograph somewhere.
+  if (bareSingle && Array.isArray(plateNouns) && Array.isArray(plateNouns[0]) && plateNouns[0].length && !censusHit)
+    v.push({ rule: "restaging", cut: 1 });
   if (durationSec) for (const d of dialogueShape(t, durationSec, { partiesNamed, dialogueWords })) {
     if (d.rule === "dialogue-underfilled") v.push({ rule: d.rule, cut: null, detail: d.figure });
   }
