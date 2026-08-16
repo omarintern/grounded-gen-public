@@ -100,7 +100,7 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // texts run STRUCTURALLY longer — the moment sentence (~90) + two swap clauses (~130) + a legit free-cut
 // (~180) put the measured legit ceiling ≈1650 over the mcgregor max; 1750 = that + margin, still tight
 // enough that paragraph bloat flags. CONTRACT CONSTANT — flagged to the owner's eye at landing.
-export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
+export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
   const t = String(text || "");
   const v = [];
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -382,9 +382,37 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   // ⚠ Position still matters where a rule is fatal in one place and advisory in another — subject-missing is a
   // VIOLATION on cut 1 and an advisory on later cuts; the flag is what distinguishes them now, not whether the
   // push happened at all.
-  for (const a of v.filter((x) => x.advisory))
+  return v;
+}
+
+// ⭐⭐ SEMANTIC CLARITY OVER DETERMINISTIC RULES (owner 2026-08-16, verbatim: «we cant afford to impose
+// deterministic rules. semantic clarity is always better, because clauses trip up alot. our recent additions
+// reflect this as did history»). FOUR writer deaths in one session, every one a mechanical predicate that had
+// drifted from the law it was meant to enforce — cut-count counted lines while the law meant vantages;
+// plate-dressing governed the article "a" and flagged the contract's own shape; dialogue-label rejected the
+// addressee form its sibling parser strips; restaging was only ever passing because of a repetition that was
+// then correctly removed. In none of the four was the INSTRUCTION unclear. So the law carries the intent and
+// the validator mostly reports.
+//
+// ⚠ THE FATAL SET IS THE POLICY, AND IT IS DELIBERATELY SIX (owner-confirmed). Each one is mechanically
+// load-bearing on the celeb lane — not a taste call — and the whole celeb cleared record satisfies all six:
+//   name         a celebrity name reaching the model is a © hazard
+//   lens         the ©-ceiling ladder walks 200→135→85 IN THE TEXT; without it the instrument does not exist
+//   wide         face size is identity safety
+//   swap-missing the celeb has to land on a real body
+//   no-cuts      nothing to render
+//   too-long     over budget
+// Everything else REPORTS. Kept as one declarative set rather than eighteen scattered flags so the policy can
+// be read in one place — which is the same clarity principle applied to our own code.
+const FATAL = new Set(["no-cuts", "name", "lens", "wide", "swap-missing", "too-long"]);
+
+/** The enforcement layer: what may KILL a run. Everything else is warned and dropped. */
+export function goldenViolations(text, opts = {}) {
+  const found = writerFindings(text, opts);
+  const fatal = found.filter((x) => FATAL.has(x.rule) && !x.advisory);
+  for (const a of found.filter((x) => !FATAL.has(x.rule) || x.advisory))
     console.warn(`  ⚠ ${a.rule} ADVISORY${a.cut ? ` (cut ${a.cut})` : ""}${a.detail ? `: ${a.detail}` : ""} — reported, not enforced`);
-  return v.filter((x) => !x.advisory);
+  return fatal;
 }
 
 /** The writer's instruction under WRITER_FACTS: labeled fact lines + a SHORT rule contract. Everything the old
