@@ -316,7 +316,15 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   if (t.length > maxChars) v.push({ rule: "too-long", cut: null, detail: `${t.length}/${maxChars} chars` });
   const dlgIdx = lines.findIndex((l) => /^dialogue:$/i.test(l));
   if (dlgIdx >= 0) for (const l of lines.slice(dlgIdx + 1)) {
-    if (!/^[A-Za-z][\w .'-]{0,40}:\s/.test(l)) { v.push({ rule: "dialogue-label", cut: null }); break; }
+    // ⭐ MIRRORS dialogueShape's OWN PARSER (_gate_rules ~:1169: `^\s*([^:]{1,40}):\s*(.+)$`, which then strips
+    // `\s*\(to [^)]*\)` and sets `addressed` from it). The old class `[\w .'-]` excluded PARENTHESES, so this
+    // check rejected the exact addressee form its sibling was built to read — and addressing is doctrine, not
+    // decoration ("a speaker with no listener is an advert"). x33 died here: the writer emitted a Dialogue:
+    // block with addressee labels, survived two re-asks it could not satisfy, and fell back to the pre-scrape
+    // draft. Same shape as the cut-count kill — two predicates for one concept, drifted apart. Measured:
+    // "Garfield (to Tyson):" now clean, the MJ golden's bare "Investor:" still clean, an unlabelled line still
+    // flags. The leading-letter anchor and the 40-char cap are kept; only the character class is reconciled.
+    if (!/^[A-Za-z][^:]{0,40}:\s/.test(l)) { v.push({ rule: "dialogue-label", cut: null }); break; }
   }
   return v;
 }
