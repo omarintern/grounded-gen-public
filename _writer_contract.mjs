@@ -125,11 +125,8 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
   // $… run over, and promoting it to a violation would risk exactly the unsatisfiable-gate class that has
   // cost three runs this session. If the record shows the writer complying, this stays advisory forever; if it
   // shows the label surviving the instruction, that is the evidence for promoting it.
-  // ⚠ THE CONVENTION IS console.warn AND NEVER PUSH (payoff-import, ~:316). Nothing downstream filters an
-  // `advisory` FLAG — _ground_shotset treats any non-empty return as violations, re-asks twice and exits 3 —
-  // so pushing an "advisory" entry would BE a fatal rule wearing the wrong label. Caught before landing.
   if (labelled.length && wantCuts === 1)
-    console.warn(`  ⚠ cut-label-on-single ADVISORY: ${labelled.length} labelled line(s) on a one-cut script — the law says name a cut only when there is more than one; reported, not enforced`);
+    v.push({ rule: "cut-label-on-single", advisory: true, cut: null, detail: `${labelled.length} labelled line(s) on a one-cut script — a cut is named only when there is more than one` });
   if (wantCuts && cutNums !== wantCuts) v.push({ rule: "cut-count", cut: null, detail: `${cutNums}/${wantCuts}` });
   // per-cut: wide framing, lens termination, subject presence, size words, camera words
   const lensEsc = lens.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -188,7 +185,7 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     if (i === 0) {
       if (subjectThin) v.push({ rule: "subject-missing", cut: 1 });
     } else {
-      if (subjectThin) console.warn(`  ⚠ subject absent from cut ${i + 1} — lawful (McGregor/Tysonfeud both cleared with one), reported because the golden prefers presence`);
+      if (subjectThin) v.push({ rule: "subject-missing", advisory: true, cut: i + 1, detail: "lawful (McGregor/Tysonfeud both cleared with one), reported because the golden prefers presence" });
       // ⚠ VERBATIM ONLY (caught by the golden itself: a ≥4-shared-token test flagged MJ's own cuts 2-3,
       // which ARE the record's carry — 7 of 10 look tokens in a legal SUBSET). The distinguishing fact is not
       // how many traits repeat but whether the WHOLE phrase returns: a subset is the law, the full sequence
@@ -316,7 +313,7 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // invocation, not novelty. Post-freeze option (his later call): ONE cheap semantic call asking «is this
     // element ESTABLISHED, or does it arrive by a route the frame contains?» (~$…) — never "is this word
     // new"; a regex is structurally unable to answer either question.
-    if (fresh.length >= 2) console.warn(`  ⚠ payoff-import ADVISORY (cut ${cuts.length}): ${fresh.slice(0, 4).join(" ")} — reported, not enforced`);
+    if (fresh.length >= 2) v.push({ rule: "payoff-import", advisory: true, cut: cuts.length, detail: fresh.slice(0, 4).join(" ") });
     // context-spend: when the venue's own nouns rode in as facts, at least one must surface in the text —
     // spoken or handled; harvested material the writer never touches is the contract failing silently.
     const vv = (context.venueVocabulary || []).map((n) => ledgerToks(n)).filter((a) => a.length);
@@ -365,7 +362,18 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     const lab = l.match(/^([A-Za-z][^:]{0,40}):\s/);
     if (!lab || !/^[\w .'-]+(?:\s*\([^)]*\))?$/.test(lab[1])) { v.push({ rule: "dialogue-label", cut: null }); break; }
   }
-  return v;
+  // ⭐⭐ THE `advisory` FLAG IS NOW LOAD-BEARING (owner-directed hardening, 2026-08-16). It existed in the
+  // codebase — _gate_rules pushes exchange-floor/button-position with it — but NOTHING read it: dialogueShape's
+  // advisories were filtered by NAME one boundary up, and anything pushed with the flag out of THIS function
+  // reached _ground_shotset, which treats a non-empty return as violations, re-asks twice and exits 3. So the
+  // flag read like a contract and was decoration, which is precisely how I nearly shipped a fatal rule wearing
+  // an advisory label. Now it means what it says, everywhere: reported on stderr, never returned, never fatal.
+  // ⚠ Position still matters where a rule is fatal in one place and advisory in another — subject-missing is a
+  // VIOLATION on cut 1 and an advisory on later cuts; the flag is what distinguishes them now, not whether the
+  // push happened at all.
+  for (const a of v.filter((x) => x.advisory))
+    console.warn(`  ⚠ ${a.rule} ADVISORY${a.cut ? ` (cut ${a.cut})` : ""}${a.detail ? `: ${a.detail}` : ""} — reported, not enforced`);
+  return v.filter((x) => !x.advisory);
 }
 
 /** The writer's instruction under WRITER_FACTS: labeled fact lines + a SHORT rule contract. Everything the old
