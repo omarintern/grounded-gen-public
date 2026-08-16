@@ -12,7 +12,16 @@ import sharp from "sharp";
 import { padToAspect, ASPECT_DIMS } from "./_padref.mjs";
 
 const PROVIDER = "https://api.provider.example/api/v1";
-const ENDPOINT = "seedance-2-0-reference-to-video";
+// ENGINE + RESOLUTION are env-overridable so a direct probe can point at another r2v model without
+// forking this file. Defaults are the seedance path unchanged — omit both and nothing differs.
+// ⚠ RESOLUTION IS PER-MODEL, NOT UNIVERSAL: seedance takes "480p", another model takes "768P"/"2K" ONLY
+// (`/models?type=video` → constraints.resolutions). Sending a resolution the model does not list is an
+// input rejection, so read the model's own constraint list rather than assuming this file's default.
+const ENDPOINT = process.env.GEN_ENDPOINT || "seedance-2-0-reference-to-video";
+const RESOLUTION = process.env.GEN_RES || "480p";
+// The 409 consent object is keyed by PROVIDER, so it cannot stay hardcoded to seedance once the
+// endpoint is variable — derive it from the model id's own prefix.
+const CONSENT_KEY = ENDPOINT.split("-")[0];
 const HERE = dirname(fileURLToPath(import.meta.url));
 const [slug, promptFile, duration = "4s", aspect = "9:16", ...refs] = process.argv.slice(2);
 if (!slug || !promptFile || !refs.length) { console.error('usage: node _multiref_gen.mjs <slug> <promptFile.txt> <duration> <aspect> <ref1> <ref2> ...'); process.exit(1); }
@@ -59,9 +68,9 @@ if (process.env.PAD_WORLD && ASPECT_DIMS[aspect]) {
 }
 
 const promptText = readFileSync(join(HERE, promptFile), "utf8").trim();
-console.log(`[multiref] ${slug}: ${refs.length} refs · ${duration} · ${aspect}\nPROMPT:\n${promptText}\n`);
+console.log(`[multiref] ${slug}: ${refs.length} refs · ${duration} · ${aspect} · ${ENDPOINT} @ ${RESOLUTION}\nPROMPT:\n${promptText}\n`);
 for (let i = 0; i < refs.length; i++) refs[i] = await normaliseRef(refs[i]);
-const payload = { model: ENDPOINT, prompt: promptText, duration, resolution: "480p", aspect_ratio: aspect, reference_image_urls: refs.map(dataUri) };
+const payload = { model: ENDPOINT, prompt: promptText, duration, resolution: RESOLUTION, aspect_ratio: aspect, reference_image_urls: refs.map(dataUri) };
 
 const submit = () => fetch(`${PROVIDER}/video/queue`, { method: "POST", headers: { "Content-Type": "application/json", "SIGN-IN-WITH-X": signIn() }, body: JSON.stringify(payload) });
 // ⚠ A BUDGET STOP IS NOT A COPYRIGHT VERDICT, AND IT MUST NOT BUY A SECOND ENGINE.
@@ -82,7 +91,7 @@ const capGuard = async (fn) => {
   }
 };
 let res = await capGuard(submit);
-if (res.status === 409) { console.log(`[multiref] 409 consent → attest + resubmit`); payload.consents = { seedance: { confirmed_terms_and_privacy: true, confirmed_legal_right: true, confirmed_screening_acknowledged: true } }; res = await capGuard(submit); }
+if (res.status === 409) { console.log(`[multiref] 409 consent → attest + resubmit`); payload.consents = { [CONSENT_KEY]: { confirmed_terms_and_privacy: true, confirmed_legal_right: true, confirmed_screening_acknowledged: true } }; res = await capGuard(submit); }
 if (!res.ok) { console.log(`[multiref] ${slug}: REJECTED (${res.status})\n${(await res.text()).slice(0, 300)}`); process.exit(2); }
 const { queue_id, id } = await res.json(); const qid = queue_id ?? id;
 console.log(`[multiref] ${slug}: ACCEPTED queue_id=${qid} — polling…`);
