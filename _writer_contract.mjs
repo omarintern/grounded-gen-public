@@ -324,7 +324,18 @@ export function goldenViolations(text, { subjectLook = "", lens = "85mm", wantCu
     // draft. Same shape as the cut-count kill — two predicates for one concept, drifted apart. Measured:
     // "Garfield (to Tyson):" now clean, the MJ golden's bare "Investor:" still clean, an unlabelled line still
     // flags. The leading-letter anchor and the 40-char cap are kept; only the character class is reconciled.
-    if (!/^[A-Za-z][^:]{0,40}:\s/.test(l)) { v.push({ rule: "dialogue-label", cut: null }); break; }
+    // ⭐ THE EXISTING NAME CLASS IS UNCHANGED; the ONLY addition is the optional "(to Other)" suffix, which is
+    // not new vocabulary — dialogueShape already strips exactly `\s*\(to [^)]*\)` and sets `addressed` from it,
+    // so the construct exists in this architecture and the two predicates simply disagreed about it. The
+    // addressee form is doctrine, not decoration ("a speaker with no listener is an advert"), so the writer was
+    // obeying the law and dying on the sibling check: x33 emitted `Garfield (to Tyson):`, failed two re-asks it
+    // could not satisfy, and shipped the pre-scrape fallback. ⚠ Nothing on the celeb path instructs a Dialogue:
+    // block (dialogueClause is inert without PLAN_DIALOGUE, which _run sets at :1813, past the celeb exit at
+    // :760) — the writer chooses the shape itself, so instructions alone cannot prevent this. The pre-colon
+    // capture is length-bounded the same way dialogueShape bounds it, so a label this accepts is a label the
+    // parser can actually read; that is the drift the reconciliation exists to close.
+    const lab = l.match(/^([A-Za-z][^:]{0,40}):\s/);
+    if (!lab || !/^[\w .'-]+(?:\s*\([^)]*\))?$/.test(lab[1])) { v.push({ rule: "dialogue-label", cut: null }); break; }
   }
   return v;
 }
