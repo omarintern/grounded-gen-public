@@ -100,7 +100,7 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // texts run STRUCTURALLY longer — the moment sentence (~90) + two swap clauses (~130) + a legit free-cut
 // (~180) put the measured legit ceiling ≈1650 over the mcgregor max; 1750 = that + margin, still tight
 // enough that paragraph bloat flags. CONTRACT CONSTANT — flagged to the owner's eye at landing.
-export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
+export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
   const t = String(text || "");
   const v = [];
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -342,6 +342,17 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   // party speaks and how a line ends belong to the PROMPT, not a validator. They are DEMOTED here: never
   // violations, never re-asks. dialogue-underfilled stays LAW — dead air after the voice dies is a defect in
   // every prompt.
+  // ⚠ NOTHING EVER CHECKED THAT THE SUPPLIED STAMPS WERE USED (x37: a single [0s] beat and no dialogue for a
+  // SIX-second clip — five seconds of unscripted tail, the exact defect spanHeader exists to prevent).
+  // stamp-missing only ever asked whether a line HAS a stamp, never whether the clip was filled. The law
+  // already says "Use these stamps in order, one per beat" and x37 ignored it, so instruction alone does not
+  // close this — but per the owner's ruling this REPORTS rather than kills: a thin script is a quality
+  // failure, not a © or engine-mechanical one, and killing a run over it is what the prune exists to stop.
+  if (Array.isArray(stamps) && stamps.length > 1) {
+    const used = stamps.filter((sec) => new RegExp(`\\[${sec}(?:\\.\\d+)?s\\]`).test(t)).length;
+    if (used < stamps.length)
+      v.push({ rule: "stamps-unused", advisory: true, cut: null, detail: `${used}/${stamps.length} supplied stamps appear — the clip runs ${durationSec || "?"}s and the script only reaches [${stamps[used - 1] ?? 0}s]` });
+  }
   // the one-cut restaging verdict (see the per-cut note above): the SCRIPT must touch the photograph somewhere.
   if (bareSingle && Array.isArray(plateNouns) && Array.isArray(plateNouns[0]) && plateNouns[0].length && !censusHit)
     v.push({ rule: "restaging", cut: 1 });
