@@ -70,7 +70,40 @@ if (process.env.PAD_WORLD && ASPECT_DIMS[aspect]) {
 const promptText = readFileSync(join(HERE, promptFile), "utf8").trim();
 console.log(`[multiref] ${slug}: ${refs.length} refs · ${duration} · ${aspect} · ${ENDPOINT} @ ${RESOLUTION}\nPROMPT:\n${promptText}\n`);
 for (let i = 0; i < refs.length; i++) refs[i] = await normaliseRef(refs[i]);
-const payload = { model: ENDPOINT, prompt: promptText, duration, resolution: RESOLUTION, aspect_ratio: aspect, reference_image_urls: refs.map(dataUri) };
+// ⚠ THE PLATE IS THE FRAME, NOT A PEER REFERENCE — and the API distinguishes the two.
+// `image_url` is documented as "for image-to-video models, THE reference image"; `reference_image_urls`
+// is "up to 30 images for character/style CONSISTENCY". another model's *-to-video declares
+// model_type=image-to-video, so its plate belongs in image_url and only figure refs belong in the array.
+// Sending both together (what seedance wants) demotes the plate to one style vote among many, which is
+// the shape that produced a square render from a 9:16 plate and let a 2D cel drag a photographic pool
+// into CGI. FRAME_REF=1 promotes refs[0] to image_url; default off leaves the seedance path untouched.
+const ELEMENTS = process.env.ELEMENTS === "1";
+const FRAME_REF = process.env.FRAME_REF === "1";
+// ⚠ ASPECT IS PER-MODEL AND THE VALIDATOR ENFORCES IT. `/models?type=video` publishes an aspect_ratios
+// list per model and it is CURATED, not boilerplate: another model's image-to-video publishes an EMPTY list
+// and rejects the field outright ("This model does not support aspect_ratio"), because an i2v model takes
+// its frame from the image. Send the field only where the model lists it — NO_ASPECT=1 omits it.
+const payload = { model: ENDPOINT, prompt: promptText, duration };
+if (process.env.NO_RES !== "1") payload.resolution = RESOLUTION;   // the fallback video model publishes resolutions:[] — omit
+if (process.env.NO_ASPECT !== "1") payload.aspect_ratio = aspect;
+
+// ⚠ ELEMENTS — THE ONLY CONVENTION THAT KEEPS SCENE AND CHARACTER IN SEPARATE SLOTS.
+// `scene_image_urls` (bound in-prompt as @Image1..) and `elements` (bound as @Element1..) are named,
+// typed slots: the plate is declared AS THE SCENE and a figure AS A CHARACTER, instead of both being
+// dropped into one flat `reference_image_urls` bag where they compete as peers. Documented for the fallback video model
+// R2V. The header's note that "@Image binding was rejected" refers to SEEDANCE, which does not support
+// these fields at all — it is not a verdict on this model. ELEMENTS=1: refs[0] → scene, refs[1..] → elements.
+if (ELEMENTS) {
+  payload.scene_image_urls = [dataUri(refs[0])];
+  if (refs.length > 1) payload.elements = refs.slice(1).map((r) => ({ frontal_image_url: dataUri(r) }));
+  console.log(`[multiref] ELEMENTS: plate ${refs[0]} → scene_image_urls (@Image1) · ${refs.length - 1} figure(s) → elements (@Element1..)`);
+} else if (FRAME_REF) {
+  payload.image_url = dataUri(refs[0]);
+  if (refs.length > 1) payload.reference_image_urls = refs.slice(1).map(dataUri);
+  console.log(`[multiref] FRAME_REF: plate ${refs[0]} → image_url · ${refs.length - 1} figure ref(s) → reference_image_urls`);
+} else {
+  payload.reference_image_urls = refs.map(dataUri);
+}
 
 const submit = () => fetch(`${PROVIDER}/video/queue`, { method: "POST", headers: { "Content-Type": "application/json", "SIGN-IN-WITH-X": signIn() }, body: JSON.stringify(payload) });
 // ⚠ A BUDGET STOP IS NOT A COPYRIGHT VERDICT, AND IT MUST NOT BUY A SECOND ENGINE.
