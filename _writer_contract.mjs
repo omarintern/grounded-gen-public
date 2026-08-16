@@ -88,7 +88,20 @@ export const cutLinesOf = (text) => String(text || "").split("\n").map((l) => l.
  *  and this check MUTUALLY UNSATISFIABLE the moment a scene wanted several beats off one plate: x31 asked for
  *  3 beats on 1 sourced ref, scored cut-count [3/1], and no re-ask could ever satisfy both — the writer was
  *  punished for obeying its own contract. _ground_shotset counted distinctly already; this is the other half. */
-export const cutNumbersOf = (text) => new Set(cutLinesOf(text).map((l) => ((l.match(/\bCUT\s*(\d+)/i) || [])[1]) ?? "1")).size;
+export const cutNumbersOf = (text) => {
+  const labelled = cutLinesOf(text);
+  if (labelled.length) return new Set(labelled.map((l) => ((l.match(/\bCUT\s*(\d+)/i) || [])[1]) ?? "1")).size;
+  // ⭐ A STAMPED, UNLABELLED SCRIPT IS ONE VANTAGE — the shape factContract MANDATES for a single plate ("One
+  // line per BEAT and NO cut label anywhere"). Returning 0 here made the two counters disagree on the very
+  // shape the law orders: goldenViolations scored it CLEAN while _ground_shotset's pre-check (:252,
+  // cutCount(lines) !== wantCuts) read 0 !== 1 and threw the compliant script away for a PAID prose-model rewrite
+  // — and the rewrite re-adds "CUT 1 —" per line, which is precisely what x37 emitted. I reported that as the
+  // writer IGNORING the new law. It obeyed; this counter overwrote it. Same two-predicates-drifted class I had
+  // just written three commits about, introduced by my own cut-law change and caught by the vacuum probe.
+  // Prose carries its vantage in the capture sentence and has no stamps, so it is left to the caller's own
+  // shape handling rather than guessed at here.
+  return /^\[\d+(?:\.\d+)?s\]/m.test(String(text || "")) ? 1 : 0;
+};
 const STAMPED_CUT = /^\[\d+(?:\.\d+)?s\]\s*cut \d+/i;
 
 /** The MJ golden properties as violations. [] = the text IS the shape. Each violation carries the rule name and
