@@ -227,7 +227,7 @@ export const proseFiguresBlock = () => (
 (process.env.PROSE_FIGURES
       ? `⚠ THESE FIGURES CARRY THEIR IDENTITY IN YOUR PROSE — there is NO reference image for them, by design ` +
         `(they are concepts the video model already knows, and a reference would collapse them into one arbitrary ` +
-        `rendering). Introduce each ONCE, at first mention, in a SINGLE clause built from these fixed signatures, ` +
+        `rendering). Introduce each ONCE, at first mention, in a SINGLE clause built from these fixed signatures, \u26a0 THE BRACKETED LIST IS DATA, NEVER PHRASING: name the figure in your own sentence and fold its signatures into that sentence's grammar. Never copy the brackets, the separators or the list itself into a beat. ` +
         `then never describe it again: ${process.env.PROSE_FIGURES}. Signatures only — no mood, no manner, no ` +
         `texture.\n\n`
       : "")
