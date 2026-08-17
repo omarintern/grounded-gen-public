@@ -24,7 +24,10 @@ const RESOLUTION = process.env.GEN_RES || "480p";
 const CONSENT_KEY = ENDPOINT.split("-")[0];
 const HERE = dirname(fileURLToPath(import.meta.url));
 const [slug, promptFile, duration = "4s", aspect = "9:16", ...refs] = process.argv.slice(2);
-if (!slug || !promptFile || !refs.length) { console.error('usage: node _multiref_gen.mjs <slug> <promptFile.txt> <duration> <aspect> <ref1> <ref2> ...'); process.exit(1); }
+// ⚠ ZERO REFS IS NOW LEGAL — it means TEXT-TO-VIDEO (owner 2026-08-17: a stylized request "goes straight to
+// seedance. no llm treatment or vlm or anything"). A drawn world has no real photograph to ground against,
+// so the grounded pipeline has nothing to offer it and the prompt goes to the generator bare.
+if (!slug || !promptFile) { console.error('usage: node _multiref_gen.mjs <slug> <promptFile.txt> <duration> <aspect> [ref1 ref2 ...]'); process.exit(1); }
 
 // ⚠ THE DECLARED TYPE MUST MATCH THE BYTES, AND A FILENAME IS NOT EVIDENCE. Scraped candidates are saved with
 // a .jpg NAME whatever the host served — measured on one real pool: 8 files, only 4 genuine JPEG (1 AVIF,
@@ -83,7 +86,12 @@ const FRAME_REF = process.env.FRAME_REF === "1";
 // list per model and it is CURATED, not boilerplate: another model's image-to-video publishes an EMPTY list
 // and rejects the field outright ("This model does not support aspect_ratio"), because an i2v model takes
 // its frame from the image. Send the field only where the model lists it — NO_ASPECT=1 omits it.
-const payload = { model: ENDPOINT, prompt: promptText, duration };
+// ⚠ THE T2V MODEL ID IS NOT ASSUMED. A reference-to-video endpoint asked for a ref-less generation may or
+// may not serve it; that is a question for the provider, not for a guess that costs a call to answer.
+// T2V_ENDPOINT names the text-to-video model when the ref-less route is used; unset, the r2v endpoint is
+// tried as-is and any refusal is the provider telling us the id. Verify free via /video/quote first.
+const MODEL = refs.length ? ENDPOINT : (process.env.T2V_ENDPOINT || ENDPOINT);
+const payload = { model: MODEL, prompt: promptText, duration };
 if (process.env.NO_RES !== "1") payload.resolution = RESOLUTION;   // the fallback video model publishes resolutions:[] — omit
 if (process.env.NO_ASPECT !== "1") payload.aspect_ratio = aspect;
 
@@ -93,7 +101,9 @@ if (process.env.NO_ASPECT !== "1") payload.aspect_ratio = aspect;
 // dropped into one flat `reference_image_urls` bag where they compete as peers. Documented for the fallback video model
 // R2V. The header's note that "@Image binding was rejected" refers to SEEDANCE, which does not support
 // these fields at all — it is not a verdict on this model. ELEMENTS=1: refs[0] → scene, refs[1..] → elements.
-if (ELEMENTS) {
+if (!refs.length) {
+  console.log(`[multiref] TEXT-TO-VIDEO — no refs (stylized passthrough); model ${MODEL}`);
+} else if (ELEMENTS) {
   payload.scene_image_urls = [dataUri(refs[0])];
   if (refs.length > 1) payload.elements = refs.slice(1).map((r) => ({ frontal_image_url: dataUri(r) }));
   console.log(`[multiref] ELEMENTS: plate ${refs[0]} → scene_image_urls (@Image1) · ${refs.length - 1} figure(s) → elements (@Element1..)`);
