@@ -52,7 +52,12 @@ export function logPregateMiss(who, kind) { log({ action: "miss", who, kind, not
 export async function pregate(prompt) {
   if (process.env.PREGATE === "0") return { refuse: false };
   try {
-    const { providerJson, textPart } = await import("./provider-llm.mjs");
+    // ⚠ PLAIN COMPLETION, NOT JSON MODE. providerJson sends response_format, which the cheap models reject with
+    // a 400 ("response_format is not supported by this model") — measured 2026-08-17, and every call failed open
+    // so the gate silently refused nothing at all. The verdict log is the only reason that was visible within a
+    // minute rather than looking like a gate that simply never fires. Parse the object out of the text instead:
+    // any model can produce JSON, only some can be forced to.
+    const { providerText } = await import("./provider-llm.mjs");
     const ask =
       `Does this video request depict a REAL FAMOUS PERSON (a celebrity, athlete, politician, musician — anyone ` +
       `identifiable), or a FICTIONAL CHARACTER OWNED by a company or studio (a film, game, cartoon or brand ` +
@@ -64,7 +69,9 @@ export async function pregate(prompt) {
       `is owned, answer false. Being unsure here is free and costs nothing; being wrong turns away a legitimate ` +
       `request, which cannot be undone.\n` +
       `Return ONLY JSON {"owned":true|false,"who":"<the name, or empty>","why":"celebrity|owned-character|none","sure":0..1}.`;
-    const j = await providerJson([textPart(ask)], { model: MODEL, maxTokens: 120, temperature: 0 });
+    const { text } = await providerText(ask, { model: MODEL, maxTokens: 120, temperature: 0 });
+    let j = null; try { j = JSON.parse((String(text).match(/\{[\s\S]*\}/) || ["{}"])[0]); } catch {}
+    if (!j) { log({ action: "unparseable", raw: String(text).slice(0, 160), model: MODEL }); return { refuse: false }; }
     const owned = j?.owned === true;
     const sure = Number(j?.sure);
     const who = String(j?.who || "").trim();
