@@ -5,6 +5,7 @@
 // (blanket "every shot is wide", subject small) so the recognizable subject never renders tight.
 //   node _multiref_gen.mjs <slug> <promptFile.txt> <duration=4s> <aspect=9:16> <ref1> <ref2> ...
 import { readFileSync, writeFileSync } from "node:fs";
+import { markInflight, clearInflight } from "./_inflight.mjs";   // an accepted gen is recorded at ACCEPTANCE so a dead container cannot orphan it
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -138,6 +139,10 @@ if (res.status === 409) { console.log(`[multiref] 409 consent → attest + resub
 if (!res.ok) { console.log(`[multiref] ${slug}: REJECTED (${res.status})\n${(await res.text()).slice(0, 300)}`); process.exit(2); }
 const { queue_id, id } = await res.json(); const qid = queue_id ?? id;
 console.log(`[multiref] ${slug}: ACCEPTED queue_id=${qid} — polling…`);
+// ⚠ RECORDED BEFORE THE FIRST POLL, DELIBERATELY. The job is already accepted, so from this
+// line onward the asset is ours whether or not this process survives to collect it. Writing the
+// record after polling began would leave the exact window unprotected that the record exists to cover.
+markInflight({ queue_id: qid, model: MODEL, slug, aspect, duration, target: `out/_aspect/gen_${slug}_${aspect.replace(":", "x")}.mp4` });
 
 for (let i = 0; i < 75; i++) {
   await new Promise((r) => setTimeout(r, 8000));
@@ -160,7 +165,7 @@ for (let i = 0; i < 75; i++) {
     }
     const url = data.download_url ?? data.url; if (url) buf = Buffer.from(await (await fetch(url)).arrayBuffer());
   } else buf = Buffer.from(await poll.arrayBuffer());
-  if (buf && buf.length) { const out = join(HERE, "out", "_aspect", `gen_${slug}_${aspect.replace(":", "x")}.mp4`); writeFileSync(out, buf); console.log(`[multiref] ${slug}: ✓ COMPLETED ${(buf.length / 1024).toFixed(0)}KB → ${out}\n  queue_id=${qid}`); process.exit(0); }
+  if (buf && buf.length) { const out = join(HERE, "out", "_aspect", `gen_${slug}_${aspect.replace(":", "x")}.mp4`); writeFileSync(out, buf); clearInflight(qid); console.log(`[multiref] ${slug}: ✓ COMPLETED ${(buf.length / 1024).toFixed(0)}KB → ${out}\n  queue_id=${qid}`); process.exit(0); }
   console.log(`[multiref] ${slug}: ${data ? "failed_during_gen (OUTPUT GATE)" : "empty"} ${data ? JSON.stringify(data).slice(0, 200) : ""}`); process.exit(1);
 }
 console.log(`[multiref] ${slug}: poll timeout — queue_id=${qid} (recover via _poll_one.mjs)`); process.exit(1);
