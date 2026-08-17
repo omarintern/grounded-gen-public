@@ -86,11 +86,11 @@ const FRAME_REF = process.env.FRAME_REF === "1";
 // list per model and it is CURATED, not boilerplate: another model's image-to-video publishes an EMPTY list
 // and rejects the field outright ("This model does not support aspect_ratio"), because an i2v model takes
 // its frame from the image. Send the field only where the model lists it — NO_ASPECT=1 omits it.
-// ⚠ THE T2V MODEL ID IS NOT ASSUMED. A reference-to-video endpoint asked for a ref-less generation may or
-// may not serve it; that is a question for the provider, not for a guess that costs a call to answer.
-// T2V_ENDPOINT names the text-to-video model when the ref-less route is used; unset, the r2v endpoint is
-// tried as-is and any refusal is the provider telling us the id. Verify free via /video/quote first.
-const MODEL = refs.length ? ENDPOINT : (process.env.T2V_ENDPOINT || ENDPOINT);
+// ⚠ THE T2V MODEL ID WAS NOT ASSUMED — IT WAS ASKED. /video/quote is free, exact and validates params before
+// any call, so the ref-less route names a model we CONFIRMED exists rather than one we hoped would serve:
+// seedance-2-0-text-to-video quoted 200 at 6s/480p/9:16, the same shape as r2v.
+// T2V_ENDPOINT still overrides for a deliberate experiment.
+const MODEL = refs.length ? ENDPOINT : (process.env.T2V_ENDPOINT || "seedance-2-0-text-to-video");   // VERIFIED 2026-08-17 via the free /video/quote: the id exists and prices identically to r2v ($… @ 6s/480p/9:16), so the ref-less route no longer borrows the reference-to-video endpoint
 const payload = { model: MODEL, prompt: promptText, duration };
 if (process.env.NO_RES !== "1") payload.resolution = RESOLUTION;   // the fallback video model publishes resolutions:[] — omit
 if (process.env.NO_ASPECT !== "1") payload.aspect_ratio = aspect;
