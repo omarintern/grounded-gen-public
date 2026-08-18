@@ -11,7 +11,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
 import { scrapeImages } from "./scrape.mjs";
-import { judgeKillshot, killshotFails, safetyOnlyFails } from "./_judge_killshot.mjs";   // SHARED minors/content kill-shot — this figure/char-ref sourcer was the ONE ref path that never ran it (the other four do)
+import { judgeKillshot, killshotFails, safetyOnlyFails, contentFlagFails } from "./_judge_killshot.mjs";   // SHARED minors/content kill-shot — this figure/char-ref sourcer was the ONE ref path that never ran it (the other four do)
 import { fetchImage, isPaidStock } from "./_placeholder_card.mjs";
 import { cacheRead, cacheWrite, characterKey, figureKey, slugify } from "./_ref_cache.mjs";
 import { bgCutout } from "./_plate_sane.mjs";
@@ -173,7 +173,20 @@ async function judgeOne(c) {
     ? safetyOnlyFails(ks)   // fail-closed on minors AND content — the shared version; a MISSING content_flag key rejects (the old `k.content_flag && …` truthiness let it pass)
     : killshotFails(ks, Number(process.env.AI_CEILING ?? 0.3), { requireSubject: false });
   if (unsafe) {
-    console.log(`  ${c.p.split("/").pop()} @${c.host}: KILL-SHOT ✗ ${!ks ? "UNSCREENED" : ks.shows_minor ? "MINOR" : (ks.content_flag && ks.content_flag !== "none") ? String(ks.content_flag).toUpperCase() : "unsafe"} — dropped`);
+    // ⚠⚠ NAME THE REASON THAT ACTUALLY DECIDED, NOT WHICHEVER FLAG HAPPENS TO BE SET (app lane, 2026-08-18:
+    // "I chased the wrong flag for two runs"). This printed content_flag whenever it was non-"none", so an
+    // entire scrape reported "KILL-SHOT ✗ THIRD_PARTY_MEDIA" while the real cause was real_photo !== true.
+    // third_party_media has been RETIRED since 2026-08-09 (_judge_killshot:265) — contentFlagFails returns
+    // false for it, so it CANNOT reject anything, and the log was naming a cause that is incapable of being
+    // one. A dishonest rejection label is worse than none: it sends the reader to fix something that is not
+    // broken. The reasons are tested in the SAME ORDER the gate applies them, so the label is the verdict.
+    const _why = !ks ? "UNSCREENED"
+      : ks.shows_minor ? "MINOR"
+      : contentFlagFails(ks) ? String(ks.content_flag).toUpperCase()
+      : ks.real_photo !== true ? "NOT-A-PHOTO"
+      : Number(ks.ai_generated) > Number(process.env.AI_CEILING ?? 0.3) ? `AI ${Number(ks.ai_generated).toFixed(2)}`
+      : "unsafe";
+    console.log(`  ${c.p.split("/").pop()} @${c.host}: KILL-SHOT ✗ ${_why} — dropped`);
     return null;
   }
   const j = await judge(c.p);
