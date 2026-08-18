@@ -144,8 +144,25 @@ console.log(`[multiref] ${slug}: ACCEPTED queue_id=${qid} — polling…`);
 // record after polling began would leave the exact window unprotected that the record exists to cover.
 markInflight({ queue_id: qid, model: MODEL, slug, aspect, duration, target: `out/_aspect/gen_${slug}_${aspect.replace(":", "x")}.mp4` });
 
-for (let i = 0; i < 75; i++) {
-  await new Promise((r) => setTimeout(r, 8000));
+// ⚠⚠ THE POLL INTERVAL IS A THROUGHPUT DECISION, NOT A LATENCY ONE (measured 2026-08-18). the provider publishes
+// a budget of 120 requests on /video/retrieve — observed directly in the response headers mid-run
+// (limit_requests 120, remaining 118), which is the same counter the app lane warned about from the outside.
+// Every concurrent run polls against that ONE shared budget, so the interval sets a hard ceiling on how many
+// runs can exist at all:
+//     every  8s → 7.5 polls/min/run → saturates 120 at 16 concurrent runs
+//     every 15s → 4.0 polls/min/run → saturates at 30
+// Measured throughput is 8.35 min/run under 2-way contention, so 100 gens/hr needs ~14 concurrent — which at
+// the old 8s left 12% headroom against a limit shared with everything else. That is not a margin, it is a
+// coincidence. Fifteen seconds costs each clip up to 7s of extra delivery latency and roughly doubles the
+// number of runs the system can hold.
+// ⚠ THE WINDOW IS PRESERVED, NOT THE ITERATION COUNT. Keeping 75 iterations would have stretched the wait to
+// 18 minutes; the ceiling is expressed in SECONDS so changing the interval cannot silently change how long a
+// run waits before it gives up.
+const POLL_MS = Math.max(2000, Number(process.env.VIDEO_POLL_MS || 15000));
+const POLL_WINDOW_S = Math.max(60, Number(process.env.VIDEO_POLL_WINDOW_S || 900));   // 15 min, as before-ish
+const POLL_N = Math.ceil((POLL_WINDOW_S * 1000) / POLL_MS);
+for (let i = 0; i < POLL_N; i++) {
+  await new Promise((r) => setTimeout(r, POLL_MS));
   let poll; try { poll = await fetch(`${PROVIDER}/video/retrieve`, { method: "POST", headers: { "Content-Type": "application/json", "SIGN-IN-WITH-X": signIn() }, body: JSON.stringify({ model: ENDPOINT, queue_id: qid }), signal: AbortSignal.timeout(30000) }); }
   catch (e) { if (i % 3 === 0) console.log(`[multiref] ${slug}: poll net err (job still rendering) ${String(e).slice(0, 60)}`); continue; }
   if (poll.status === 402) { console.log(`[multiref] ${slug}: lane exhausted`); process.exit(1); }
@@ -166,7 +183,7 @@ for (let i = 0; i < 75; i++) {
     try { data = JSON.parse(raw.toString("utf8")); } catch { data = null; }
     if (!data) { if (i % 3 === 0) console.log(`[multiref] ${slug}: poll returned unparseable JSON (${raw.length}B) — retrying`); continue; }
     const s = (data.status || "").toUpperCase();
-    if (["PROCESSING", "IN_PROGRESS", "QUEUED", "IN_QUEUE"].includes(s)) { if (i % 3 === 0) console.log(`[multiref] ${slug}: ${s}… (${(i + 1) * 8}s)`); continue; }
+    if (["PROCESSING", "IN_PROGRESS", "QUEUED", "IN_QUEUE"].includes(s)) { if (i % 3 === 0) console.log(`[multiref] ${slug}: ${s}… (${Math.round(((i + 1) * POLL_MS) / 1000)}s)`); continue; }
     // INFRA ≠ ©-TRIP: a provider concurrency / rate-limit error on the POLL is TRANSIENT (the gen is still
     // running) — back off + retry the poll, NEVER misclassify it as an OUTPUT-GATE trip. That false trip is
     // what recorded bogus per-subject ceilings and triggered needless widen/re-source/fallback this session.
