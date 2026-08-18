@@ -12,6 +12,7 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
 import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, beatStamps } from "./_beat_law.mjs";
+import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -201,6 +202,19 @@ if (BEAT_STYLE !== "template") {
     asWhileCheck() +
     cutLaw() +
     causalOrder() +
+    // ⚠⚠ THE SINGLE-REF WRITER WAS TOLD WHERE A PAYOFF GOES AND NEVER WHAT ONE IS (owner 2026-08-18: the
+    // clips "come across as stale videos, stale comedy / narrative"). payoffLaw governs PLACEMENT — the
+    // consequence lands last, the camera stays unstaged — while COMEDY_LAW governs CONSTRUCTION, and rule 4
+    // is the missing sentence: "the payoff is the same material one step further — the commitment deepens".
+    // ⚠ MEASURED ON FOUR SHIPPED CLIPS. Three decomposed the prompt chronologically — paw on plant, push,
+    // look at dog; stands at counter, gestures at menu, barista turns away — with the payoff being whatever
+    // the prompt's last clause already said. The fourth ESCALATED (a self-checkout rejects Robin Hood's gold,
+    // so he draws his bow on it) and it used the SAME writer, so the difference was not the writer: his
+    // signatures handed it material to escalate WITH. A raccoon in a shed has none, and with no rule to
+    // escalate the material it had, it described the scene instead. Rule 2 is the other half — the venue's
+    // own things in PARTICULARS, never the general item.
+    // ⚠ NOTHING IN THE SIX RULES IS CELEB-SPECIFIC; it reached only the assembly writer by history, not design.
+    COMEDY_LAW + "\n\n" +
     payoffLaw() +
     seesawLaw(BEAT_STYLE) +
     situationArc() +
