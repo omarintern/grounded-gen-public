@@ -228,6 +228,17 @@ export const framingConcessionBlock = (framingConceded) => (
 // rather describe the reporter in frame0 to carry forward the scene"). A figure the photograph already holds
 // needs no signatures and no reference — it needs to be READ. Same law as frame zero generally: the plate is
 // the scene's first frame, so whoever stands in it is already cast.
+// ⚠⚠ THE SPACE LAW LIVED ONLY IN THE BRAIN DOCTRINE, WHICH IS NOT WHERE THE SHIPPED BEATS ARE WRITTEN
+// (measured 2026-08-18). manifest.mjs holds the plan/draft prompt; the POST-SCRAPE writers compose their laws
+// from this module, and _ground_shotset does not import manifest at all. So the affordance law governed the
+// DRAFT — which is only the fallback — while the beats that actually reach the generator had no space law of
+// any kind. That is why the raccoon walked through the cage mesh, and why ten A/B samples showed no effect
+// from a law they never received. Exported as TEXT so the brain can import the same bytes; two copies of a
+// law drift, and a drifted law is worse than a missing one because it looks present.
+export const RECONCILE_LAW = "⚠⚠ RECONCILE THE REQUEST WITH THE PHOTOGRAPH — THAT RECONCILIATION IS YOUR JOB, NOT A RULE YOU OBEY. The photograph is the ground truth for SPACE: what exists, what stands where, what is reachable from where. The request is the ground truth for INTENT. When the space cannot stage the action as asked, keep the intent and change only the staging — begin from the state that action would have produced, or stage it where the photograph allows. ⚠ AND NEVER INVENT STRUCTURE THE PHOTOGRAPH DOES NOT SHOW in order to make an action work. If you cannot see how a thing is reached, you do not know that it can be, and describing the route anyway is how a clip ends up showing a body passing through something solid. What you can actually see, use freely.";
+
+export const reconcileLaw = () => `${RECONCILE_LAW}\n\n`;
+
 export const plateQuestionerBlock = () => (
 (process.env.PLATE_QUESTIONER === "1"
       ? `\u26a0 THE QUESTIONER IS ALREADY IN THE PHOTOGRAPH. Do not invent one and do not give them an ` +
