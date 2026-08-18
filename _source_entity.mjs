@@ -135,10 +135,16 @@ if (dlFails.size) console.log(`  ⚠ ${[...dlFails.values()].reduce((a, b) => a 
 // (rebank4 bug: the ladder hooked only the judge branch, so a stage whose pool died at download killed the
 // whole chain with exit 2 instead of walking on). Infra errors still throw past this: an outage is not exhaustion.
 function escalateEngine(reason) {
-  const STAGES = [
-    { transport: "scoped", env: {}, label: "scoped-reddit (fan layer)" },
-    { transport: "library", env: {}, label: "the free library (CC corpus, free rows — terminal stage)" },
-  ];
+  // ⛔ THE LADDER IS EMPTY — A CHARACTER-REF IS WEB ONLY (owner 2026-08-18: "character-refs are web only").
+  // Both rungs are removed, for the reason the identity route already gives about corpora: this job optimises
+  // for LEGIBILITY of ONE named subject, and a corpus that does not hold that subject cannot answer the query -
+  // it can only return something ELSE that survives the judge. the free library was the terminal stage on the theory
+  // that free rows are zero-downside; they are not. A wrong ref is worse than no ref (the Alice film-still trip:
+  // an owned rendition rotated in from an off-corpus pool and went straight into seedance's output gate), and a
+  // thin web draw that walks two more corpora spends judge calls to arrive somewhere further from the subject.
+  // Exhaustion now exits honestly and the figure is PROMPTED, which is the correct degrade.
+  // ⚠ ENTITY_TRANSPORT still overrides for an operator; this only removes the AUTOMATIC walk.
+  const STAGES = [];
   const stage = Number(process.env.ENTITY_BACKFILL || 0);
   if (stage >= STAGES.length) return false;   // terminal stage — the caller proceeds to its own honest exit
   const s = STAGES[stage];
