@@ -34,6 +34,24 @@ export const dialogueClause = () => {
     + `present asks the model to invent a body mid-line, which it does badly or not at all.\n`
     + `· An unaddressed line is delivered TO THE LENS. That is occasionally right and usually not — it is the `
     + `grammar of an advertisement — so let it happen only where you actually mean it.`
+    // ── THE SPEAKER SIDE, WHICH THIS CLAUSE NEVER POLICED (owner 2026-08-18, on the UFC clip) ───────────
+    // Everything above decides who a line is aimed AT. Nothing decided who it comes FROM, and the brain's
+    // own speaker law lives in manifest.mjs — the DRAFT prompt, which this writer does not import. So a
+    // dialogue block reading `UFC interviewer to raccoon: "..."` arrived with the addressee present and
+    // correct and the speaker a bare NAME with no body anywhere in the beats. The generator resolved
+    // "someone is asking" the only way it could — it handed the question to a visible panelist, who then
+    // read as asking something he plainly was not.
+    // ⚠ ALL THREE LEGITIMATE GEOMETRIES SURVIVE, and that is why this is not the manifest rule copied over:
+    // visible-when-speaking, carried-voice (established, then the picture moves on — the rule below), and
+    // the questioner of a form whose questioners stand where the camera stands. The owner ruled that last
+    // one CORRECT for a presser, and an absolute speaker-must-be-visible rule is what produced the fault.
+    + `\n· AND WHOEVER SPEAKS MUST BE SOMEONE THE SCENE HAS ESTABLISHED. A line may come from a figure the `
+    + `frame shows; from one established earlier whose voice carries over a later shot; or, in a form whose `
+    + `questioners stand where the camera stands, from off-frame by that form's own convention. What it may `
+    + `never come from is a NAME that appears only in a dialogue label. A speaker with no body anywhere in `
+    + `the beats leaves the generator to invent one, and it will give the line to whoever happens to be `
+    + `visible — who then reads as saying something they are plainly not. If you cannot say where a speaker `
+    + `is, either put them in a beat or cut the line.`
     // ── THE THIRD OPTION: A VOICE MAY OUTLAST THE SHOT IT WAS ANCHORED IN ──────────────────────────────────
     // This clause used to say "two honest options and no third", which foreclosed the one thing a montage
     // needs. Camera-address and carried voice get confused because neither shows a listener, but they are
