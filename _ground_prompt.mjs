@@ -12,7 +12,7 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
 import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, beatStamps } from "./_beat_law.mjs";
-import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
+import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const [worldRef, userPrompt, slug = "scene", ...charRefs] = process.argv.slice(2);
@@ -192,6 +192,7 @@ if (BEAT_STYLE !== "template") {
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +
+    plateQuestionerBlock() +
     beatZeroLaw() +
     trappingsLaw() +
     charSigBlock(charSig) +

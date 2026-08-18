@@ -223,6 +223,20 @@ export const framingConcessionBlock = (framingConceded) => (
       : "")
 );
 
+// ⚠ THE PLATE'S OWN QUESTIONER IS DESCRIBED, NEVER INVENTED (owner 2026-08-18: "often television news
+// reporter holding a microphone will hit rung0, in which case you dont need to conjure the reporter but
+// rather describe the reporter in frame0 to carry forward the scene"). A figure the photograph already holds
+// needs no signatures and no reference — it needs to be READ. Same law as frame zero generally: the plate is
+// the scene's first frame, so whoever stands in it is already cast.
+export const plateQuestionerBlock = () => (
+(process.env.PLATE_QUESTIONER === "1"
+      ? `\u26a0 THE QUESTIONER IS ALREADY IN THE PHOTOGRAPH. Do not invent one and do not give them an ` +
+        `appearance of your own: read the person the plate shows — what they wear, where they stand, what they ` +
+        `hold — and write THAT into beat zero, then carry them forward unchanged. They are cast already; your ` +
+        `job is to describe, not to conjure.\n\n`
+      : "")
+);
+
 export const proseFiguresBlock = () => (
 (process.env.PROSE_FIGURES
       ? `⚠ THESE FIGURES CARRY THEIR IDENTITY IN YOUR PROSE — there is NO reference image for them, by design ` +
