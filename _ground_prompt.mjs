@@ -92,6 +92,7 @@ if (charPaths.length) {
 // made the penguin GROW up the escalator). Templated (not LLM-elaborated) to guarantee minimalism.
 const has = (s) => s && !/^none$/i.test(String(s).trim());
 let beatLine, mode;
+let writerInstruction = "";   // the writer contract, captured at _dump so the payoff repair can re-ask with it
 if (seen.standin_is_target) {
   mode = "animate (stand-in IS the target)";
   // stand-in IS the subject — use the clean TARGET noun + action (NOT the verbose VLM stand-in string, which
@@ -183,7 +184,9 @@ if (BEAT_STYLE !== "template") {
   // FULL OBSERVABILITY: dump the ENTIRE instruction the beat writer receives. Until now only its OUTPUT (the
   // beats) was inspectable, so the ruling that produced them — hundreds of lines of accumulated doctrine — was
   // invisible to review. Written every run to out/_aspect/<slug>_instruction.txt.
-  const _dump = (t) => { try { writeFileSync(join(HERE, "out/_aspect", `${slug}_instruction.txt`), t); } catch {} return t; };
+  // Captured for the PAYOFF REPAIR below, which lives outside this block: a re-ask must carry the same
+  // contract the first ask did, or the retry answers a different question than the one that failed.
+  const _dump = (t) => { writerInstruction = t; try { writeFileSync(join(HERE, "out/_aspect", `${slug}_instruction.txt`), t); } catch {} return t; };
   const instruction = _dump(
     spanHeader() +
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
@@ -437,6 +440,53 @@ try {
   const { payoffVerdict, payoffActs } = await import("./_payoff_check.mjs");
   const pv = await payoffVerdict(process.env.USER_PROMPT || userPrompt || "", beatLine);
   if (pv.verdict) console.error(`  [payoff:${payoffActs() ? "live" : "shadow"}] last beat ${pv.verdict.toUpperCase()}${pv.why ? ` — ${pv.why}` : ""}${payoffActs() ? "" : "  (recorded only)"}`);
+  // ── THE REPAIR (owner 2026-08-19: "i dont see payoff") ──────────────────────────────────────────────────
+  // ⚠⚠ THE CHECK WAS RIGHT AND DID NOTHING. payoffActs() existed but was read ONLY to change the word in the
+  // log line — there was no repair behind it, so "live" meant "print live". Measured on both runs of
+  // 2026-08-19: the check returned COMPLETES for each ("matches described celebration directly"; "Matches
+  // request, no extra action") and the owner independently said "i dont see payoff" — 2 more agreements on
+  // top of the 3 it was calibrated on. A verdict nothing acts on is a log line.
+  // Same shape as the fine-detail repair above, and for the same reasons: RE-ASK, never edit the beat
+  // ourselves (deleting a clause could delete the payoff the user asked for); carry the ORIGINAL contract so
+  // the retry answers the question that failed; VERIFY the retry actually escalates; and ship the original
+  // with a loud warning if it does not — a working clip with a flat payoff beats no clip.
+  if (payoffActs() && pv.verdict === "completes" && writerInstruction) {
+    // The dialogue block is APPENDED as a trailing section, so beats and block separate cleanly and the
+    // block's [Ns] stamps still line up as long as the retry keeps the same stamps (it is told to).
+    const _bl = beatLine.split("\n");
+    const _lastBeatIdx = _bl.map((l) => /^\[\d+(?:\.\d+)?s\]/.test(l.trim())).lastIndexOf(true);
+    const _tail = _lastBeatIdx >= 0 ? _bl.slice(_lastBeatIdx + 1).join("\n") : "";
+    console.warn(`  [payoff] last beat only COMPLETES the request — re-asking once for a beat that ESCALATES.`);
+    try {
+      const { text: t3 } = await providerText(
+        writerInstruction +
+        `\n\n⚠ YOUR PREVIOUS ATTEMPT IS FINE EXCEPT FOR ITS LAST BEAT, WHICH ONLY COMPLETES THE REQUEST. ` +
+        `It delivers what the request already described, or the obvious next step of the action, so the clip ` +
+        `stops rather than lands. Rewrite the SAME beats at the SAME timestamps, keeping every earlier beat ` +
+        `exactly as it is, and change ONLY the last beat so it ESCALATES: take the same material one step ` +
+        `further — commit harder, or answer the situation with something THE SCENE'S OWN WORLD already ` +
+        `supplies that the request never named. Do not introduce a new place, a new character, or a prop the ` +
+        `frame cannot afford. If an earlier beat set up a turn that nothing answered, ANSWERING IT is the ` +
+        `escalation. Return the full beat list and nothing else.`,
+        { maxTokens: 1000, temperature: 0.3 });
+      const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, BEAT_STAMPS.length);
+      if (rl.length !== BEAT_STAMPS.length) {
+        console.warn(`  [payoff] retry returned ${rl.length}/${BEAT_STAMPS.length} beats — shipping the original.`);
+      } else {
+        // ⚠ VERIFY, DO NOT ASSUME. The retry is judged by the SAME check that failed it; a retry that still
+        // only completes is not an improvement worth the risk of a worse-written beat.
+        const rebuilt = rl.join("\n");
+        const pv2 = await payoffVerdict(process.env.USER_PROMPT || userPrompt || "", rebuilt);
+        if (pv2.verdict === "escalates") {
+          beatLine = rebuilt + (_tail ? "\n" + _tail : "");
+          console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`);
+        } else console.warn(`  [payoff] retry still ${String(pv2.verdict || "unjudged").toUpperCase()} — shipping the original (expect a flat payoff).`);
+      }
+    } catch (e) {
+      if (e?.name === "ProviderInfraError") throw e;
+      console.warn(`  [payoff] repair errored (${String(e.message).slice(0, 60)}) — shipping the original`);
+    }
+  }
 } catch { /* a check that cannot run is not a verdict */ }
 writeFileSync(outFile, beatLine + "\n");
 console.log(`target : ${intent.target} · action: ${intent.action}${intent.secondary ? ` · +${intent.secondary}` : ""}`);
