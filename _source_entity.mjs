@@ -182,7 +182,11 @@ async function judgeOne(c) {
     // broken. The reasons are tested in the SAME ORDER the gate applies them, so the label is the verdict.
     const _why = !ks ? "UNSCREENED"
       : ks.shows_minor ? "MINOR"
-      : contentFlagFails(ks) ? String(ks.content_flag).toUpperCase()
+      // ⚠ THE FLAG, NOT THE OBJECT. contentFlagFails takes a STRING; passing the verdict object made it
+      // stringify to "[object Object]", which is neither "none" nor a known flag, so it returned TRUE for
+      // every candidate and the label printed whatever content_flag happened to be — reviving the exact
+      // dishonest labels this fix was written to remove (✗ NONE, ✗ THIRD_PARTY_MEDIA).
+      : contentFlagFails(ks.content_flag) ? String(ks.content_flag).toUpperCase()
       : ks.real_photo !== true ? "NOT-A-PHOTO"
       : Number(ks.ai_generated) > Number(process.env.AI_CEILING ?? 0.3) ? `AI ${Number(ks.ai_generated).toFixed(2)}`
       : "unsafe";
