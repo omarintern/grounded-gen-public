@@ -428,6 +428,16 @@ if (!/(^|\n)\s*Dialogue\s*:/i.test(beatLine) && (process.env.PLAN_DIALOGUE || ""
 }
 
 const outFile = join(HERE, "out/_aspect", `${slug}_beats.txt`);
+// ⚠ SHADOW: records what the payoff check WOULD say and changes nothing. COMEDY_LAW rule 4 reaches this
+// writer now and the beats stayed chronological anyway — cat: paw, push, accusing stare; heron: stands over
+// sandwich, grips, swallows — so this is the check half. It is calibrated on only THREE owner-judged
+// examples, and a comedy verdict is exactly what a model is confidently wrong about, so it watches until its
+// agreement can be read across real traffic. PAYOFF_CHECK=1 lets it act; "0" disables it.
+try {
+  const { payoffVerdict, payoffActs } = await import("./_payoff_check.mjs");
+  const pv = await payoffVerdict(process.env.USER_PROMPT || userPrompt || "", beatLine);
+  if (pv.verdict) console.error(`  [payoff:${payoffActs() ? "live" : "shadow"}] last beat ${pv.verdict.toUpperCase()}${pv.why ? ` — ${pv.why}` : ""}${payoffActs() ? "" : "  (recorded only)"}`);
+} catch { /* a check that cannot run is not a verdict */ }
 writeFileSync(outFile, beatLine + "\n");
 console.log(`target : ${intent.target} · action: ${intent.action}${intent.secondary ? ` · +${intent.secondary}` : ""}`);
 console.log(`scene : ${seen.scene}`);
