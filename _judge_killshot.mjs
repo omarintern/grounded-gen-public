@@ -286,10 +286,19 @@ export function contentFlagFails(flag) {
 // A CHARACTER-REF exists to carry one person's identity forward. That is its entire function, no redaction
 // makes it safe for a child, and this ruling deliberately does not reach it: a child figure is conjured from
 // the beats, never scraped. Unanswered still rejects there — a frame nobody screened is never an identity.
-export function minorFails(k, { plate = false } = {}) {
-  if (plate) return false;                                  // a stage's population is scenery, never a verdict
-  if (k?.shows_minor === false) return false;               // no minor at all
-  return true;                                              // identity ref: true or unanswered ⇒ reject
+// ⚠⚠ PRESENCE IS NO LONGER A VERDICT (owner 2026-08-18: "for minor or teenager it should still work, we
+// should remove anything in codebase that gates against minors ... our gate is for context of material").
+// The plate side already worked this way — a stage's population is scenery. The CHARACTER-REF side still
+// rejected on presence alone, and that is what it cost: searching "Punch monkey" returned genuine Punch
+// monkey material from wikia and the press, and two of four candidates died as MINOR because the figure is a
+// BABY MACAQUE. The rule was written to keep real children out of generated video and it was destroying the
+// only reference that carries a viral animal's identity, protecting nobody.
+// ⚠⚠ WHAT IS DELIBERATELY KEPT, AND WHY IT IS NOT WHAT HE ASKED ME TO REMOVE: the CO-PRESENCE interlock
+// below. A frame reporting a minor AND nudity is a statement about the CONTENT OF THE MATERIAL, not about
+// who merely appears in it — it is exactly the "context" test the owner names as the thing we do gate on,
+// and it is the one combination that must never be buildable. Presence alone no longer rejects anywhere.
+export function minorFails(_k, _opts = {}) {
+  return false;                                             // presence never rejects — context still does
 }
 
 export function safetyOnlyFails(k, { plate = false } = {}) {
