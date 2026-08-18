@@ -150,9 +150,21 @@ for (let i = 0; i < 75; i++) {
   catch (e) { if (i % 3 === 0) console.log(`[multiref] ${slug}: poll net err (job still rendering) ${String(e).slice(0, 60)}`); continue; }
   if (poll.status === 402) { console.log(`[multiref] ${slug}: lane exhausted`); process.exit(1); }
   const ctype = (poll.headers.get("content-type") || "").toLowerCase();
+  // ⚠⚠ THE BODY IS READ EXACTLY ONCE, AND THAT IS THE WHOLE POINT (measured 2026-08-18, cell G). This branched
+  // on content-type and then read json() on one path and arrayBuffer() on the other. A response that reached
+  // the else-branch with its body already consumed threw "Body is unusable: Body has already been read" —
+  // an UNCAUGHT TypeError that killed the poller AFTER acceptance. The gen itself was perfect: the
+  // sweep retrieved a complete 1182KB mp4 by queue_id minutes later. So a delivery bug destroyed a finished asset
+  // and then, because _run inferred the verdict from the exit code, reported itself as a COPYRIGHT TRIP on a
+  // clip of a raccoon. Read the bytes once, decide afterwards; a parse failure is then just a parse failure.
+  let raw = null;
+  try { raw = Buffer.from(await poll.arrayBuffer()); }
+  catch (e) { if (i % 3 === 0) console.log(`[multiref] ${slug}: poll body unreadable (${String(e?.message || e).slice(0, 70)}) — retrying`); continue; }
   let buf = null, data = null;
-  if (ctype.includes("application/json")) {
-    data = await poll.json();
+  const looksJson = ctype.includes("application/json") || (raw.length > 0 && (raw[0] === 0x7b || raw[0] === 0x5b));
+  if (looksJson) {
+    try { data = JSON.parse(raw.toString("utf8")); } catch { data = null; }
+    if (!data) { if (i % 3 === 0) console.log(`[multiref] ${slug}: poll returned unparseable JSON (${raw.length}B) — retrying`); continue; }
     const s = (data.status || "").toUpperCase();
     if (["PROCESSING", "IN_PROGRESS", "QUEUED", "IN_QUEUE"].includes(s)) { if (i % 3 === 0) console.log(`[multiref] ${slug}: ${s}… (${(i + 1) * 8}s)`); continue; }
     // INFRA ≠ ©-TRIP: a provider concurrency / rate-limit error on the POLL is TRANSIENT (the gen is still
@@ -164,8 +176,12 @@ for (let i = 0; i < 75; i++) {
       await new Promise((r) => setTimeout(r, 10000)); continue;
     }
     const url = data.download_url ?? data.url; if (url) buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-  } else buf = Buffer.from(await poll.arrayBuffer());
+  } else if (raw.length) buf = raw;
   if (buf && buf.length) { const out = join(HERE, "out", "_aspect", `gen_${slug}_${aspect.replace(":", "x")}.mp4`); writeFileSync(out, buf); clearInflight(qid); console.log(`[multiref] ${slug}: ✓ COMPLETED ${(buf.length / 1024).toFixed(0)}KB → ${out}\n  queue_id=${qid}`); process.exit(0); }
-  console.log(`[multiref] ${slug}: ${data ? "failed_during_gen (OUTPUT GATE)" : "empty"} ${data ? JSON.stringify(data).slice(0, 200) : ""}`); process.exit(1);
+  // ⚠ EXIT 7 = A REAL OUTPUT-GATE VERDICT, AND NOTHING ELSE MAY WEAR IT. The genuine trip used to exit 1,
+  // which is also what an uncaught crash exits, so _run could not tell a clearance verdict from a bug and
+  // called every non-2/4/5 failure a © trip. The text stays byte-identical because _persistent_gen matches
+  // on OUTPUT rather than on the code (the right pattern — it never had this bug).
+  console.log(`[multiref] ${slug}: ${data ? "failed_during_gen (OUTPUT GATE)" : "empty"} ${data ? JSON.stringify(data).slice(0, 200) : ""}`); process.exit(data ? 7 : 1);
 }
 console.log(`[multiref] ${slug}: poll timeout — queue_id=${qid} (recover via _poll_one.mjs)`); process.exit(1);
