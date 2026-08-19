@@ -126,3 +126,38 @@ export async function judgeSpatial(filePath, sceneIntent = "", opts = {}) {
     };
   } catch (e) { if (process.env.SPATIAL_DEBUG) console.error(`  [judgeSpatial] ${String(e && e.message).slice(0,120)}`); return null; }   // ⚠ FAILS OPEN — no opinion leaves the crowded answers in place
 }
+
+// ── THE TELLS SECOND LOOK ─────────────────────────────────────────────────────────────────────────
+// ⚠⚠ THE CANDOUR TELLS CROWD-SUPPRESS EXACTLY LIKE THE SPATIAL FIELDS (measured 2026-08-20). The plate the
+// owner rejected as "professional" — a ground-level NYC street shot with a faded film grade, from a stock
+// mirror (pxhere) — answered shallow_dof=FALSE in the crowded 25-field call and TRUE when the tells were
+// asked alone. Same image, same wording. A crowded TRUE is trustworthy (it already rejected); a crowded
+// FALSE is not, so would-pass candidates get the tells re-asked in their own small call.
+// ⚠⚠ TWO NEW TELLS, FROM THE OWNER'S OWN READ ("an image should look low-effort and casual and as if
+// someone took it on the fly/spot"). Both are ACTS OF PRODUCTION you can see, not taste:
+//   chosen_vantage  the camera occupies a position nobody casually holds a phone — this plate was LAID ON
+//                   THE ROAD for its leading lines. Mounted utility devices (doorbell/cctv/dashcam) are
+//                   FALSE: they were not placed for a picture. (Tells only gate where candidness selects,
+//                   so device-form worlds never reach this anyway — the FALSE is belt and braces.)
+//   graded_color    the colors were processed toward an aesthetic — the faded pink wash, split-toning,
+//                   HDR looks. Ordinary camera color, however dull, is FALSE.
+// MEASURED before shipping, on owner-labelled plates: NYC fires [shallow_dof, chosen_vantage, graded_color];
+// the bar portrait fires [posed, graded_color]; the penguin plate, the foot-shot (owner: "actually candid"),
+// the heron and the deer all stay clean — so the foot-shot still dies on SPATIAL, not on tells.
+// ⚠ SEPARATE FROM judgeSpatial, DELIBERATELY: a combined 10-field call re-crowded the spatial answers (the
+// foot-shot flipped back to stage=open with the tells added). Two small calls preserve both measured
+// behaviours. ⚠ FAILS OPEN — null leaves the crowded answers in place.
+export async function judgeTells(filePath, opts = {}) {
+  const px = Number(opts.viewPx ?? process.env.VIEW_PX ?? 512);
+  try {
+    const j = await providerJson([
+      textPart(`Return ONLY JSON {"posed":bool,"arranged_light":bool,"shallow_dof":bool,"styled":bool,"crisp":bool,"chosen_vantage":bool,"graded_color":bool}. Each is a fact you can SEE, not a taste judgement. posed = a person or animal looking at, or performing for, the camera. arranged_light = light PUT THERE for the picture. shallow_dof = STRONG background blur against a sharp subject. styled = objects placed or arranged for the shot. crisp = CONSPICUOUSLY sharp and clean the way a stock photograph is. chosen_vantage = the camera occupies a position a person does not casually hold a phone: laid on the ground, ankle height, flat overhead, pressed to a surface, shooting through an object for framing. Ordinary standing or seated eye/chest height — including a quick tilt down at something on the ground — is FALSE. A mounted utility device (doorbell, security cam, dashcam) is FALSE: it was not placed for a picture. graded_color = the colors were PROCESSED toward an aesthetic after capture: faded film emulation, split-toned shadows, heavy vignette, HDR tone-mapping, a wash the real scene could not have had. Ordinary camera color, including dull or badly-lit color, is FALSE.`),
+      imagePart("image/jpeg", await smallViewAt(filePath, px)),
+    ], { maxTokens: 200, temperature: 0.1 });
+    if (!j) return null;
+    const out = {};
+    for (const k of ["posed", "arranged_light", "shallow_dof", "styled", "crisp", "chosen_vantage", "graded_color"])
+      if (typeof j[k] === "boolean") out[k] = j[k];
+    return Object.keys(out).length ? out : null;
+  } catch { return null; }   // ⚠ FAILS OPEN — no opinion leaves the crowded answers in place
+}
