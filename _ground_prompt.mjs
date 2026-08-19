@@ -448,6 +448,49 @@ const outFile = join(HERE, "out/_aspect", `${slug}_beats.txt`);
 // sandwich, grips, swallows — so this is the check half. It is calibrated on only THREE owner-judged
 // examples, and a comedy verdict is exactly what a model is confidently wrong about, so it watches until its
 // agreement can be read across real traffic. PAYOFF_CHECK=1 lets it act; "0" disables it.
+// ── SWAP CHECK + REPAIR — runs BEFORE the payoff repair, deliberately: this one is about GROUNDING beat zero
+// on the photograph, and there is no point escalating a payoff on a shot whose first frame the generator is
+// still free to invent. Only fires when a swap was actually instructed (a stand-in exists and is not already
+// the target); a plate with an empty action spot has nothing to take the position of.
+try {
+  if (has(seen.standin) && !seen.standin_is_target) {
+    const { swapVerdict, swapActs } = await import("./_swap_check.mjs");
+    const sv = await swapVerdict(seen.standin, seen.standin_placement, intent.target, beatLine);
+    if (sv.verdict) console.error(`  [swap:${swapActs() ? "live" : "shadow"}] beat zero ${sv.verdict.toUpperCase()} — position ${JSON.stringify(sv.position)} · facing ${JSON.stringify(sv.facing)}${swapActs() ? "" : "  (recorded only)"}`);
+    if (swapActs() && sv.verdict === "unanchored" && writerInstruction) {
+      const _bl = beatLine.split("\n");
+      const _i0 = _bl.findIndex((l) => /^\[\d+(?:\.\d+)?s\]/.test(l.trim()));
+      console.warn(`  [swap] beat zero states neither position nor facing — re-asking once so the subject takes the stand-in's place.`);
+      try {
+        const { text: t4 } = await providerText(
+          writerInstruction +
+          `\n\n⚠ YOUR PREVIOUS ATTEMPT IS FINE EXCEPT FOR ITS OPENING BEAT, WHICH DOES NOT PLACE THE SUBJECT. ` +
+          `The photograph already contains ${seen.standin}${seen.standin_placement ? `, in the ${seen.standin_placement} of the frame` : ""}, ` +
+          `and ${intent.target} must take over THAT position — the generator has to know which body it is replacing, ` +
+          `or it invents a second one and the first frame drifts. Your opening beat named the place in general but ` +
+          `said nothing about WHERE in the picture the subject is or WHICH WAY it faces. Rewrite the SAME beats at ` +
+          `the SAME timestamps, changing ONLY the opening beat so it states the subject's position in the frame and ` +
+          `its facing, at the spot that body occupies. Do NOT mention the body being replaced — it is gone, the ` +
+          `subject is simply there instead. Return the full beat list and nothing else.`,
+          { maxTokens: 1000, temperature: 0.3 });
+        const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, BEAT_STAMPS.length);
+        if (rl.length !== BEAT_STAMPS.length) console.warn(`  [swap] retry returned ${rl.length}/${BEAT_STAMPS.length} beats — shipping the original.`);
+        else {
+          const rebuilt = rl.join("\n");
+          const sv2 = await swapVerdict(seen.standin, seen.standin_placement, intent.target, rebuilt);
+          if (sv2.verdict === "anchored") {
+            beatLine = rebuilt + (_i0 >= 0 && _bl.slice(_i0 + rl.length).length ? "\n" + _bl.slice(_i0 + rl.length).join("\n") : "");
+            console.log(`  [swap] repaired — beat zero now states position ${JSON.stringify(sv2.position)} · facing ${JSON.stringify(sv2.facing)}`);
+          } else console.warn(`  [swap] retry still ${String(sv2.verdict || "unjudged").toUpperCase()} — shipping the original (expect a loose first frame).`);
+        }
+      } catch (e) {
+        if (e?.name === "ProviderInfraError") throw e;
+        console.warn(`  [swap] repair errored (${String(e.message).slice(0, 60)}) — shipping the original`);
+      }
+    }
+  }
+} catch { /* a check that cannot run is not a verdict */ }
+
 try {
   const { payoffVerdict, payoffActs } = await import("./_payoff_check.mjs");
   const pv = await payoffVerdict(process.env.USER_PROMPT || userPrompt || "", beatLine);
