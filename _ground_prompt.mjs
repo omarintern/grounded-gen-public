@@ -43,8 +43,20 @@ const intent = await providerJson([textPart(
 
 // 2. READ THE SCRAPE (VLM) — what real STAND-IN is actually in the picked world-ref, and is it already the target?
 const b64 = readFileSync(worldRef).toString("base64");
+// ⚠ NO WORKED EXAMPLES IN THIS FIELD (owner's standing rule: general rules avoid pushing biases in
+// specificity; enforced across the engine in 9650c7d / 68f787b / 4c1796f, which this site escaped).
+// A/B MEASURED 2026-08-19 on six stored plates, the shipped wording against the same wording minus its three
+// examples ('the person driving' / 'the clerk at the counter' / 'the raccoon on the table'):
+//   · DETECTION is unaffected — 6/6 identical on whether a stand-in exists and where it sits.
+//   · DESCRIPTION is pulled toward the examples. The ski-counter plate answered "the clerk behind the
+//     counter" WITH them — nearly the example verbatim — and "the female worker wearing a blue beanie"
+//     without. The sidewalk plate: "the person walking with a backpack" vs "woman with a backpack walking away".
+// That matters because seen.standin is interpolated VERBATIM into the swap clause the beat writer obeys, and a
+// generic role-noun is a weaker positional anchor than a description that identifies WHICH body in the frame.
+// Small sample: only 2 of the 6 plates held an occupant, so the wording effect rests on two observations —
+// but detection is unchanged, so removing them costs nothing.
 const seen = await providerJson([
-  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant/subject currently AT THE ACTION SPOT that the target should REPLACE — the body the model swaps (e.g. 'the person driving', 'the clerk at the counter', 'the raccoon on the table'); if the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so NO swap is needed),"standin_placement":"foreground | side | background | none",${ELEMENTS_FIELD}}.`),
+  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant/subject currently AT THE ACTION SPOT that the target should REPLACE — the body the model swaps. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so NO swap is needed),"standin_placement":"foreground | side | background | none",${ELEMENTS_FIELD}}.`),
   imagePart("image/jpeg", b64),
 ], { maxTokens: 1000, temperature: 0.2 });
 
