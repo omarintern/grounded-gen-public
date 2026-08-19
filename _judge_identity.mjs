@@ -83,3 +83,46 @@ export async function judgeIdentity(filePath, subjectStr, opts = {}) {
     return null;
   }
 }
+
+// ── THE SPATIAL SECOND LOOK ───────────────────────────────────────────────────────────────────────
+// ⚠⚠ MEASURED PROMPT CROWDING, 2026-08-19, and it is the reason three gates failed today. The identity
+// rubric asks ~25 fields in ONE call, and the SPATIAL ones degrade there while the safety and capture ones
+// hold. Same image, same rubric TEXT, same 512px view — only the number of co-asked fields differs:
+//     the foot-shot sidewalk plate   full judge  usable_stage=open      asked ALONE  usable_stage=closeup
+//                                    full judge  action_spot_room=ample
+//     the bar counter macro          full judge  action_spot_room=ample asked ALONE  action_spot_room=too_small
+// The full-judge answers repeated 3/3, so this is systematic rather than variance. Both plates passed and both
+// diffused; the owner's read was "it keeps diffusing the bar ... even sidewalk is diffused".
+// ⚠ IT ALSO MADE A GATE SHIPPED THE SAME MORNING INERT. stageFails() can only fire on "closeup", and the
+// crowded call never returns it — so usable_stage gated nothing even after it was wired.
+//
+// Precedent for the shape: overlay_designed already takes a targeted second look above. This asks the THREE
+// spatial questions alone, with the same wording, so the answers are comparable to the ones they replace.
+// ⚠ CALLED ONLY ON A CANDIDATE THAT WOULD OTHERWISE PASS — see _source_scene. A near-winner is worth one more
+// call; a frame already rejected on subject or safety is not.
+export async function judgeSpatial(filePath, sceneIntent = "", opts = {}) {
+  const px = Number(opts.viewPx ?? process.env.VIEW_PX ?? 512);
+  try {
+    // ⚠⚠ KEEP THIS PROMPT SHORT — THE SAME DISEASE, ONE LEVEL DOWN. The first cut carried the full rubric
+    // verbatim and the model never closed the JSON: at maxTokens 120 the reply stopped at `{ "usable_stage": "`
+    // and at 400 it stopped at `{ "`. A longer prompt buys more reasoning before the object starts, so a
+    // three-field answer ran out of budget. The wording below is the one that answered cleanly, and it is
+    // deliberately terser than the crowded rubric it replaces.
+    const j = await providerJson([
+      textPart(`Return ONLY JSON {"usable_stage":"open|enclosed|closeup","action_spot_room":"ample|tight|too_small","subject_scale":0..1}.` +
+        (sceneIntent ? ` THE ACTION: "${String(sceneIntent).slice(0, 140)}".` : "") +
+        ` usable_stage = does this frame CONTAIN SPACE? "open" = it ESTABLISHES ITS LOCATION — you can see the place around the action. "enclosed" = cramped or occluded. "closeup" = no surrounding world; a frame pointed at the ground, a wall or a detail shows no place however much room is in it.` +
+        ` action_spot_room = would the ACTION'S finest detail render legibly here? "ample" yes · "tight" subject reads but fine detail would not · "too_small" a subject there would be unreadable pixels.` +
+        ` subject_scale = 0.9 close · 0.5 medium · 0.3 wide · 0.1 super-wide.`),
+      imagePart("image/jpeg", await smallViewAt(filePath, px)),
+    ], { maxTokens: 200, temperature: 0.1 });
+    if (!j) return null;
+    const st = String(j.usable_stage || "").toLowerCase();
+    const rm = String(j.action_spot_room || "").toLowerCase();
+    return {
+      usable_stage: ["open", "enclosed", "closeup"].includes(st) ? st : null,
+      action_spot_room: ["ample", "tight", "too_small"].includes(rm) ? rm : null,
+      subject_scale: Number.isFinite(Number(j.subject_scale)) ? Number(j.subject_scale) : null,
+    };
+  } catch (e) { if (process.env.SPATIAL_DEBUG) console.error(`  [judgeSpatial] ${String(e && e.message).slice(0,120)}`); return null; }   // ⚠ FAILS OPEN — no opinion leaves the crowded answers in place
+}
