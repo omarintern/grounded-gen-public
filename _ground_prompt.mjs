@@ -382,8 +382,18 @@ if (BEAT_STYLE !== "template") {
   const bl = beatLine.split("\n");
   const hasBlock = /(^|\n)\s*(?:Dialogue|Sound)\s*:/i.test(beatLine);
   const spoken = [];
-  const cleaned = bl.map((line) => {
-    if (/^\s*(?:Dialogue|Sound)\s*:/i.test(line)) return line;
+  // ⚠⚠ THE STRIP STOPS AT THE FIRST BLOCK HEADER (owner 2026-08-20). This walk protected only lines that
+  // START with Dialogue:/Sound: and ran the quote-strip inside the terminal blocks themselves. Measured on
+  // punch monkey 61429ca6: the writer's block was healthy — `BARTENDER (to PUNCH) [4s]: "Rough day,"` /
+  // `BARTENDER (continuing) [7s]: "pal?"` — and shipped as `BARTENDER (to PUNCH) [4s]` / `BARTENDER (`:
+  // the block's OWN authored words stripped as if they were inline narration (the `continu\w*` verb-branch
+  // ate `continuing) [7s]: "pal?"` whole), and seedance, handed a bare label, invented its own line
+  // ("first time here, kid?" — unauthored speech on a blank check). Everything from the first block header
+  // on is CANONICAL — the very destination this guard exists to move words INTO — so the strip may only
+  // run on the beat region above it.
+  const _blockAt = bl.findIndex((l) => /^\s*(?:Dialogue|Sound)\s*:/i.test(l));
+  const cleaned = bl.map((line, i) => {
+    if (_blockAt >= 0 && i >= _blockAt) return line;   // canonical region — headers and block content pass through untouched
     const at = (line.match(/^\s*\[(\d+)s\]/) || [])[1];
     let out = line;
     for (const m of [...line.matchAll(QUOTED)]) { spoken.push({ at, text: m[1] }); out = out.replace(m[0], ""); }
