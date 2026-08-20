@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
-import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, beatStamps } from "./_beat_law.mjs";
+import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -69,7 +69,13 @@ let charSig = "";
 // 7-second clip was explicitly instructed to stop at 4 seconds — no amount of "span the full duration" elsewhere
 // could win against a literal format spec. Every 2s, last stamp at least 2s before the end.
 const BEAT_SECS = Math.max(2, Math.round(Number(process.env.BEAT_DURATION || 4)));
-const BEAT_STAMPS = beatStamps(BEAT_SECS);   // derivation MOVED to _beat_law (slot payload for the merged contract per the hybrid fold)
+// ── THE GRID IS RETIRED ON THIS WRITER (owner 2026-08-20, the depth ruling): the writer CHOOSES its count
+// from the legal set (density floor: ≥1.5s/beat) and places its own stamps. A legacy duration below 4.5s has
+// no legal count — it falls back to the old arithmetic count, free-placed under the same stamp rules.
+const LEGAL = legalBeatCounts(BEAT_SECS);
+const COUNTS = LEGAL.length ? LEGAL : [Math.max(2, Math.ceil(BEAT_SECS / 2))];
+// Canon rides in from _run (the resolver's derivation over a CONFIRMED figure) — absent for John Does.
+const CHAR_CANON = (() => { try { const j = JSON.parse(process.env.CHAR_CANON || ""); return j && typeof j === "object" ? j : null; } catch { return null; } })();
 const charNames = charRefs.map((r) => (r.includes("=") ? r.split("=")[0] : "")).filter(Boolean);
 const charPaths = charRefs.map((r) => (r.includes("=") ? r.split("=").slice(1).join("=") : r));
 if (charPaths.length) {
@@ -213,6 +219,7 @@ if (BEAT_STYLE !== "template") {
     beatZeroLaw() +
     trappingsLaw() +
     charSigBlock(charSig) +
+    charContextBlock(CHAR_CANON) +
     soundLaw() +
     asWhileCheck() +
     cutLaw() +
@@ -241,7 +248,7 @@ if (BEAT_STYLE !== "template") {
     // doorbell story (7 elements, blocks, near-zero detail) came back "this is great … this is perfect".
     // Timestamps supply PACING the model otherwise invents; without them events land off-beat. BEAT_BLOCKS=0
     // restores continuous prose.
-    outputShape(BEAT_STAMPS) +
+    outputShape(BEAT_SECS, COUNTS) +
     hardConstraints() +
     // FINAL CHECKLIST, LAST ON PURPOSE. This instruction passed 10,000 characters of accumulated doctrine and new
     // rules buried mid-text stopped landing: a 7-second clip kept returning beats that stopped at [4s], and the
@@ -256,17 +263,22 @@ if (BEAT_STYLE !== "template") {
   // model stopped complying with parts of it: a 7s clip explicitly told to return 4 beats stamped [0s][2s][4s][6s]
   // came back with 3, and the payoff verb kept vanishing - both stated tersely at the very end. Restating a rule a
   // fifth time does not fix a compliance problem at that length; CHECKING THE OUTPUT does.
-  const wantStamps = BEAT_STAMPS.join(",");
-  const gotStamps = (t) => (t.match(/\[(\d+)s\]/g) || []).map((x) => x.replace(/\D/g, "")).join(",");
-  if (process.env.BEAT_BLOCKS !== "0" && gotStamps(text) !== wantStamps) {
-    console.error(` (returned [${gotStamps(text)}], need [${wantStamps}] - one corrective retry)`);
+  // ⚠ LEGALITY, NOT A GRID (owner 2026-08-20). The enforcement mechanism survives exactly — a validator that
+  // RE-ASKS, which the density lesson proved is the half that works — but "wrong" no longer means
+  // disagreement with a prescribed list: it means an illegal COUNT (outside {${...}}), a DECIMAL stamp, an
+  // opening that is not [0s], disorder, or a stamp past the duration. Vacuum-lab measured 7/7 legal under
+  // this contract with counts varying by material — the variance is the point of the ruling.
+  const stampList = (t) => (t.match(/^\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));
+  if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(text), BEAT_SECS, COUNTS)) {
+    console.error(` (returned [${stampList(text).join(",")}] — illegal for ${BEAT_SECS}s, counts {${COUNTS.join(",")}} - one corrective retry)`);
     const fix = await providerText(
-      `Rewrite these beats so there are EXACTLY ${BEAT_STAMPS.length}, stamped ${BEAT_STAMPS.map((t) => `[${t}s]`).join(" ")}. ` +
-      `Keep the same story and wording as far as possible; redistribute or extend the action to fill every stamp. ` +
+      `Rewrite these beats so the beat COUNT is one of {${COUNTS.join(", ")}} and every stamp is a WHOLE second: ` +
+      `first beat [0s], stamps ascending, all under ${BEAT_SECS}s. Spacing is yours — beats need not be evenly spaced. ` +
+      `Keep the same story and wording as far as possible. ` +
       `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines.\n\n${text}`,
       { maxTokens: 700, temperature: 0.3 }
     ).catch(() => null);
-    if (fix?.text && gotStamps(fix.text) === wantStamps) { text = fix.text; console.error(` (retry OK)`); }
+    if (fix?.text && stampsLegal(stampList(fix.text), BEAT_SECS, COUNTS)) { text = fix.text; console.error(` (retry OK)`); }
   }
 
   let lines;
@@ -280,8 +292,8 @@ if (BEAT_STYLE !== "template") {
     // 4 beats and this line silently DELETED the 4th — the PAYOFF beat, which by doctrine lands LAST. That is the
     // whole "payoff survives some runs, not others": it survived only when the model happened to pack it into beat 3.
     // The retry validator never fired because it inspects `text` (4 stamps, matched) BEFORE this slice cut it to 3.
-    // Cap at BEAT_STAMPS.length so parser, instruction and validator agree on one number.
-    lines = text.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, BEAT_STAMPS.length);
+    // Cap at the LARGEST legal count so parser, instruction and validator agree on one ceiling.
+    lines = text.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, Math.max(...COUNTS));
   } else {
     // Continuous prose: keep every non-empty line, but strip any timestamps the model emits out of habit.
     lines = text.split("\n").map((l) => l.trim().replace(/^\[\d+s\]\s*/, ""))
@@ -321,6 +333,10 @@ if (BEAT_STYLE !== "template") {
     mode += " + NARRATIVE";
   }
   else console.error(" (narrative beats failed to parse — keeping the minimal beat)");
+  // ⚠ REPAIRS KEY ON THE ACCEPTED DRAFT, NEVER ON A GRID (2026-08-20). Every downstream re-ask (fine-detail,
+  // swap, payoff) verifies "same count as before" — and "before" is whatever count the writer legally CHOSE,
+  // which no constant can know ahead of the draft.
+  const ACCEPTED_N = lines.length || Math.max(...COUNTS);
 
   // ⚠⚠ DETERMINISTIC GUARD — POST-CUT BEATS MAY NOT NAME FINE DETAIL.
   // The doctrine above already forbids this, and the doctrine is an LLM instruction, which makes it a
@@ -355,7 +371,7 @@ if (BEAT_STYLE !== "template") {
         `as they are, but describe the post-cut action by what the WHOLE BODY does at the distance the ` +
         `photograph was taken from. Do not name the limb or the object in the grip. Change nothing else.`,
         { maxTokens: 1000, temperature: 0.2 });
-      const relines = t2.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, BEAT_STAMPS.length);
+      const relines = t2.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, ACCEPTED_N);
       const stillBad = relines.filter((l) => FINE_DETAIL.test(l)).length;
       if (relines.length && !stillBad) { beatLine = relines.join("\n"); console.log(`[GUARD] beats: repaired on retry`); }
       else console.warn(`[GUARD] beats: retry ${relines.length ? "STILL names fine detail" : "failed to parse"} — shipping the original (expect a close payoff)`);
@@ -483,8 +499,8 @@ try {
           `its facing, at the spot that body occupies. Do NOT mention the body being replaced — it is gone, the ` +
           `subject is simply there instead. Return the full beat list and nothing else.`,
           { maxTokens: 1000, temperature: 0.3 });
-        const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, BEAT_STAMPS.length);
-        if (rl.length !== BEAT_STAMPS.length) console.warn(`  [swap] retry returned ${rl.length}/${BEAT_STAMPS.length} beats — shipping the original.`);
+        const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
+        if (rl.length !== ACCEPTED_N) console.warn(`  [swap] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
         else {
           const rebuilt = rl.join("\n");
           const sv2 = await swapVerdict(seen.standin, seen.standin_placement, intent.target, rebuilt);
@@ -534,9 +550,9 @@ try {
         `frame cannot afford. If an earlier beat set up a turn that nothing answered, ANSWERING IT is the ` +
         `escalation. Return the full beat list and nothing else.`,
         { maxTokens: 1000, temperature: 0.3 });
-      const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, BEAT_STAMPS.length);
-      if (rl.length !== BEAT_STAMPS.length) {
-        console.warn(`  [payoff] retry returned ${rl.length}/${BEAT_STAMPS.length} beats — shipping the original.`);
+      const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
+      if (rl.length !== ACCEPTED_N) {
+        console.warn(`  [payoff] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
       } else {
         // ⚠ VERIFY, DO NOT ASSUME. The retry is judged by the SAME check that failed it; a retry that still
         // only completes is not an improvement worth the risk of a worse-written beat.

@@ -271,6 +271,39 @@ export async function probe(term) {
   }
 }
 
+// ── CANON OVER A CONFIRMATION, NEVER COLD (owner 2026-08-20: "lets try canon derivation over confirmed
+// entity … character context needs reasoning turned on"). The vacuum lab measured the failure twice: asked
+// COLD, a stale model flattens meme-tier figures to generics (Punch → "a monkey"; the nihilist penguin →
+// nobody) — the exact flattening the probe above exists to fix. So canon NEVER re-asks instancehood: it
+// derives only over an entry the probe already confirmed, hunt-seeded with the probe's own what_it_is, web
+// search ON. Validated 2026-08-20: Punch came back "persistently approaching others despite being pushed
+// away · clinging to the orange plush · dragging it everywhere" — the owner's own canon (bullied, protective,
+// carries it always), recovered independently; the penguin resolved to the Herzog Encounters figure with
+// filmable manner. A SEPARATE call by design: the probe is a 16-field instrument and the crowding law
+// (measured) says subjective fields flatten inside crowded asks. Figure kinds only — a venue has no
+// temperament; a real person is the celeb branch's business. probe→remember: cached into the same store
+// entry, so one web call per never-seen figure, then never; a null derivation is NOT cached (the
+// never-persist-a-failure law above), so the next run simply asks again.
+export const CANON_KINDS = new Set(["meme", "real_animal", "ip_character"]);
+export const canonNeeded = (r) => !!(r && r.specific_entity_found === true && !r.canon && CANON_KINDS.has(r.kind));
+export async function deriveCanon(name, whatItIs) {
+  try {
+    const j = await providerJson(
+      `The figure "${name}" is a CONFIRMED specific entity: ${whatItIs}. Derive its CHARACTER CONTEXT for a ` +
+      `video writer from what is actually known and shared about it (look it up if needed) — the temperament ` +
+      `people read into it, its defining attachment, what it always carries or does. Each a short phrase ` +
+      `describing VISIBLE behaviour, never backstory prose. ` +
+      `Return ONLY JSON {"temperament":"...","attachment":"...","always":"..."}`,
+      { maxTokens: 500, temperature: 0.2, webSearch: "on" });
+    const c = { temperament: String(j?.temperament || "").slice(0, 160), attachment: String(j?.attachment || "").slice(0, 160), always: String(j?.always || "").slice(0, 160) };
+    return (c.temperament || c.attachment || c.always) ? c : null;
+  } catch (e) {
+    if (e?.name === "ProviderInfraError" || e?.ledgerCap) throw e;   // an outage is not "this figure has no character"
+    console.warn(`[resolve] ⚠ canon derivation failed for "${name}" (${String(e?.message || e).slice(0, 60)}) — NOT cached; asked again next run`);
+    return null;
+  }
+}
+
 /** Resolve the named entities in a prompt (probe→remember). Returns the ones that resolved to a
  *  specific entity at confidence ≥ minConfidence: [{term, what_it_is, kind, defining_signatures, ...}].
  *  Never throws — degrades to [] so a gen is never blocked. */
@@ -323,7 +356,14 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
     } else {
       console.log(`[resolve] cache "${term}" → ${r.specific_entity_found ? r.what_it_is : "generic"}`);
     }
-    if (r?.specific_entity_found && (Number(r.confidence) || 0) >= minConfidence) resolved.push({ term, ...r });
+    if (r?.specific_entity_found && (Number(r.confidence) || 0) >= minConfidence) {
+      // canon backfills warm cache hits too — one derivation per figure per store lifetime, then never
+      if (canonNeeded(r)) {
+        const cv = await deriveCanon(r.canonical_name || term, r.what_it_is);
+        if (cv) { r.canon = cv; store[key] = r; dirty = true; console.log(`[resolve] canon "${term}" → always: ${String(cv.always).slice(0, 70)}`); }
+      }
+      resolved.push({ term, ...r });
+    }
     // ── A CHECKED GENERIC IS VERIFIED-ABSENT, NOT UNKNOWN (owner 2026-08-12) ──────────────────────────
     // branchOf fails closed when resolved.length < candidateCount, and a term the probe AFFIRMATIVELY
     // established as an ordinary name/noun used to be indistinguishable from one it could not verify —

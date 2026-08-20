@@ -500,11 +500,16 @@ export const situationArc = () => (
     `real thing that could happen in that place) but never artificially small in AMOUNT.\n\n`
 );
 
-export const outputShape = (BEAT_STAMPS) => (
+// ⚠ SIGNATURE CHANGED 2026-08-20 (the depth ruling): the grid argument died with the grid — the stamped
+// branch now hands the writer the LEGAL COUNT SET and the placement rules instead of a prescribed list.
+// The single-ref writer is the only consumer (_ground_shotset deliberately never imported this).
+export const outputShape = (secs, counts) => (
 (process.env.BEAT_BLOCKS !== "0"
-      ? `Return ${BEAT_STAMPS.length} beats, one per line, stamped exactly ${BEAT_STAMPS.map((t) => `"[${t}s] …"`).join(" ")} ` +
-        `(evenly spaced across ` +
-        `the duration). Each beat describes ONLY what physically CHANGES at that moment — a movement, a gesture, a ` +
+      ? `Return your beats one per line, each stamped "[Ns] …" in WHOLE seconds: ` +
+        `${counts.length > 1 ? `choose a beat count from {${counts.join(", ")}} — whichever this material wants; different materials deserve different counts` : `exactly ${counts[0]} beats`}, ` +
+        `first beat at [0s], stamps ascending, all under ${secs}s. Spacing is yours — beats need not be evenly ` +
+        `spaced; two may land close and a third delayed. ` +
+        `Each beat describes ONLY what physically CHANGES at that moment — a movement, a gesture, a ` +
         `small event. Build a tiny arc so the clip has a beginning and an end rather than a loop.\n` +
         // ⚠ THIS RULE LIVED ONLY IN THE PROSE BRANCH BELOW, SO THE DEFAULT (STAMPED) PATH NEVER RECEIVED IT.
         // Measured 2026-08-05: a CONFIDENT Tesco plate — real customer phone shot, branded packaging, £ prices,
@@ -567,6 +572,35 @@ export const finalChecklist = (userPrompt) => (
 
 // ── STAMPED-OUTPUT MACHINERY (joined the export set 2026-08-14: the owner's hybrid fold — stamps + Cut-N +
 // capture sentence — makes the stamp machinery SLOT payload for the merged contract, not world-only) ─────────
+// ── THE COUNT IS THE WRITER'S; THE LAW IS THE SET (owner 2026-08-20, the depth ruling) ────────────────────
+// «economy of statement (3,6,9) beats … its not a deterministic formula, it depends on the writer. and the
+// beats dont need to occur in equal spaces of time» — and the density half: «6s cant carry 6 beats (1 per
+// second is too much)». So: legal counts are the members of {3,6,9} that give each beat ≥1.5s of screen
+// time — 6s→{3}, 9s→{3,6}, 12s→{3,6} (the owner's own "6 in 2 spaces"), 15s→{3,6,9} — and WHICH one, and
+// WHERE the stamps land, is authorship: whole seconds, [0s] first, ascending, syncopation welcome.
+// Vacuum-lab measured (2026-08-20): 7/7 legal scripts under this contract, counts varying with material,
+// while the arithmetic grid below gives an illegal 5 at 9s — the punch clips' "5 arithmetic beats with no
+// act structure" that this ruling was written from. Enforcement is unchanged in KIND (a validator re-asks,
+// the density lesson's own mechanism); only the meaning of "wrong" moved from grid-disagreement to
+// ILLEGALITY. `counts` is overridable for the short-duration fallback the caller supplies.
+export const legalBeatCounts = (secs) => [3, 6, 9].filter((c) => secs / c >= 1.5);
+export const stampsLegal = (stamps, secs, counts = legalBeatCounts(secs)) =>
+  counts.includes(stamps.length) && stamps[0] === 0
+  && stamps.every((v, i) => Number.isInteger(v) && v < secs && (i === 0 || v > stamps[i - 1]));
+
+// ── CANON COMPILES TO MANNER (owner 2026-08-20): «whatever the characterization should imbue within the
+// bounds of action, almost blending but not giving out on the central piece of actions». The character never
+// takes a sentence from the action — it shows only in HOW the actions are performed, on bare nouns (owner:
+// «stitched mouth is description we dont do»). The canon itself is the RESOLVER's derivation over a
+// CONFIRMED entity — this block is data-driven and collapses to nothing for a rhetorical John Doe.
+export const charContextBlock = (canon) => (canon && (canon.temperament || canon.attachment || canon.always)
+  ? `⚠ CHARACTER CONTEXT — show it ONLY in HOW actions are performed, never as a statement; the character ` +
+    `never takes a sentence from the action, and props stay bare nouns: ` +
+    `temperament: ${canon.temperament || "—"} · attachment: ${canon.attachment || "—"} · always: ${canon.always || "—"}\n\n`
+  : "");
+
+// ⚠ CELEB-ONLY (CELEB_STAMPS=1 in _ground_shotset) plus the short-duration fallback (<4.5s has no legal
+// count above). The single-ref writer no longer consumes this grid — the depth ruling retired it there.
 export const beatStamps = (secs = Math.max(2, Math.round(Number(process.env.BEAT_DURATION || 4)))) =>
   Array.from({ length: Math.max(2, Math.ceil(secs / 2)) }, (_, i) => i * 2)
     .filter((t) => t < secs); // any stamp BEFORE the end — reproduces the validated patterns:
