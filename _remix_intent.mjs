@@ -13,7 +13,8 @@
 // ⚠ A FAILED PARSE FAILS LOUDLY, NEVER GUESSES. An unparsed intent silently treated as "keep everything"
 // would bill the user for a copy of their parent; treated as a fresh prompt it would destroy what they
 // meant to keep. Neither is a remix. The caller surfaces the failure and no money moves.
-import { providerJson, textPart } from "./provider-llm.mjs";
+import { providerJson, providerText, textPart } from "./provider-llm.mjs";
+import { danglingSpeakerLabels } from "./_gate_rules.mjs";
 
 /** Compact state summary the parser sees — names and places, never internals. */
 export function stateSummary(state) {
@@ -119,21 +120,77 @@ export function restoreBeatZero(parentText, surgeredText) {
   if (lines[i].trim() !== p0.trim()) lines[i] = p0;
   return lines.join("\n");
 }
-/** The surgical contract text — the parent's beats plus ONLY the listed changes, everything else verbatim. */
-export function surgeryContract(parentPrompt, diff) {
+/** Split a script into its beat region and its terminal blocks — the tail the model never touches. */
+export function splitScript(text) {
+  const lines = String(text || "").split("\n");
+  const i = lines.findIndex((l) => /^\s*(?:Dialogue|Sound)\s*:/i.test(l.trim()));
+  if (i === -1) return { beats: String(text || "").trimEnd(), dialogue: "", sound: "" };
+  const tail = lines.slice(i);
+  const si = tail.findIndex((l) => /^\s*Sound\s*:/i.test(l.trim()));
+  const dlg = tail.filter((_, k) => si === -1 || k < si).join("\n").trim();
+  const snd = si === -1 ? "" : tail.slice(si).join("\n").trim();
+  return { beats: lines.slice(0, i).join("\n").trimEnd(), dialogue: /^\s*Dialogue\s*:/i.test(dlg) ? dlg : "", sound: snd };
+}
+
+/** The surgical contract — BEATS ONLY (measured in the lab: handed the whole script, the model reformats
+ *  the tail it was told to keep — so the tail is never handed over; kept sections reattach BY CODE). */
+export function surgeryContract(parentBeats, diff) {
   const changes = [];
   if (diff.action?.op === "rewrite") changes.push(`ACTION: ${diff.action.instruction}`);
   for (const pr of diff.props || []) changes.push(`PROP: ${pr.op === "add" ? `add ${pr.to}` : pr.op === "remove" ? `remove ${pr.target}` : `${pr.target} becomes ${pr.to}`}`);
-  if (diff.dialogue?.op === "rewrite") changes.push(`DIALOGUE: ${diff.dialogue.instruction}`);
-  if (diff.dialogue?.op === "remove") changes.push(`DIALOGUE: remove it`);
+  const dlgRewrite = diff.dialogue?.op === "rewrite";
+  if (dlgRewrite) changes.push(`DIALOGUE: ${diff.dialogue.instruction}`);
   return (
-    `A finished video's beat script follows. A REMIX changes ONLY what is listed under CHANGES — every ` +
-    `unchanged beat must survive WORD-FOR-WORD, at the SAME [Ns] stamps, the same count. Beat [0s] is ` +
-    `grounded on a photograph that is being KEPT: never alter it. The Dialogue and Sound sections survive ` +
-    `unchanged unless a change names them.\n\nSCRIPT:\n${parentPrompt}\n\nCHANGES:\n${changes.map((c) => `- ${c}`).join("\n")}\n\n` +
+    `A finished video's beats follow. A REMIX changes ONLY what is listed under CHANGES — every unchanged ` +
+    `beat must survive WORD-FOR-WORD, at the SAME [Ns] stamps, the same count. Beat [0s] is grounded on a ` +
+    `photograph that is being KEPT: never alter it.\n\nBEATS:\n${parentBeats}\n\nCHANGES:\n${changes.map((c) => `- ${c}`).join("\n")}\n\n` +
     `Apply the changes with the smallest possible edit. The final beat still lands the story. ` +
-    `Return the full script — beats, then Dialogue (if any), then the Sound line — and nothing else.`
+    (dlgRewrite
+      ? `Return the beat lines, then a Dialogue: section applying the dialogue change (speaker labels with quoted words), and nothing else.`
+      : `Return ONLY the beat lines and nothing else.`)
   );
+}
+
+/** ⭐ THE SURGERY, ONE IMPLEMENTATION (ruling C, 2026-08-21): the shallow-remix writer stage — the lab
+ *  tests exactly what the executor ships because both call THIS. Model work bounded by mechanical law:
+ *  beat 0 restored verbatim (frame-zero is plate law), the parent's rhythm enforced with one corrective
+ *  retry then refusal, dangling speaker labels refused. Throws on any refusal — a broken remix never
+ *  ships silently. Returns { surgered, retried, beatZeroRestored }. */
+export async function performBeatSurgery(parentPrompt, diff) {
+  const parent = splitScript(parentPrompt);
+  const contract = surgeryContract(parent.beats, diff);
+  const dlgOp = diff.dialogue?.op || "keep";
+  const p0 = parent.beats.split("\n").find((l) => /^\[0/.test(l.trim()))?.trim();
+  let beatZeroRestored = false;
+  const attempt = async (extra, temp) => {
+    const { text: raw } = await providerText(contract + extra, { maxTokens: 1200, temperature: temp });
+    const got = splitScript(String(raw).trim());
+    const g0 = got.beats.split("\n").find((l) => /^\[0/.test(l.trim()))?.trim();
+    if (p0 && g0 !== p0) beatZeroRestored = true;
+    return { beats: restoreBeatZero(parent.beats, got.beats), modelDialogue: got.dialogue };
+  };
+  let a = await attempt("", 0.3);
+  let retried = false;
+  if (!sameStamps(parent.beats, a.beats)) {
+    retried = true;
+    a = await attempt(`\n\n⚠ YOUR PREVIOUS ATTEMPT CHANGED THE STAMPS. Same beats, SAME [Ns] stamps, smallest edit.`, 0.2);
+    if (!sameStamps(parent.beats, a.beats)) throw new Error("surgery could not keep the parent's rhythm — refusing to ship a broken remix");
+  }
+  // ⚠ THE TAIL COMPOSES BY CODE, NEVER BY THE MODEL (lab-measured: handed the whole script, the model
+  // reformatted the very tail it was told to keep — `Sound:` split across lines). Kept dialogue is the
+  // PARENT'S, character-for-character; a rewrite takes the model's Dialogue section (validated); removal
+  // takes none; the Sound line is ALWAYS the parent's — shallow remixes never touch audio (owner's
+  // standing sound ruling).
+  let dialogue = "";
+  if (dlgOp === "keep") dialogue = parent.dialogue;
+  else if (dlgOp === "rewrite") {
+    if (!a.modelDialogue || !/["“”]/.test(a.modelDialogue)) throw new Error("dialogue rewrite returned no quoted words — refusing");
+    dialogue = a.modelDialogue;
+  }
+  const surgered = [a.beats, dialogue, parent.sound].filter(Boolean).join("\n\n");
+  const dangling = danglingSpeakerLabels(surgered);
+  if (dangling.length) throw new Error(`surgery produced a speaker label with no words (${dangling[0].figure?.slice(0, 40)}) — refusing`);
+  return { surgered, retried, beatZeroRestored };
 }
 
 /** The router's pure brain: which stages re-run, which artifacts are reused. The executor spends this. */
