@@ -233,7 +233,13 @@ export function keepPins(state, diff, intentText = "") {
     const ref = refs.find((r) => r.role === "figure" && (refs.filter((x) => x.role === "figure").length === 1 || String(r.filename).toLowerCase().includes(slugish))) || null;
     if (ref) belongings.push({ figure: f.target, attachment: String(att), ref, replacement: f.to || null });
   }
-  return { world, figures: (diff.figures || []).filter((f) => f.op === "keep").map((f) => f.target), belongings };
+  // ⚠ KEPT CUTS PIN THEIR PLATES (owner 2026-08-22): when every later place KEEPS, the parent's cut
+  // plates ride CUT_PIN in order — re-buying a plate the parent already owns is «definitely wrong».
+  // Any cut CHANGING drops all cut pins (order-matching to the changed set is a finer build; V1 never
+  // pins a plate that might belong to a replaced place).
+  const cutsAllKeep = (diff.cuts || []).length > 0 && (diff.cuts || []).every((c) => c.op === "keep");
+  const cuts = cutsAllKeep ? refs.filter((r) => r.role === "cut") : [];
+  return { world, figures: (diff.figures || []).filter((f) => f.op === "keep").map((f) => f.target), belongings, cuts };
 }
 
 /** The load-bearing noun of a phrase — first-longest word ≥4 letters, for mechanical contains-checks.
@@ -425,9 +431,10 @@ export function pinsFromPlan(plan, state) {
   const refs = Array.isArray(state?.refs) ? state.refs : [];
   const kept = new Map((Array.isArray(plan?.refs) ? plan.refs : []).filter((r) => r?.keep === true).map((r) => [r.filename, r]));
   const world = refs.find((r) => r.role === "world" && kept.has(r.filename)) || null;
-  const belongings = refs.filter((r) => r.role !== "world" && kept.has(r.filename))
+  const cuts = refs.filter((r) => r.role === "cut" && kept.has(r.filename));
+  const belongings = refs.filter((r) => r.role !== "world" && r.role !== "cut" && kept.has(r.filename))
     .map((r) => ({ figure: null, attachment: null, ref: r, note: kept.get(r.filename)?.note || null, replacement: null }));
-  return { world, figures: [], belongings };
+  return { world, figures: [], belongings, cuts };
 }
 
 /** The router's pure brain: which stages re-run, which artifacts are reused. The executor spends this. */
