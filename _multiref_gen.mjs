@@ -4,7 +4,7 @@
 // so don't treat "world-refs first, figure last" as load-bearing. The prompt carries ALL the framing
 // (blanket "every shot is wide", subject small) so the recognizable subject never renders tight.
 //   node _multiref_gen.mjs <slug> <promptFile.txt> <duration=4s> <aspect=9:16> <ref1> <ref2> ...
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { markInflight, clearInflight } from "./_inflight.mjs";   // an accepted gen is recorded at ACCEPTANCE so a dead container cannot orphan it
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
@@ -194,7 +194,24 @@ for (let i = 0; i < POLL_N; i++) {
     }
     const url = data.download_url ?? data.url; if (url) buf = Buffer.from(await (await fetch(url)).arrayBuffer());
   } else if (raw.length) buf = raw;
-  if (buf && buf.length) { const out = join(HERE, "out", "_aspect", `gen_${slug}_${aspect.replace(":", "x")}.mp4`); writeFileSync(out, buf); clearInflight(qid); console.log(`[multiref] ${slug}: ✓ COMPLETED ${(buf.length / 1024).toFixed(0)}KB → ${out}\n  queue_id=${qid}`); process.exit(0); }
+  if (buf && buf.length) {
+    const out = join(HERE, "out", "_aspect", `gen_${slug}_${aspect.replace(":", "x")}.mp4`);
+    writeFileSync(out, buf); clearInflight(qid);
+    // ── GEN-STATE CAPTURE (owner 2026-08-21, the remix substrate): the gen alone knows its exact inputs —
+    // the verbatim prompt and the ref bag in order — so it writes the core record HERE, at the only moment
+    // both the inputs and the success are facts. Keyed by LEDGER_JOB (the job id), slug-keyed for manual
+    // runs. The server enriches with the plan digest at close; the delivery hook archives to the app store.
+    try {
+      const { assembleGenState } = await import("./_gen_state.mjs");
+      const st = assembleGenState({ id: process.env.LEDGER_JOB || slug, slug, prompt_text: promptText, refs, aspect, duration, endpoint: ENDPOINT, queue_id: qid });
+      const dir = join(HERE, "out", "_state");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, `${st.id}.json`), JSON.stringify(st, null, 2));
+      console.log(`[state] gen-state captured → out/_state/${st.id}.json (${st.refs.length} ref(s))`);
+    } catch (e) { console.warn(`[state] ⚠ capture failed (${String(e?.message || e).slice(0, 70)}) — the video stands, this gen is not remixable`); }
+    console.log(`[multiref] ${slug}: ✓ COMPLETED ${(buf.length / 1024).toFixed(0)}KB → ${out}\n  queue_id=${qid}`);
+    process.exit(0);
+  }
   // ⚠ EXIT 7 = A REAL OUTPUT-GATE VERDICT, AND NOTHING ELSE MAY WEAR IT. The genuine trip used to exit 1,
   // which is also what an uncaught crash exits, so _run could not tell a clearance verdict from a bug and
   // called every non-2/4/5 failure a © trip. The text stays byte-identical because _persistent_gen matches
