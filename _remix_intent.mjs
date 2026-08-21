@@ -203,11 +203,31 @@ export async function performBeatSurgery(parentPrompt, diff) {
 // never a walk to the root.
 
 /** Pure: what the deep path pins. A kept world pins the parent's order-0 plate; kept figures are named
- *  for the cache. Falsy-safe on a refless state. */
-export function keepPins(state, diff) {
+ *  for the cache. Falsy-safe on a refless state.
+ *  ⚠ KEPT BELONGINGS PIN THE OLD FIGURE'S REF (owner 2026-08-21: «keeping plush would mean maintaining
+ *  the punch character-ref and referencing the plush from the image») — when the intent EXEMPTS a swept
+ *  figure's belonging (the user asked to keep the plush), the mechanism is REF-LEVEL, not prose: the
+ *  parent's figure ref — whose pixels carry the belonging — rides into the reframe as a reference, the
+ *  beats name the belonging FROM it, and the swap grammar keeps the old figure itself from rendering. */
+export function keepPins(state, diff, intentText = "") {
   const refs = Array.isArray(state?.refs) ? state.refs : [];
   const world = diff.world?.op !== "change" ? (refs.find((r) => r.role === "world") || null) : null;
-  return { world, figures: (diff.figures || []).filter((f) => f.op === "keep").map((f) => f.target) };
+  const lcIntent = String(intentText || "").toLowerCase();
+  const belongings = [];
+  for (const f of diff.figures || []) {
+    if (f.op !== "swap" && f.op !== "remove") continue;
+    const fig = (state?.plan?.figures || []).find((x) => String(x?.name || "").toLowerCase() === String(f.target || "").toLowerCase());
+    const att = fig?.canon?.attachment;
+    if (!att) continue;
+    const nouns = String(att).toLowerCase().match(/[a-z]{4,}/g) || [];
+    if (!nouns.some((n) => lcIntent.includes(n))) continue;   // nothing kept → the sweep alone governs
+    // the figure's ref by naming convention (entity_/refs_redacted/ipref_ → role "figure"); a single-figure
+    // parent has at most one, and a multi-figure parent's refs carry the figure slug in the filename
+    const slugish = String(f.target).replace(/[^a-z0-9]+/gi, "").slice(0, 14).toLowerCase();
+    const ref = refs.find((r) => r.role === "figure" && (refs.filter((x) => x.role === "figure").length === 1 || String(r.filename).toLowerCase().includes(slugish))) || null;
+    if (ref) belongings.push({ figure: f.target, attachment: String(att), ref, replacement: f.to || null });
+  }
+  return { world, figures: (diff.figures || []).filter((f) => f.op === "keep").map((f) => f.target), belongings };
 }
 
 /** The load-bearing noun of a phrase — first-longest word ≥4 letters, for mechanical contains-checks.

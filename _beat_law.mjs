@@ -182,6 +182,15 @@ export const vocalizationClause = () =>
   `written as the sound it makes, in quotes, never human words — timed, labeled and AIMED like any spoken ` +
   `line, and an exchange of such lines progresses like an argument: each answer responding to the last.`;
 
+// ── A KEPT BELONGING RIDES A REFERENCE IMAGE (owner 2026-08-21: «keeping plush would mean maintaining the
+// punch character-ref and referencing the plush from the image») — the deep-remix executor sets the note;
+// the beats bind the belonging to its pixels and the replacement grammar keeps the old holder out of frame.
+export const belongingClause = () =>
+  !process.env.BELONGING_NOTE ? "" :
+  `⚠ A KEPT BELONGING RIDES A REFERENCE IMAGE: ${process.env.BELONGING_NOTE} ` +
+  `The beats NAME it inside the action so the reference's pixels carry its look; the figure holding it in ` +
+  `that reference is NOT in this video — the replacement takes its place entirely, belonging in hand.`;
+
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";
   if (!ELICITED_FORM.test(form)) return "";
