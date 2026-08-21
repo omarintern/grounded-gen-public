@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
-import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, incompleteBeatLines, genericSpeakerLabels } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -262,16 +262,32 @@ if (BEAT_STYLE !== "template") {
   // opening that is not [0s], disorder, or a stamp past the duration. Vacuum-lab measured 7/7 legal under
   // this contract with counts varying by material — the variance is the point of the ruling.
   const stampList = (t) => (t.match(/^\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));
-  if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(text), BEAT_SECS, COUNTS)) {
-    console.error(` (returned [${stampList(text).join(",")}] — illegal for ${BEAT_SECS}s, counts {${COUNTS.join(",")}} - one corrective retry)`);
+  // ⚠ COMPLETENESS + LABEL LAWS RIDE THE SAME VALIDATOR (owner 2026-08-21, penguin deep remix: beat [4s]
+  // shipped ending "lets out a flat" and a line labeled "Speaker" — both are output defects the check-the-
+  // output pattern owns; a fifth restatement in the ask is not the fix).
+  const _lawFails = (t) => {
+    const fails = [];
+    if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(t), BEAT_SECS, COUNTS)) fails.push(`stamps [${stampList(t).join(",")}] illegal for ${BEAT_SECS}s counts {${COUNTS.join(",")}}`);
+    const inc = incompleteBeatLines(t);
+    if (inc.length) fails.push(`a beat ends mid-sentence ("…${inc[0].slice(-40)}")`);
+    const gen = genericSpeakerLabels(t);
+    if (gen.length) fails.push(`a dialogue label names nobody (${gen[0].trim().slice(0, 30)}) — name the figure`);
+    return fails;
+  };
+  const _fails1 = _lawFails(text);
+  if (_fails1.length) {
+    console.error(` (writer output broke the law: ${_fails1.join("; ")} - one corrective retry)`);
     const fix = await providerText(
-      `Rewrite these beats so the beat COUNT is one of {${COUNTS.join(", ")}} and every stamp is a WHOLE second: ` +
-      `first beat [0s], stamps ascending, all under ${BEAT_SECS}s. Spacing is yours — beats need not be evenly spaced. ` +
+      `Rewrite these beats fixing EXACTLY these violations: ${_fails1.join("; ")}. ` +
+      `Beat COUNT one of {${COUNTS.join(", ")}}, every stamp a WHOLE second, first beat [0s], stamps ascending, all under ${BEAT_SECS}s. ` +
+      `Every beat a COMPLETE sentence. Dialogue labels name their speaker. ` +
       `Keep the same story and wording as far as possible. ` +
-      `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines.\n\n${text}`,
-      { maxTokens: 700, temperature: 0.3 }
+      `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines (and the Dialogue/Sound blocks if present).\n\n${text}`,
+      { maxTokens: 900, temperature: 0.3 }
     ).catch(() => null);
-    if (fix?.text && stampsLegal(stampList(fix.text), BEAT_SECS, COUNTS)) { text = fix.text; console.error(` (retry OK)`); }
+    if (fix?.text && _lawFails(fix.text).length === 0) { text = fix.text; console.error(` (retry OK)`); }
+    else if (fix?.text && _lawFails(fix.text).length < _fails1.length) { text = fix.text; console.error(` (retry improved: ${_lawFails(fix.text).join("; ")} — shipping with the residue, loudly)`); }
+    else console.error(` (retry did not improve — shipping the original, loudly: ${_fails1.join("; ")})`);
   }
 
   let lines;

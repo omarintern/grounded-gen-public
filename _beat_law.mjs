@@ -587,8 +587,24 @@ export const outputShape = (secs, counts) => (
         `into what it DOES. Name props only when the action touches them.\n\n`)
 );
 
+// ── COMPLETENESS + LABEL LAWS (owner 2026-08-21, measured on the penguin deep remix): a beat that ends
+// mid-sentence ("lets out a flat") and a dialogue line labeled "Speaker" both shipped. The laws are
+// general non-IP-lane law — feed gens and remixes alike. Pure halves here; the writers re-ask on
+// violation (the check-the-output pattern, never a fifth restatement).
+export const incompleteBeatLines = (text) =>
+  String(text || "").split("\n").map((l) => l.trim())
+    .filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l))
+    .filter((l) => !/[.!?…"”']$/.test(l));
+// ⚠ ONLY truly ANONYMOUS labels ban — "Woman"/"Bartender" name a figure the beats established and are
+// legitimate; "Speaker"/"Voice"/"Narrator" name nobody and hand the line to whoever happens to be visible.
+export const genericSpeakerLabels = (text) =>
+  String(text || "").match(/^\s*(?:Speaker|Voice|Narrator|Someone)\s*\d*\s*(?:\([^)]*\))?\s*\[\d+s\]\s*:/gim) || [];
+
 export const hardConstraints = () => (
 `⚠ HARD CONSTRAINTS — the photograph already determines these, and contradicting them corrupts the render:\n` +
+    `• PROPS ARE BARE NOUNS — never name an object's construction, material or making; the thing, not its fabrication.\n` +
+    `• EVERY BEAT IS A COMPLETE SENTENCE — a line that trails off unfinished corrupts the render it half-describes.\n` +
+    `• A DIALOGUE LABEL NAMES ITS SPEAKER — a figure the beats established; never a generic label.\n` +
     `• NEVER mention how BIG, SMALL, NEAR or FAR the subject is, and never say it grows, shrinks or approaches.\n` +
     `• CAMERA — FLY ON THE WALL. Owner doctrine 2026-07-29/30: the camera is a BYSTANDER that happened to be\n` +
     ` there. It does not reveal, follow drama, chase a subject, or reframe for effect. If something enters the\n` +

@@ -15,6 +15,7 @@
 // meant to keep. Neither is a remix. The caller surfaces the failure and no money moves.
 import { providerJson, providerText, textPart } from "./provider-llm.mjs";
 import { danglingSpeakerLabels } from "./_gate_rules.mjs";
+import { incompleteBeatLines, genericSpeakerLabels } from "./_beat_law.mjs";
 
 /** Compact state summary the parser sees — names and places, never internals. */
 export function stateSummary(state) {
@@ -191,6 +192,11 @@ export async function performBeatSurgery(parentPrompt, diff) {
   const surgered = [a.beats, dialogue, parent.sound].filter(Boolean).join("\n\n");
   const dangling = danglingSpeakerLabels(surgered);
   if (dangling.length) throw new Error(`surgery produced a speaker label with no words (${dangling[0].figure?.slice(0, 40)}) — refusing`);
+  // the completeness + label laws hold in surgery too (owner: the laws persist across the non-IP lane)
+  const inc = incompleteBeatLines(surgered);
+  if (inc.length) throw new Error(`surgery produced a beat ending mid-sentence ("…${inc[0].slice(-40)}") — refusing`);
+  const gen = genericSpeakerLabels(surgered);
+  if (gen.length) throw new Error(`surgery produced an anonymous dialogue label (${gen[0].trim().slice(0, 30)}) — refusing`);
   return { surgered, retried, beatZeroRestored };
 }
 
