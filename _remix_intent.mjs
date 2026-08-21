@@ -97,6 +97,45 @@ export function normalizeDiff(raw, state) {
   return d;
 }
 
+// ── BEAT SURGERY, the pure halves (the executor's writer stage) ──────────────────────────────────────────
+/** The stamp sets of two beat texts — the action-swap rhythm law (owner, provisional ruling 4): an
+ *  action-only remix PRESERVES the parent's rhythm; the surgery must return the same stamps. */
+export function stampsOf(text) {
+  return (String(text || "").match(/^\[(\d+(?:\.\d+)?)s\]/gm) || []).map((s) => s.replace(/[^\d.]/g, ""));
+}
+export function sameStamps(a, b) {
+  const x = stampsOf(a), y = stampsOf(b);
+  return x.length === y.length && x.every((v, i) => v === y[i]);
+}
+/** ⚠ FRAME ZERO IS PLATE-GROUNDED LAW: when the world KEEPS, beat 0 must survive VERBATIM — it was written
+ *  FROM the kept photograph (write-after-plate) and a rewritten opening fights the plate exactly like the
+ *  hand-run diffusions did. Returns the surgered text with beat 0 mechanically restored when needed. */
+export function restoreBeatZero(parentText, surgeredText) {
+  const p0 = String(parentText || "").split("\n").find((l) => /^\[0(?:\.0)?s\]/.test(l.trim()));
+  if (!p0) return surgeredText;
+  const lines = String(surgeredText || "").split("\n");
+  const i = lines.findIndex((l) => /^\[0(?:\.0)?s\]/.test(l.trim()));
+  if (i === -1) return `${p0}\n${surgeredText}`;
+  if (lines[i].trim() !== p0.trim()) lines[i] = p0;
+  return lines.join("\n");
+}
+/** The surgical contract text — the parent's beats plus ONLY the listed changes, everything else verbatim. */
+export function surgeryContract(parentPrompt, diff) {
+  const changes = [];
+  if (diff.action?.op === "rewrite") changes.push(`ACTION: ${diff.action.instruction}`);
+  for (const pr of diff.props || []) changes.push(`PROP: ${pr.op === "add" ? `add ${pr.to}` : pr.op === "remove" ? `remove ${pr.target}` : `${pr.target} becomes ${pr.to}`}`);
+  if (diff.dialogue?.op === "rewrite") changes.push(`DIALOGUE: ${diff.dialogue.instruction}`);
+  if (diff.dialogue?.op === "remove") changes.push(`DIALOGUE: remove it`);
+  return (
+    `A finished video's beat script follows. A REMIX changes ONLY what is listed under CHANGES — every ` +
+    `unchanged beat must survive WORD-FOR-WORD, at the SAME [Ns] stamps, the same count. Beat [0s] is ` +
+    `grounded on a photograph that is being KEPT: never alter it. The Dialogue and Sound sections survive ` +
+    `unchanged unless a change names them.\n\nSCRIPT:\n${parentPrompt}\n\nCHANGES:\n${changes.map((c) => `- ${c}`).join("\n")}\n\n` +
+    `Apply the changes with the smallest possible edit. The final beat still lands the story. ` +
+    `Return the full script — beats, then Dialogue (if any), then the Sound line — and nothing else.`
+  );
+}
+
 /** The router's pure brain: which stages re-run, which artifacts are reused. The executor spends this. */
 export function routeStages(diff) {
   const figureChange = (diff.figures || []).some((f) => f.op !== "keep");
