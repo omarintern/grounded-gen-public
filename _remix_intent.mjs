@@ -193,6 +193,104 @@ export async function performBeatSurgery(parentPrompt, diff) {
   return { surgered, retried, beatZeroRestored };
 }
 
+// ── DEEP REFRAME (ruling C, owner 2026-08-21): a world/figure/cut change invalidates the parent's
+// plate-grounded script — surgery cannot help, because frame zero must be authored FROM the new plate
+// (write-after-plate law). So a deep remix re-runs the pipeline END TO END on a compiled EFFECTIVE
+// PROMPT, with what survives pinned MECHANICALLY: a kept world rides WORLD_PIN into _run's reuse seam
+// (sourcing skipped, $0); kept figures ride the ref-cache (free on a warm name). The effective prompt is
+// also stamped as the child's own user_prompt, so a chain of remixes always compiles from its OWN state —
+// never a walk to the root.
+
+/** Pure: what the deep path pins. A kept world pins the parent's order-0 plate; kept figures are named
+ *  for the cache. Falsy-safe on a refless state. */
+export function keepPins(state, diff) {
+  const refs = Array.isArray(state?.refs) ? state.refs : [];
+  const world = diff.world?.op !== "change" ? (refs.find((r) => r.role === "world") || null) : null;
+  return { world, figures: (diff.figures || []).filter((f) => f.op === "keep").map((f) => f.target) };
+}
+
+/** The load-bearing noun of a phrase — first-longest word ≥4 letters, for mechanical contains-checks.
+ *  ("the nihilist penguin" → "nihilist"; a rephrase that keeps the noun passes, one that drops it fails.) */
+export function anchorOf(phrase) {
+  const tokens = String(phrase || "").toLowerCase().match(/[a-z][a-z'-]{3,}/g) || [];
+  return tokens.reduce((m, t) => (t.length > (m?.length || 0) ? t : m), null);
+}
+
+/** Every op in the diff as one typed line — the compiler's CHANGES list. */
+export function describeDiff(diff) {
+  const lines = [];
+  for (const f of diff.figures || []) {
+    if (f.op === "swap") lines.push(`FIGURE: ${f.target} is REPLACED by ${f.to}`);
+    else if (f.op === "remove") lines.push(`FIGURE: ${f.target} is REMOVED`);
+    else if (f.op === "add") lines.push(`FIGURE: ${f.to} is ADDED`);
+  }
+  if (diff.world?.op === "change") lines.push(`OPENING PLACE: becomes ${diff.world.to}`);
+  for (const c of diff.cuts || []) {
+    if (c.op === "change") lines.push(`LATER PLACE: ${c.target} becomes ${c.to}`);
+    else if (c.op === "remove") lines.push(`LATER PLACE: ${c.target} is REMOVED`);
+  }
+  if (diff.action?.op === "rewrite") lines.push(`ACTION: ${diff.action.instruction}`);
+  for (const pr of diff.props || []) lines.push(`PROP: ${pr.op === "add" ? `add ${pr.to}` : pr.op === "remove" ? `remove ${pr.target}` : `${pr.target} becomes ${pr.to}`}`);
+  if (diff.dialogue?.op === "rewrite") lines.push(`DIALOGUE: ${diff.dialogue.instruction}`);
+  else if (diff.dialogue?.op === "remove") lines.push(`DIALOGUE: removed — nobody speaks`);
+  return lines;
+}
+
+/** ⚠ THE KEEP-LAW, ENFORCED MECHANICALLY (the dont-narrow doctrine mirrored onto the compile): kept
+ *  figures keep their nouns, new elements must actually appear, replaced/removed figures must be gone,
+ *  and a user prompt is BARE — no stamps, no script sections, one line. Pure, gate-testable. */
+export function reframeViolations(compiled, diff) {
+  const c = String(compiled || "").trim();
+  if (!c) return ["empty prompt"];
+  const lc = c.toLowerCase(), v = [];
+  if (/\[\d+(?:\.\d+)?s\]/.test(c)) v.push("carries beat stamps — a user prompt is bare");
+  if (/(^|\n)\s*(?:Dialogue|Sound)\s*:/i.test(c)) v.push("carries script sections — a user prompt is bare");
+  if (/\n/.test(c)) v.push("more than one line");
+  if (c.length > 420) v.push("longer than a user prompt has any right to be");
+  for (const f of diff.figures || []) {
+    const a = anchorOf(f.target), an = anchorOf(f.to);
+    if (f.op === "keep" && a && !lc.includes(a)) v.push(`kept figure "${f.target}" lost its noun`);
+    if ((f.op === "swap" || f.op === "add") && an && !lc.includes(an)) v.push(`the new figure "${f.to}" is missing`);
+    if ((f.op === "swap" || f.op === "remove") && a && lc.includes(a)) v.push(`the ${f.op === "swap" ? "replaced" : "removed"} figure "${f.target}" is still named`);
+  }
+  if (diff.world?.op === "change") { const a = anchorOf(diff.world.to); if (a && !lc.includes(a)) v.push(`the new opening place "${diff.world.to}" is missing`); }
+  for (const cu of diff.cuts || []) if (cu.op === "change") { const a = anchorOf(cu.to); if (a && !lc.includes(a)) v.push(`the new later place "${cu.to}" is missing`); }
+  for (const pr of diff.props || []) if ((pr.op === "swap" || pr.op === "add") && pr.to) { const a = anchorOf(pr.to); if (a && !lc.includes(a)) v.push(`the new prop "${pr.to}" is missing`); }
+  return v;
+}
+
+/** The compile ask. Base is the parent's own user prompt when the state carries one (every post-substrate
+ *  gen does); a pre-stamp parent falls back to its beat script, declared as such. */
+export function reframeContract(base, baseKind, diff, intentText) {
+  return (
+    `A video was generated from this ${baseKind === "prompt" ? "prompt" : "beat script"}:\n"""${base}"""\n\n` +
+    `A user remixes it. Their words: """${String(intentText || "").slice(0, 500)}"""\n` +
+    `The typed changes (LAW: everything not listed KEEPS exactly as it was):\n${describeDiff(diff).map((l) => `- ${l}`).join("\n")}\n\n` +
+    `Write the remixed video's generation prompt: ONE bare line in the same plain register as the original — ` +
+    `unchanged elements kept in the original's own nouns, the changes applied, nothing else altered, no new ` +
+    `detail invented. No timestamps, no Dialogue or Sound sections, no camera or style language. Return ONLY the prompt line.`
+  );
+}
+
+/** The compiler — one small call, mechanically validated, one corrective retry, then loud refusal.
+ *  Returns { effective, retried }. Throws when the keep-law cannot be satisfied. */
+export async function compileEffectivePrompt(state, diff, intentText) {
+  const base = state?.plan?.user_prompt || null;
+  const contract = reframeContract(base || String(state?.prompt_text || ""), base ? "prompt" : "script", diff, intentText);
+  const attempt = async (extra, temp) =>
+    String((await providerText(contract + extra, { maxTokens: 300, temperature: temp })).text || "").trim().replace(/^["'“”\s]+|["'“”\s]+$/g, "");
+  let effective = await attempt("", 0.2);
+  let v = reframeViolations(effective, diff);
+  let retried = false;
+  if (v.length) {
+    retried = true;
+    effective = await attempt(`\n\n⚠ YOUR PREVIOUS ATTEMPT BROKE THE LAW: ${v.join("; ")}. Fix exactly these and return ONLY the prompt line.`, 0.1);
+    v = reframeViolations(effective, diff);
+    if (v.length) throw new Error(`reframe compile broke the keep-law twice (${v[0]}) — refusing`);
+  }
+  return { effective, retried };
+}
+
 /** The router's pure brain: which stages re-run, which artifacts are reused. The executor spends this. */
 export function routeStages(diff) {
   const figureChange = (diff.figures || []).some((f) => f.op !== "keep");
