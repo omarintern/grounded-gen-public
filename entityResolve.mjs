@@ -109,7 +109,11 @@ export const loadStore = () => {
   }
   // Targeted re-ask (2026-08-12): character/meme records predating basic_guise re-probe ONCE — the field
   // decides whether a ©-trip may retry ref-less on prose alone (absent fails closed to the fallback rung).
-  const guiseStale = Object.keys(raw).filter((k) => { const v = raw[k]; return v && (v.kind === "meme" || v.kind === "ip_character") && v.specific_entity_found === true && typeof v.basic_guise !== "boolean"; });
+  // ⚠ real_animal INCLUDED (measured 2026-08-21, punch e2e c3cb3e56): the 2026-08-17 basic-guise lesson was
+  // measured ON viral real animals, yet this filter never re-probed them — a real_animal record predating
+  // the field stayed "unanswered" forever, and when its ref search came home empty the prose fallback that
+  // plainly applies (a baby macaque clutching an orange plush renders from description) was refused → exit 2.
+  const guiseStale = Object.keys(raw).filter((k) => { const v = raw[k]; return v && (v.kind === "meme" || v.kind === "ip_character" || v.kind === "real_animal") && v.specific_entity_found === true && typeof v.basic_guise !== "boolean"; });
   if (guiseStale.length) {
     for (const k of guiseStale) delete raw[k];
     storeHealed = true;
