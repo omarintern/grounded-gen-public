@@ -340,6 +340,90 @@ export async function compileEffectivePrompt(state, diff, intentText) {
   return { effective, retried };
 }
 
+// ── ESCALATION (owner ruling "3", 2026-08-21: «demands have variance and our model needs to satisfy
+// this variance» → escalation hybrid): the typed ontology stays the fast path; a demand it cannot type
+// (noop/vague/dropped on a non-empty intent) escalates to a REASONING PLANNER that emits a typed
+// EXECUTION PLAN — and the mechanical laws become VALIDATORS of the plan instead of the decision.
+// The planner may only ask for what the executor can actually do: surgery under the rhythm laws, or a
+// reframe from a bare effective prompt with parent refs kept by name. A plan that abandons the parent
+// is not a remix (solvable:false). Nothing here is trusted raw: validateRemixPlan is the mechanical
+// gate, and clearance probes every new term the plan introduces (union of the planner's own list and a
+// mechanically-derived one — the coinage-blindness lesson applied forward).
+
+export async function planRemixEscalation(state, intentText) {
+  const p = state?.plan || {};
+  const figures = (p.figures || []).map((f) => `${f.name}${f.canon?.attachment ? ` (attachment: ${f.canon.attachment})` : ""}`).join(" · ") || String(p.subject || "the subject");
+  const bag = (state?.refs || []).map((r) => `${r.filename} · ${r.role}`).join("\n") || "(none)";
+  const ask =
+    `A finished video exists. Its state:\n` +
+    `USER PROMPT: ${p.user_prompt || "(unknown)"}\n` +
+    `FIGURES: ${figures}\nPLACES: ${(p.places || []).join(", ") || "?"}\n` +
+    `DURATION ${state?.duration || "?"} · ASPECT ${state?.aspect || "?"}\nREF BAG (each ref's pixels are real material from this video):\n${bag}\n` +
+    `SCRIPT:\n${String(state?.prompt_text || "").slice(0, 1500)}\n\n` +
+    `A user asks for a remix that the standard dimensions (figure/world/cut/action/prop/dialogue swaps) could ` +
+    `not type. Their words: """${String(intentText || "").slice(0, 500)}"""\n\n` +
+    `You are the ESCALATION PLANNER. LAW: a remix preserves everything the words do not change — ambiguity ` +
+    `resolves to preservation. A plan that abandons the parent is not a remix: answer solvable:false.\n` +
+    `The executor can do EXACTLY two things:\n` +
+    `· "surgery" — rewrite the beats per your script_instruction, under the parent's rhythm (same [Ns] stamps, ` +
+    `same count, beat 0 verbatim) with every ref reused. For changes the existing footage's structure can carry.\n` +
+    `· "reframe" — regenerate end-to-end from your effective_prompt (ONE bare line, no timestamps, no Dialogue/` +
+    `Sound sections, no camera language), keeping any parent refs you list: keeping the world ref means the SAME ` +
+    `opening photograph; keeping a figure ref means its pixels ride as a reference, bound by your note.\n` +
+    `Return ONLY JSON {"solvable":bool,"why":"one plain sentence","path":"surgery|reframe",` +
+    `"script_instruction":"for surgery, precisely what changes — else null",` +
+    `"effective_prompt":"for reframe, the new one-line prompt — else null",` +
+    `"refs":[{"filename":"<exactly as in the bag>","keep":bool,"note":"how the kept ref binds — null when dropped"}],` +
+    `"resource":["<anything new that must be sourced — advisory>"],` +
+    `"clearance_delta":["<every NEW proper name or brand introduced — empty when none>"],` +
+    `"duration":null|"<Ns> only when the demand needs a different length"}`;
+  return await providerJson([textPart(ask)], { maxTokens: 800, temperature: 0.15 });
+}
+
+/** The mechanical gate on the plan — the laws as validators. Pure, gate-testable. Returns violations. */
+export function validateRemixPlan(plan, state) {
+  const v = [];
+  if (!plan || typeof plan !== "object") return ["planner returned nothing"];
+  if (plan.solvable !== true) return [];   // an honest refusal validates trivially — the caller exits clean
+  if (!["surgery", "reframe"].includes(plan.path)) v.push(`unknown path "${plan.path}" — the executor does surgery or reframe, nothing else`);
+  if (plan.path === "surgery" && !String(plan.script_instruction || "").trim()) v.push("surgery with no script_instruction");
+  if (plan.path === "reframe") {
+    const ep = String(plan.effective_prompt || "").trim();
+    if (!ep) v.push("reframe with no effective_prompt");
+    if (/\[\d+(?:\.\d+)?s\]/.test(ep)) v.push("effective_prompt carries beat stamps — a user prompt is bare");
+    if (/(^|\n)\s*(?:Dialogue|Sound)\s*:/i.test(ep)) v.push("effective_prompt carries script sections");
+    if (/\n/.test(ep)) v.push("effective_prompt is more than one line");
+    if (ep.length > 420) v.push("effective_prompt longer than a user prompt has any right to be");
+  }
+  const bagNames = new Set((state?.refs || []).map((r) => r.filename));
+  for (const r of Array.isArray(plan.refs) ? plan.refs : []) {
+    if (!bagNames.has(r?.filename)) v.push(`plan names a ref the parent does not have ("${r?.filename}")`);
+  }
+  if (plan.duration != null && !/^\d{1,2}s$/.test(String(plan.duration))) v.push(`illegal duration "${plan.duration}"`);
+  return v;
+}
+
+/** Every new content word the plan introduces, mechanically — union this with the planner's own delta
+ *  before probing (the model's list is advisory, never load-bearing). Bounded, stopword-pruned. */
+const _ESC_STOP = new Set(["that", "with", "into", "from", "then", "this", "their", "there", "where", "while", "over", "under", "same", "more", "less", "very", "slow", "fast", "night", "morning", "instead", "still", "just", "only", "them", "they", "when", "what", "make", "makes", "walks", "walk", "goes", "gets", "have", "keeps", "keep"]);
+export function escalationTerms(plan, state, intentText) {
+  const known = ` ${String(state?.prompt_text || "").toLowerCase()} ${String(state?.plan?.user_prompt || "").toLowerCase()} ${(state?.plan?.figures || []).map((f) => String(f?.name || "").toLowerCase()).join(" ")} `;
+  const text = `${plan?.effective_prompt || ""} ${plan?.script_instruction || ""}`.toLowerCase();
+  const fresh = [...new Set((text.match(/[a-z][a-z'-]{3,}/g) || []).filter((w) => !_ESC_STOP.has(w) && !known.includes(w)))].slice(0, 8);
+  return [...new Set([...(Array.isArray(plan?.clearance_delta) ? plan.clearance_delta : []).map((x) => String(x).trim()).filter(Boolean), ...fresh])];
+}
+
+/** Pure: an escalation plan's kept refs → the deep path's pin shape (world pin + reference-riding refs
+ *  with the plan's own binding notes). The same executor machinery serves both origins. */
+export function pinsFromPlan(plan, state) {
+  const refs = Array.isArray(state?.refs) ? state.refs : [];
+  const kept = new Map((Array.isArray(plan?.refs) ? plan.refs : []).filter((r) => r?.keep === true).map((r) => [r.filename, r]));
+  const world = refs.find((r) => r.role === "world" && kept.has(r.filename)) || null;
+  const belongings = refs.filter((r) => r.role !== "world" && kept.has(r.filename))
+    .map((r) => ({ figure: null, attachment: null, ref: r, note: kept.get(r.filename)?.note || null, replacement: null }));
+  return { world, figures: [], belongings };
+}
+
 /** The router's pure brain: which stages re-run, which artifacts are reused. The executor spends this. */
 export function routeStages(diff) {
   const figureChange = (diff.figures || []).some((f) => f.op !== "keep");
