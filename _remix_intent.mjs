@@ -144,7 +144,8 @@ export function surgeryContract(parentBeats, diff) {
     `A finished video's beats follow. A REMIX changes ONLY what is listed under CHANGES — every unchanged ` +
     `beat must survive WORD-FOR-WORD, at the SAME [Ns] stamps, the same count. Beat [0s] is grounded on a ` +
     `photograph that is being KEPT: never alter it.\n\nBEATS:\n${parentBeats}\n\nCHANGES:\n${changes.map((c) => `- ${c}`).join("\n")}\n\n` +
-    `Apply the changes with the smallest possible edit. The final beat still lands the story. ` +
+    `Apply the changes with the smallest possible edit. The final beat still lands the story at a CLIMAX ` +
+    `of the feeling in motion — deadpan counts, flat does not. ` +
     (dlgRewrite
       ? `Return the beat lines, then a Dialogue: section applying the dialogue change (speaker labels with quoted words), and nothing else.`
       : `Return ONLY the beat lines and nothing else.`)

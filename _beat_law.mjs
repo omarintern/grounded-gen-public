@@ -509,8 +509,17 @@ export const outputShape = (secs, counts) => (
         `${counts.length > 1 ? `choose a beat count from {${counts.join(", ")}} — whichever this material wants; different materials deserve different counts` : `exactly ${counts[0]} beats`}, ` +
         `first beat at [0s], stamps ascending, all under ${secs}s. Spacing is yours — beats need not be evenly ` +
         `spaced; two may land close and a third delayed. ` +
+        // ⚠ A BEAT IS A FEELING, NOT AN ACTION COUNTED (owner 2026-08-21, on the first remix pair): «beats
+        // arent actions in themselves, theyre a feeling … its about progression of emotion that finds climax
+        // at the end (not a flat end) … it doesnt require escalation … but must find climax whether deadpan
+        // or not. the point is not 3's of actions in the pure sense of just number, but rather how a plot
+        // lands … the key here is flux of emotion but structure in 3's». The beat still DESCRIBES only
+        // physical change (the no-scene and objectivity laws own the register); what this rules is the LINE
+        // THROUGH the beats.
         `Each beat describes ONLY what physically CHANGES at that moment — a movement, a gesture, a ` +
-        `small event. Build a tiny arc so the clip has a beginning and an end rather than a loop.\n` +
+        `small event. But a beat IS a movement of feeling, not an action counted: across the beats one ` +
+        `emotion must move — build, dip, or turn — and find its CLIMAX at the final beat. A deadpan climax ` +
+        `counts and escalation is optional; the one failure is a flat end.\n` +
         // ⚠ THIS RULE LIVED ONLY IN THE PROSE BRANCH BELOW, SO THE DEFAULT (STAMPED) PATH NEVER RECEIVED IT.
         // Measured 2026-08-05: a CONFIDENT Tesco plate — real customer phone shot, branded packaging, £ prices,
         // daylight — produced a gen with none of it: night, blue cast, a MOON inside the store, generic boxes.
