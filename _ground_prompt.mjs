@@ -340,6 +340,18 @@ if (BEAT_STYLE !== "template") {
       console.log(`  \u266a dialogue block kept from the writer (${emittedDialogue.split("\n").length - 1} line(s)) — it used to be dropped by the beat filter`);
     }
     mode += " + NARRATIVE";
+    // ⚠ VALIDATE THE ASSEMBLY, NOT JUST THE DRAFT (owner 2026-08-22, the walrus): the law validator ran on
+    // the writer's RAW text, then THIS assembly moved an inline quote into the Dialogue block — stranding
+    // "…and barks" mid-sentence and (via the old buildDialogueBlock default) labeling the line "Speaker".
+    // Anonymous labels REPAIR mechanically to the subject; a stranded beat is warned LOUDLY (a re-ask at
+    // this stage would re-open the whole draft — the residue ships visible, never silent).
+    const _subj = String(intent?.target || "").toUpperCase().trim();
+    if (_subj && genericSpeakerLabels(beatLine).length) {
+      beatLine = beatLine.replace(/^(\s*)(?:Speaker|Voice|Narrator|Someone)(\s*\d*\s*(?:\([^)]*\))?\s*\[\d+s\]\s*:)/gim, `$1${_subj}$2`);
+      console.error(`  ⚠ anonymous dialogue label REPAIRED to ${_subj} (the label law, post-assembly)`);
+    }
+    const _postInc = incompleteBeatLines(beatLine);
+    if (_postInc.length) console.error(`  ⚠ POST-ASSEMBLY: a beat ends mid-sentence ("…${_postInc[0].slice(-40)}") — shipping visible, never silent`);
   }
   else console.error(" (narrative beats failed to parse — keeping the minimal beat)");
   // ⚠ REPAIRS KEY ON THE ACCEPTED DRAFT, NEVER ON A GRID (2026-08-20). Every downstream re-ask (fine-detail,
@@ -457,7 +469,8 @@ if (BEAT_STYLE !== "template") {
 // costs nothing, and makes every prior "writer dropped the speech" outcome impossible rather than unlikely.
 // The writer's own block still wins whenever it produces one — this is a floor, not a replacement.
 if (!/(^|\n)\s*Dialogue\s*:/i.test(beatLine) && (process.env.PLAN_DIALOGUE || "").trim()) {
-  const _b = buildDialogueBlock(process.env.PLAN_DIALOGUE);
+  // fallback speaker = the subject as the writer knows it (never "Speaker" — the label law's own bug site)
+  const _b = buildDialogueBlock(process.env.PLAN_DIALOGUE, undefined, String(intent?.target || "").toUpperCase() || null);
   beatLine += "\n\n" + _b.block;
   const stamps = _b.stamps;
   console.warn(`[GUARD] dialogue: the writer emitted no speech — SYNTHESISED a timed block from the plan's line across ${stamps.map((x) => `${x}s`).join(", ")} (deterministic; the writer's own block always wins when it produces one).`);

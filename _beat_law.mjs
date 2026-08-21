@@ -236,10 +236,16 @@ export const FINE_DETAIL = /\b(?:with|in|using|between)\s+(?:its|his|her|their|b
 
 // ── THE DETERMINISTIC DIALOGUE BUILDER (moved verbatim; parameterized only at the boundary) ────────────────
 // Returns the terminal Dialogue block string, or null when planDialogue is empty. The caller appends + warns.
-export function buildDialogueBlock(planDialogue, stamps = DIALOGUE_STAMPS) {
+export function buildDialogueBlock(planDialogue, stamps = DIALOGUE_STAMPS, fallbackSpeaker = null) {
   if (!(planDialogue || "").trim()) return null;
   const raw = planDialogue.replace(/^\s*Dialogue\s*:\s*/i, "").trim();
-  const speaker = (raw.match(/^([^:\n]{1,80}?)\s*:/) || [, "Speaker"])[1].trim();
+  // ⚠ NO ANONYMOUS LABELS (owner 2026-08-22, the walrus "Speaker [2s]" — MANUFACTURED HERE, not by the
+  // writer: this default was "Speaker", reintroducing the exact label the law bans one stage after the
+  // validator ran). A label-less plan line takes the CALLER's subject; with no subject either, the block
+  // is DROPPED — an unlabeled line violates the label law and an absent block degrades gracefully.
+  const m = raw.match(/^([^:\n]{1,80}?)\s*:/);
+  const speaker = (m ? m[1] : (fallbackSpeaker || "")).trim();
+  if (!speaker) return null;
   const words = raw.replace(/^[^:\n]{1,80}?\s*:\s*/, "").replace(/^["'“]|["'”]$/g, "").trim();
   // ⚠ SENTENCES FIRST, COMMAS ONLY IF THAT IS NOT ENOUGH; ⚠ DO NOT MANUFACTURE FRAGMENTS (see the history at
   // the callsite in _ground_prompt.mjs — the comments stay there with their measured regression record).
