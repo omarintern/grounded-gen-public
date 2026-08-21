@@ -237,10 +237,33 @@ export function describeDiff(diff) {
   return lines;
 }
 
+/** ⚠ A SWAPPED FIGURE'S BELONGINGS LEAVE WITH IT (owner 2026-08-21, on the penguin deep remix: «if it
+ *  said to replace punch with the nihilistic penguin, would it keep the plush? it shouldnt, unless
+ *  prompted for the plush or a different one»). Measured: default-KEEP treated Punch's plush as scene
+ *  material, so the compiled prompt marched the penguin in dragging "his plush toy" — which the gen then
+ *  mutated into a penguin plush. The state's own canon says what belongs to whom (canon.attachment), so
+ *  the sweep is MECHANICAL: for each swapped/removed figure, its attachment nouns leave the compile —
+ *  EXCEPT any noun the intent itself speaks (the user asked for the plush, or a different one). Pure. */
+export function sweptBelongings(state, diff, intentText) {
+  const lcIntent = String(intentText || "").toLowerCase();
+  const out = [];
+  for (const f of diff.figures || []) {
+    if (f.op !== "swap" && f.op !== "remove") continue;
+    const fig = (state?.plan?.figures || []).find((x) => String(x?.name || "").toLowerCase() === String(f.target || "").toLowerCase());
+    const att = fig?.canon?.attachment;
+    if (!att) continue;
+    for (const noun of String(att).toLowerCase().match(/[a-z]{4,}/g) || []) {
+      if (!lcIntent.includes(noun)) out.push({ figure: f.target, noun });
+    }
+  }
+  return out;
+}
+
 /** ⚠ THE KEEP-LAW, ENFORCED MECHANICALLY (the dont-narrow doctrine mirrored onto the compile): kept
- *  figures keep their nouns, new elements must actually appear, replaced/removed figures must be gone,
- *  and a user prompt is BARE — no stamps, no script sections, one line. Pure, gate-testable. */
-export function reframeViolations(compiled, diff) {
+ *  figures keep their nouns, new elements must actually appear, replaced/removed figures must be gone —
+ *  along with their swept belongings — and a user prompt is BARE — no stamps, no script sections, one
+ *  line. Pure, gate-testable. */
+export function reframeViolations(compiled, diff, sweeps = []) {
   const c = String(compiled || "").trim();
   if (!c) return ["empty prompt"];
   const lc = c.toLowerCase(), v = [];
@@ -257,16 +280,20 @@ export function reframeViolations(compiled, diff) {
   if (diff.world?.op === "change") { const a = anchorOf(diff.world.to); if (a && !lc.includes(a)) v.push(`the new opening place "${diff.world.to}" is missing`); }
   for (const cu of diff.cuts || []) if (cu.op === "change") { const a = anchorOf(cu.to); if (a && !lc.includes(a)) v.push(`the new later place "${cu.to}" is missing`); }
   for (const pr of diff.props || []) if ((pr.op === "swap" || pr.op === "add") && pr.to) { const a = anchorOf(pr.to); if (a && !lc.includes(a)) v.push(`the new prop "${pr.to}" is missing`); }
+  for (const s of sweeps) if (lc.includes(s.noun)) v.push(`"${s.noun}" belonged to the replaced figure "${s.figure}" and must leave with it`);
   return v;
 }
 
 /** The compile ask. Base is the parent's own user prompt when the state carries one (every post-substrate
  *  gen does); a pre-stamp parent falls back to its beat script, declared as such. */
-export function reframeContract(base, baseKind, diff, intentText) {
+export function reframeContract(base, baseKind, diff, intentText, sweeps = []) {
+  const sweepLines = sweeps.length
+    ? `\n${[...new Set(sweeps.map((s) => s.figure))].map((f) => `- BELONGINGS: ${f} takes its own things with it (${sweeps.filter((s) => s.figure === f).map((s) => s.noun).join(", ")}) — the replacement arrives with ITS OWN, not the old figure's`).join("\n")}`
+    : "";
   return (
     `A video was generated from this ${baseKind === "prompt" ? "prompt" : "beat script"}:\n"""${base}"""\n\n` +
     `A user remixes it. Their words: """${String(intentText || "").slice(0, 500)}"""\n` +
-    `The typed changes (LAW: everything not listed KEEPS exactly as it was):\n${describeDiff(diff).map((l) => `- ${l}`).join("\n")}\n\n` +
+    `The typed changes (LAW: everything not listed KEEPS exactly as it was):\n${describeDiff(diff).map((l) => `- ${l}`).join("\n")}${sweepLines}\n\n` +
     `Write the remixed video's generation prompt: ONE bare line in the same plain register as the original — ` +
     `unchanged elements kept in the original's own nouns, the changes applied, nothing else altered, no new ` +
     `detail invented. No timestamps, no Dialogue or Sound sections, no camera or style language. Return ONLY the prompt line.`
@@ -277,16 +304,17 @@ export function reframeContract(base, baseKind, diff, intentText) {
  *  Returns { effective, retried }. Throws when the keep-law cannot be satisfied. */
 export async function compileEffectivePrompt(state, diff, intentText) {
   const base = state?.plan?.user_prompt || null;
-  const contract = reframeContract(base || String(state?.prompt_text || ""), base ? "prompt" : "script", diff, intentText);
+  const sweeps = sweptBelongings(state, diff, intentText);
+  const contract = reframeContract(base || String(state?.prompt_text || ""), base ? "prompt" : "script", diff, intentText, sweeps);
   const attempt = async (extra, temp) =>
     String((await providerText(contract + extra, { maxTokens: 300, temperature: temp })).text || "").trim().replace(/^["'“”\s]+|["'“”\s]+$/g, "");
   let effective = await attempt("", 0.2);
-  let v = reframeViolations(effective, diff);
+  let v = reframeViolations(effective, diff, sweeps);
   let retried = false;
   if (v.length) {
     retried = true;
     effective = await attempt(`\n\n⚠ YOUR PREVIOUS ATTEMPT BROKE THE LAW: ${v.join("; ")}. Fix exactly these and return ONLY the prompt line.`, 0.1);
-    v = reframeViolations(effective, diff);
+    v = reframeViolations(effective, diff, sweeps);
     if (v.length) throw new Error(`reframe compile broke the keep-law twice (${v[0]}) — refusing`);
   }
   return { effective, retried };
