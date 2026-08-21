@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
-import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -186,19 +186,12 @@ if (BEAT_STYLE !== "template") {
   // The swap template says WHAT the creature IS and never WHAT IT DOES, so the model renders a plausible animal
   // standing in a human's place — which is the un-funny reading. The joke is COMPETENCE: the creature performing
   // the human job deliberately and well, with specific physical business, not chaos and not animal behaviour.
-  const humanRole = has(seen.standin) ? seen.standin : "the person who would normally be there";
-  const comedyClause =
-    `⚠ THIS IS THE JOKE, AND IT IS THE POINT OF THE SHOT. The ${intent.target} must ACTUALLY PERFORM the human ` +
-    `job that ${humanRole} was doing — not merely stand in that spot behaving like a ${intent.target}. Work out ` +
-    `what that job physically INVOLVES in this exact scene and have the creature DO IT, deliberately and ` +
-    `competently, with whatever body it has. Invent SPECIFIC physical business — but PITCH IT AT THE DISTANCE ` +
-    `THE PHOTOGRAPH WAS TAKEN FROM: business the WHOLE BODY performs and that reads from across the room, never ` +
-    `business identified by the limb that does it or by the small object in its grip. Specific and coarse are ` +
-    `not opposites — the same act can be written either way, and only one of them can be seen from here. ` +
-    `The humour comes from COMPETENCE, not from mess: it is funny because the animal is unmistakably ` +
-    `GOOD at a job it has no business doing, and treats it as completely routine. Do NOT write generic animal ` +
-    `behaviour (pecking at crumbs, flapping, sniffing around, looking cute) — that is the boring reading and it ` +
-    `wastes the shot. Do NOT have it fail, panic or wreck the place unless the prompt asked for that.`;
+  // ⚠ CONTEXT-CARRIED (owner 2026-08-21): the human role is the sidecar's ACTUAL occupant being replaced —
+  // never invented. A creature already the scene's own animal (standin_is_target) or entering an empty
+  // natural spot gets the context law instead: a fox in snow behaves as a fox. The competence text for the
+  // real-role branch is UNCHANGED (the pigeon-register ruling) — it moved VERBATIM to _beat_law.
+  const humanRole = has(seen.standin) && !seen.standin_is_target ? seen.standin : null;
+  const comedyClause = anthropomorphismClause(intent.target, humanRole);
   // FULL OBSERVABILITY: dump the ENTIRE instruction the beat writer receives. Until now only its OUTPUT (the
   // beats) was inspectable, so the ruling that produced them — hundreds of lines of accumulated doctrine — was
   // invisible to review. Written every run to out/_aspect/<slug>_instruction.txt.
@@ -210,7 +203,7 @@ if (BEAT_STYLE !== "template") {
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
     `WHAT THE USER ASKED FOR: "${userPrompt}"\n` +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}\n${comedyClause}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}\n${comedyClause}\n${vocalizationClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +

@@ -149,6 +149,39 @@ export const dialogueClause = () => {
 // Stated as a general rule, not a worked case: whenever the form implies someone off-frame drew the speech
 // out, that person must EXIST in the beats and the speaker must be oriented to them rather than to us.
 export const ELICITED_FORM = /\b(?:interview|news|segment|report(?:er|age)?|broadcast|vox[- ]?pop|documentary|talk[- ]?show|press|podcast)\b/i;
+// ── ANTHROPOMORPHISM IS CONTEXT-CARRIED, NEVER A DEFAULT (owner 2026-08-21: «if its a nonanthropomorphic
+// thing like a fox in snow, or bear in a zoo, then it doesnt warrant anthropomorphism. context carries here
+// and prompting»). The competence joke (owner 2026-07-30, the pigeon register) is UNCHANGED where it was
+// measured — a creature REPLACING a human occupant performs that human's job. What died is the fallback that
+// INVENTED "the person who would normally be there" when no such occupant existed: a creature in its own
+// natural world behaves as the creature. humanRole = the actual occupant's description, or null when the
+// scene offers no human role to perform.
+export const anthropomorphismClause = (target, humanRole) => humanRole
+  ? `⚠ THIS IS THE JOKE, AND IT IS THE POINT OF THE SHOT. The ${target} must ACTUALLY PERFORM the human ` +
+    `job that ${humanRole} was doing — not merely stand in that spot behaving like a ${target}. Work out ` +
+    `what that job physically INVOLVES in this exact scene and have the creature DO IT, deliberately and ` +
+    `competently, with whatever body it has. Invent SPECIFIC physical business — but PITCH IT AT THE DISTANCE ` +
+    `THE PHOTOGRAPH WAS TAKEN FROM: business the WHOLE BODY performs and that reads from across the room, never ` +
+    `business identified by the limb that does it or by the small object in its grip. Specific and coarse are ` +
+    `not opposites — the same act can be written either way, and only one of them can be seen from here. ` +
+    `The humour comes from COMPETENCE, not from mess: it is funny because the animal is unmistakably ` +
+    `GOOD at a job it has no business doing, and treats it as completely routine. Do NOT write generic animal ` +
+    `behaviour (pecking at crumbs, flapping, sniffing around, looking cute) — that is the boring reading and it ` +
+    `wastes the shot. Do NOT have it fail, panic or wreck the place unless the prompt asked for that.`
+  : `⚠ ANTHROPOMORPHISM IS CARRIED BY CONTEXT AND PROMPTING, NEVER A DEFAULT. If the request or the scene ` +
+    `puts the ${target} in a HUMAN ROLE — a job, a station, a task a person would do there — it performs that ` +
+    `role deliberately and competently with whatever body it has, and that competence is the joke. If the ` +
+    `context is the creature's own natural world, it behaves AS THE CREATURE — no invented human job, no ` +
+    `borrowed business; its canon and the feeling of the beats carry the clip.`;
+
+// ── AN ANTHROPOMORPHIZED CREATURE CARRIES LINES AS VOCALIZATION (owner 2026-08-21: «an anthropomorophisized
+// animal can and should carry a "line" as vocalization in the Dialogue block»). The exchange geometry is
+// speech's own — addressee, timing, progression — only the content is the creature's voice.
+export const vocalizationClause = () =>
+  `⚠ A creature holding a human role CAN AND SHOULD carry dialogue lines: its line is ITS OWN VOCALIZATION — ` +
+  `written as the sound it makes, in quotes, never human words — timed, labeled and AIMED like any spoken ` +
+  `line, and an exchange of such lines progresses like an argument: each answer responding to the last.`;
+
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";
   if (!ELICITED_FORM.test(form)) return "";
