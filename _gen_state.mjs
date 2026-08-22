@@ -80,8 +80,11 @@ export async function insertGenState(st, env = process.env) {
   const { default: postgres } = await import("postgres");
   const sql = postgres(env.DATABASE_URL, { ssl: /localhost|127\.0\.0\.1/.test(env.DATABASE_URL) ? false : "require", max: 1 });
   try {
-    await sql`INSERT INTO gen_state (id, engine, prompt_text, refs, plan, clearance, parent_id, root_id, status)
-      VALUES (${st.id}, ${st.engine}, ${st.prompt_text}, ${sql.json(st.refs)}, ${sql.json(st.plan ?? null)}, ${sql.json(clearanceFacts(st.plan))}, ${st.parent_id}, ${st.root_id}, ${st.status})
+    // aspect/duration ride the row as of the billing lane's 0052 (measured missing 2026-08-22: every
+    // DB-loaded parent remixed at the 9s/9:16 defaults — and ALL 14 feed clips were 6s, one 16:9, so the
+    // "dormant" assumption was false twice over).
+    await sql`INSERT INTO gen_state (id, engine, prompt_text, refs, plan, clearance, parent_id, root_id, status, aspect, duration)
+      VALUES (${st.id}, ${st.engine}, ${st.prompt_text}, ${sql.json(st.refs)}, ${sql.json(st.plan ?? null)}, ${sql.json(clearanceFacts(st.plan))}, ${st.parent_id}, ${st.root_id}, ${st.status}, ${st.aspect || null}, ${st.duration || null})
       ON CONFLICT (id) DO NOTHING`;
     return true;
   } finally { await sql.end({ timeout: 2 }).catch(() => {}); }
