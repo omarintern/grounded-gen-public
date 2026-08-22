@@ -99,7 +99,7 @@ export function planDigest(plan) {
       public_domain: f?.public_domain === true ? true : undefined, drawn: f?.drawn === true ? true : undefined,
     })),
     places: Array.isArray(plan.form?.places) ? plan.form.places : [],
-    vantage: (Array.isArray(plan.slots?.vantage) ? plan.slots.vantage : []).map((v) => ({ beat: v?.beat ?? null, scope: v?.scope || null, queries: Array.isArray(v?.queries) ? v.queries : [] })),
+    vantage: (Array.isArray(plan.slots?.vantage) ? plan.slots.vantage : []).map((v) => ({ beat: v?.beat ?? null, scope: v?.scope || null, queries: Array.isArray(v?.queries) ? v.queries : [], kernel: v?.kernel || null })),
     scene_requirements: Array.isArray(plan.scene_requirements) ? plan.scene_requirements : [],
     cuts: plan.execution?.cuts === true,
   };
