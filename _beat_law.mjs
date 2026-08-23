@@ -506,7 +506,13 @@ export const payoffLaw = () => (
     `suppressed the exact thing this branch exists for. The comedy is NARRATIVE-DENSE: a densely plotted, fully ` +
     `committed absurd event captured by a mundane fixed camera. The mundane CAPTURE is what makes the absurd ` +
     `CONTENT funny - so be restrained about FRAMING and generous about STORY. Let the event land on frame and ` +
-    `let the characters react to it. Something happening off-frame may still be HEARD rather than chased.\n\n`
+    `let the characters react to it. Something happening off-frame may still be HEARD rather than chased. ` +
+    // ⚠ THE WORLD PARTICIPATES (owner 2026-08-23): the delivered clips' worlds stood STATIC through their
+    // payoffs — the event happened AT the scene, never TO it. Consequences are actions, so the no-scene law
+    // is untouched: touched props were always nameable; now the touch must have a result.
+    `⚠ THE CLIMAX RECRUITS THE SCENE: what the event touches MOVES — objects topple, spill, scatter, swing; ` +
+    `bystanders react in frame. Consequences are ACTIONS the camera sees, never described scenery — name a ` +
+    `prop when the event touches it, and let every touch have a visible result.\n\n`
 );
 
 // ⚠ ANIMAL EXCLUSION IS CONDITIONAL (owner 2026-08-14, verbatim: «the animal exclusion applies only when
@@ -543,9 +549,18 @@ export const situationArc = () => (
     `and nothing more ("a rabbit outside someone's front door"). A situation is not a captured moment — something ` +
     `must HAPPEN and then be OVER. Author a tiny complete incident that suits the place and the creature: it ` +
     `arrives, does one specific thing, and reacts or leaves. Use whatever the photograph actually contains as the ` +
-    `Scale the invention to the DURATION, not to a fixed minimum - fill the beats you have. A short clip ` +
-    `carries a setup and a payoff; a longer one carries setup, escalation and payoff. Ordinary in KIND (a ` +
-    `real thing that could happen in that place) but never artificially small in AMOUNT.\n\n`
+    `Scale the invention to the DURATION, not to a fixed minimum - fill the beats you have. ` +
+    // ⚠ C — THE OVERSTEP LADDER (owner 2026-08-23, activated on the measured trigger: the real pipeline's
+    // restraint stack averaged the A+B climaxes down — zeus landed "lights on, a nod". The middle of the arc
+    // is now a STRUCTURAL slot for size, not a volume contest: the pigeon-register ruling — don't just work
+    // the register, work it in hilarious fashion — generalized to every arc. Amended same day: the ladder
+    // applies at EVERY duration — the original "short clip = setup and payoff" carve-out let 6s clips skip
+    // the overstep entirely (the guard flinched and dropped a bow).
+    `Every clip, whatever its length, carries setup, OVERSTEP and consequence: the ` +
+    `middle escalates PAST the sensible version of the action — the subject overdoes, overcommits, oversteps ` +
+    `the reasonable form of what it is doing — and the final event is the consequence the overstep earned. ` +
+    `With few beats the overstep and its consequence may share a beat; neither may be skipped. ` +
+    `Ordinary in KIND (a real thing that could happen in that place) but never artificially small in AMOUNT.\n\n`
 );
 
 // ⚠ SIGNATURE CHANGED 2026-08-20 (the depth ruling): the grid argument died with the grid — the stamped
@@ -566,8 +581,15 @@ export const outputShape = (secs, counts) => (
         // THROUGH the beats.
         `Each beat describes ONLY what physically CHANGES at that moment — a movement, a gesture, a ` +
         `small event. But a beat IS a movement of feeling, not an action counted: across the beats one ` +
-        `emotion must move — build, dip, or turn — and find its CLIMAX at the final beat. A deadpan climax ` +
-        `counts and escalation is optional; the one failure is a flat end.\n` +
+        `emotion must move — build, dip, or turn — and find its CLIMAX at the final beat. ` +
+        // ⚠ REGISTER ≠ SIZE (owner 2026-08-23, the spectacle ruling): "a deadpan climax counts" was read as
+        // license for micro-gesture endings — Zeus POKED the fuse box, the reaper's payoff was a GRIN. The
+        // owner's own exemplar separates the axes: the cat SMASHES the counter (huge event) and lets off one
+        // flat meow (deadpan register). Deadpan is a register; the event is still the premise's largest.
+        `⚠ THE CLIMAX IS AN EVENT, NOT AN EXPRESSION: the final beat's change is a whole-body, whole-scene ` +
+        `PHYSICAL event — the largest the premise affords. An expression or micro-gesture may ride the climax ` +
+        `but can never BE it. Deadpan is a REGISTER, never a size — flat delivery over a big event is the ` +
+        `form's own joke. Escalation is optional; the one failure is a flat end.\n` +
         // ⚠ THIS RULE LIVED ONLY IN THE PROSE BRANCH BELOW, SO THE DEFAULT (STAMPED) PATH NEVER RECEIVED IT.
         // Measured 2026-08-05: a CONFIDENT Tesco plate — real customer phone shot, branded packaging, £ prices,
         // daylight — produced a gen with none of it: night, blue cast, a MOON inside the store, generic boxes.

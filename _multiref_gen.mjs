@@ -4,7 +4,7 @@
 // so don't treat "world-refs first, figure last" as load-bearing. The prompt carries ALL the framing
 // (blanket "every shot is wide", subject small) so the recognizable subject never renders tight.
 //   node _multiref_gen.mjs <slug> <promptFile.txt> <duration=4s> <aspect=9:16> <ref1> <ref2> ...
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { markInflight, clearInflight } from "./_inflight.mjs";   // an accepted gen is recorded at ACCEPTANCE so a dead container cannot orphan it
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
@@ -206,8 +206,19 @@ for (let i = 0; i < POLL_N; i++) {
       const st = assembleGenState({ id: process.env.LEDGER_JOB || slug, slug, prompt_text: promptText, refs, aspect, duration, endpoint: ENDPOINT, queue_id: qid });
       const dir = join(HERE, "out", "_state");
       mkdirSync(dir, { recursive: true });
+      // ⚠ REF BYTES ARE COPIED, NEVER POINTED AT (the cinderella clobber, 2026-08-23): out/_aspect files are
+      // slug-keyed and rewritten by any same-prompt rerun, so a pointer store dies — or worse, the archive
+      // hook (which serves GET /gen/:id/ref/:filename from these paths) ships the RERUN's bytes under the
+      // original id. The state owns its bytes from the moment of capture, in a job-scoped directory.
+      const refDir = join(dir, st.id);
+      mkdirSync(refDir, { recursive: true });
+      for (const r of st.refs) {
+        copyFileSync(r.file, join(refDir, r.filename));
+        // relative, because every reader resolves refs as join(HERE, file) — an absolute path would double up
+        r.file = `out/_state/${st.id}/${r.filename}`;
+      }
       writeFileSync(join(dir, `${st.id}.json`), JSON.stringify(st, null, 2));
-      console.log(`[state] gen-state captured → out/_state/${st.id}.json (${st.refs.length} ref(s))`);
+      console.log(`[state] gen-state captured → out/_state/${st.id}.json (${st.refs.length} ref(s), bytes owned)`);
     } catch (e) { console.warn(`[state] ⚠ capture failed (${String(e?.message || e).slice(0, 70)}) — the video stands, this gen is not remixable`); }
     console.log(`[multiref] ${slug}: ✓ COMPLETED ${(buf.length / 1024).toFixed(0)}KB → ${out}\n  queue_id=${qid}`);
     process.exit(0);
