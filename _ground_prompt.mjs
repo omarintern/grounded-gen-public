@@ -285,6 +285,11 @@ if (BEAT_STYLE !== "template") {
       // 2. "…with both hands. Fisherman, to the water" — an attribution fragment riding the beat line.
       if (/\.\s+[A-Z][a-z]+,\s+to\s+[^.\n]{1,40}$/m.test(t))
         fails.push('an attribution fragment rides a beat line ("Name, to …") — attribution lives in the Dialogue block, never in a beat');
+      // c2 residues (owner 2026-08-25, the UFC fan clip):
+      if (/\bthe camera\b/i.test(t))
+        fails.push('a beat names the camera ("the camera hard cuts") — write "Hard cut to …"; the camera is never a character');
+      if (/unphotographed/i.test(t))
+        fails.push('contract language leaked into a beat ("unphotographed") — name the place plainly');
     }
     return fails;
   };
