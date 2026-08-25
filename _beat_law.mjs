@@ -497,8 +497,27 @@ export const causalOrder = () => (
     `the effect already underway before the cause. Fusing them makes the render show the effect already underway before its cause. One link per beat: the act in one, its consequence in the NEXT.\n\n`
 );
 
-export const payoffLaw = () => (
-`⚠ THE PAYOFF LANDS LAST, AND THE RESTRAINT IS IN THE CAMERA - NOT IN THE STORY. Put the consequence in ` +
+// ── THE MOOD FORK (owner 2026-08-24: «two moods one selects on the platform … same processes and rulings,
+// breaks the rules where we've seen them broken in b30 and b28»). CANDID is the default and is
+// BYTE-IDENTICAL to the law as it stood — the fork is falsy-safe; an absent flag changes nothing.
+// DREAM re-licenses exactly the four seams the b28/b30 forensics identified as the fever-dream moment:
+//   1. cut targets with NO photograph behind them (the flashback licence + hard-cut reset),
+//   2. physics-free spectacle after beat zero,
+//   3. one non-diegetic property riding the payoff (a glow), and the object-looms-to-fill-frame move,
+//   4. denser cadence (density floor 1.5s → 1.0s per beat).
+// Everything else is SHARED law in both moods: sourcing, clearance, blur, captions, de-naming, camera
+// silence, action-zero, identity-as-prose, the Sound line — and frame zero still grounds on a REAL plate.
+export const genMood = () => (process.env.GEN_MOOD === "dream" ? "dream" : "candid");
+
+export const payoffLaw = () => (genMood() === "dream"
+? `⚠ THE PAYOFF LANDS LAST, AND IT MAY LAND ACROSS A CUT. Put the consequence in the FINAL beat — and in ` +
+    `this register the consequence may arrive in the dreamed place the story cut to, not only where it began. ` +
+    `The event itself may be larger than physics: a creature flung skyward, a fall that hangs, a leap the ` +
+    `real world would refuse. ONE impossible property may ride the payoff — an object may glow, shimmer, or ` +
+    `pulse — one, not a light show. And one camera-adjacent move is licensed here alone: an object may fly ` +
+    `toward the viewer until it fills the frame. Every other camera word stays banned; the shooting is still ` +
+    `a mundane fixed witness to an impossible event.\n\n`
+: `⚠ THE PAYOFF LANDS LAST, AND THE RESTRAINT IS IN THE CAMERA - NOT IN THE STORY. Put the consequence in ` +
     `the FINAL beat. What must stay unstaged is the SHOOTING: a real camera does not reframe, push in, or hunt ` +
     `the money shot, so nothing is composed FOR the lens and no spectacle is front-loaded into beat 1. ` +
     `⚠⚠ THIS IS NOT A LIMIT ON HOW MUCH HAPPENS. An ` +
@@ -544,8 +563,17 @@ export const seesawLaw = (BEAT_STYLE) => (
     `\n`
 );
 
-export const situationArc = () => (
-`⚠ IF THE PROMPT DESCRIBES A SITUATION WITH NO EVENT, INVENT ONE AND GIVE IT A REAL ARC. Some prompts are a subject in a place ` +
+export const situationArc = () => (genMood() === "dream"
+? `⚠ IF THE PROMPT DESCRIBES A SITUATION WITH NO EVENT, INVENT ONE AND GIVE IT A REAL ARC — and in this ` +
+    `register the arc may LEAVE THE PHOTOGRAPH. Beat zero still happens in the real place the photograph ` +
+    `shows, mid-action. After that, the spectacle may defy physics — a creature flung skyward, a leap the ` +
+    `real world would refuse — and the story may HARD-CUT to a place the photograph never held: open that ` +
+    `cut beat by naming the place plainly ("Hard cut to a sunny grassy meadow:") — the ONE place-naming ` +
+    `licence in this contract, allowed ONLY on a cut to an unphotographed place. Anyone who first appears ` +
+    `in the dreamed place enters AT the cut, never before it; a hard cut back is equally licensed, and the ` +
+    `payoff may land on either side. Scale the invention to the DURATION, not to a fixed minimum - fill ` +
+    `the beats you have.\n\n`
+: `⚠ IF THE PROMPT DESCRIBES A SITUATION WITH NO EVENT, INVENT ONE AND GIVE IT A REAL ARC. Some prompts are a subject in a place ` +
     `and nothing more ("a rabbit outside someone's front door"). A situation is not a captured moment — something ` +
     `must HAPPEN and then be OVER. Author a tiny complete incident that suits the place and the creature: it ` +
     `arrives, does one specific thing, and reacts or leaves. Use whatever the photograph actually contains as the ` +
@@ -678,7 +706,8 @@ export const finalChecklist = (userPrompt) => (
 // act structure" that this ruling was written from. Enforcement is unchanged in KIND (a validator re-asks,
 // the density lesson's own mechanism); only the meaning of "wrong" moved from grid-disagreement to
 // ILLEGALITY. `counts` is overridable for the short-duration fallback the caller supplies.
-export const legalBeatCounts = (secs) => [3, 6, 9].filter((c) => secs / c >= 1.5);
+// DREAM relaxes the density floor to 1.0s/beat (the b-era cadence: more cuts, more dream); CANDID keeps 1.5.
+export const legalBeatCounts = (secs) => [3, 6, 9].filter((c) => secs / c >= (genMood() === "dream" ? 1.0 : 1.5));
 export const stampsLegal = (stamps, secs, counts = legalBeatCounts(secs)) =>
   counts.includes(stamps.length) && stamps[0] === 0
   && stamps.every((v, i) => Number.isInteger(v) && v < secs && (i === 0 || v > stamps[i - 1]));
