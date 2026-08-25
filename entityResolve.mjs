@@ -26,7 +26,6 @@ import { providerJson, textPart } from "./provider-llm.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 // Paths are env-overridable so the seed/store merge can be exercised against real files in a test
 // rather than asserted by grepping this source — the weakness that let two defects through today.
-const STORE = process.env.ENTITY_STORE || join(HERE, "out", "_entities", "remember.json");
 // ⚠ THE LEARNED STORE NEVER REACHED PRODUCTION, AND A COLD CACHE IS INVISIBLE. remember.json lives under
 // out/, which is gitignored AND excluded from the deploy upload — and the deploy path is
 // monorepo → `git subtree split` → grounded-gen → `deploy`, so ONLY GIT-TRACKED FILES SURVIVE. An
@@ -48,7 +47,6 @@ const STORE = process.env.ENTITY_STORE || join(HERE, "out", "_entities", "rememb
 // Two files, two jobs: SEED is tracked, ships, and is read-only at runtime; STORE is the volume-backed store
 // the run writes. Reads merge seed-then-store so a learned verdict always beats a shipped one; writes only
 // ever touch STORE, so a deploy can never clobber what production learned.
-const SEED = process.env.ENTITY_SEED || join(HERE, "entity_seed.json");
 // ⚠⚠ A CACHED VERDICT OUTLIVES THE CLASSIFIER THAT PRODUCED IT, AND A CACHE HIT SKIPS THE PROBE ENTIRELY.
 // So changing the probe's schema changes NOTHING for any term already in the store or the shipped seed — the
 // fix deploys, the run hits cache, and the old answer wins forever. Measured 2026-08-11: the `venue` bucket
@@ -79,85 +77,24 @@ export const isPoisonedEntry = (v) =>
   // answer is not the type it claims is how a truthiness check drifts from an identity one.
   !!(v && typeof v === "object" && v.specific_entity_found === false && Object.keys(v).filter((k) => k !== "_pv").length < 2);
 
-let storeHealed = false;   // set when loadStore drops a thrown-probe entry, so the heal is PERSISTED
-const readJson = (p) => { try { return JSON.parse(readFileSync(p, "utf8")); } catch { return {}; } };
+// ── THE REGISTRY IS DEAD (owner 2026-08-25: «eliminate search records, no more entity registry.
+// that was part of old architecture»). No remember.json, no shipped seed: every run REASONS FRESH —
+// the probe (reasoning + web) answers everything, and resolution results live only in this process,
+// for this run, dying with it. The staleness class this buries, all measured this week: a dead
+// session's phrasing served as "the user's term" ("punch monkey coin"); canonical-drift cache misses
+// re-paying for renamed entities (b27/b28); guise/meme records predating their fields sitting
+// "unanswered" forever. The whole healing apparatus below the old store (probe-version drops,
+// meme_in_context re-asks, guise-stale re-probes, poison sweeps) existed to repair persistence rot —
+// with no persistence there is nothing to rot, and it is deleted with the store.
+let storeHealed = false;   // kept for the callers' dirty-tracking shape; never true without a disk store
+const SESSION = {};        // this run's resolutions — the ONLY store there is
+export const loadStore = () => SESSION;
+export const saveStore = () => {};   // in-memory only: assignments into loadStore()'s object live for the run
+/** This run's resolved entities, store-shaped — for the run's own lookups (world property/drawn,
+ *  celeb relevance) that used to read remember.json. */
+export const sessionEntities = () => SESSION;
 
-export const loadStore = () => {
-  storeHealed = false;
-  // Seed first, learned store second, so a verdict production actually probed always beats the shipped one.
-  // The seed is never written back — see SEED above.
-  const seed = readJson(SEED), live = readJson(STORE);
-  const raw = { ...seed, ...live };
-  const seedOnly = Object.keys(seed).filter((k) => !(k in live)).length;
-  if (seedOnly) console.log(`[resolve] seed supplied ${seedOnly} entr${seedOnly === 1 ? "y" : "ies"} this run would otherwise have re-probed`);
-  const stale = Object.keys(raw).filter((k) => {
-    const v = raw[k];
-    return v && typeof v === "object" && v.specific_entity_found === false && (Number(v._pv) || 1) < PROBE_VERSION;
-  });
-  if (stale.length) {
-    for (const k of stale) delete raw[k];
-    storeHealed = true;
-    console.warn(`[resolve] \u26a0 dropped ${stale.length} GENERIC verdict${stale.length === 1 ? "" : "s"} from an older classifier (v<${PROBE_VERSION}) \u2014 they will be re-probed: ${stale.map((k) => `"${k}"`).join(", ")}`);
-  }
-  // Targeted re-ask (2026-08-12): meme records predating meme_in_context re-probe ONCE — the field decides
-  // the faithful-ref-vs-blur treatment and cannot be defaulted (unknown fails closed to blur meanwhile).
-  const memeStale = Object.keys(raw).filter((k) => { const v = raw[k]; return v && v.kind === "meme" && v.specific_entity_found === true && (typeof v.meme_in_context !== "boolean" || (Number(v._micv) || 1) < MEME_CONTEXT_V); });
-  if (memeStale.length) {
-    for (const k of memeStale) delete raw[k];
-    storeHealed = true;
-    console.warn(`[resolve] ⚠ dropped ${memeStale.length} meme verdict(s) predating meme_in_context — they will be re-probed: ${memeStale.map((k) => `"${k}"`).join(", ")}`);
-  }
-  // Targeted re-ask (2026-08-12): character/meme records predating basic_guise re-probe ONCE — the field
-  // decides whether a ©-trip may retry ref-less on prose alone (absent fails closed to the fallback rung).
-  // ⚠ real_animal INCLUDED (measured 2026-08-21, punch e2e c3cb3e56): the 2026-08-17 basic-guise lesson was
-  // measured ON viral real animals, yet this filter never re-probed them — a real_animal record predating
-  // the field stayed "unanswered" forever, and when its ref search came home empty the prose fallback that
-  // plainly applies (a baby macaque clutching an orange plush renders from description) was refused → exit 2.
-  const guiseStale = Object.keys(raw).filter((k) => { const v = raw[k]; return v && (v.kind === "meme" || v.kind === "ip_character" || v.kind === "real_animal") && v.specific_entity_found === true && typeof v.basic_guise !== "boolean"; });
-  if (guiseStale.length) {
-    for (const k of guiseStale) delete raw[k];
-    storeHealed = true;
-    console.warn(`[resolve] ⚠ dropped ${guiseStale.length} character verdict(s) predating basic_guise — they will be re-probed: ${guiseStale.map((k) => `"${k}"`).join(", ")}`);
-  }
-  const bad = Object.keys(raw).filter((k) => isPoisonedEntry(raw[k]));
-  if (bad.length) {
-    for (const k of bad) delete raw[k];
-    storeHealed = true;   // force a save even if this run probes nothing, or the poison survives to the next run
-    console.warn(`[resolve] ⚠ dropped ${bad.length} cached entr${bad.length === 1 ? "y" : "ies"} written by a THROWN probe, not a verdict (${bad.map((k) => `"${k}"`).join(", ")}) — they will be re-probed`);
-  }
-  return raw;
-};
-// ⚠ NEVER WRITE THE SEED BACK INTO THE LIVE STORE. loadStore returns seed+live merged, so saving that object
-// verbatim would copy every shipped entry into the volume — and because live overrides seed on read, a later
-// CORRECTION to the seed could then never take effect: the stale copy would win forever. Persist only what
-// this machine actually learned, i.e. entries the seed does not already hold identically.
-export const saveStore = (s) => {
-  const seed = readJson(SEED);
-  const learned = {};
-  for (const [k, v] of Object.entries(s)) {
-    if (JSON.stringify(seed[k]) === JSON.stringify(v)) continue;   // identical to the shipped answer — not ours to keep
-    learned[k] = v;
-  }
-  mkdirSync(dirname(STORE), { recursive: true });
-  writeFileSync(STORE, JSON.stringify(learned, null, 2));
-};
-
-/** Build the shipped seed from what this machine has learned. The seed is TRACKED, so this is how a warm
- *  cache reaches production at all — an untracked file cannot survive the subtree split into grounded-gen.
- *  Poisoned entries are refused rather than baked in: shipping a thrown-probe verdict would make it permanent
- *  on every container at once, which is the same bug with a wider blast radius.
- *    node entityResolve.mjs --build-seed */
-export function buildSeed() {
-  const live = readJson(STORE), seed = readJson(SEED);
-  const merged = { ...seed, ...live };
-  const out = {}, refused = [];
-  for (const [k, v] of Object.entries(merged)) {
-    if (isPoisonedEntry(v)) { refused.push(k); continue; }
-    out[k] = v;
-  }
-  writeFileSync(SEED, JSON.stringify(out, null, 2));
-  return { written: Object.keys(out).length, refused };
-}
+// (buildSeed deleted 2026-08-25 with the registry — no shipped seed exists to build.)
 
 // Stage 1 — candidate named subjects (web-search OFF). Generic scene/action words are NOT candidates.
 /** EXPORTED FOR AUDIT. This is the input the branch router gates on: candidateCount === 0 is the ONE
@@ -424,12 +361,6 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
 // ── CLI ──
 if (process.argv[1] && process.argv[1].endsWith("entityResolve.mjs")) {
   const p = process.argv.slice(2).join(" ");
-  if (process.argv.includes("--build-seed")) {
-    const { written, refused } = buildSeed();
-    console.log(`✓ entity_seed.json — ${written} entr${written === 1 ? "y" : "ies"} written${refused.length ? `; REFUSED ${refused.length} thrown-probe entr${refused.length === 1 ? "y" : "ies"} (${refused.map((k) => `"${k}"`).join(", ")})` : ""}`);
-    console.log(`  commit it: this is a TRACKED file, and an untracked cache cannot survive the subtree split into grounded-gen.`);
-    process.exit(0);
-  }
-  if (!p) { console.error('usage: node entityResolve.mjs "<user prompt>"   |   node entityResolve.mjs --build-seed'); process.exit(1); }
+  if (!p) { console.error('usage: node entityResolve.mjs "<user prompt>"'); process.exit(1); }
   console.log(JSON.stringify(await resolveEntities(p), null, 2));
 }
