@@ -38,7 +38,7 @@ if (framingConceded) console.log("framing: CONCEDED → beats pitched to the pla
 
 // 1. INTENT (text-only) — the target creature + its action, extracted from the user's prompt.
 const intent = await providerJson([textPart(
-  `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff (validated failure 2026-07-31)","secondary":"any OTHER creatures/props to CONJURE INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${userPrompt}".`
+  `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff (validated failure 2026-07-31)","secondary":"any OTHER creatures/props to CINEMATIC INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${userPrompt}".`
 )], { maxTokens: 900, temperature: 0.2 });
 
 // 2. READ THE SCRAPE (VLM) — what real STAND-IN is actually in the picked world-ref, and is it already the target?
@@ -272,10 +272,20 @@ if (BEAT_STYLE !== "template") {
     if (inc.length) fails.push(`a beat ends mid-sentence ("…${inc[0].slice(-40)}")`);
     const gen = genericSpeakerLabels(t);
     if (gen.length) fails.push(`a dialogue label names nobody (${gen[0].trim().slice(0, 30)}) — name the figure`);
-    // CONJURE (owner 2026-08-25: «ensure dream mode produces cuts in prompt without refs»): the register's
-    // signature move is MANDATED in the contract; this is the backstop — a conjure script with no hard cut
+    // CINEMATIC (owner 2026-08-25: «ensure dream mode produces cuts in prompt without refs»): the register's
+    // signature move is MANDATED in the contract; this is the backstop — a cinematic script with no hard cut
     // gets the one corrective re-ask like any other law break.
-    if (genMood() === "conjure" && !/hard cut(?:s)? to /i.test(t)) fails.push("the conjure register carries at least one hard cut to an unphotographed place — write one");
+    if (genMood() === "cinematic") {
+      if (!/hard cut(?:s)? to /i.test(t)) fails.push("the cinematic register carries at least one hard cut to an unphotographed place — write one");
+      // fisherman c1 residues (owner 2026-08-25: fix WITHOUT touching candid) — both checks live only
+      // inside this guard, so the candid branch's behavior is byte-identical:
+      // 1. "Speaker [2s]:" slipped the shared label check because the stamp sat between label and colon.
+      if (/^\s*(?:Speaker|Voice|Narrator|Someone|Man|Woman|Person)\s*(?:\[\d+s\])?\s*:/mi.test(t))
+        fails.push("a dialogue label names nobody (a stamp between the label and the colon does not excuse it) — name the figure");
+      // 2. "…with both hands. Fisherman, to the water" — an attribution fragment riding the beat line.
+      if (/\.\s+[A-Z][a-z]+,\s+to\s+[^.\n]{1,40}$/m.test(t))
+        fails.push('an attribution fragment rides a beat line ("Name, to …") — attribution lives in the Dialogue block, never in a beat');
+    }
     return fails;
   };
   const _fails1 = _lawFails(text);
