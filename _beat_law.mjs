@@ -500,16 +500,16 @@ export const causalOrder = () => (
 // ── THE MOOD FORK (owner 2026-08-24: «two moods one selects on the platform … same processes and rulings,
 // breaks the rules where we've seen them broken in b30 and b28»). CANDID is the default and is
 // BYTE-IDENTICAL to the law as it stood — the fork is falsy-safe; an absent flag changes nothing.
-// DREAM re-licenses exactly the four seams the b28/b30 forensics identified as the fever-dream moment:
+// CONJURE re-licenses exactly the four seams the b28/b30 forensics identified as the fever-dream moment (register named "conjure" — the engine's own word for unphotographed rendering; owner 2026-08-25):
 //   1. cut targets with NO photograph behind them (the flashback licence + hard-cut reset),
 //   2. physics-free spectacle after beat zero,
 //   3. one non-diegetic property riding the payoff (a glow), and the object-looms-to-fill-frame move,
 //   4. denser cadence (density floor 1.5s → 1.0s per beat).
 // Everything else is SHARED law in both moods: sourcing, clearance, blur, captions, de-naming, camera
 // silence, action-zero, identity-as-prose, the Sound line — and frame zero still grounds on a REAL plate.
-export const genMood = () => (process.env.GEN_MOOD === "dream" ? "dream" : "candid");
+export const genMood = () => (process.env.GEN_MOOD === "conjure" ? "conjure" : "candid");
 
-export const payoffLaw = () => (genMood() === "dream"
+export const payoffLaw = () => (genMood() === "conjure"
 ? `⚠ THE PAYOFF LANDS LAST, AND IT MAY LAND ACROSS A CUT. Put the consequence in the FINAL beat — and in ` +
     `this register the consequence may arrive in the dreamed place the story cut to, not only where it began. ` +
     `The event itself may be larger than physics: a creature flung skyward, a fall that hangs, a leap the ` +
@@ -563,11 +563,11 @@ export const seesawLaw = (BEAT_STYLE) => (
     `\n`
 );
 
-export const situationArc = () => (genMood() === "dream"
+export const situationArc = () => (genMood() === "conjure"
 ? `⚠ IF THE PROMPT DESCRIBES A SITUATION WITH NO EVENT, INVENT ONE AND GIVE IT A REAL ARC — and in this ` +
     `register the arc may LEAVE THE PHOTOGRAPH. Beat zero still happens in the real place the photograph ` +
     `shows, mid-action. After that, the spectacle may defy physics — a creature flung skyward, a leap the ` +
-    `real world would refuse — and the story may HARD-CUT to a place the photograph never held: open that ` +
+    `real world would refuse — and the story CARRIES AT LEAST ONE HARD CUT to a place the photograph never held — the cut is this register's signature move, not an option: open that ` +
     `cut beat by naming the place plainly ("Hard cut to a sunny grassy meadow:") — the ONE place-naming ` +
     `licence in this contract, allowed ONLY on a cut to an unphotographed place. Anyone who first appears ` +
     `in the dreamed place enters AT the cut, never before it; a hard cut back is equally licensed, and the ` +
@@ -706,8 +706,8 @@ export const finalChecklist = (userPrompt) => (
 // act structure" that this ruling was written from. Enforcement is unchanged in KIND (a validator re-asks,
 // the density lesson's own mechanism); only the meaning of "wrong" moved from grid-disagreement to
 // ILLEGALITY. `counts` is overridable for the short-duration fallback the caller supplies.
-// DREAM relaxes the density floor to 1.0s/beat (the b-era cadence: more cuts, more dream); CANDID keeps 1.5.
-export const legalBeatCounts = (secs) => [3, 6, 9].filter((c) => secs / c >= (genMood() === "dream" ? 1.0 : 1.5));
+// CONJURE relaxes the density floor to 1.0s/beat (the b-era cadence: more cuts, more dream); CANDID keeps 1.5.
+export const legalBeatCounts = (secs) => [3, 6, 9].filter((c) => secs / c >= (genMood() === "conjure" ? 1.0 : 1.5));
 export const stampsLegal = (stamps, secs, counts = legalBeatCounts(secs)) =>
   counts.includes(stamps.length) && stamps[0] === 0
   && stamps.every((v, i) => Number.isInteger(v) && v < secs && (i === 0 || v > stamps[i - 1]));

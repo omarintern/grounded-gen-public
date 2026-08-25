@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
-import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, incompleteBeatLines, genericSpeakerLabels } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -272,6 +272,10 @@ if (BEAT_STYLE !== "template") {
     if (inc.length) fails.push(`a beat ends mid-sentence ("…${inc[0].slice(-40)}")`);
     const gen = genericSpeakerLabels(t);
     if (gen.length) fails.push(`a dialogue label names nobody (${gen[0].trim().slice(0, 30)}) — name the figure`);
+    // CONJURE (owner 2026-08-25: «ensure dream mode produces cuts in prompt without refs»): the register's
+    // signature move is MANDATED in the contract; this is the backstop — a conjure script with no hard cut
+    // gets the one corrective re-ask like any other law break.
+    if (genMood() === "conjure" && !/hard cut(?:s)? to /i.test(t)) fails.push("the conjure register carries at least one hard cut to an unphotographed place — write one");
     return fails;
   };
   const _fails1 = _lawFails(text);
