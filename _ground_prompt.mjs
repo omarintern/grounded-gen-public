@@ -37,9 +37,39 @@ if (!framingConceded) {
 if (framingConceded) console.log("framing: CONCEDED → beats pitched to the plate's scale (no per-actor detail)");
 
 // 1. INTENT (text-only) — the target creature + its action, extracted from the user's prompt.
+// ⭐⭐ THE SUBJECT IS EXTRACTED FROM THE USER'S OWN WORDS (owner 2026-08-29, the mechanical-monkeys gen):
+// the app door rewrites prompts and its added adjectives were RENAMING the subject — 'cymbal monkeys'
+// arrived as 'vintage mechanical cymbal monkeys' and the beats rendered clockwork machines. Same law,
+// same mechanism as resolveEntities and inferNativeCapture: WHO IS IN THE VIDEO is the user's call, and
+// the raw words rule whenever the door supplied them. The rewrite stays visible as narrative context.
 const intent = await providerJson([textPart(
-  `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff (validated failure 2026-07-31)","secondary":"any OTHER creatures/props to CONJURE INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${userPrompt}".`
+  `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff (validated failure 2026-07-31)","secondary":"any OTHER creatures/props to CONJURE INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}".`
 )], { maxTokens: 900, temperature: 0.2 });
+// ⭐⭐ ENTITY NAMING IS NEVER RE-DERIVED FROM PROMPT TEXT — RAW OR REWRITE (owner 2026-08-29). The raw
+// words rule the subject ONLY when no resolved entity covers it (the cymbal-monkeys law). When the
+// plan's cast covers the extracted subject, the plan's OWN string replaces it: that string is already
+// correctly NAMED (public domain — "Dracula" is the better prompt) or DE-NAMED (owned IP and ref-led
+// instances like Punch — the ref leads, prose never names) by the resolver's class laws. One source of
+// truth; the writer never re-litigates a name.
+try {
+  const _entries = JSON.parse(process.env.CAST_ENTRIES || "[]");
+  const _tokset = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2);
+  const _covers = (entry, text) => {
+    const toks = _tokset(text);
+    const need = Math.min(2, Math.max(1, (entry.tokens || []).length));
+    return (entry.tokens || []).filter((t) => toks.includes(t)).length >= need && (entry.tokens || []).length > 0;
+  };
+  for (const key of ["target", "secondary"]) {
+    const cur = intent && intent[key];
+    if (!cur || typeof cur !== "string") continue;
+    const hit = _entries.find((e) => e && e.name && _covers(e, cur));
+    const form = hit && (hit.prose || hit.name);
+    if (hit && form && form.toLowerCase() !== cur.toLowerCase()) {
+      console.log(`  [cast] intent.${key} "${String(cur).slice(0, 40)}" → plan's own form "${String(form).slice(0, 48)}" (entity naming is the branch law's, never re-derived)`);
+      intent[key] = form;
+    }
+  }
+} catch { /* no entries or unparseable — raw extraction stands (the generic-subject case) */ }
 
 // 2. READ THE SCRAPE (VLM) — what real STAND-IN is actually in the picked world-ref, and is it already the target?
 const b64 = readFileSync(worldRef).toString("base64");
@@ -213,7 +243,10 @@ if (BEAT_STYLE !== "template") {
   const instruction = _dump(
     spanHeader() +
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
-    `WHAT THE USER ASKED FOR: "${userPrompt}"\n` +
+    `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n` +
+    (String(process.env.RAW_USER_PROMPT || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() !== userPrompt
+      ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns): "${userPrompt}"\n`
+      : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
     `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
