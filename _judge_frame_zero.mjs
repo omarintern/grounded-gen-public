@@ -53,6 +53,11 @@ export async function judgeFrameZero(filePath, action, opts = {}) {
         `stands, sits, perches or moves ON. A person needs walkable ground; a small animal may need only a shelf, a ` +
         `counter, a sill, a branch, a bin lid or a car roof \u2014 and a frame with no visible floor at all can be perfectly ` +
         `hostable for one. Judge the space THAT actor needs, never a human's by default. ` +
+        `\u26a0 STYLED OR PERIOD FIXTURES IN THE ACTION ARE CONJURED, NEVER REQUIRED. When the action names a styled, ` +
+        `ornate, branded or period version of an ordinary fixture — an ornate royal bed, a throne-like chair, a ` +
+        `vintage counter — judge hostability against the ORDINARY fixture of that kind in THIS photograph: any bed ` +
+        `hosts an action written for an ornate bed, because the styling is rendered onto it, not found. Answer for ` +
+        `the space and the geometry, never for whether the furniture matches the description. ` +
         `\u26a0 FILLED WITH OBJECTS IS NOT AUTOMATICALLY FALSE. Objects are what a small actor climbs on, walks between ` +
         `and knocks over, so a crowded shelf can be the STAGE rather than an obstruction. Answer FALSE only when the ` +
         `actor could not physically BE there, or could not perform the action from there. ` +

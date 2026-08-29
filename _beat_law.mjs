@@ -736,3 +736,28 @@ export const stampRetryPrompt = (stamps, userPrompt, text) =>
   `Rewrite these beats so there are EXACTLY ${stamps.length}, stamped ${stamps.map((t) => `[${t}s]`).join(" ")}. ` +
   `Keep the same story and wording as far as possible; redistribute or extend the action to fill every stamp. ` +
   `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines.\n\n${text}`;
+
+// ── SECONDARY RECASTS (owner 2026-08-29, the cymbal-king ruling) ────────────────────────────────
+// "the swap grammar should recast every role-bearing occupant the story re-casts, not just the
+// subject's stand-in. but we should limit it to three." The validated moat law already says a real
+// in-role body is the SWAP TARGET, never an obstacle — a sleeping woman is the perfect stand-in for
+// a sleeping king. This extends that ruling from the subject's stand-in to every occupant the story
+// re-casts, hard-capped at three bodies total (subject included): the owner's stated worry is that
+// too many simultaneous swaps may diffuse the render, so the cap is a quality guard, not a nicety.
+export const RECAST_CAP = 3;
+
+/** The secondary-recast law block for the writer instruction. `others` = the plate-reader's list of
+ *  OTHER real occupants (each {body, position, doing}); trimmed to RECAST_CAP-1 (the subject's own
+ *  stand-in holds the first slot). Pure — vacuum-tested. Returns "" when there is nobody to recast. */
+export function recastLaw(others, cap = RECAST_CAP) {
+  const list = (Array.isArray(others) ? others : [])
+    .filter((o) => o && typeof o.body === "string" && o.body.trim() && !/^none$/i.test(o.body.trim()))
+    .slice(0, Math.max(0, cap - 1));
+  if (!list.length) return "";
+  const lines = list.map((o) => ` • ${o.body.trim()}${o.position ? ` (${String(o.position).trim()}` + (o.doing ? `, ${String(o.doing).trim()}` : "") + ")" : o.doing ? ` (${String(o.doing).trim()})` : ""}`).join("\n");
+  return `\nSECONDARY RECASTS — the photograph ALSO contains:\n${lines}\n` +
+    `When a story character's ROLE matches an occupant's — a sleeping person for a sleeping king, a clerk for the story's clerk — ` +
+    `beat zero MUST state that story body at the occupant's EXACT position, replacing it: the same replacement grammar as the subject. ` +
+    `⚠ HARD CAP: at most ${cap} bodies are replaced in total, the subject's stand-in included — recast only role-matching occupants. ` +
+    `Every other occupant KEEPS ITS PLACE: leave it real and unmentioned, and never invent a replacement for a body whose role the story does not name.`;
+}

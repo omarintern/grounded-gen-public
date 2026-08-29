@@ -13,7 +13,7 @@ import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_in
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
 import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
-import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
+import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const [worldRef, userPrompt, slug = "scene", ...charRefs] = process.argv.slice(2);
@@ -56,7 +56,7 @@ const b64 = readFileSync(worldRef).toString("base64");
 // Small sample: only 2 of the 6 plates held an occupant, so the wording effect rests on two observations —
 // but detection is unchanged, so removing them costs nothing.
 const seen = await providerJson([
-  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant/subject currently AT THE ACTION SPOT that the target should REPLACE — the body the model swaps. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so NO swap is needed),"standin_placement":"foreground | side | background | none",${ELEMENTS_FIELD}}.`),
+  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant/subject currently AT THE ACTION SPOT that the target should REPLACE — the body the model swaps. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so NO swap is needed),"standin_placement":"foreground | side | background | none","other_occupants":[{"body":"…","position":"…","doing":"…"}] (0-2 OTHER prominent REAL occupants — a person or animal — elsewhere in the frame, each described closely enough to pick it out; [] when there are none),${ELEMENTS_FIELD}}.`),
   imagePart("image/jpeg", b64),
 ], { maxTokens: 1000, temperature: 0.2 });
 
@@ -110,6 +110,13 @@ if (charPaths.length) {
 // made the penguin GROW up the escalator). Templated (not LLM-elaborated) to guarantee minimalism.
 const has = (s) => s && !/^none$/i.test(String(s).trim());
 let beatLine, mode;
+// ⚠ MODULE-SCOPED ON PURPOSE (2026-08-29). ACCEPTED_N was a const inside the fine-detail guard's block
+// (closed ~40 lines later), while BOTH later repairs — swap-anchor and payoff-escalation — read it from
+// outside that scope. The payoff repair crashed with a ReferenceError on EVERY firing ("ACCEPTED_N is not
+// defined — shipping the original"), silently flattening every climax that needed the escalation re-ask;
+// the swap repair carried the identical crash, unexercised only because its verdicts kept coming back
+// anchored. Declared here, assigned where the accepted draft's count is known.
+let ACCEPTED_N = Math.max(...COUNTS);
 let writerInstruction = "";   // the writer contract, captured at _dump so the payoff repair can re-ask with it
 if (seen.standin_is_target) {
   mode = "animate (stand-in IS the target)";
@@ -190,6 +197,11 @@ if (BEAT_STYLE !== "template") {
   // never invented. A creature already the scene's own animal (standin_is_target) or entering an empty
   // natural spot gets the context law instead: a fox in snow behaves as a fox. The competence text for the
   // real-role branch is UNCHANGED (the pigeon-register ruling) — it moved VERBATIM to _beat_law.
+  // SECONDARY RECASTS (owner 2026-08-29): every role-bearing occupant the story re-casts, cap 3
+  // bodies total. The plate-reader lists other occupants; the WRITER does the role matching (it
+  // holds the story); unmatched occupants stay real. Observability: the count is logged every run.
+  const _others = (Array.isArray(seen.other_occupants) ? seen.other_occupants : []).filter((o) => o && o.body && !/^none$/i.test(String(o.body))).slice(0, RECAST_CAP - 1);
+  if (_others.length) console.log(`  [recast] ${_others.length} secondary occupant(s) offered to the writer (cap ${RECAST_CAP} incl subject): ${_others.map((o) => String(o.body).slice(0, 40)).join(" | ")}`);
   const humanRole = has(seen.standin) && !seen.standin_is_target ? seen.standin : null;
   const comedyClause = anthropomorphismClause(intent.target, humanRole);
   // FULL OBSERVABILITY: dump the ENTIRE instruction the beat writer receives. Until now only its OUTPUT (the
@@ -203,7 +215,7 @@ if (BEAT_STYLE !== "template") {
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
     `WHAT THE USER ASKED FOR: "${userPrompt}"\n` +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +
@@ -376,7 +388,7 @@ if (BEAT_STYLE !== "template") {
   // ⚠ REPAIRS KEY ON THE ACCEPTED DRAFT, NEVER ON A GRID (2026-08-20). Every downstream re-ask (fine-detail,
   // swap, payoff) verifies "same count as before" — and "before" is whatever count the writer legally CHOSE,
   // which no constant can know ahead of the draft.
-  const ACCEPTED_N = lines.length || Math.max(...COUNTS);
+  ACCEPTED_N = lines.length || Math.max(...COUNTS);
 
   // ⚠⚠ DETERMINISTIC GUARD — POST-CUT BEATS MAY NOT NAME FINE DETAIL.
   // The doctrine above already forbids this, and the doctrine is an LLM instruction, which makes it a
