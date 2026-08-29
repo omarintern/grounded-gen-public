@@ -161,3 +161,34 @@ export async function judgeTells(filePath, opts = {}) {
     return Object.keys(out).length ? out : null;
   } catch { return null; }   // ⚠ FAILS OPEN — no opinion leaves the crowded answers in place
 }
+
+// ── FULL-RESOLUTION AI RE-READ (owner 2026-08-29: ai generated is a hard no-go. very hard no-go) ──
+// The kill-shot judges a 512px thumbnail, and the AI tells — mushy background detail, unresolved
+// objects, dreamlike over-even glow — are exactly what 512px hides (the overlay_designed field already
+// recorded this class of blindness: FALSE at 512, TRUE at 1024). Measured live: a generated fantasy
+// bedchamber passed real_photo=true ai<=0.3 and was SERVED as a world-ref; r2v amplified its synthetic
+// texture into heavy diffusion. So the WINNER gets one extra read at 1024px, real/ai only, before any
+// serve. The veto is ABSOLUTE — no best-of-bunch exception, no style carve-out: synthetic is never served.
+export async function aiRecheck(filePath, opts = {}) {
+  try {
+    const b64 = await smallViewAt(filePath, Number(opts.viewPx ?? 1024));
+    return await providerJson([
+      textPart(
+        'Return ONLY JSON {"real_photo":bool,"ai_generated":0..1}. You are looking at a candidate WORLD ' +
+        'REFERENCE at full resolution — judge ONLY whether it is a genuine photograph. real_photo = made by a ' +
+        'REAL CAMERA pointed at a REAL SCENE THAT PHYSICALLY EXISTED (never a render, illustration, or model ' +
+        'synthesis). ai_generated = how likely this was SYNTHESISED by an image model. PHOTOREALISTIC AI IS ' +
+        'THE CASE YOU ARE HERE FOR — judge the PHYSICS at this resolution: architecture or objects that repeat, ' +
+        'melt, or could not be built; background detail dissolving into mush; hands, wheels, text or small ' +
+        'objects that never resolve; dreamlike over-even light with no real source; unnaturally perfect ' +
+        'symmetry; surfaces with no real wear. A beautiful real place is 0.0; a place that could not have been ' +
+        'photographed is 1.0. When genuinely unsure score HIGHER — a synthetic reference reaching the video ' +
+        'model is a hard failure, so this judgement fails CLOSED.'
+      ),
+      imagePart("image/jpeg", b64),
+    ], { maxTokens: 900, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
+  } catch (e) {
+    if (e?.name === "ProviderInfraError") throw e;
+    return null;   // infra/unreadable → no opinion; the caller must not treat this as a pass or a veto
+  }
+}
