@@ -280,7 +280,9 @@ export const goalBlock = () => (
     `we ALREADY HAVE THE PHOTOGRAPH. Dense visual description does not help here, it COMPETES with the reference ` +
     `(a verbose beat once made a penguin GROW; a spectacle-heavy beat turned a grainy night photo into a polished ` +
     `render). Take a text-to-video model's TEMPORAL AND NARRATIVE STRUCTURE only. The reference owns geometry, lighting, texture, ` +
-    `lens and grade; the beats own TIME, CAUSALITY and INTENT.\n\n`
+    `lens and grade; the beats own TIME, CAUSALITY and INTENT. The CAMERA is NEVER written — no camera words, ` +
+    `no framing, no shot-scale, no lens (a clause like "the camera tracks with it" is a law break): the ` +
+    `reference's own framing IS the shot; write only what the SUBJECT does.\n\n`
 );
 
 export const framingConcessionBlock = (framingConceded) => (

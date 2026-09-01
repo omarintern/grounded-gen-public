@@ -317,6 +317,10 @@ if (BEAT_STYLE !== "template") {
     if (inc.length) fails.push(`a beat ends mid-sentence ("…${inc[0].slice(-40)}")`);
     const gen = genericSpeakerLabels(t);
     if (gen.length) fails.push(`a dialogue label names nobody (${gen[0].trim().slice(0, 30)}) — name the figure`);
+    // ⚠ THE CAMERA IS NEVER WRITTEN — ANY REGISTER (owner 2026-09-01, punch-monkey postmortem: a candid
+    // beat shipped "and the camera tracks with it"; this check lived only inside the cinematic guard below).
+    if (/\bthe camera\b/i.test(t))
+      fails.push(`a beat names the camera ("the camera tracks with it") — the camera is never a character: delete the camera clause and write only what the subject does${genMood() === "cinematic" ? ' (for a cut, write "Hard cut to …")' : ""}`);
     // CINEMATIC (owner 2026-08-25: «ensure dream mode produces cuts in prompt without refs»): the register's
     // signature move is MANDATED in the contract; this is the backstop — a cinematic script with no hard cut
     // gets the one corrective re-ask like any other law break.
@@ -331,8 +335,6 @@ if (BEAT_STYLE !== "template") {
       if (/\.\s+[A-Z][a-z]+,\s+to\s+[^.\n]{1,40}$/m.test(t))
         fails.push('an attribution fragment rides a beat line ("Name, to …") — attribution lives in the Dialogue block, never in a beat');
       // c2 residues (owner 2026-08-25, the UFC fan clip):
-      if (/\bthe camera\b/i.test(t))
-        fails.push('a beat names the camera ("the camera hard cuts") — write "Hard cut to …"; the camera is never a character');
       if (/unphotographed/i.test(t))
         fails.push('contract language leaked into a beat ("unphotographed") — name the place plainly');
     }
