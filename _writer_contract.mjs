@@ -150,10 +150,8 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   if (labelled.length && wantCuts === 1)
     v.push({ rule: "cut-label-on-single", advisory: true, cut: null, detail: `${labelled.length} labelled line(s) on a one-cut script — a cut is named only when there is more than one` });
   if (wantCuts && cutNums !== wantCuts) v.push({ rule: "cut-count", cut: null, detail: `${cutNums}/${wantCuts}` });
-  // per-cut: wide framing, lens termination, subject presence, size words, camera words
-  const lensEsc = lens.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const lensEnd = new RegExp(`Shot on an? ${lensEsc} lens\\.$`, "i");
-  const lensInline = new RegExp(`shot on an? ${lensEsc} lens`, "i");   // hybrid: the capture sentence carries the lens inline ("…, shot on an 85mm lens. <action>…")
+  // per-cut: subject presence, size words, camera words. (The wide/lens REQUIREMENTS are retired — owner
+  // 2026-09-01: lens language is gone everywhere; wide is a SOURCING criterion, never prompted.)
   // "stamped" selects the INLINE lens test over the end-of-line one. Bare beats and PROSE both carry the capture
   // mid-line — the x32-era clear opens "Shot on a 200mm lens. A wide shot. In the boxing ring…" — so requiring
   // the line to END with the lens flags a script whose lens is right there in the first sentence. Same
@@ -184,13 +182,6 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   const plateIdxOf = (line) => Math.max(0, (Number((String(line).match(/\bCUT\s*(\d+)/i) || [])[1]) || 1) - 1);
   cuts.forEach((c, i) => {
     const pi = plateIdxOf(c);
-    // THE CAPTURE IS STATED ONCE. On a bare-stamped single-cut script the framing + lens ride the FIRST beat
-    // only; repeating them on every line is the noise the owner struck out, and it is what tripled the identity
-    // surface in x35. On a labelled multi-cut script each cut still declares its own capture, unchanged.
-    if (!bareSingle || i === 0) {
-      if (!/\ba wide shot\b/i.test(c)) v.push({ rule: "wide", cut: i + 1 });
-      if (!(stamped ? lensInline : lensEnd).test(c)) v.push({ rule: "lens", cut: i + 1 });
-    }
     // stamp consistency: a stamped text stamps EVERY cut, ascending — one shape per prompt, never a mix
     if (stamped && !(bareSingle ? STAMP_ONLY : STAMPED_CUT).test(c)) v.push({ rule: "stamp-missing", cut: i + 1 });
     if (SIZE_WORDS.test(c)) v.push({ rule: "size-word", cut: i + 1 });
@@ -441,7 +432,7 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
 //   too-long     over budget
 // Everything else REPORTS. Kept as one declarative set rather than eighteen scattered flags so the policy can
 // be read in one place — which is the same clarity principle applied to our own code.
-const FATAL = new Set(["no-cuts", "name", "lens", "wide", "swap-missing", "too-long"]);
+const FATAL = new Set(["no-cuts", "name", "swap-missing", "too-long"]);   // lens+wide REMOVED (owner 2026-09-01: lens retired; wide lives in sourcing, never in prompts)
 
 /** The enforcement layer: what may KILL a run. Everything else is warned and dropped. */
 export function goldenViolations(text, opts = {}) {
@@ -464,7 +455,6 @@ export function goldenViolations(text, opts = {}) {
 // — per-gen harvested FACTS. De-named visual clauses with physics + the venue's own speakable/handleable
 // nouns. Data the laws can point at; never law text itself.
 export function factContract({ userPrompt, cutList, cutCount, subjectLook, lens, payoff = "", swap = "", charSig = "", maxLines = 16, coFigures = [], register = "", handle = "", dialoguePace = "", dialogueWords = 0, lawBlocks = [], stamps = [], freeCuts = false, durationSec = 0, context = null, places = [] }) {
-  const art = /^[aeiou8]/.test(lens) ? "an" : "a";
   // Identity mechanism (ratified law 7, celeb instantiation): full look + "matching the reference" in the
   // subject's FIRST cut; the HANDLE carries every later cut. Without a handle the legacy shape stands.
   // ⭐ THE CARRY, TAKEN FROM THE CLEARED RECORD (owner 2026-08-16; the role-noun handle proposal WITHDRAWN):
@@ -483,16 +473,16 @@ VIDEO: "${userPrompt}"
 
 FACTS — data, not suggestions:
 ${lookFact}
-${register ? `REGISTER: ${register} — given, not chosen.\n` : ""}${stamps.length ? `LENS: every cut's capture sentence carries ", shot on ${art} ${lens} lens." — its one lawful home; no lens or framing words anywhere else.` : `LENS LINE: end every cut with "Shot on ${art} ${lens} lens."`}
+${register ? `REGISTER: ${register} — given, not chosen.\n` : ""}CAMERA: no lens or framing words — the plates own the vantage (lens retired 2026-09-01).
 ${swap ? `SWAP: ${swap} — SAY WHO HE REPLACES, in the first cut he appears: "takes the place of the <role> — same position and scale". ${cutCount > 1 || !cutCount ? `From your SECOND cut on, that role noun alone carries him ("the <role>"): never re-describe the look, the reference already owns it and repeating it repaints him every cut. ` : ""}\n` : ""}${(coFigures || []).map((c) => `CO-FIGURE: ${c.guise}${c.nameable ? ` — may be named "${c.name}"` : ` — NEVER any name (not "${c.name}"); the reference carries its identity, your description carries only what it DOES`}.${c.swapRole ? ` In its first cut it ${ipSwapClause(c.swapRole)}.` : ""} It speaks when the scene calls for it — write its lines IN CHARACTER${c.nameable ? "" : ", labeled by its role noun"}; if its canon is wordless, write its response-turn in its own register. The WORDS are yours; the voice and mannerism are the model's.\n`).join("")}${payoff ? `PAYOFF MATERIAL: ${payoff}\n` : ""}${dialogueWords ? `DIALOGUE PACE: ${dialoguePace} — about ${dialogueWords} spoken words across this clip. That is the BUDGET, not a ceiling to creep toward: an underfilled clip is dead air, and a character with a voice is wasted saying nothing.\n` : ""}${context?.subjectContext?.length ? `SUBJECT CONTEXT — the subject's signatures as PHYSICS, deployable as the manner of ordinary actions: ${context.subjectContext.join("; ")}.\n` : ""}${context?.venueVocabulary?.length ? `VENUE VOCABULARY — this place's own nouns, for DIALOGUE and ACTION only (spoken or handled, never written on anything): ${context.venueVocabulary.join(", ")}.\n` : ""}${context?.collision?.length ? `COLLISION MATERIAL: ${context.collision.join("; ")}.\n` : ""}${context?.moment ? `THE MOMENT — script THIS, the particular not the general: ${context.moment}\n` : ""}${charSig ? `SIGNATURE IN THE REFERENCE: ${charSig}\n` : ""}${(places || []).filter(Boolean).length ? `CUT PLACES — from the photograph itself, use VERBATIM as each capture sentence place: ${places.map((pl, pi) => `Cut ${pi + 1} = ${pl}`).join("; ")}.\n` : ""}CUTS, IN ORDER:
 ${cutList}
 ${lawBlocks.length ? `\n${lawBlocks.filter(Boolean).join("\n")}` : ""}
 RULES — each is checked mechanically after you write:
 ${freeCuts
-    ? `1. Each cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." YOU choose the cut count — as many as the scene's intent needs and no more (padding robs the scene; one cut is a full answer when the scene wants one). Stamp cuts ascending from [0s], spread across the ${durationSec || 6}-second clip. The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
+    ? `1. Each cut: "[Ns] CUT N — <that cut given place>. <the subject> <does the action>." YOU choose the cut count — as many as the scene's intent needs and no more (padding robs the scene; one cut is a full answer when the scene wants one). Stamp cuts ascending from [0s], spread across the ${durationSec || 6}-second clip. No framing or lens words — nothing about how the scene is seen.`
     : stamps.length
-    ? `1. ${cutCount === 1 ? `One line per BEAT and NO cut label anywhere — a cut is named only when there is more than one, and only at the moment it happens. The FIRST beat states the capture once: "[${stamps[0] ?? 0}s] A wide shot of <the place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Every later beat is just "[Ns] <who> <does what>." — no framing, no lens, no "CUT". Use these stamps in order, one per beat: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is that beat's moment. ONE plate means ONE vantage, so every line is CUT 1; what changes between them is what HAPPENS, never where the camera is.` : `One line per cut: "[Ns] CUT N — A wide shot of <that cut given place>, shot on ${art} ${lens} lens. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time.`} The capture sentence is the one home for framing and lens; nothing about how the scene is seen anywhere else.`
-    : `1. One line per cut: "Cut N: A wide shot of <that cut given place>. <subject look> <does the action>. Shot on ${art} ${lens} lens."`}
+    ? `1. ${cutCount === 1 ? `One line per BEAT and NO cut label anywhere — a cut is named only when there is more than one, and only at the moment it happens. The FIRST beat opens at the place once: "[${stamps[0] ?? 0}s] <the place>. <the subject> <does the action>." Every later beat is just "[Ns] <who> <does what>." — no framing, no lens, no "CUT". Use these stamps in order, one per beat: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is that beat's moment. ONE plate means ONE vantage, so every line is CUT 1; what changes between them is what HAPPENS, never where the camera is.` : `One line per cut: "[Ns] CUT N — <that cut given place>. <the subject> <does the action>." Use these stamps in order, one per cut: ${stamps.map((t) => `[${t}s]`).join(" ")} — the bracket is the cut's start time.`} No framing or lens words — nothing about how the scene is seen.`
+    : `1. One line per cut: "Cut N: <that cut given place>. <subject look> <does the action>." No framing or lens words.`}
 2. The subject acts in EVERY cut; no cut belongs to anyone else. The set's other people stay exactly where the photographs show them.
 2b. CONTACT, not scenery: each cut's action stages ON that photograph's own objects and people, by DEFINITE ARTICLE — and every noun you write must be FINDABLE in that photograph.
 ${lawBlocks.length ? "" : `3. The LAST cut lands one payoff, transformed from something already in that photograph; each element pays off once; real-world brand surfaces render blank.\n`}${lawBlocks.length ? "3" : "4"}. Speech goes under "Dialogue:", every line labeled "Name/Role:", aimed at someone in the frame.
