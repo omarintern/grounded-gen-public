@@ -18,7 +18,7 @@ const PROVIDER = "https://api.provider.example/api/v1";
 // ⚠ RESOLUTION IS PER-MODEL, NOT UNIVERSAL: seedance takes "480p", another model takes "768P"/"2K" ONLY
 // (`/models?type=video` → constraints.resolutions). Sending a resolution the model does not list is an
 // input rejection, so read the model's own constraint list rather than assuming this file's default.
-const ENDPOINT = process.env.GEN_ENDPOINT || "seedance-2-0-reference-to-video";
+const ENDPOINT = process.env.GEN_ENDPOINT || "seedance-2-5-reference-to-video";   // SILENT engine (owner 2026-09-05): "grounded 1.0" to the world, seedance 2.5 underneath. Override via GEN_ENDPOINT.
 const RESOLUTION = process.env.GEN_RES || "480p";
 // The 409 consent object is keyed by PROVIDER, so it cannot stay hardcoded to seedance once the
 // endpoint is variable — derive it from the model id's own prefix.
@@ -91,7 +91,7 @@ const FRAME_REF = process.env.FRAME_REF === "1";
 // any call, so the ref-less route names a model we CONFIRMED exists rather than one we hoped would serve:
 // seedance-2-0-text-to-video quoted 200 at 6s/480p/9:16, the same shape as r2v.
 // T2V_ENDPOINT still overrides for a deliberate experiment.
-const MODEL = refs.length ? ENDPOINT : (process.env.T2V_ENDPOINT || "seedance-2-0-text-to-video");   // VERIFIED 2026-08-17 via the free /video/quote: the id exists and prices identically to r2v ($… @ 6s/480p/9:16), so the ref-less route no longer borrows the reference-to-video endpoint
+const MODEL = refs.length ? ENDPOINT : (process.env.T2V_ENDPOINT || "seedance-2-5-text-to-video");   // 2.5 t2v default (owner 2026-09-05 silent switch); VERIFIED live /video/quote
 const payload = { model: MODEL, prompt: promptText, duration };
 if (process.env.NO_RES !== "1") payload.resolution = RESOLUTION;   // the fallback video model publishes resolutions:[] — omit
 if (process.env.NO_ASPECT !== "1") payload.aspect_ratio = aspect;

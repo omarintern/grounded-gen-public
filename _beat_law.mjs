@@ -392,7 +392,7 @@ export const trappingsLaw = () => (
 );
 
 export const charSigBlock = (charSig) => (
-`${charSig ? `⚠ THE CHARACTER'S VISIBLE SIGNATURES (read off the sourced character reference): ${charSig}. USE at least one of these IN THE ACTION — have the creature actually handle or use what it carries, rather than merely having it present. An identity performed is stronger than one only rendered.\n\n` : ""}`
+`${charSig ? `⚠ THE CHARACTER'S VISIBLE SIGNATURES (read off the sourced character reference): ${charSig}. USE at least one of these IN THE ACTION — have the creature actually handle or use what it carries, rather than merely having it present. An identity performed is stronger than one only rendered.\n⚠⚠ A SIGNATURE OBJECT IS THAT FIGURE'S OWN, AND THE REFERENCE FIXES ITS LOOK. When the figure has a signature carried thing (a plush, a toy, a hat, a prop named in its signatures above OR referred to in the request as belonging to it — "his plush", "her doll") it is ONE specific object throughout, the exact one the reference shows. Name it the way the request/signatures name it and let the reference render it; NEVER assign it a colour, material or type the reference does not show — do not turn an orange plush into "a brown stuffed toy", do not invent a generic version of it, and never spawn a second fresh prop of the same kind. If the request has that object act ("his plush comes in to save him"), it is still HIS established plush doing the acting, not a new one.\n\n` : ""}`
 );
 
 export const soundLaw = () => (
@@ -721,7 +721,7 @@ export const stampsLegal = (stamps, secs, counts = legalBeatCounts(secs)) =>
 // CONFIRMED entity — this block is data-driven and collapses to nothing for a rhetorical John Doe.
 export const charContextBlock = (canon) => (canon && (canon.temperament || canon.attachment || canon.always)
   ? `⚠ CHARACTER CONTEXT — show it ONLY in HOW actions are performed, never as a statement; the character ` +
-    `never takes a sentence from the action, and props stay bare nouns: ` +
+    `never takes a sentence from the action, and ordinary props stay bare nouns (the figure's OWN signature object is the exception — it keeps its referenced identity, never recoloured): ` +
     `temperament: ${canon.temperament || "—"} · attachment: ${canon.attachment || "—"} · always: ${canon.always || "—"}\n\n`
   : "");
 
