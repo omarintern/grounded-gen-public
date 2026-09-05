@@ -65,7 +65,11 @@ export function logPregateMiss(who, kind) { log({ action: "miss", who, kind, not
  * @returns {Promise<{refuse:boolean, who?:string, why?:string, sure?:number, shadow?:boolean}>}
  *          refuse=false on ANY doubt, error or absence — the caller proceeds exactly as it would have.
  */
-export async function pregate(prompt) {
+/** @param prompt      the text that will EXECUTE (the app's compiled prompt when one exists)
+ *  @param userPrompt  the user's OWN words — the only text a refusal may be charged against (owner 2026-09-05:
+ *                     "unwritten names are fine. it's just unwritten names that it flags itself" — our compiler
+ *                     may elaborate with names; the gate must never refuse the user for what WE wrote). */
+export async function pregate(prompt, userPrompt = "") {
   if (process.env.PREGATE === "0") return { refuse: false };
   try {
     // ⚠ PLAIN COMPLETION, NOT JSON MODE. providerJson sends response_format, which the cheap models reject with
@@ -94,9 +98,10 @@ export async function pregate(prompt) {
     const owned = j?.owned === true;
     const sure = Number(j?.sure);
     const who = String(j?.who || "").trim();
-    const named = namedInRequest(who, prompt);   // a name the user never wrote is an ASSOCIATION, never a depiction
+    const named = namedInRequest(who, userPrompt || prompt);   // judged against the USER'S OWN WORDS — a name our compiler or the model supplied is never the user's depiction
+    const compiledOnly = !named && !!userPrompt && namedInRequest(who, prompt);   // present in what executes, absent from what the user wrote: ours, not theirs
     const confident = owned && Number.isFinite(sure) && sure >= SURE && who.length > 0 && named;
-    log({ action: SHADOW ? "shadow" : confident ? "refused" : (owned && Number.isFinite(sure) && sure >= SURE && who && !named) ? "association" : "passed", owned, who, why: j?.why, sure, named, model: MODEL, prompt: String(prompt).slice(0, 200) });
+    log({ action: SHADOW ? "shadow" : confident ? "refused" : (owned && Number.isFinite(sure) && sure >= SURE && who && !named) ? (compiledOnly ? "ours-not-theirs" : "association") : "passed", owned, who, why: j?.why, sure, named, compiled_only: compiledOnly, model: MODEL, prompt: String(prompt).slice(0, 200), user_prompt: String(userPrompt || "").slice(0, 120) });
     if (!confident) return { refuse: false };
     if (SHADOW) { console.log(`  [pregate] SHADOW — would have refused "${who}" (${j?.why}, sure ${sure}); falling through as instructed`); return { refuse: false, shadow: true }; }
     return { refuse: true, who, why: String(j?.why || "owned"), sure };
