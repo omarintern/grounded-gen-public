@@ -42,6 +42,22 @@ const log = (row) => {
   try { mkdirSync(LOGDIR, { recursive: true }); appendFileSync(join(LOGDIR, "verdicts.jsonl"), JSON.stringify({ ts: new Date().toISOString(), ...row }) + "\n"); } catch {}
 };
 
+// ⭐⭐ A NAME THE USER NEVER WROTE IS NOT A DEPICTION (owner 2026-09-05). This gate refused "The Shining
+// Rollercoaster" for the Grady twins — a character the model ASSOCIATED with the film, absent from the request.
+// A named work, show, game, book or place is not a character: its cast is not being asked for, and a request
+// for a work's world is served by grounding the world (the appropriated-scene path), never refused for people
+// who merely live in it. So the refused name must be one the model can point to IN THE REQUEST. Pure, so the
+// battery tests it; it can only ever make the gate MORE permissive — the direction this whole design leans.
+const STOP = new Set(["the", "a", "an", "of", "and", "from", "in", "on", "at", "by", "to", "mr", "mrs", "ms", "dr", "sir"]);
+const GENERIC = new Set(["twins", "twin", "brothers", "sisters", "family", "gang", "crew", "band", "boys", "girls", "kids", "cast", "character", "characters", "man", "woman"]);
+const _tok = (s) => String(s || "").toLowerCase().replace(/['\u2019]s\b/g, "").replace(/[^a-z0-9]+/g, " ").split(/\s+/).filter(Boolean);
+export function namedInRequest(who, prompt) {
+  const w = _tok(who), ptoks = _tok(prompt), p = new Set(ptoks);
+  if (!w.length) return false;
+  if ((" " + ptoks.join(" ") + " ").includes(" " + w.join(" ") + " ")) return true;
+  return w.some((t) => t.length >= 2 && !STOP.has(t) && !GENERIC.has(t) && p.has(t));
+}
+
 /** Record that the FULL resolver refused something this gate let through — the only measurable disagreement. */
 export function logPregateMiss(who, kind) { log({ action: "miss", who, kind, note: "full gate refused what the pre-gate passed" }); }
 
@@ -68,6 +84,9 @@ export async function pregate(prompt) {
       `generic roles are NOT owned; answer false. If you do not recognise the name, or you are unsure whether it ` +
       `is owned, answer false. Being unsure here is free and costs nothing; being wrong turns away a legitimate ` +
       `request, which cannot be undone.\n` +
+      `⚠ A FILM, SHOW, GAME, BOOK OR PLACE NAMED in the request is NOT a depicted character and does not make its ` +
+      `cast one: never name a character the request itself does not write. Answer owned=true only for a person or ` +
+      `character whose NAME APPEARS in the request.\n` +
       `Return ONLY JSON {"owned":true|false,"who":"<the name, or empty>","why":"celebrity|owned-character|none","sure":0..1}.`;
     const { text } = await providerText(ask, { model: MODEL, maxTokens: 120, temperature: 0 });
     let j = null; try { j = JSON.parse((String(text).match(/\{[\s\S]*\}/) || ["{}"])[0]); } catch {}
@@ -75,8 +94,9 @@ export async function pregate(prompt) {
     const owned = j?.owned === true;
     const sure = Number(j?.sure);
     const who = String(j?.who || "").trim();
-    const confident = owned && Number.isFinite(sure) && sure >= SURE && who.length > 0;
-    log({ action: SHADOW ? "shadow" : confident ? "refused" : "passed", owned, who, why: j?.why, sure, model: MODEL, prompt: String(prompt).slice(0, 200) });
+    const named = namedInRequest(who, prompt);   // a name the user never wrote is an ASSOCIATION, never a depiction
+    const confident = owned && Number.isFinite(sure) && sure >= SURE && who.length > 0 && named;
+    log({ action: SHADOW ? "shadow" : confident ? "refused" : (owned && Number.isFinite(sure) && sure >= SURE && who && !named) ? "association" : "passed", owned, who, why: j?.why, sure, named, model: MODEL, prompt: String(prompt).slice(0, 200) });
     if (!confident) return { refuse: false };
     if (SHADOW) { console.log(`  [pregate] SHADOW — would have refused "${who}" (${j?.why}, sure ${sure}); falling through as instructed`); return { refuse: false, shadow: true }; }
     return { refuse: true, who, why: String(j?.why || "owned"), sure };
