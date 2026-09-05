@@ -113,7 +113,21 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // texts run STRUCTURALLY longer — the moment sentence (~90) + two swap clauses (~130) + a legit free-cut
 // (~180) put the measured legit ceiling ≈1650 over the mcgregor max; 1750 = that + margin, still tight
 // enough that paragraph bloat flags. CONTRACT CONSTANT — flagged to the owner's eye at landing.
-export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null } = {}) {
+// APPARATUS LAW (owner 2026-09-05/06): in a ridden or worn form the camera IS the rider. A cut that looks AT the rider
+// or the vehicle from outside, or that carries no seat cue at all, has dismounted — 2026-09-05 the writer authored
+// "a trike-borne rider pumps hard down the patterned carpet" from a plate showing a boy on a trike, and the ride was
+// gone. Pure text predicates; the caller passes `apparatus: true` when the run recognised such a form.
+const DISMOUNT = /\b(?:(?:a|the|one|another)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard|inside|in)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|cart|car|coaster|seat|kart|sled|board|wagon))\b|\b(?:trike|tricycle|bike|cart|kart|sled)-borne\b|\bthe\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|leans|clips|crashes|is thrown|rolls|speeds|races|steers|brakes|ducks)\b|\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|cart|car|coaster)\b|\b(?:from|on)\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway)\b/i;
+const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness|handlebars?|grab bar|the bar|hands?|gloves|knuckles|car nose|nose of the car|hood|visor|goggles|ahead|dead ahead|straight at|toward the lens|at the lens|rush(?:es|ing)? (?:at|toward|past)|into frame|fills? the (?:lower|bottom) (?:frame|edge)|drops? away|the climb|the drop|the turn|crest(?:s|ing)?)\b/i;
+export function apparatusFinding(cutText) {
+  const t = String(cutText || "");
+  const m = t.match(DISMOUNT);
+  if (m) return `dismounted: "${m[0]}" — the camera is the rider, never a view of one`;
+  if (!SEAT.test(t)) return "no seat cue — every cut opens from the seat (the rails ahead, the bar, the hands)";
+  return null;
+}
+
+export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, apparatus = false } = {}) {
   const t = String(text || "");
   const v = [];
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -142,6 +156,7 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   const cuts = bareSingle ? bareBeats : labelled.length ? labelled : proseCapture ? [t.replace(/\n/g, " ")] : [];
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
   const cutNums = bareSingle ? 1 : cutNumbersOf(t);
+  if (apparatus) cuts.forEach((c, i) => { const why = apparatusFinding(c); if (why) v.push({ rule: "apparatus", cut: i + 1, detail: why }); });
   // ⚠ ADVISORY, DELIBERATELY NOT FATAL. The law and the re-ask both now instruct the bare shape, so a labelled
   // single-cut script means the writer ignored an explicit instruction — worth SEEING, not worth killing a
   // $… run over, and promoting it to a violation would risk exactly the unsatisfiable-gate class that has
@@ -432,7 +447,7 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
 //   too-long     over budget
 // Everything else REPORTS. Kept as one declarative set rather than eighteen scattered flags so the policy can
 // be read in one place — which is the same clarity principle applied to our own code.
-const FATAL = new Set(["no-cuts", "name", "swap-missing", "too-long"]);   // lens+wide REMOVED (owner 2026-09-01: lens retired; wide lives in sourcing, never in prompts)
+const FATAL = new Set(["no-cuts", "name", "swap-missing", "too-long", "apparatus"]);   // apparatus: owner 2026-09-06 — a dismounted cut is a wrong video, not a style note   // lens+wide REMOVED (owner 2026-09-01: lens retired; wide lives in sourcing, never in prompts)
 
 /** The enforcement layer: what may KILL a run. Everything else is warned and dropped. */
 export function goldenViolations(text, opts = {}) {

@@ -204,7 +204,10 @@ export const apparatusClause = () =>
   `aims a wheel — its path is the track's, and contact with the world is what the track brings past. The world is what streams past and what ` +
   `the ride arrives at, so the payoff is something the ride RUNS INTO or THROUGH, seen coming. A reference ` +
   `frame of this form rides with the beats; its pixels carry the apparatus's look, so name the apparatus in ` +
-  `plain nouns and let the reference render it.`;
+  `plain nouns and let the reference render it. THE RIDER IS NEVER A SEEN FIGURE: no beat names a rider, cyclist ` +
+  `or passenger, nor a trike, cart or car looked at from outside — the seat's own cues (the rails running ahead, ` +
+  `the bar, the hands) open every beat. Cuts are allowed only as LATER SECTIONS OF THE SAME RIDE: the camera never ` +
+  `dismounts, never stands in a room and watches the ride pass; each cut is the rails carrying into the next place.`;
 
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";
