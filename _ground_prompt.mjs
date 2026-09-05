@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
-import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -248,7 +248,7 @@ if (BEAT_STYLE !== "template") {
       ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns): "${userPrompt}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${apparatusClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +

@@ -191,6 +191,20 @@ export const belongingClause = () =>
   `The beats NAME it inside the action so the reference's pixels carry its look; the figure holding it in ` +
   `that reference is NOT in this video — the replacement takes its place entirely, belonging in hand.`;
 
+// ⭐⭐ THE CAMERA IS PART OF THE SCENE'S APPARATUS (owner 2026-09-05: a ride is a camera form). Keyed on the
+// run's APPARATUS_NOTE, set only when the recognised form is participant-worn/ridden. A reference frame of
+// the form rides with the beats (the form plate), so the writer names the apparatus in plain nouns and lets
+// the reference render it — the same shape as a kept belonging.
+export const apparatusClause = () =>
+  !process.env.APPARATUS_NOTE ? "" :
+  `⚠⚠ THE CAMERA IS PART OF THE SCENE'S OWN APPARATUS: ${process.env.APPARATUS_NOTE}. Compose EVERY beat from ` +
+  `inside it — what the rider sees, never a view OF the ride from outside; the apparatus is never introduced, ` +
+  `explained or looked at, it is simply the frame's constant foreground. Motion is the ride's own (the climb, ` +
+  `the drop, the turn, the rush) and is never a camera instruction. The world is what streams past and what ` +
+  `the ride arrives at, so the payoff is something the ride RUNS INTO or THROUGH, seen coming. A reference ` +
+  `frame of this form rides with the beats; its pixels carry the apparatus's look, so name the apparatus in ` +
+  `plain nouns and let the reference render it.`;
+
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";
   if (!ELICITED_FORM.test(form)) return "";
