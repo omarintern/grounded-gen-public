@@ -91,7 +91,12 @@ export async function pregate(prompt, userPrompt = "") {
       `⚠ A FILM, SHOW, GAME, BOOK OR PLACE NAMED in the request is NOT a depicted character and does not make its ` +
       `cast one: never name a character the request itself does not write. Answer owned=true only for a person or ` +
       `character whose NAME APPEARS in the request.\n` +
-      `Return ONLY JSON {"owned":true|false,"who":"<the name, or empty>","why":"celebrity|owned-character|none","sure":0..1}.`;
+      `⚠ AMONG OWNED CHARACTERS ONLY THE WORK'S FACE IS BLOCKED. canonical=true when the character is a protagonist, title ` +
+      `character or lead whose name and look a general audience knows on sight (Jack Torrance, Mickey Mouse); canonical=false ` +
+      `for a peripheral or lesser-known figure of a work — a one-scene pair, a background or minor supporting character a ` +
+      `general audience could not name (the Grady twins). Judge the character's own prominence, never the work's fame. ` +
+      `A real famous PERSON is always canonical.\n` +
+      `Return ONLY JSON {"owned":true|false,"who":"<the name, or empty>","why":"celebrity|owned-character|none","canonical":true|false,"sure":0..1}.`;
     const { text } = await providerText(ask, { model: MODEL, maxTokens: 120, temperature: 0 });
     let j = null; try { j = JSON.parse((String(text).match(/\{[\s\S]*\}/) || ["{}"])[0]); } catch {}
     if (!j) { log({ action: "unparseable", raw: String(text).slice(0, 160), model: MODEL }); return { refuse: false }; }
@@ -100,8 +105,12 @@ export async function pregate(prompt, userPrompt = "") {
     const who = String(j?.who || "").trim();
     const named = namedInRequest(who, userPrompt || prompt);   // judged against the USER'S OWN WORDS — a name our compiler or the model supplied is never the user's depiction
     const compiledOnly = !named && !!userPrompt && namedInRequest(who, prompt);   // present in what executes, absent from what the user wrote: ours, not theirs
-    const confident = owned && Number.isFinite(sure) && sure >= SURE && who.length > 0 && named;
-    log({ action: SHADOW ? "shadow" : confident ? "refused" : (owned && Number.isFinite(sure) && sure >= SURE && who && !named) ? (compiledOnly ? "ours-not-theirs" : "association") : "passed", owned, who, why: j?.why, sure, named, compiled_only: compiledOnly, model: MODEL, prompt: String(prompt).slice(0, 200), user_prompt: String(userPrompt || "").slice(0, 120) });
+    // ⭐ ONLY THE WORK'S FACE REFUSES (owner 2026-09-05: "allow through non-canonical ip … it should block jack torrance").
+    // A real person is always canonical; an owned character refuses only when the model is CERTAIN it is the face
+    // of its work. Unknown or false → falls through to the full gate, which fails closed on its own evidence.
+    const canonicalBlock = j?.why === "celebrity" || j?.canonical === true;
+    const confident = owned && Number.isFinite(sure) && sure >= SURE && who.length > 0 && named && canonicalBlock;
+    log({ action: SHADOW ? "shadow" : confident ? "refused" : (owned && Number.isFinite(sure) && sure >= SURE && who && !named) ? (compiledOnly ? "ours-not-theirs" : "association") : (owned && Number.isFinite(sure) && sure >= SURE && who && named && !canonicalBlock) ? "non-canonical" : "passed", owned, who, why: j?.why, canonical: j?.canonical, sure, named, compiled_only: compiledOnly, model: MODEL, prompt: String(prompt).slice(0, 200), user_prompt: String(userPrompt || "").slice(0, 120) });
     if (!confident) return { refuse: false };
     if (SHADOW) { console.log(`  [pregate] SHADOW — would have refused "${who}" (${j?.why}, sure ${sure}); falling through as instructed`); return { refuse: false, shadow: true }; }
     return { refuse: true, who, why: String(j?.why || "owned"), sure };
