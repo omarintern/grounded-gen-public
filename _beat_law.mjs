@@ -200,7 +200,8 @@ export const apparatusClause = () =>
   `⚠⚠ THE CAMERA IS PART OF THE SCENE'S OWN APPARATUS: ${process.env.APPARATUS_NOTE}. Compose EVERY beat from ` +
   `inside it — what the rider sees, never a view OF the ride from outside; the apparatus is never introduced, ` +
   `explained or looked at, it is simply the frame's constant foreground. Motion is the ride's own (the climb, ` +
-  `the drop, the turn, the rush) and is never a camera instruction. The world is what streams past and what ` +
+  `the drop, the turn, the rush) and is never a camera instruction. A rail-bound ride never steers, swerves or ` +
+  `aims a wheel — its path is the track's, and contact with the world is what the track brings past. The world is what streams past and what ` +
   `the ride arrives at, so the payoff is something the ride RUNS INTO or THROUGH, seen coming. A reference ` +
   `frame of this form rides with the beats; its pixels carry the apparatus's look, so name the apparatus in ` +
   `plain nouns and let the reference render it.`;
