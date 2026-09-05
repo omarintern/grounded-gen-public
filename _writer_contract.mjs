@@ -117,12 +117,16 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // or the vehicle from outside, or that carries no seat cue at all, has dismounted — 2026-09-05 the writer authored
 // "a trike-borne rider pumps hard down the patterned carpet" from a plate showing a boy on a trike, and the ride was
 // gone. Pure text predicates; the caller passes `apparatus: true` when the run recognised such a form.
-const DISMOUNT = /\b(?:(?:a|the|one|another)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard|inside|in)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|cart|car|coaster|seat|kart|sled|board|wagon))\b|\b(?:trike|tricycle|bike|cart|kart|sled)-borne\b|\bthe\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|leans|clips|crashes|is thrown|rolls|speeds|races|steers|brakes|ducks)\b|\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|cart|car|coaster)\b|\b(?:from|on)\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway)\b/i;
-const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness|handlebars?|grab bar|the bar|hands?|gloves|knuckles|car nose|nose of the car|hood|visor|goggles|ahead|dead ahead|straight at|toward the lens|at the lens|rush(?:es|ing)? (?:at|toward|past)|into frame|fills? the (?:lower|bottom) (?:frame|edge)|drops? away|the climb|the drop|the turn|crest(?:s|ing)?)\b/i;
+// Riders ARE seen in a POV when the camera sits mid-train or at the back (owner 2026-09-06): the backs of heads,
+// shoulders and raised arms in the rows ahead are the seat's own view. What dismounts is a rider or vehicle looked at
+// from OUTSIDE the train (a kid on a tricycle watched from a doorway) or a rider doing a driver's work (pumping,
+// pedalling, steering, swerving — impossible on rails, so always a view of someone else's ride).
+const DISMOUNT = /\b(?:(?:a|the|one|another|some)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|kart|sled|board|skateboard|scooter|wagon|big wheel))\b|\b(?:trike|tricycle|bike|bicycle|kart|sled|scooter)-borne\b|\b(?:the|a)\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|steers|brakes|aims|weaves)\b|\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|riders|cart|car|coaster|train)\b|\b(?:from|on)\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway|curb|pavement)\b/i;
+const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness|handlebars?|grab bar|the bar|hands?|gloves|knuckles|car nose|nose of the car|hood|visor|goggles|ahead|dead ahead|in front|the row|rows|backs? of|from behind|over (?:the|their) shoulders?|shoulders|arms up|raised arms|train ahead|car ahead|seats? ahead|straight at|toward the lens|at the lens|rush(?:es|ing)? (?:at|toward|past)|into frame|fills? the (?:lower|bottom) (?:frame|edge)|drops? away|the climb|the drop|the turn|crest(?:s|ing)?)\b/i;
 export function apparatusFinding(cutText) {
   const t = String(cutText || "");
   const m = t.match(DISMOUNT);
-  if (m) return `dismounted: "${m[0]}" — the camera is the rider, never a view of one`;
+  if (m) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
   if (!SEAT.test(t)) return "no seat cue — every cut opens from the seat (the rails ahead, the bar, the hands)";
   return null;
 }
