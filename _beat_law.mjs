@@ -209,7 +209,18 @@ export const apparatusClause = () =>
   `mid-train or at the back — never a rider or vehicle looked at from outside the train (a figure on a trike watched ` +
   `from a doorway is a dismount). The seat's own cues (the rails running ahead, the bar, the hands, the row in front) ` +
   `open every beat. Cuts are allowed only as LATER SECTIONS OF THE SAME RIDE: the camera never ` +
-  `dismounts, never stands in a room and watches the ride pass; each cut is the rails carrying into the next place.`;
+  `dismounts, never stands in a room and watches the ride pass; each cut is the rails carrying into the next place. ` +
+  `THE RIDE'S MOTION IS WHAT THIS PLACE CAN HOST: in a corridor, room or hall — straight runs, dips, banks at corners, ` +
+  `a doorway taken at speed; never a loop, inversion, corkscrew or upside-down pass indoors (they need height the place ` +
+  `does not have, and the frame diffuses into nothing true to the photographs). THE PAYOFF IS PASSED THROUGH OR BY AT ` +
+  `SPEED: the frame never ends on a face, nothing fills the lens, and every figure keeps the room's scale to the last frame.`;
+
+// NAMED WORKS ARE TITLES (owner 2026-09-06: "context carries here rather than a user's perfect punctuation/grammar"). The
+// run restores each resolved work's casing in the prompt the writer reads (restoreWorkTitles) and names them here, so a
+// lowercase "the shining rollercoaster" is never written as "the rollercoaster is shining".
+export const workTitlesClause = () =>
+  !process.env.WORK_TITLES ? "" :
+  `⚠ NAMED WORKS IN THIS REQUEST: ${process.env.WORK_TITLES}. These are TITLES of works — never read a title's words as adjectives or verbs, whatever the user's casing.`;
 
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";

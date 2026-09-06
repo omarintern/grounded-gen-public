@@ -123,15 +123,21 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // pedalling, steering, swerving — impossible on rails, so always a view of someone else's ride).
 const DISMOUNT = /\b(?:(?:a|the|one|another|some)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|kart|sled|board|skateboard|scooter|wagon|big wheel))\b|\b(?:trike|tricycle|bike|bicycle|kart|sled|scooter)-borne\b|\b(?:the|a)\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|steers|brakes|aims|weaves)\b|\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|riders|cart|car|coaster|train)\b|\b(?:from|on)\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway|curb|pavement)\b/i;
 const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness|handlebars?|grab bar|the bar|hands?|gloves|knuckles|car nose|nose of the car|hood|visor|goggles|ahead|dead ahead|in front|the row|rows|backs? of|from behind|over (?:the|their) shoulders?|shoulders|arms up|raised arms|train ahead|car ahead|seats? ahead|straight at|toward the lens|at the lens|rush(?:es|ing)? (?:at|toward|past)|into frame|fills? the (?:lower|bottom) (?:frame|edge)|drops? away|the climb|the drop|the turn|crest(?:s|ing)?)\b/i;
-export function apparatusFinding(cutText) {
+const INVERSION = /\b(?:loop(?:s|ing|ed)?|loop-the-loop|inversions?|upside[- ]down|inverted|corkscrews?|barrel[- ]rolls?)\b/i;
+const FACEFILL = /\b(?:fills? the (?:frame|lens|screen|shot)|filling the (?:frame|lens|screen)|faces? (?:fill|loom)s?\b|inches from (?:a|the|her|his|their) faces?|straight into (?:a|the|her|his|their) faces?|close-up (?:of|on) (?:a|the|her|his|their) faces?|between the two (?:girls|twins|figures))/i;
+export function apparatusFinding(cutText, { interior = false, last = false } = {}) {
   const t = String(cutText || "");
   const m = t.match(DISMOUNT);
   if (m) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
   if (!SEAT.test(t)) return "no seat cue — every cut opens from the seat (the rails ahead, the bar, the hands)";
+  const inv = interior ? t.match(INVERSION) : null;
+  if (inv) return `inverted indoors: "${inv[0]}" — a corridor or room hosts straight runs, dips and banks at corners, never a loop or inversion (owner 2026-09-06: the frame diffuses into nothing true)`;
+  const ff = last ? t.match(FACEFILL) : null;
+  if (ff) return `payoff stops on a face: "${ff[0]}" — the ride passes THROUGH or BY at speed; the frame never ends on a face and figures keep the room's scale`;
   return null;
 }
 
-export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, apparatus = false } = {}) {
+export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, apparatus = false, apparatusInterior = false } = {}) {
   const t = String(text || "");
   const v = [];
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -160,7 +166,7 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   const cuts = bareSingle ? bareBeats : labelled.length ? labelled : proseCapture ? [t.replace(/\n/g, " ")] : [];
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
   const cutNums = bareSingle ? 1 : cutNumbersOf(t);
-  if (apparatus) cuts.forEach((c, i) => { const why = apparatusFinding(c); if (why) v.push({ rule: "apparatus", cut: i + 1, detail: why }); });
+  if (apparatus) cuts.forEach((c, i) => { const why = apparatusFinding(c, { interior: apparatusInterior, last: i === cuts.length - 1 }); if (why) v.push({ rule: "apparatus", cut: i + 1, detail: why }); });
   // ⚠ ADVISORY, DELIBERATELY NOT FATAL. The law and the re-ask both now instruct the bare shape, so a labelled
   // single-cut script means the writer ignored an explicit instruction — worth SEEING, not worth killing a
   // $… run over, and promoting it to a violation would risk exactly the unsatisfiable-gate class that has

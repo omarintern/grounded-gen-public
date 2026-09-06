@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
-import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -154,6 +154,11 @@ if (seen.standin_is_target) {
   // already embeds an article + the action → doubled words like "The the red fox trotting … trotting …").
   const T = String(intent.target).charAt(0).toUpperCase() + String(intent.target).slice(1);
   beatLine = `[0s] ${T} ${intent.action}${has(intent.secondary) ? `, with ${intent.secondary} in the scene` : ""}.`;
+} else if (has(seen.standin) && process.env.APPARATUS_NOTE) {
+  // ⚠ A RIDDEN FORM NEVER SWAPS (owner 2026-09-06). "The rollercoaster replaces a young boy on a blue tricycle" was obeyed
+  // to the letter: the boy stayed a beat, then faded. The ride is not a figure; the camera occupies the seat he had.
+  mode = `VACATE: ${seen.standin} → the camera's own seat (apparatus form)`;
+  beatLine = `[0s] From the camera's own seat, the rails run ahead down the scene, the bar and hands in the lower frame; ${seen.standin} is not in the video. Everything else stays exactly as photographed.`;
 } else if (has(seen.standin)) {
   mode = `SWAP: ${seen.standin} → ${intent.target}`;
   beatLine = `[0s] Replace ${seen.standin} with ${intent.target}. Everything else in the scene stays exactly as photographed.`;
@@ -213,6 +218,8 @@ console.log(`seesaw : spec-density ${_density} (dense at ${SPEC_DENSE}) → ${BE
 if (BEAT_STYLE !== "template") {
   const swapClause = seen.standin_is_target
     ? `The ${intent.target} is ALREADY the creature in the photo — do not swap anything, just animate it.`
+    : (has(seen.standin) && process.env.APPARATUS_NOTE)
+      ? `⚠ ${seen.standin} in the photograph is NOT in the video and is NEVER described, named or replaced by anything: under a ridden form the camera occupies that seat. Beat 1 opens on the rails ahead, the bar and the hands, everything else exactly as photographed.`
     : has(seen.standin)
       ? `Beat 1 MUST begin by replacing ${seen.standin} with ${intent.target}, which takes over that exact position.`
       : `Beat 1 MUST introduce ${intent.target} into the scene at the natural action spot.`;
@@ -248,7 +255,7 @@ if (BEAT_STYLE !== "template") {
       ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns): "${userPrompt}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${apparatusClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${apparatusClause()}\n${workTitlesClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +
