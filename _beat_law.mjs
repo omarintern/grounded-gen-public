@@ -210,6 +210,9 @@ export const apparatusClause = () =>
   `from a doorway is a dismount). The seat's own cues (the rails running ahead, the bar, the hands, the row in front) ` +
   `open every beat. Cuts are allowed only as LATER SECTIONS OF THE SAME RIDE: the camera never ` +
   `dismounts, never stands in a room and watches the ride pass; each cut is the rails carrying into the next place. ` +
+  `A CUT IS A CHOICE, NOT A PLATE COUNT: two consecutive stops may be ONE CONTINUOUS CARRY — the motion leaves one ` +
+  `photograph and arrives in the next inside the same section, both places named in order — and a hard cut is written ` +
+  `only where the ride wants one. ` +
   `THE RIDE'S MOTION IS WHAT THIS PLACE CAN HOST: in a corridor, room or hall — straight runs, dips, banks at corners, ` +
   `a doorway taken at speed; never a loop, inversion, corkscrew or upside-down pass indoors (they need height the place ` +
   `does not have, and the frame diffuses into nothing true to the photographs). THE PAYOFF IS PASSED THROUGH OR BY AT ` +

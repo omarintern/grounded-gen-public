@@ -160,7 +160,7 @@ export function apparatusFinding(cutText, { interior = false, last = false } = {
   return null;
 }
 
-export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, apparatus = false, apparatusInterior = false, referenceDependent = false, cutPlates = 0 } = {}) {
+export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, apparatus = false, apparatusInterior = false, referenceDependent = false, cutPlates = 0, cutsAreMax = false } = {}) {
   const t = String(text || "");
   const v = [];
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -198,7 +198,9 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   // shows the label surviving the instruction, that is the evidence for promoting it.
   if (labelled.length && wantCuts === 1)
     v.push({ rule: "cut-label-on-single", advisory: true, cut: null, detail: `${labelled.length} labelled line(s) on a one-cut script — a cut is named only when there is more than one` });
-  if (wantCuts && cutNums !== wantCuts) v.push({ rule: "cut-count", cut: null, detail: `${cutNums}/${wantCuts}` });
+  // cutsAreMax (owner 2026-09-06, the writer chooses the join): the plate count is a CEILING — fewer cuts means a carried
+  // section spent two photographs on one label; more cuts than photographs is still the ungrounded-vantage failure.
+  if (wantCuts && (cutsAreMax ? cutNums > wantCuts : cutNums !== wantCuts)) v.push({ rule: "cut-count", cut: null, detail: `${cutNums}/${wantCuts}${cutsAreMax ? " max" : ""}` });
   // per-cut: subject presence, size words, camera words. (The wide/lens REQUIREMENTS are retired — owner
   // 2026-09-01: lens language is gone everywhere; wide is a SOURCING criterion, never prompted.)
   // "stamped" selects the INLINE lens test over the end-of-line one. Bare beats and PROSE both carry the capture
