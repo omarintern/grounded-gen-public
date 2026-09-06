@@ -139,6 +139,15 @@ const DISMOUNT = new RegExp(DISMOUNT_PARTS.join("|"), "i");
 const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness(?:es)?|handlebars?|grab bar|the bar|hands?|gloves|knuckles|car nose|nose of the car|the car'?s? (?:nose|front)|hood|visor|goggles|the seat|from the seat|rows? ahead|the row in front|backs? of (?:heads|riders)|train ahead|car ahead|seats? ahead)\b/i;
 const INVERSION = /\b(?:loop(?:s|ing|ed)?|loop-the-loop|inversions?|upside[- ]down|inverted|corkscrews?|barrel[- ]rolls?)\b/i;
 const FACEFILL = /\b(?:fills? the (?:frame|lens|screen|shot)|filling the (?:frame|lens|screen)|faces? (?:fill|loom)s?\b|inches from (?:a|the|her|his|their) faces?|straight into (?:a|the|her|his|their) faces?|close-up (?:of|on) (?:a|the|her|his|their) faces?|between the two (?:girls|twins|figures))/i;
+// REFERENCE-DEPENDENT GENS NEVER CUT TO AN UNPHOTOGRAPHED PLACE (owner 2026-09-06: "we do hard cut to unphotographed places
+// sometimes. however, where this is a reference-dependent gen like the overlook hotel and or a disney type ride, these can't
+// be unphotographed cuts"). A named work or venue is the reference; a cut the plates do not carry is a place the model
+// invents — a dark-wood corridor where the Overlook's hexagons should be. Counts "hard cut to" lines against the cut plates.
+export const HARD_CUT = /\bhard cuts?\s+to\b/gi;
+export function unphotographedCuts(text, cutPlates = 0) {
+  const n = (String(text || "").match(HARD_CUT) || []).length;
+  return Math.max(0, n - Math.max(0, Number(cutPlates) || 0));
+}
 export function apparatusFinding(cutText, { interior = false, last = false } = {}) {
   const t = String(cutText || "");
   const m = t.match(DISMOUNT);
@@ -151,7 +160,7 @@ export function apparatusFinding(cutText, { interior = false, last = false } = {
   return null;
 }
 
-export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, apparatus = false, apparatusInterior = false } = {}) {
+export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, apparatus = false, apparatusInterior = false, referenceDependent = false, cutPlates = 0 } = {}) {
   const t = String(text || "");
   const v = [];
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -181,6 +190,7 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
   const cutNums = bareSingle ? 1 : cutNumbersOf(t);
   if (apparatus) cuts.forEach((c, i) => { const why = apparatusFinding(c, { interior: apparatusInterior, last: i === cuts.length - 1 }); if (why) v.push({ rule: "apparatus", cut: i + 1, detail: why }); });
+  if (referenceDependent) { const extra = unphotographedCuts(t, cutPlates); if (extra) v.push({ rule: "unphotographed-cut", cut: null, detail: `${extra} hard cut(s) to a place no plate carries — this gen depends on its references; the story reaches that place within a photographed plate or not at all` }); }
   // ⚠ ADVISORY, DELIBERATELY NOT FATAL. The law and the re-ask both now instruct the bare shape, so a labelled
   // single-cut script means the writer ignored an explicit instruction — worth SEEING, not worth killing a
   // $… run over, and promoting it to a violation would risk exactly the unsatisfiable-gate class that has
@@ -471,7 +481,7 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
 //   too-long     over budget
 // Everything else REPORTS. Kept as one declarative set rather than eighteen scattered flags so the policy can
 // be read in one place — which is the same clarity principle applied to our own code.
-const FATAL = new Set(["no-cuts", "name", "swap-missing", "too-long", "apparatus"]);   // apparatus: owner 2026-09-06 — a dismounted cut is a wrong video, not a style note   // lens+wide REMOVED (owner 2026-09-01: lens retired; wide lives in sourcing, never in prompts)
+const FATAL = new Set(["no-cuts", "name", "swap-missing", "too-long", "apparatus", "unphotographed-cut"]);   // apparatus: owner 2026-09-06 — a dismounted cut is a wrong video, not a style note   // lens+wide REMOVED (owner 2026-09-01: lens retired; wide lives in sourcing, never in prompts)
 
 /** The enforcement layer: what may KILL a run. Everything else is warned and dropped. */
 export function goldenViolations(text, opts = {}) {
