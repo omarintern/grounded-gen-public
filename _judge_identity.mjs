@@ -115,7 +115,7 @@ export async function judgeSpatial(filePath, sceneIntent = "", opts = {}) {
         ` action_spot_room = would the ACTION'S finest detail render legibly here? "ample" yes · "tight" subject reads but fine detail would not · "too_small" a subject there would be unreadable pixels.` +
         ` subject_scale = 0.9 close · 0.5 medium · 0.3 wide · 0.1 super-wide.`),
       imagePart("image/jpeg", await smallViewAt(filePath, px)),
-    ], { maxTokens: 200, temperature: 0.1 });
+    ], { maxTokens: 200, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });   // an IMAGE question → the vision model (owner 2026-09-07: "$… on cut hunts seems like a lot"): these two calls ran on the default REASONING model, whose thinking overran a 200-token budget and retried — ~530 billed output tokens per call, $…–$… of every hunt; the 08-11 bakeoff measured the vision model on exactly these rubric fields
     if (!j) return null;
     const st = String(j.usable_stage || "").toLowerCase();
     const rm = String(j.action_spot_room || "").toLowerCase();
@@ -153,7 +153,7 @@ export async function judgeTells(filePath, opts = {}) {
     const j = await providerJson([
       textPart(`Return ONLY JSON {"posed":bool,"arranged_light":bool,"shallow_dof":bool,"styled":bool,"crisp":bool,"chosen_vantage":bool,"graded_color":bool}. Each is a fact you can SEE, not a taste judgement. posed = a person or animal looking at, or performing for, the camera. arranged_light = light PUT THERE for the picture. shallow_dof = STRONG background blur against a sharp subject. styled = objects placed or arranged for the shot. crisp = CONSPICUOUSLY sharp and clean the way a stock photograph is. chosen_vantage = the camera occupies a position a person does not casually hold a phone: laid on the ground, ankle height, flat overhead, pressed to a surface, shooting through an object for framing. Ordinary standing or seated eye/chest height — including a quick tilt down at something on the ground — is FALSE. A mounted utility device (doorbell, security cam, dashcam) is FALSE: it was not placed for a picture. graded_color = the colors were PROCESSED toward an aesthetic after capture: faded film emulation, split-toned shadows, heavy vignette, HDR tone-mapping, a wash the real scene could not have had. Ordinary camera color, including dull or badly-lit color, is FALSE.`),
       imagePart("image/jpeg", await smallViewAt(filePath, px)),
-    ], { maxTokens: 200, temperature: 0.1 });
+    ], { maxTokens: 200, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });   // an IMAGE question → the vision model (owner 2026-09-07: "$… on cut hunts seems like a lot"): these two calls ran on the default REASONING model, whose thinking overran a 200-token budget and retried — ~530 billed output tokens per call, $…–$… of every hunt; the 08-11 bakeoff measured the vision model on exactly these rubric fields
     if (!j) return null;
     const out = {};
     for (const k of ["posed", "arranged_light", "shallow_dof", "styled", "crisp", "chosen_vantage", "graded_color"])
