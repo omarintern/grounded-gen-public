@@ -136,7 +136,7 @@ const DISMOUNT_PARTS = [
 ];
 const DISMOUNT = new RegExp(DISMOUNT_PARTS.join("|"), "i");
 // a seat cue is a seat OBJECT, never a motion word (owner 2026-09-06: "the turn" alone let a ballroom cut through)
-const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness(?:es)?|handlebars?|grab bar|the bar|hands?|gloves|knuckles|car nose|nose of the car|the car'?s? (?:nose|front)|hood|visor|goggles|the seat|from the seat|rows? ahead|the row in front|backs? of (?:heads|riders)|train ahead|car ahead|seats? ahead)\b/i;
+const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness(?:es)?|handlebars?|grab bar|safety bar|restraint bar|bar across (?:the|my|our|their) (?:laps?|chests?|waists?)|hands?|gloves|knuckles|car nose|nose of the car|the car'?s? (?:nose|front)|hood|visor|goggles|the seat|from the seat|rows? ahead|the row in front|backs? of (?:heads|riders)|train ahead|car ahead|seats? ahead)\b/i;
 const INVERSION = /\b(?:loop(?:s|ing|ed)?|loop-the-loop|inversions?|upside[- ]down|inverted|corkscrews?|barrel[- ]rolls?)\b/i;
 const FACEFILL = /\b(?:fills? the (?:frame|lens|screen|shot)|filling the (?:frame|lens|screen)|faces? (?:fill|loom)s?\b|inches from (?:a|the|her|his|their) faces?|straight into (?:a|the|her|his|their) faces?|close-up (?:of|on) (?:a|the|her|his|their) faces?|between the two (?:girls|twins|figures))/i;
 // REFERENCE-DEPENDENT GENS NEVER CUT TO AN UNPHOTOGRAPHED PLACE (owner 2026-09-06: "we do hard cut to unphotographed places
@@ -152,7 +152,7 @@ export function apparatusFinding(cutText, { interior = false, last = false } = {
   const t = String(cutText || "");
   const m = t.match(DISMOUNT);
   if (m) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
-  if (!SEAT.test(t)) return "no seat cue — every cut opens from the seat (the rails ahead, the bar, the hands)";
+  if (!SEAT.test(t)) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
   const inv = interior ? t.match(INVERSION) : null;
   if (inv) return `inverted indoors: "${inv[0]}" — a corridor or room hosts straight runs, dips and banks at corners, never a loop or inversion (owner 2026-09-06: the frame diffuses into nothing true)`;
   const ff = last ? t.match(FACEFILL) : null;
