@@ -159,7 +159,7 @@ markInflight({ queue_id: qid, model: MODEL, slug, aspect, duration, target: `out
 // 18 minutes; the ceiling is expressed in SECONDS so changing the interval cannot silently change how long a
 // run waits before it gives up.
 const POLL_MS = Math.max(2000, Number(process.env.VIDEO_POLL_MS || 15000));
-const POLL_WINDOW_S = Math.max(60, Number(process.env.VIDEO_POLL_WINDOW_S || 900));   // 15 min, as before-ish
+const POLL_WINDOW_S = Math.max(60, Number(process.env.VIDEO_POLL_WINDOW_S || 1800));   // 30 min (owner 2026-09-06): a 9s render sat 14m02s in the provider queue and cleared the old 15m window by 58s — a good render is never thrown away for arriving at minute sixteen
 const POLL_N = Math.ceil((POLL_WINDOW_S * 1000) / POLL_MS);
 for (let i = 0; i < POLL_N; i++) {
   await new Promise((r) => setTimeout(r, POLL_MS));

@@ -121,8 +121,22 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // shoulders and raised arms in the rows ahead are the seat's own view. What dismounts is a rider or vehicle looked at
 // from OUTSIDE the train (a kid on a tricycle watched from a doorway) or a rider doing a driver's work (pumping,
 // pedalling, steering, swerving — impossible on rails, so always a view of someone else's ride).
-const DISMOUNT = /\b(?:(?:a|the|one|another|some)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|kart|sled|board|skateboard|scooter|wagon|big wheel))\b|\b(?:trike|tricycle|bike|bicycle|kart|sled|scooter)-borne\b|\b(?:the|a)\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|steers|brakes|aims|weaves)\b|\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|riders|cart|car|coaster|train)\b|\b(?:from|on)\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway|curb|pavement)\b/i;
-const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness|handlebars?|grab bar|the bar|hands?|gloves|knuckles|car nose|nose of the car|hood|visor|goggles|ahead|dead ahead|in front|the row|rows|backs? of|from behind|over (?:the|their) shoulders?|shoulders|arms up|raised arms|train ahead|car ahead|seats? ahead|straight at|toward the lens|at the lens|rush(?:es|ing)? (?:at|toward|past)|into frame|fills? the (?:lower|bottom) (?:frame|edge)|drops? away|the climb|the drop|the turn|crest(?:s|ing)?)\b/i;
+const DISMOUNT_PARTS = [
+  // a rider or figure on a non-train vehicle, looked at
+  String.raw`\b(?:(?:a|the|one|another|some)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|kart|sled|board|skateboard|scooter|wagon|big wheel))\b`,
+  String.raw`\b(?:trike|tricycle|bike|bicycle|kart|sled|scooter)-borne\b`,
+  // a rider doing a driver's work — impossible on rails, so always someone else's ride
+  String.raw`\b(?:the|a)\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|steers|brakes|aims|weaves)\b`,
+  String.raw`\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|riders|cart|car|coaster|train)\b`,
+  String.raw`\b(?:from|on)\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway|curb|pavement)\b`,
+  // the vehicle described from the ROOM (owner 2026-09-06: "the coaster carves past them" is the room's view, not the seat's)
+  String.raw`\b(?:the|a)\s+(?:car|cart|coaster|train|ride|carriage)\s+(?:whips|carves|barrels|races|roars|plunges|swoops|tears|rips|hurtles|rockets|thunders|slaloms|spirals|screams|charges|blasts|slices|weaves)\s+(?:past|by|through|around|between|into)\s+(?:them|it|the crowd|the diners|the guests|the room|the tables|the figures|the people|everyone|the onlookers|the dancers|the patrons)\b`,
+  // the room performing for the ride (owner 2026-09-06: the ride is voyeuristic — the riders see the room; it does not react)
+  String.raw`\b(?:the crowd|the diners|the guests|the room'?s?(?: gathered)? figures|the figures|the people|the onlookers|the patrons|the dancers|bystanders|everyone)\b[^.;]{0,50}\b(?:press(?:es|ed)? back|lean(?:s|ed|ing)? away|scatter(?:s|ed)?|part(?:s|ed)?|recoil(?:s|ed)?|flinch(?:es|ed)?|duck(?:s|ed)?|gasp(?:s|ed)?|startled|leap(?:s|ed)? (?:back|aside)|give(?:s)? (?:the turn|it|the car|the ride) room)\b`,
+];
+const DISMOUNT = new RegExp(DISMOUNT_PARTS.join("|"), "i");
+// a seat cue is a seat OBJECT, never a motion word (owner 2026-09-06: "the turn" alone let a ballroom cut through)
+const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness(?:es)?|handlebars?|grab bar|the bar|hands?|gloves|knuckles|car nose|nose of the car|the car'?s? (?:nose|front)|hood|visor|goggles|the seat|from the seat|rows? ahead|the row in front|backs? of (?:heads|riders)|train ahead|car ahead|seats? ahead)\b/i;
 const INVERSION = /\b(?:loop(?:s|ing|ed)?|loop-the-loop|inversions?|upside[- ]down|inverted|corkscrews?|barrel[- ]rolls?)\b/i;
 const FACEFILL = /\b(?:fills? the (?:frame|lens|screen|shot)|filling the (?:frame|lens|screen)|faces? (?:fill|loom)s?\b|inches from (?:a|the|her|his|their) faces?|straight into (?:a|the|her|his|their) faces?|close-up (?:of|on) (?:a|the|her|his|their) faces?|between the two (?:girls|twins|figures))/i;
 export function apparatusFinding(cutText, { interior = false, last = false } = {}) {
