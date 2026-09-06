@@ -5,7 +5,7 @@
 // either copy is edited. ZERO text change at extraction; _ground_prompt imports its own former text from here.
 // Model-visible doctrine lives in the clause functions; pure machinery (the deterministic dialogue builder,
 // the FINE_DETAIL regex) rides along. speechReach already lives in _gate_rules (shared there, not here).
-import { dialogueStamps } from "./_gate_rules.mjs";
+import { dialogueStamps, musicRequested } from "./_gate_rules.mjs";
 
 export const DIALOGUE_STAMPS = dialogueStamps(Number(process.env.BEAT_DURATION) || 4, Number(process.env.CUT_BUDGET) || 0);
 
@@ -429,14 +429,25 @@ export const charSigBlock = (charSig) => (
 `${charSig ? `⚠ THE CHARACTER'S VISIBLE SIGNATURES (read off the sourced character reference): ${charSig}. USE at least one of these IN THE ACTION — have the creature actually handle or use what it carries, rather than merely having it present. An identity performed is stronger than one only rendered.\n⚠⚠ A SIGNATURE OBJECT IS THAT FIGURE'S OWN, AND THE REFERENCE FIXES ITS LOOK. When the figure has a signature carried thing (a plush, a toy, a hat, a prop named in its signatures above OR referred to in the request as belonging to it — "his plush", "her doll") it is ONE specific object throughout, the exact one the reference shows. Name it the way the request/signatures name it and let the reference render it; NEVER assign it a colour, material or type the reference does not show — do not turn an orange plush into "a brown stuffed toy", do not invent a generic version of it, and never spawn a second fresh prop of the same kind. If the request has that object act ("his plush comes in to save him"), it is still HIS established plush doing the acting, not a new one.\n\n` : ""}`
 );
 
+// MUSIC THE MAKER ASKED FOR (owner 2026-09-07): allowed, in the Sound block, DIEGETIC — its source is in the scene.
+const musicClause = () => (
+  musicRequested(process.env.RAW_USER_PROMPT || process.env.USER_PROMPT || "")
+    ? `⚠ THE REQUEST NAMES MUSIC, SO MUSIC IS ALLOWED — write it in the Sound: line as DIEGETIC music with its SOURCE in the ` +
+      `scene ("warped 1930s swing from the ride's own speakers", "a brass band on the stand", "a radio on the counter"), described ` +
+      `by era and genre, NEVER a named song, album or artist (a named work trips the provider's copyright check). It plays where ` +
+      `its source is — it swells when the ride nears the speakers and fades in the tunnel — and it is the only music: no score, ` +
+      `no soundtrack laid over the scene. `
+    : `⚠ NEVER ask for MUSIC or a score — this is found footage, music breaks the realism AND the provider REFUSES generations ` +
+      `whose invented soundtrack trips a copyright check (a warehouse clip was rejected outright on exactly that). `
+);
 export const soundLaw = () => (
 `⚠ SOUND CARRIES THE STORY WHEN THE CAUSE IS OFF-FRAME. in a shot where the target of the ` +
     `action is outside the frame, "we dont know whats happening" until the consequence arrives — so the sound must ` +
     `tell us. Author DIEGETIC sound that does narrative work: an approach heard before it is seen, a bell or an ` +
     `engine locating something off-frame, an impact heard rather than shown, sound STOPPING to mark an event. Name ` +
-    `sound in the beat that needs it. ⚠ AUTHOR THE SOUNDSCAPE — DO NOT LEAVE THE AUDIO SLOT TO THE FALLBACK. End the beats with a Sound: line naming the DIEGETIC ambience of each world the clip visits, in order, specific to what is on screen (water, a crowd, a mechanism, wind), closing with "no music". A specific soundscape crowds out the generator's urge to score; a generic room-tone fallback invites it. ⚠ NEVER ask for MUSIC or a score — this is found footage, music breaks the ` +
-    `realism AND the provider REFUSES generations whose invented soundtrack trips a copyright check (a warehouse ` +
-    `clip was rejected outright on exactly that). Ambient and diegetic only.\n\n`
+    `sound in the beat that needs it. ⚠ AUTHOR THE SOUNDSCAPE — DO NOT LEAVE THE AUDIO SLOT TO THE FALLBACK. End the beats with a Sound: line naming the DIEGETIC ambience of each world the clip visits, in order, specific to what is on screen (water, a crowd, a mechanism, wind)${musicRequested(process.env.RAW_USER_PROMPT || process.env.USER_PROMPT || "") ? "" : `, closing with "no music"`}. A specific soundscape crowds out the generator's urge to score; a generic room-tone fallback invites it. ` +
+    musicClause() +
+    `Ambient and diegetic only.\n\n`
 );
 
 export const asWhileCheck = () => (
