@@ -181,12 +181,16 @@ export function statueFinding(cutText) {
 // the 12-second Shining ride opened on a wooden train coming down the carpet toward the lens, then rode. Only the FIRST cut, and
 // only when the cut says the camera is taken aboard; after that a vehicle looked at from outside is a dismount as before.
 const MOUNT = /\b(?:toward|towards|to|at|straight at|right at|up to|onto) the (?:camera|lens|frame)\b|\breach(?:es|ing)? the (?:camera|lens)\b|\bnears? the (?:camera|lens)\b|\b(?:the camera|the lens|the frame|the view|the shot) (?:is )?(?:taken up|taken aboard|picked up|swept up|swept aboard|carried along|carried aboard|climbs aboard|drops into the (?:front |back )?seat|becomes the (?:front |back )?seat|is aboard|rides from here|goes aboard)\b|\btakes (?:it|the camera|the lens|us) up\b|\bfrom (?:that|this) moment (?:on )?(?:aboard|the seat|the ride|we ride|it rides)\b|\bfrom the (?:front |back )?seat from then on\b/i;
-export function apparatusFinding(cutText, { interior = false, last = false, first = false } = {}) {
+// ⚠ THE SEAT CUE IS OWED BY A CUT'S OPENING (owner's law: "every cut opens from the seat"), not by every stamped line of one continuous
+// take. Job 4ed43401 (2026-09-07): "[6s] The red elevator doors begin to slide open, and a wave of blood surges forward to engulf the
+// car" — the camera never left the seat, the line simply did not restate the bar — failed twice and the run was refused. A caller
+// passes opener=false for a line that continues the take it is already in; the shot-set writer's cuts are all openers (default).
+export function apparatusFinding(cutText, { interior = false, last = false, first = false, opener = true } = {}) {
   const t = String(cutText || "");
   const mounting = first && MOUNT.test(t);
   const m = t.match(DISMOUNT);
   if (m && !mounting) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
-  if (!SEAT.test(t) && !mounting) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
+  if (opener && !SEAT.test(t) && !mounting) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
   const st = statueFinding(t);
   if (st) return st;
   const rl = railsFinding(t, { last });
