@@ -157,7 +157,9 @@ const REACTS = /\b(?:steps? (?:back|aside|away|clear|off)|leaps?|lunges?|dives?|
 // THE RAILS NEVER END ON SCREEN (owner 2026-09-07: "a constant problem because that doesn't happen in rollercoaster"): no cut may
 // end the track, and the payoff cut must send the rails ON — through, past, out of the frame — as its final words.
 const RAILS_END = /\b(?:rails?|track|tracks) (?:end|ends|ending|stop|stops|stopping|terminate|terminates|run out|runs out|give out|gives out|dead-?end|dead-?ends|halt|halts)\b/i;
-const RAILS_ON = /\b(?:rails?|track|tracks)\b[^.!?]{0,90}\b(?:run|runs|running|carry|carries|carrying|continue|continues|continuing|race|races|racing|stretch|stretches|stretching|curve|curves|curving|bank|banks|banking|drop|drops|dropping|climb|climbs|climbing|lead|leads|leading|plunge|plunges|plunging|vanish|vanishes|vanishing|disappear|disappears|disappearing|go|goes|going)\b[^.!?]{0,60}\b(?:on|onward|onwards|ahead|through|into|past|beyond|out of|away|around|down|up|off|under)\b/i;
+// the RIDE goes on: the rails running, or the car/train diving through what the payoff releases (the 12-second Shining ride the owner
+// praised ends "submerging the car as the car dives into the red deluge" — engulfed at speed is a ride; a stopped track is not)
+const RAILS_ON = /\b(?:rails?|track|tracks|car|cars|train|coaster|ride)\b[^.!?]{0,90}\b(?:run|runs|running|carry|carries|carrying|continue|continues|continuing|race|races|racing|rush|rushes|rushing|stretch|stretches|stretching|curve|curves|curving|bank|banks|banking|drop|drops|dropping|climb|climbs|climbing|lead|leads|leading|plunge|plunges|plunging|dive|dives|diving|hurtle|hurtles|hurtling|barrel|barrels|barreling|tear|tears|tearing|vanish|vanishes|vanishing|disappear|disappears|disappearing|go|goes|going|carries? on|roll|rolls|rolling)\b[^.!?]{0,60}\b(?:on|onward|onwards|ahead|through|into|past|beyond|out of|away|around|down|up|off|under)\b/i;
 export function railsFinding(cutText, { last = false } = {}) {
   const t = String(cutText || "");
   const e = t.match(RAILS_END);
@@ -165,7 +167,7 @@ export function railsFinding(cutText, { last = false } = {}) {
   if (last) {
     const sentences = t.replace(/^\s*(?:Cut\s+\d+\s*:|\[\d+(?:\.\d+)?s\])\s*/i, "").split(/(?<=[.!?])\s+/).filter(Boolean);
     const tail = sentences[sentences.length - 1] || t;
-    if (!RAILS_ON.test(tail)) return "the payoff does not send the rails on — the last words of the last cut say where the track goes: through the doors, along the floor, out of the frame";
+    if (!RAILS_ON.test(tail)) return "the payoff does not send the ride on — the last words of the last cut say where it goes: the rails through the doors and out of the frame, or the car diving through what the payoff releases";
   }
   return null;
 }
