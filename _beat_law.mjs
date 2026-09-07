@@ -206,6 +206,7 @@ export function informantPlacesBlock() {
   const raw = String(process.env.INFORMANT_PLACES || "").replace(/\s+/g, " ").trim();
   if (!raw) return "";
   if (process.env.COASTER_ARCH === "1") return `PHOTOGRAPHED SECTIONS OF THE RIDE (coaster architecture \u2014 real photographs riding with the seat, in story order): ${raw}. ` +
+    `The ride BEGINS as a legit roller coaster on its own rails (the seat photograph, one clause); the TUNNEL MOUTH is the ride's own portal from that open coaster into the world and comes first; the sections follow in order. ` +
     `Each section is DRESSED as the story's stop named beside it: the stop's things sit on the section's walls, floor and facades at track scale \u2014 ` +
     `a carpet pattern runs under the rails, a fireplace glows in a scene's wall, hedges flank the track, a door is a facade the rails dive through into blackout \u2014 ` +
     `never a room the car has entered. The take is written from the seat and rides each section in this order; there is no cut: ${carryPhrase()} into each ${transitionPhrase()}; a section not named here is never entered.\n`;
