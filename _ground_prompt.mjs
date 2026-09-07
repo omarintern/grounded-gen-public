@@ -334,6 +334,8 @@ if (BEAT_STYLE !== "template") {
       const toks = (s) => s.split(/[^a-z0-9']+/).filter((w) => w.length >= 4 && !STOPW.has(w));
       const named = places.some((p) => toks(p).some((w) => firstTwo.includes(w)));
       if (places.length && !named) fails.push(`the block dwells on the seat: enter "${places[0]}" within the first sentence (by the second at the latest) — the seat gets one clause, never a scene`);
+      const _rider = body.match(/\b(?:shirt|sleeves?|plaid|gloves?|jacket|hoodie|wrist|watch|knuckles?|fingers?)\b/i);
+      if (_rider) fails.push(`the rider is written ("${_rider[0]}") — the rider is never described: no hands, clothing or body; the vehicle is the bar, the nose, the rails`);
     }
     const inc = incompleteBeatLines(t);
     if (inc.length) fails.push(`a beat ends mid-sentence ("…${inc[0].slice(-40)}")`);

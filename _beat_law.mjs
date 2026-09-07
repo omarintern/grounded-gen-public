@@ -209,7 +209,9 @@ export function informantPlacesBlock() {
     `The ride BEGINS as a legit roller coaster on its own rails (the seat photograph, one clause); the TUNNEL MOUTH is the ride's own portal from that open coaster into the world and comes first; the sections follow in order. ` +
     `Each section is DRESSED as the story's stop named beside it: the stop's things sit on the section's walls, floor and facades at track scale \u2014 ` +
     `a carpet pattern runs under the rails, a fireplace glows in a scene's wall, hedges flank the track, a door is a facade the rails dive through into blackout \u2014 ` +
-    `never a room the car has entered. The take is written from the seat and rides each section in this order; there is no cut: ${carryPhrase()} into each ${transitionPhrase()}; a section not named here is never entered.\n`;
+    `never a room the car has entered. The take is written from the seat and rides each section in this order; there is no cut: ${carryPhrase()} into each ${transitionPhrase()}; a section not named here is never entered. ` +
+    `${process.env.WORLD_ELEMENTS ? `THE WORLD'S THINGS ALREADY IN THE TUNNEL PHOTOGRAPH: ${process.env.WORLD_ELEMENTS} \u2014 they are in the plate; name them as the car passes them and invent no others. ` : ""}` +
+    `No person, creature or character of the world appears \u2014 its things are its presence. The stops beyond the tunnel are written: the rails run on through each in order.\n`;
   return `PHOTOGRAPHED PLACES BEYOND THIS FRAME (real photographs riding with this one, in story order): ${raw}. ` +
     `The take is written from the seat and ARRIVES in each of them in this order \u2014 the world enters the ride. ` +
     `There is no cut between them: ${carryPhrase()} into each \u2014 ${transitionPhrase()} \u2014 and a place not named here is never entered.\n`;
@@ -606,7 +608,8 @@ export const INHABIT_CLAUSE =
   `\u26a0\u26a0 THE SEAT IS A VANTAGE, NOT A PLACE (coaster): the opening is a MOMENT on the form \u2014 the seat, the bar, the rails ahead, ONE ` +
   `clause, never omitted and never a scene \u2014 and the first photographed place is entered within the first sentence, by the second at the ` +
   `latest, the rails running straight into it. The seat photograph's own surroundings are never described or dwelt in. The rest of the ` +
-  `take lives inside the photographed places in order, the rails named through each, and the last sentence ends inside the last place. `;
+  `take lives inside the photographed places in order, the rails named through each, and the last sentence ends inside the last place. ` +
+  `The rider is never written \u2014 no hands, clothing or body; the vehicle is the bar, the nose, the rails. `;
 export const viewLaw = () => (
 `\u26a0\u26a0 THIS IS A VIEW HELD, NOT A STORY (the maker's words ask for nothing to happen and nothing to turn \u2014 no plot, no drama). ` +
     `So: NO payoff, NO climax, NO twist, NO punchline, NO reveal, NO overstep \u2014 never manufacture an event to end on. ` +
