@@ -206,6 +206,11 @@ export function informantPlacesBlock() {
     `The take is written from the seat and ARRIVES in each of them in this order \u2014 the world enters the ride. ` +
     `There is no cut between them: ${carryPhrase()} into each — through a door, an archway, a tunnel mouth — and a place not named here is never entered.\n`;
 }
+const MOUNT_TEXT =
+  `THE MOUNT (owner 2026-09-07, the ride he keeps returning to): the ride MAY open outside the car — the train seen coming down ` +
+  `the track toward the camera, the camera waiting on the rails — and the camera is taken up as the train arrives; from that ` +
+  `moment every beat rides. One mount, at the opening, said plainly ("the train comes down the track toward the camera and takes ` +
+  `it up as it passes; from the front seat the rails run on"); never a dismount after it. `;
 export const apparatusClause = () =>
   !process.env.APPARATUS_NOTE ? "" :
   `⚠⚠ THE CAMERA IS PART OF THE SCENE'S OWN APPARATUS: ${process.env.APPARATUS_NOTE}. Compose EVERY beat from ` +
@@ -224,10 +229,7 @@ export const apparatusClause = () =>
   `each named in order inside the take; the camera never dismounts, never stands in a room and watches the ride pass, and ` +
   `there is no "hard cut" between a ride's places — a cut restarts the room without its rails. Two consecutive stops are ` +
   `ONE CONTINUOUS CARRY: the motion leaves one photograph and arrives in the next, both places named in order. ` +
-  `THE MOUNT (owner 2026-09-07, the ride he keeps returning to): the ride MAY open outside the car — the train seen coming down ` +
-  `the track toward the camera, the camera waiting on the rails — and the camera is taken up as the train arrives; from that ` +
-  `moment every beat rides. One mount, at the opening, said plainly ("the train comes down the track toward the camera and takes ` +
-  `it up as it passes; from the front seat the rails run on"); never a dismount after it. ` +
+  `${coasterTake() ? "NO MOUNT ON THIS TAKE (coaster, owner 2026-09-07: time on the form is a moment, never an approach): the block opens aboard and already moving. " : MOUNT_TEXT}` +
   `WHATEVER THE RAILS REACH IS MET AT SPEED (owner 2026-09-07): a figure the ride passes close is ACTED UPON by the passage — ` +
   `the wind of it lifts a coat, they step back, swing at the car, turn with it, are shoved aside — the ride is the event and ` +
   `nothing it reaches is a statue; a figure may stand only far off, unreached. THE RAILS NEVER END ON SCREEN AND THE RIDE NEVER STOPS: a rollercoaster's ` +
@@ -390,6 +392,7 @@ export const proseFiguresBlock = () => (
 // vocabulary + re-attributes the sleeping-lady to the FRAME-0 CENSUS (her true violation: she was IN the
 // photograph). Closer now restates THE TEST. Middle clauses byte-identical, every scar intact.
 export const beatZeroLaw = () => (
+(coasterTake() ? `\u26a0\u26a0 ON THIS TAKE THE CENSUS OF FRAME ZERO IS THE VEHICLE \u2014 the seat, the bar, the rider's hands, the car's nose, the rails \u2014 never the photograph's surroundings, which the take leaves within its first sentence.\n` : "") +
 `\u26a0\u26a0 BEAT ZERO ESTABLISHES THE WHOLE SCENE - INCLUDING WHAT THE PHOTOGRAPH LACKS. The picture is ` +
     `the STARTING FRAME, not a limit on what may exist. If the story needs something the photo does not show, ` +
     `NAME IT IN THE FIRST BEAT as part of the opening state: "a woman is asleep in the bed", "a cat sits at the ` +
@@ -472,8 +475,9 @@ export const soundLaw = () => (
     `Ambient and diegetic only.\n\n`
 );
 
-export const asWhileCheck = () => (
-`\u26a0\u26a0 THIS RULE IS ROUTINELY IGNORED - CHECK YOUR OWN OUTPUT BEFORE RETURNING IT. Re-read every beat for 'as' / 'while' / 'and then' and split any that joins an act to its result. A beat may hold a concurrent STATE; it may not hold an act and that act's consequence. `
+export const asWhileCheck = () => (singleBlock()
+? `\u26a0 In one block the ride's succession of places is joined by "then"; split only a cause from its effect, never the ride's own sequence.\n`
+: `\u26a0\u26a0 THIS RULE IS ROUTINELY IGNORED - CHECK YOUR OWN OUTPUT BEFORE RETURNING IT. Re-read every beat for 'as' / 'while' / 'and then' and split any that joins an act to its result. A beat may hold a concurrent STATE; it may not hold an act and that act's consequence. `
 );
 
 export const cutLaw = () => (
@@ -586,6 +590,15 @@ export const telling = () => (process.env.TELLING === "observational" ? "observa
 // of continuous prose, no later stamps — the only ride gen that read as one take; every stamped one restarted at each place).
 // Set by the run when the take never cuts and more than one WORLD photograph rides in the bag (character refs never count).
 export const singleBlock = () => process.env.SINGLE_BLOCK === "1";
+// COASTER ONE-TAKE (owner 2026-09-07, coaster-specific by his word: "the refs carry a gen, and since we work with the form as frame0
+// in a rollercoaster, we want to move away from it asap to get to the gist … time on the form is important but it musnt be long,
+// because omitting is wrong but spending too much time is also wrong"). The seat is a VANTAGE, not a place.
+export const coasterTake = () => singleBlock() && /coaster/i.test(process.env.APPARATUS_NOUN || "");
+export const INHABIT_CLAUSE =
+  `\u26a0\u26a0 THE SEAT IS A VANTAGE, NOT A PLACE (coaster): the opening is a MOMENT on the form \u2014 the seat, the bar, the rails ahead, ONE ` +
+  `clause, never omitted and never a scene \u2014 and the first photographed place is entered within the first sentence, by the second at the ` +
+  `latest, the rails running straight into it. The seat photograph's own surroundings are never described or dwelt in. The rest of the ` +
+  `take lives inside the photographed places in order, the rails named through each, and the last sentence ends inside the last place. `;
 export const viewLaw = () => (
 `\u26a0\u26a0 THIS IS A VIEW HELD, NOT A STORY (the maker's words ask for nothing to happen and nothing to turn \u2014 no plot, no drama). ` +
     `So: NO payoff, NO climax, NO twist, NO punchline, NO reveal, NO overstep \u2014 never manufacture an event to end on. ` +
@@ -705,8 +718,8 @@ singleBlock()
         `into"). NO further timestamps: on a travelling take a stamp per place reads as a CUT MARKER and restarts the place without ` +
         `its rails (measured 2026-09-07: the one-block take carried through; every stamped take restarted). Name the way ahead as each ` +
         `place is entered — the rails or path running on through the doorway, the archway, the tunnel mouth — so the track is drawn ` +
-        `INTO it; enter the first photographed place early and give each place its share of the take, in order; the opening is a ` +
-        `moment, not a scene. Each sentence describes ONLY what physically changes — a movement, the next place entered, what streams past. ` +
+        `INTO it; ${coasterTake() ? INHABIT_CLAUSE : "enter the first photographed place early and give each place its share of the take, in order; the opening is a moment, not a scene. "}` +
+        `Each sentence describes ONLY what physically changes — a movement, the next place entered, what streams past. ` +
         `\u26a0 DO NOT DESCRIBE THE SCENE OR SETTING: the photographs carry the places; write nothing about the location, weather, ` +
         `lighting, time of day, surfaces or background, and name props only when the motion touches them.\n\n`
       : (process.env.BEAT_BLOCKS !== "0"
