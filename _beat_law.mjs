@@ -213,6 +213,12 @@ export const apparatusClause = () =>
   `A CUT IS A CHOICE, NOT A PLATE COUNT: two consecutive stops may be ONE CONTINUOUS CARRY — the motion leaves one ` +
   `photograph and arrives in the next inside the same section, both places named in order — and a hard cut is written ` +
   `only where the ride wants one. ` +
+  `WHATEVER THE RAILS REACH IS MET AT SPEED (owner 2026-09-07): a figure the ride passes close is ACTED UPON by the passage — ` +
+  `the wind of it lifts a coat, they step back, swing at the car, turn with it, are shoved aside — the ride is the event and ` +
+  `nothing it reaches is a statue; a figure may stand only far off, unreached. THE RAILS NEVER END ON SCREEN: a rollercoaster's ` +
+  `track does not stop at a wall, a door or a flood — in the final image of EVERY cut, and above all the payoff, the rails are ` +
+  `still running, through the doors, along the floor, around the bend, out of the frame; whatever the payoff releases parts ` +
+  `around the track and the track stays visible; say where the rails go as the cut's LAST words. ` +
   `THE RIDE'S MOTION IS WHAT THIS PLACE CAN HOST: in a corridor, room or hall — straight runs, dips, banks at corners, ` +
   `a doorway taken at speed; never a loop, inversion, corkscrew or upside-down pass indoors (they need height the place ` +
   `does not have, and the frame diffuses into nothing true to the photographs). THE PAYOFF IS PASSED THROUGH OR BY AT ` +

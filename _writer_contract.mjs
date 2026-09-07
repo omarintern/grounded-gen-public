@@ -148,11 +148,42 @@ export function unphotographedCuts(text, cutPlates = 0) {
   const n = (String(text || "").match(HARD_CUT) || []).length;
   return Math.max(0, n - Math.max(0, Number(cutPlates) || 0));
 }
+// WHATEVER THE RAILS REACH IS MET AT SPEED (owner 2026-09-07, job 17b1f0fd: "Jack stands where the plate holds him … not swinging,
+// not yet … the coaster clatters past close enough to stir the powder near his boots, and he lets it go by without turning" — a
+// figure the ride passed close, written as a statue). A stillness phrase + a passage-close phrase + no reaction on the figure.
+const STILL = /\b(?:stands?|standing|stood) (?:where|still|motionless|there|at|by|in|beside|on)\b|\b(?:holds? (?:still|position)|motionless|frozen (?:in place|still)|unmoving|does not move|doesn't move|without moving|not moving|waits? there|waiting|lets? it (?:go|pass|rush|roll) by|without turning|does not turn|doesn't turn)\b/i;
+const CLOSE_PASS = /\b(?:clatters?|rattles?|roars?|rushes?|races?|sweeps?|whips?|passes?|goes|hurtles?|barrels?) (?:past|by)\b|\bclose enough\b|\binches? (?:from|past)\b|\bbrush(?:es|ing)? (?:past|by)\b|\bnear(?:ly)? (?:his|her|their) (?:boots|feet|shoulder|face|coat)\b|\bpast (?:him|her|them)\b/i;
+const REACTS = /\b(?:steps? (?:back|aside|away|clear|off)|leaps?|lunges?|dives?|ducks?|flinch(?:es|ing)?|recoils?|staggers?|stumbles?|scrambles?|swings? (?:the|his|her|at|it|round|around)|spins?|wheels? (?:round|around)|is (?:thrown|knocked|swept|shoved|blown|spun)|blown back|(?:coat|hair|scarf|hat|dress|sleeves?) (?:whips?|snaps?|lifts?|flies|tears?)|snatches?|jumps? (?:back|aside|clear)|bolts?|throws? (?:himself|herself|themselves)|shoved aside|pushed aside|knocked aside)\b/i;
+// THE RAILS NEVER END ON SCREEN (owner 2026-09-07: "a constant problem because that doesn't happen in rollercoaster"): no cut may
+// end the track, and the payoff cut must send the rails ON — through, past, out of the frame — as its final words.
+const RAILS_END = /\b(?:rails?|track|tracks) (?:end|ends|ending|stop|stops|stopping|terminate|terminates|run out|runs out|give out|gives out|dead-?end|dead-?ends|halt|halts)\b/i;
+const RAILS_ON = /\b(?:rails?|track|tracks)\b[^.!?]{0,90}\b(?:run|runs|running|carry|carries|carrying|continue|continues|continuing|race|races|racing|stretch|stretches|stretching|curve|curves|curving|bank|banks|banking|drop|drops|dropping|climb|climbs|climbing|lead|leads|leading|plunge|plunges|plunging|vanish|vanishes|vanishing|disappear|disappears|disappearing|go|goes|going)\b[^.!?]{0,60}\b(?:on|onward|onwards|ahead|through|into|past|beyond|out of|away|around|down|up|off|under)\b/i;
+export function railsFinding(cutText, { last = false } = {}) {
+  const t = String(cutText || "");
+  const e = t.match(RAILS_END);
+  if (e) return `the rails end: "${e[0]}" — a rollercoaster's track never ends on screen; the rails run on through the payoff and out of the frame`;
+  if (last) {
+    const sentences = t.replace(/^\s*(?:Cut\s+\d+\s*:|\[\d+(?:\.\d+)?s\])\s*/i, "").split(/(?<=[.!?])\s+/).filter(Boolean);
+    const tail = sentences[sentences.length - 1] || t;
+    if (!RAILS_ON.test(tail)) return "the payoff does not send the rails on — the last words of the last cut say where the track goes: through the doors, along the floor, out of the frame";
+  }
+  return null;
+}
+export function statueFinding(cutText) {
+  const t = String(cutText || "");
+  const s = t.match(STILL);
+  if (!s || !CLOSE_PASS.test(t) || REACTS.test(t)) return null;
+  return `a figure the ride reaches is held still: "${s[0]}" — the ride is the event; whatever the rails pass close is acted upon (steps back, is blown, swings, turns with it), never a statue`;
+}
 export function apparatusFinding(cutText, { interior = false, last = false } = {}) {
   const t = String(cutText || "");
   const m = t.match(DISMOUNT);
   if (m) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
   if (!SEAT.test(t)) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
+  const st = statueFinding(t);
+  if (st) return st;
+  const rl = railsFinding(t, { last });
+  if (rl) return rl;
   const inv = interior ? t.match(INVERSION) : null;
   if (inv) return `inverted indoors: "${inv[0]}" — a corridor or room hosts straight runs, dips and banks at corners, never a loop or inversion (owner 2026-09-06: the frame diffuses into nothing true)`;
   const ff = last ? t.match(FACEFILL) : null;
