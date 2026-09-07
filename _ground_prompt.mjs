@@ -45,7 +45,7 @@ if (framingConceded) console.log("framing: CONCEDED → beats pitched to the pla
 // the raw words rule whenever the door supplied them. The rewrite stays visible as narrative context.
 const intent = await providerJson([textPart(
   `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff (validated failure 2026-07-31)","secondary":"any OTHER creatures/props to CONJURE INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}".`
-)], { maxTokens: 900, temperature: 0.2 });
+)], { maxTokens: 2400, temperature: 0.2 });   // budget bounds, never spends: the fast model reasons inside max_tokens (see WRITER BUDGETS below)
 // ⭐⭐ ENTITY NAMING IS NEVER RE-DERIVED FROM PROMPT TEXT — RAW OR REWRITE (owner 2026-08-29). The raw
 // words rule the subject ONLY when no resolved entity covers it (the cymbal-monkeys law). When the
 // plan's cast covers the extracted subject, the plan's OWN string replaces it: that string is already
@@ -89,7 +89,7 @@ const b64 = readFileSync(worldRef).toString("base64");
 const seen = await providerJson([
   textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant/subject currently AT THE ACTION SPOT that the target should REPLACE — the body the model swaps. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so NO swap is needed),"standin_placement":"foreground | side | background | none","other_occupants":[{"body":"…","position":"…","doing":"…"}] (0-2 OTHER prominent REAL occupants — a person or animal — elsewhere in the frame, each described closely enough to pick it out; [] when there are none),${ELEMENTS_FIELD}}.`),
   imagePart("image/jpeg", b64),
-], { maxTokens: 1000, temperature: 0.2 });
+], { maxTokens: 2400, temperature: 0.2 });
 
 // 2b. READ THE CHARACTER REFS (VLM) — what does the sourced character actually LOOK like, and what does it
 // CARRY or WEAR that the beats can put to work? A signature the beats never touch is a signature the action
@@ -122,7 +122,7 @@ if (charPaths.length) {
     try { parts.push(imagePart("image/jpeg", readFileSync(r).toString("base64"))); } catch {}
   }
   try {
-    const cs = await providerJson(parts, { maxTokens: 700, temperature: 0.2 });
+    const cs = await providerJson(parts, { maxTokens: 2000, temperature: 0.2 });
     const sig = (cs?.signatures || []).filter(Boolean);
     if (sig.length) charSig = sig.join("; ");
     if (cs?.carried && !/^none$/i.test(cs.carried)) {
@@ -300,7 +300,11 @@ if (BEAT_STYLE !== "template") {
     // rules buried mid-text stopped landing: a 7-second clip kept returning beats that stopped at [4s], and the
     // payoff verb kept vanishing, though both were stated above. Same law as the judges - ISOLATE WHAT YOU GATE ON.
     finalChecklist(userPrompt) );
-  let { text } = await providerText(instruction, { maxTokens: 700, temperature: 0.5 });
+  // ⚠ WRITER BUDGETS (measured 2026-09-07, job 32fc6c35): the fast model counts its REASONING against max_tokens, so a
+  // 700-token budget was consumed before the first beat line; provider-llm then retried at 1400 → 2800 → 5600. The ledger
+  // shows 26 physical calls for six logical steps and $… — the same writer at the budgets below is one call per step.
+  // A budget BOUNDS the answer, it never spends it: over-provisioning costs nothing, under-provisioning pays every rung.
+  let { text } = await providerText(instruction, { maxTokens: 6000, temperature: 0.5 });
 
   // ⚠ THE VALIDATOR MUST MATCH THE REQUESTED SHAPE. It filtered for /^\[\d+s\]/ unconditionally, so the moment
   // timestamps were switched off it rejected perfectly good continuous prose and silently fell back to the
@@ -357,7 +361,7 @@ if (BEAT_STYLE !== "template") {
       `Every beat a COMPLETE sentence. Dialogue labels name their speaker. ` +
       `Keep the same story and wording as far as possible. ` +
       `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines (and the Dialogue/Sound blocks if present).\n\n${text}`,
-      { maxTokens: 900, temperature: 0.3 }
+      { maxTokens: 4000, temperature: 0.3 }
     ).catch(() => null);
     if (fix?.text && _lawFails(fix.text).length === 0) { text = fix.text; console.error(` (retry OK)`); }
     else if (fix?.text && _lawFails(fix.text).length < _fails1.length) { text = fix.text; console.error(` (retry improved: ${_lawFails(fix.text).join("; ")} — shipping with the residue, loudly)`); }
@@ -471,7 +475,7 @@ if (BEAT_STYLE !== "template") {
         `vantage with nothing to ground it. Rewrite the SAME beats, keeping every event and the payoff exactly ` +
         `as they are, but describe the post-cut action by what the WHOLE BODY does at the distance the ` +
         `photograph was taken from. Do not name the limb or the object in the grip. Change nothing else.`,
-        { maxTokens: 1000, temperature: 0.2 });
+        { maxTokens: 4000, temperature: 0.2 });
       const relines = t2.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, ACCEPTED_N);
       const stillBad = relines.filter((l) => FINE_DETAIL.test(l)).length;
       if (relines.length && !stillBad) { beatLine = relines.join("\n"); console.log(`[GUARD] beats: repaired on retry`); }
@@ -600,7 +604,7 @@ try {
           `the SAME timestamps, changing ONLY the opening beat so it states the subject's position in the frame and ` +
           `its facing, at the spot that body occupies. Do NOT mention the body being replaced — it is gone, the ` +
           `subject is simply there instead. Return the full beat list and nothing else.`,
-          { maxTokens: 1000, temperature: 0.3 });
+          { maxTokens: 4000, temperature: 0.3 });
         const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
         if (rl.length !== ACCEPTED_N) console.warn(`  [swap] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
         else {
@@ -651,7 +655,7 @@ try {
         `supplies that the request never named. Do not introduce a new place, a new character, or a prop the ` +
         `frame cannot afford. If an earlier beat set up a turn that nothing answered, ANSWERING IT is the ` +
         `escalation. Return the full beat list and nothing else.`,
-        { maxTokens: 1000, temperature: 0.3 });
+        { maxTokens: 4000, temperature: 0.3 });
       const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
       if (rl.length !== ACCEPTED_N) {
         console.warn(`  [payoff] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
