@@ -12,7 +12,7 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, informantPlacesBlock, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, telling, viewLaw, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, informantPlacesBlock, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -282,7 +282,7 @@ if (BEAT_STYLE !== "template") {
     // escalate the material it had, it described the scene instead. Rule 2 is the other half — the venue's
     // own things in PARTICULARS, never the general item.
     // ⚠ NOTHING IN THE SIX RULES IS CELEB-SPECIFIC; it reached only the assembly writer by history, not design.
-    COMEDY_LAW + "\n\n" +
+    (telling() === "observational" ? viewLaw() : COMEDY_LAW) + "\n\n" +   // a view held takes the view law in the comedy law's seat (owner 2026-09-07)
     payoffLaw() +
     seesawLaw(BEAT_STYLE) +
     situationArc() +
@@ -625,7 +625,8 @@ try {
 
 try {
   const { payoffVerdict, payoffActs } = await import("./_payoff_check.mjs");
-  const pv = await payoffVerdict(process.env.USER_PROMPT || userPrompt || "", beatLine);
+  if (telling() === "observational") console.error("  [payoff] view held \u2014 no payoff is owed; the check and its re-ask are skipped");
+  const pv = telling() === "observational" ? { verdict: null } : await payoffVerdict(process.env.USER_PROMPT || userPrompt || "", beatLine);
   if (pv.verdict) console.error(`  [payoff:${payoffActs() ? "live" : "shadow"}] last beat ${pv.verdict.toUpperCase()}${pv.why ? ` — ${pv.why}` : ""}${payoffActs() ? "" : "  (recorded only)"}`);
   // ── THE REPAIR (owner 2026-08-19: "i dont see payoff") ──────────────────────────────────────────────────
   // ⚠⚠ THE CHECK WAS RIGHT AND DID NOTHING. payoffActs() existed but was read ONLY to change the word in the

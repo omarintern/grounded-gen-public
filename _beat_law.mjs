@@ -578,7 +578,20 @@ export const causalOrder = () => (
 // silence, action-zero, identity-as-prose, the Sound line — and frame zero still grounds on a REAL plate.
 export const genMood = () => (process.env.GEN_MOOD === "cinematic" ? "cinematic" : "candid");
 
-export const payoffLaw = () => (genMood() === "cinematic"
+// ── NARRATIVE vs OBSERVATIONAL (owner 2026-09-07, universal on the platform). A plan whose maker asked for no plot and no drama is a VIEW
+// HELD: the laws that serve plot and drama — payoff, climax, twist, overstep, the comedy construction — step aside, the count set is
+// {2,4}, and the last beat is where the view rests. Read from the run's TELLING (tellingMode in _gate_rules); absent = narrative.
+export const telling = () => (process.env.TELLING === "observational" ? "observational" : "narrative");
+export const viewLaw = () => (
+`\u26a0\u26a0 THIS IS A VIEW HELD, NOT A STORY (the maker's words ask for nothing to happen and nothing to turn \u2014 no plot, no drama). ` +
+    `So: NO payoff, NO climax, NO twist, NO punchline, NO reveal, NO overstep \u2014 never manufacture an event to end on. ` +
+    `The beats are the view's STATIONS: what the frame passes or holds, in order, each a physical change the form's own motion brings ` +
+    `(the next place entered, what streams past, a light that changes). The last beat is where the view RESTS, not where something lands; ` +
+    `a quiet end is correct here. Figures and speech only when the maker's words carry them. Everything else in this contract stands: ` +
+    `the photograph owns the place, the camera is never written, a travelling take never cuts.\n\n`
+);
+
+export const payoffLaw = () => (telling() === "observational" ? "" : genMood() === "cinematic"
 ? `⚠ THE PAYOFF LANDS LAST, AND IT MAY LAND ACROSS A CUT. Put the consequence in the FINAL beat — and in ` +
     `this register the consequence may arrive in the dreamed place the story cut to, not only where it began. ` +
     `The event itself may be larger than physics: a creature flung skyward, a fall that hangs, a leap the ` +
@@ -608,8 +621,9 @@ export const payoffLaw = () => (genMood() === "cinematic"
 // talking creature without supplying words → the writer WRITES the speech. No ask, no implication → mute.
 // "Imply" is intent-sensitivity, not explicit-ask-only. Single-world non-IP cut law untouched by the
 // parallel multi-cut ruling (celeb/ip/crossover only — orchestrator relay, same date).
-export const seesawLaw = (BEAT_STYLE) => (
-`⚠⚠ THE SEESAW - HOW MUCH OF THE STORY IS YOURS TO WRITE. Ported from src/composer/seesaw.ts, whose law is ` +
+export const seesawLaw = (BEAT_STYLE) => (telling() === "observational"
+? `\u26a0 THE SEESAW UNDER A VIEW: no turn is invented \u2014 the maker asked for a view, not an event. Speech only when their words gave someone speech, or the scene's own people plausibly speak in passing; diegetic, never narration, never music.\n`
+: `⚠⚠ THE SEESAW - HOW MUCH OF THE STORY IS YOURS TO WRITE. Ported from src/composer/seesaw.ts, whose law is ` +
     `"broad prompts get populated; heavily detailed prompts get nothing they didn't invite". Judge TWO things ` +
     `about the user's request and regulate each INVERSELY to what they supplied. `+
     `(1) THE TURN - did they already give you the joke or the dramatic hinge? If they DID ("cats perform a ` +
@@ -632,7 +646,7 @@ export const seesawLaw = (BEAT_STYLE) => (
     `\n`
 );
 
-export const situationArc = () => (genMood() === "cinematic"
+export const situationArc = () => (telling() === "observational" ? "" : genMood() === "cinematic"
 ? `⚠ IF THE PROMPT DESCRIBES A SITUATION WITH NO EVENT, INVENT ONE AND GIVE IT A REAL ARC — and in this ` +
     `register the arc may LEAVE THE PHOTOGRAPH. Beat zero still happens in the real place the photograph ` +
     `shows, mid-action. After that, the spectacle may defy physics — a creature flung skyward, a leap the ` +
@@ -663,6 +677,23 @@ export const situationArc = () => (genMood() === "cinematic"
 // ⚠ SIGNATURE CHANGED 2026-08-20 (the depth ruling): the grid argument died with the grid — the stamped
 // branch now hands the writer the LEGAL COUNT SET and the placement rules instead of a prescribed list.
 // The single-ref writer is the only consumer (_ground_shotset deliberately never imported this).
+// the narrative line through the beats (owner 2026-08-21/23) — a view (telling observational) takes STATION_LINE instead
+const FEELING_LINE = (
+        `Each beat describes ONLY what physically CHANGES at that moment — a movement, a gesture, a ` +
+        `small event. But a beat IS a movement of feeling, not an action counted: across the beats one ` +
+        `emotion must move — build, dip, or turn — and find its CLIMAX at the final beat. ` +
+        // ⚠ REGISTER ≠ SIZE (owner 2026-08-23, the spectacle ruling): "a deadpan climax counts" was read as
+        // license for micro-gesture endings — Zeus POKED the fuse box, the reaper's payoff was a GRIN. The
+        // owner's own exemplar separates the axes: the cat SMASHES the counter (huge event) and lets off one
+        // flat meow (deadpan register). Deadpan is a register; the event is still the premise's largest.
+        `⚠ THE CLIMAX IS AN EVENT, NOT AN EXPRESSION: the final beat's change is a whole-body, whole-scene ` +
+        `PHYSICAL event — the largest the premise affords. An expression or micro-gesture may ride the climax ` +
+        `but can never BE it. Deadpan is a REGISTER, never a size — flat delivery over a big event is the ` +
+        `form's own joke. Escalation is optional; the one failure is a flat end.\n`
+);
+const STATION_LINE = `Each beat describes ONLY what physically CHANGES at that moment \u2014 a movement, the next place entered, what streams past. ` +
+    `Under a view a beat is a STATION, not a movement of feeling: no climax is owed, no escalation, and a quiet last beat is correct; ` +
+    `the line through the beats is the view's own progression.\n`;
 export const outputShape = (secs, counts) => (
 (process.env.BEAT_BLOCKS !== "0"
       ? `Return your beats one per line, each stamped "[Ns] …" in WHOLE seconds: ` +
@@ -676,17 +707,7 @@ export const outputShape = (secs, counts) => (
         // lands … the key here is flux of emotion but structure in 3's». The beat still DESCRIBES only
         // physical change (the no-scene and objectivity laws own the register); what this rules is the LINE
         // THROUGH the beats.
-        `Each beat describes ONLY what physically CHANGES at that moment — a movement, a gesture, a ` +
-        `small event. But a beat IS a movement of feeling, not an action counted: across the beats one ` +
-        `emotion must move — build, dip, or turn — and find its CLIMAX at the final beat. ` +
-        // ⚠ REGISTER ≠ SIZE (owner 2026-08-23, the spectacle ruling): "a deadpan climax counts" was read as
-        // license for micro-gesture endings — Zeus POKED the fuse box, the reaper's payoff was a GRIN. The
-        // owner's own exemplar separates the axes: the cat SMASHES the counter (huge event) and lets off one
-        // flat meow (deadpan register). Deadpan is a register; the event is still the premise's largest.
-        `⚠ THE CLIMAX IS AN EVENT, NOT AN EXPRESSION: the final beat's change is a whole-body, whole-scene ` +
-        `PHYSICAL event — the largest the premise affords. An expression or micro-gesture may ride the climax ` +
-        `but can never BE it. Deadpan is a REGISTER, never a size — flat delivery over a big event is the ` +
-        `form's own joke. Escalation is optional; the one failure is a flat end.\n` +
+        (telling() === "observational" ? STATION_LINE : FEELING_LINE) +
         // ⚠ THIS RULE LIVED ONLY IN THE PROSE BRANCH BELOW, SO THE DEFAULT (STAMPED) PATH NEVER RECEIVED IT.
         // Measured 2026-08-05: a CONFIDENT Tesco plate — real customer phone shot, branded packaging, £ prices,
         // daylight — produced a gen with none of it: night, blue cast, a MOON inside the store, generic boxes.
@@ -776,7 +797,7 @@ export const finalChecklist = (userPrompt) => (
 // the density lesson's own mechanism); only the meaning of "wrong" moved from grid-disagreement to
 // ILLEGALITY. `counts` is overridable for the short-duration fallback the caller supplies.
 // CINEMATIC relaxes the density floor to 1.0s/beat (the b-era cadence: more cuts, more dream); CANDID keeps 1.5.
-export const legalBeatCounts = (secs) => [3, 6, 9].filter((c) => secs / c >= (genMood() === "cinematic" ? 1.0 : 1.5));
+export const legalBeatCounts = (secs) => (telling() === "observational" ? [2, 4] : [3, 6, 9]).filter((c) => secs / c >= (genMood() === "cinematic" ? 1.0 : 1.5));
 export const stampsLegal = (stamps, secs, counts = legalBeatCounts(secs)) =>
   counts.includes(stamps.length) && stamps[0] === 0
   && stamps.every((v, i) => Number.isInteger(v) && v < secs && (i === 0 || v > stamps[i - 1]));
