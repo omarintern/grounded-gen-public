@@ -213,6 +213,10 @@ export const apparatusClause = () =>
   `A CUT IS A CHOICE, NOT A PLATE COUNT: two consecutive stops may be ONE CONTINUOUS CARRY — the motion leaves one ` +
   `photograph and arrives in the next inside the same section, both places named in order — and a hard cut is written ` +
   `only where the ride wants one. ` +
+  `THE MOUNT (owner 2026-09-07, the ride he keeps returning to): the ride MAY open outside the car — the train seen coming down ` +
+  `the track toward the camera, the camera waiting on the rails — and the camera is taken up as the train arrives; from that ` +
+  `moment every beat rides. One mount, at the opening, said plainly ("the train comes down the track toward the camera and takes ` +
+  `it up as it passes; from the front seat the rails run on"); never a dismount after it. ` +
   `WHATEVER THE RAILS REACH IS MET AT SPEED (owner 2026-09-07): a figure the ride passes close is ACTED UPON by the passage — ` +
   `the wind of it lifts a coat, they step back, swing at the car, turn with it, are shoved aside — the ride is the event and ` +
   `nothing it reaches is a statue; a figure may stand only far off, unreached. THE RAILS NEVER END ON SCREEN AND THE RIDE NEVER STOPS: a rollercoaster's ` +

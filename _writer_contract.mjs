@@ -177,11 +177,16 @@ export function statueFinding(cutText) {
   if (!s || !CLOSE_PASS.test(t) || REACTS.test(t)) return null;
   return `a figure the ride reaches is held still: "${s[0]}" — the ride is the event; whatever the rails pass close is acted upon (steps back, is blown, swings, turns with it), never a statue`;
 }
-export function apparatusFinding(cutText, { interior = false, last = false } = {}) {
+// THE MOUNT (owner 2026-09-07): the opening cut may see the train from outside AS IT ARRIVES AT THE CAMERA and take the camera up —
+// the 12-second Shining ride opened on a wooden train coming down the carpet toward the lens, then rode. Only the FIRST cut, and
+// only when the cut says the camera is taken aboard; after that a vehicle looked at from outside is a dismount as before.
+const MOUNT = /\b(?:toward|towards|to|at|straight at|right at|up to|onto) the (?:camera|lens|frame)\b|\breach(?:es|ing)? the (?:camera|lens)\b|\bnears? the (?:camera|lens)\b|\b(?:the camera|the lens|the frame|the view|the shot) (?:is )?(?:taken up|taken aboard|picked up|swept up|swept aboard|carried along|carried aboard|climbs aboard|drops into the (?:front |back )?seat|becomes the (?:front |back )?seat|is aboard|rides from here|goes aboard)\b|\btakes (?:it|the camera|the lens|us) up\b|\bfrom (?:that|this) moment (?:on )?(?:aboard|the seat|the ride|we ride|it rides)\b|\bfrom the (?:front |back )?seat from then on\b/i;
+export function apparatusFinding(cutText, { interior = false, last = false, first = false } = {}) {
   const t = String(cutText || "");
+  const mounting = first && MOUNT.test(t);
   const m = t.match(DISMOUNT);
-  if (m) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
-  if (!SEAT.test(t)) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
+  if (m && !mounting) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
+  if (!SEAT.test(t) && !mounting) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
   const st = statueFinding(t);
   if (st) return st;
   const rl = railsFinding(t, { last });
@@ -222,7 +227,7 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   const cuts = bareSingle ? bareBeats : labelled.length ? labelled : proseCapture ? [t.replace(/\n/g, " ")] : [];
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
   const cutNums = bareSingle ? 1 : cutNumbersOf(t);
-  if (apparatus) cuts.forEach((c, i) => { const why = apparatusFinding(c, { interior: apparatusInterior, last: i === cuts.length - 1 }); if (why) v.push({ rule: "apparatus", cut: i + 1, detail: why }); });
+  if (apparatus) cuts.forEach((c, i) => { const why = apparatusFinding(c, { interior: apparatusInterior, last: i === cuts.length - 1, first: i === 0 }); if (why) v.push({ rule: "apparatus", cut: i + 1, detail: why }); });
   if (referenceDependent) { const extra = unphotographedCuts(t, cutPlates); if (extra) v.push({ rule: "unphotographed-cut", cut: null, detail: `${extra} hard cut(s) to a place no plate carries — this gen depends on its references; the story reaches that place within a photographed plate or not at all` }); }
   // ⚠ ADVISORY, DELIBERATELY NOT FATAL. The law and the re-ask both now instruct the bare shape, so a labelled
   // single-cut script means the writer ignored an explicit instruction — worth SEEING, not worth killing a
