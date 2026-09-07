@@ -195,6 +195,15 @@ export const belongingClause = () =>
 // run's APPARATUS_NOTE, set only when the recognised form is participant-worn/ridden. A reference frame of
 // the form rides with the beats (the form plate), so the writer names the apparatus in plain nouns and lets
 // the reference render it — the same shape as a kept belonging.
+/** FORM FIRST (owner 2026-09-07): the photographed places that ride behind the seat plate, in story order — facts the writer
+ *  needs, never framing. Empty when the run set none (the unnamed-ride and single-photo paths). */
+export function informantPlacesBlock() {
+  const raw = String(process.env.INFORMANT_PLACES || "").replace(/\s+/g, " ").trim();
+  if (!raw) return "";
+  return `PHOTOGRAPHED PLACES BEYOND THIS FRAME (real photographs riding with this one, in story order): ${raw}. ` +
+    `The take is written from the seat and ARRIVES in each of them in this order \u2014 the world enters the ride. ` +
+    `A hard cut is yours only when the story warrants one, and only to one of these places; a place not named here is never cut to.\n`;
+}
 export const apparatusClause = () =>
   !process.env.APPARATUS_NOTE ? "" :
   `⚠⚠ THE CAMERA IS PART OF THE SCENE'S OWN APPARATUS: ${process.env.APPARATUS_NOTE}. Compose EVERY beat from ` +
