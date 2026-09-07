@@ -190,7 +190,7 @@ export function apparatusFinding(cutText, { interior = false, last = false, firs
   const mounting = first && MOUNT.test(t);
   const m = t.match(DISMOUNT);
   if (m && !mounting) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
-  if (/\bhard cuts?\s+to\b/i.test(t) && !mounting) return "a travelling take never cuts between its places — its own motion (the rails, the road, the walk) carries into the next photograph (through a door, an archway, a tunnel mouth); write the arrival, not a cut";   // owner 2026-09-07, job f943d7d6: three hard cuts, three rooms without rails
+  if (/\bhard cuts?\s+to\b/i.test(t) && !mounting) return "a travelling take never cuts between its places — its own motion (the rails, the road, the walk) carries into the next photograph (a tunnel mouth, an opening, an archway; a coaster never through a door); write the arrival, not a cut";   // owner 2026-09-07, job f943d7d6: three hard cuts, three rooms without rails
   if (opener && !SEAT.test(t) && !mounting) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
   const st = statueFinding(t);
   if (st) return st;

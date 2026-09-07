@@ -199,12 +199,19 @@ export const belongingClause = () =>
  *  needs, never framing. Empty when the run set none (the unnamed-ride and single-photo paths). */
 /** The class's carry, by kind (owner 2026-09-07, class-wide): what moves the camera from one photograph into the next. */
 export const carryPhrase = () => ({ driven: "the road carries the vehicle", worn: "the wearer's own motion carries the camera" }[process.env.APPARATUS_KIND] || "the rails carry the car");
+/** A coaster's transitions are the ride's own (owner 2026-09-07: "tunnel mouths, show-scene openings and blackouts … a coaster never goes
+ *  through a door"); every other travelling form keeps the door, the archway, the tunnel mouth. */
+export const transitionPhrase = () => (/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "through a tunnel mouth, a show-scene opening or a blackout \u2014 never a door" : "through a door, an archway, a tunnel mouth");
 export function informantPlacesBlock() {
   const raw = String(process.env.INFORMANT_PLACES || "").replace(/\s+/g, " ").trim();
   if (!raw) return "";
+  if (process.env.COASTER_ARCH === "1") return `PHOTOGRAPHED SECTIONS OF THE RIDE (coaster architecture \u2014 real photographs riding with the seat, in story order): ${raw}. ` +
+    `Each section is DRESSED as the story's stop named beside it: the stop's things sit on the section's walls, floor and facades at track scale \u2014 ` +
+    `a carpet pattern runs under the rails, a fireplace glows in a scene's wall, hedges flank the track, a door is a facade the rails dive through into blackout \u2014 ` +
+    `never a room the car has entered. The take is written from the seat and rides each section in this order; there is no cut: ${carryPhrase()} into each ${transitionPhrase()}; a section not named here is never entered.\n`;
   return `PHOTOGRAPHED PLACES BEYOND THIS FRAME (real photographs riding with this one, in story order): ${raw}. ` +
     `The take is written from the seat and ARRIVES in each of them in this order \u2014 the world enters the ride. ` +
-    `There is no cut between them: ${carryPhrase()} into each — through a door, an archway, a tunnel mouth — and a place not named here is never entered.\n`;
+    `There is no cut between them: ${carryPhrase()} into each \u2014 ${transitionPhrase()} \u2014 and a place not named here is never entered.\n`;
 }
 const MOUNT_TEXT =
   `THE MOUNT (owner 2026-09-07, the ride he keeps returning to): the ride MAY open outside the car — the train seen coming down ` +
@@ -225,7 +232,7 @@ export const apparatusClause = () =>
   `mid-train or at the back — never a rider or vehicle looked at from outside the train (a figure on a trike watched ` +
   `from a doorway is a dismount). The seat's own cues (the rails running ahead, the bar, the hands, the row in front) ` +
   `open every beat. THE RIDE NEVER CUTS — class-wide: a ride, a drive and a walk alike (owner 2026-09-07: the world enters the form): every place the story visits is ` +
-  `ENTERED along the way — ${carryPhrase()} through a door, an archway, a tunnel mouth into the next photograph, ` +
+  `ENTERED along the way — ${carryPhrase()} ${transitionPhrase()} into the next photograph, ` +
   `each named in order inside the take; the camera never dismounts, never stands in a room and watches the ride pass, and ` +
   `there is no "hard cut" between a ride's places — a cut restarts the room without its rails. Two consecutive stops are ` +
   `ONE CONTINUOUS CARRY: the motion leaves one photograph and arrives in the next, both places named in order. ` +
