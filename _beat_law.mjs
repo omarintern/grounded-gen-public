@@ -326,7 +326,7 @@ export function buildDialogueBlock(planDialogue, stamps = DIALOGUE_STAMPS, fallb
 // imports the blocks its map marks TRANSFER-VERBATIM and plugs its own payloads into the SLOT positions.
 
 export const spanHeader = () => (
-`Write the shot script for a ${process.env.BEAT_DURATION || "4"}-second video generated FROM a real photograph.\n\u26a0 THE BEATS MUST SPAN THE WHOLE DURATION. Space them evenly to the END: a 7-second clip needs beats at [0s] [2s] [4s] [6s], not three that stop at [4s]. Unscripted tail time is time the generator fills however it likes, which is where off-beat pacing and invented action come from.\n`
+`Write the shot script for a ${process.env.BEAT_DURATION || "4"}-second video generated FROM a real photograph.\n${singleBlock() ? "\u26a0 ONE BLOCK: the prose spans the whole duration in order, every photographed place entered before it ends." : "\u26a0 THE BEATS MUST SPAN THE WHOLE DURATION."} Space them evenly to the END: a 7-second clip needs beats at [0s] [2s] [4s] [6s], not three that stop at [4s]. Unscripted tail time is time the generator fills however it likes, which is where off-beat pacing and invented action come from.\n`
 );
 
 export const goalBlock = () => (
@@ -582,6 +582,10 @@ export const genMood = () => (process.env.GEN_MOOD === "cinematic" ? "cinematic"
 // HELD: the laws that serve plot and drama — payoff, climax, twist, overstep, the comedy construction — step aside, the count set is
 // {2,4}, and the last beat is where the view rests. Read from the run's TELLING (tellingMode in _gate_rules); absent = narrative.
 export const telling = () => (process.env.TELLING === "observational" ? "observational" : "narrative");
+// ── ONE BLOCK FOR A MULTI-WORLD-REF ONE-TAKE (owner 2026-09-07, from the golden gen d73f9ca1: a single "[0s]" and three sentences
+// of continuous prose, no later stamps — the only ride gen that read as one take; every stamped one restarted at each place).
+// Set by the run when the take never cuts and more than one WORLD photograph rides in the bag (character refs never count).
+export const singleBlock = () => process.env.SINGLE_BLOCK === "1";
 export const viewLaw = () => (
 `\u26a0\u26a0 THIS IS A VIEW HELD, NOT A STORY (the maker's words ask for nothing to happen and nothing to turn \u2014 no plot, no drama). ` +
     `So: NO payoff, NO climax, NO twist, NO punchline, NO reveal, NO overstep \u2014 never manufacture an event to end on. ` +
@@ -695,7 +699,17 @@ const STATION_LINE = `Each beat describes ONLY what physically CHANGES at that m
     `Under a view a beat is a STATION, not a movement of feeling: no climax is owed, no escalation, and a quiet last beat is correct; ` +
     `the line through the beats is the view's own progression.\n`;
 export const outputShape = (secs, counts) => (
-(process.env.BEAT_BLOCKS !== "0"
+singleBlock()
+      ? `Return ONE BLOCK: a single "[0s] " stamp followed by the whole take as continuous present-tense prose — one paragraph, ` +
+        `the photographed places entered in story order and joined by the ride's own motion ("then crests", "drops into", "emerges ` +
+        `into"). NO further timestamps: on a travelling take a stamp per place reads as a CUT MARKER and restarts the place without ` +
+        `its rails (measured 2026-09-07: the one-block take carried through; every stamped take restarted). Name the way ahead as each ` +
+        `place is entered — the rails or path running on through the doorway, the archway, the tunnel mouth — so the track is drawn ` +
+        `INTO it; enter the first photographed place early and give each place its share of the take, in order; the opening is a ` +
+        `moment, not a scene. Each sentence describes ONLY what physically changes — a movement, the next place entered, what streams past. ` +
+        `\u26a0 DO NOT DESCRIBE THE SCENE OR SETTING: the photographs carry the places; write nothing about the location, weather, ` +
+        `lighting, time of day, surfaces or background, and name props only when the motion touches them.\n\n`
+      : (process.env.BEAT_BLOCKS !== "0"
       ? `Return your beats one per line, each stamped "[Ns] …" in WHOLE seconds: ` +
         `${counts.length > 1 ? `choose a beat count from {${counts.join(", ")}} — whichever this material wants; different materials deserve different counts` : `exactly ${counts[0]} beats`}, ` +
         `first beat at [0s], stamps ascending, all under ${secs}s. Spacing is yours — beats need not be evenly ` +
@@ -777,7 +791,7 @@ export const finalChecklist = (userPrompt) => (
 `BEFORE YOU ANSWER, CHECK ALL FOUR:\n` +
     `1. EVERY VERB from the request appears. Request: "${userPrompt}". If it names entering, performing AND waking, ` +
     `all three are in the beats. Dropping one is a failure, not a simplification.\n` +
-    `2. The beats SPAN THE FULL ${process.env.BEAT_DURATION || "4"} SECONDS, evenly spaced, last beat near the end.\n` +
+    (singleBlock() ? `2. The single [0s] block covers the FULL ${process.env.BEAT_DURATION || "4"} SECONDS in order: every photographed place is entered, and the last sentence is where the take ends.\n` : `2. The beats SPAN THE FULL ${process.env.BEAT_DURATION || "4"} SECONDS, evenly spaced, last beat near the end.\n`) +
     `3. EVERY subject exists in beat [0s], including anything the photograph does not show. Nothing appears for the ` +
     `first time later.\n` +
     `4. NO camera words anywhere.\n`
@@ -797,7 +811,7 @@ export const finalChecklist = (userPrompt) => (
 // the density lesson's own mechanism); only the meaning of "wrong" moved from grid-disagreement to
 // ILLEGALITY. `counts` is overridable for the short-duration fallback the caller supplies.
 // CINEMATIC relaxes the density floor to 1.0s/beat (the b-era cadence: more cuts, more dream); CANDID keeps 1.5.
-export const legalBeatCounts = (secs) => (telling() === "observational" ? [2, 4] : [3, 6, 9]).filter((c) => secs / c >= (genMood() === "cinematic" ? 1.0 : 1.5));
+export const legalBeatCounts = (secs) => (singleBlock() ? [1] : telling() === "observational" ? [2, 4] : [3, 6, 9]).filter((c) => secs / c >= (genMood() === "cinematic" ? 1.0 : 1.5));
 export const stampsLegal = (stamps, secs, counts = legalBeatCounts(secs)) =>
   counts.includes(stamps.length) && stamps[0] === 0
   && stamps.every((v, i) => Number.isInteger(v) && v < secs && (i === 0 || v > stamps[i - 1]));
