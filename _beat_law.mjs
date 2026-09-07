@@ -202,7 +202,7 @@ export function informantPlacesBlock() {
   if (!raw) return "";
   return `PHOTOGRAPHED PLACES BEYOND THIS FRAME (real photographs riding with this one, in story order): ${raw}. ` +
     `The take is written from the seat and ARRIVES in each of them in this order \u2014 the world enters the ride. ` +
-    `A hard cut is yours only when the story warrants one, and only to one of these places; a place not named here is never cut to.\n`;
+    `There is no cut between them: the rails carry the car into each — through a door, an archway, a tunnel mouth — and a place not named here is never entered.\n`;
 }
 export const apparatusClause = () =>
   !process.env.APPARATUS_NOTE ? "" :
@@ -217,11 +217,11 @@ export const apparatusClause = () =>
   `only as the seat sees them — the backs of heads, shoulders and raised arms in the rows ahead when the camera sits ` +
   `mid-train or at the back — never a rider or vehicle looked at from outside the train (a figure on a trike watched ` +
   `from a doorway is a dismount). The seat's own cues (the rails running ahead, the bar, the hands, the row in front) ` +
-  `open every beat. Cuts are allowed only as LATER SECTIONS OF THE SAME RIDE: the camera never ` +
-  `dismounts, never stands in a room and watches the ride pass; each cut is the rails carrying into the next place. ` +
-  `A CUT IS A CHOICE, NOT A PLATE COUNT: two consecutive stops may be ONE CONTINUOUS CARRY — the motion leaves one ` +
-  `photograph and arrives in the next inside the same section, both places named in order — and a hard cut is written ` +
-  `only where the ride wants one. ` +
+  `open every beat. THE RIDE NEVER CUTS (owner 2026-09-07: the world enters the ride): every place the story visits is ` +
+  `ENTERED along the rails — the track carries the car through a door, an archway, a tunnel mouth into the next photograph, ` +
+  `each named in order inside the take; the camera never dismounts, never stands in a room and watches the ride pass, and ` +
+  `there is no "hard cut" between a ride's places — a cut restarts the room without its rails. Two consecutive stops are ` +
+  `ONE CONTINUOUS CARRY: the motion leaves one photograph and arrives in the next, both places named in order. ` +
   `THE MOUNT (owner 2026-09-07, the ride he keeps returning to): the ride MAY open outside the car — the train seen coming down ` +
   `the track toward the camera, the camera waiting on the rails — and the camera is taken up as the train arrives; from that ` +
   `moment every beat rides. One mount, at the opening, said plainly ("the train comes down the track toward the camera and takes ` +
