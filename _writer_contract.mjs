@@ -192,7 +192,10 @@ export function apparatusFinding(cutText, { interior = false, last = false, firs
   if (m && !mounting) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
   if (/\bhard cuts?\s+to\b/i.test(t) && !mounting) return "a travelling take never cuts between its places — its own motion (the rails, the road, the walk) carries into the next photograph (a tunnel mouth, an opening, an archway; a coaster never through a door); write the arrival, not a cut";   // owner 2026-09-07, job f943d7d6: three hard cuts, three rooms without rails
   if (opener && !SEAT.test(t) && !mounting) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
-  const st = statueFinding(t);
+  // a still figure is a COASTER finding (owner 2026-09-07: "met at speed"); a dark ride glides past standing figures and tableaux by design
+  // (owner 2026-09-08, job fa203849: the twins "stand at" the far end of the corridor — the concept, refused three times as a statue)
+  const _noun = String(process.env.APPARATUS_NOUN || "");
+  const st = (_noun && !/coaster/i.test(_noun)) ? null : statueFinding(t);   // no noun (tests, other forms) or a coaster → the law stands; a named non-coaster ride glides past
   if (st) return st;
   const rl = railsFinding(t, { last });
   if (rl) return rl;
