@@ -6,13 +6,52 @@
 //   import { libraryImages } from "./library.mjs";  const r = await libraryImages("raccoon campsite", 40);
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const API = "https://api.library.example/v1";
 const UA = "grounded-gen/1.0 (candid image sourcing)";
 const CFG = join(homedir(), ".config", "library");
 const CREDS = join(CFG, "creds.json");
 const REG_EMAIL = process.env.LIBRARY_EMAIL || "dev@example.com";
+
+// ⭐⭐ AN OUTAGE IS A STATE, NOT AN EMPTY POOL (owner 2026-09-08: «we never planned for when the free library is down,
+// like it is now. if its down, then our codebase should fallback to paid routes»). Before this, a 5xx, a
+// timeout or a dead token endpoint logged one quiet line and returned [] — the SAME shape as "no CC photograph
+// exists" — so the pool read an outage as a content miss, every later call in the run paid the 20 s timeout
+// again, and nothing outside the log could tell. Now a failure of the SERVICE (5xx, 429, auth that a refresh
+// did not cure, network/timeout, the token or register endpoint) trips a circuit: the free tier is skipped
+// for OV_DOWN_TTL_MS (5 min) and answers [] at once, the reason is logged loudly ONCE per trip, and the state
+// is written to out/_ledger/library.json so /health carries it. Callers still receive [] — the pool's web
+// leg and the ladders' paid tiers already carry a hunt whose free tier gave nothing (scrape.mjs now hands the
+// free tier's seat to the paid member outright and says why). A 4xx on the search itself (a bad query) is
+// OURS, not an outage, and does not trip anything.
+const STATUS_FILE = process.env.LIBRARY_STATUS_FILE || join(dirname(fileURLToPath(import.meta.url)), "out", "_ledger", "library.json");
+const DOWN_TTL_MS = Number(process.env.OV_DOWN_TTL_MS || 5 * 60_000);
+let _state = { ok: null, at: null, status: null, why: null, down_since: null };
+let _lastWrite = 0;
+const _persist = (force) => {
+  if (!force && Date.now() - _lastWrite < 60_000) return;   // a healthy tier is re-stamped at most once a minute
+  try { mkdirSync(dirname(STATUS_FILE), { recursive: true }); writeFileSync(STATUS_FILE, JSON.stringify(_state)); _lastWrite = Date.now(); } catch { /* the marker is a courtesy to /health, never a failure */ }
+};
+/** The free tier's last observed state; `skipped` is true while the circuit holds calls back. */
+export const libraryStatus = () => ({ ..._state, skipped: _state.ok === false && !!_state.at && Date.now() - Date.parse(_state.at) < DOWN_TTL_MS });
+export const libraryDown = () => libraryStatus().skipped;
+const markDown = (status, why) => {
+  const first = _state.ok !== false;
+  const clean = String(why || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);   // an HTML error page is not a reason
+  _state = { ok: false, at: new Date().toISOString(), status: status ?? null, why: clean, down_since: first ? new Date().toISOString() : _state.down_since };
+  _persist(true);
+  if (first) console.log(`  ⛔ library UNAVAILABLE (${status ?? "network"}: ${_state.why}) — free tier skipped for ${Math.round(DOWN_TTL_MS / 60000)} min; the paid tiers carry the hunt`);
+};
+const markUp = () => {
+  const was = _state.ok === false;
+  _state = { ok: true, at: new Date().toISOString(), status: 200, why: null, down_since: null };
+  _persist(was);
+  if (was) console.log(`  ✓ the free library is back — the free tier resumes`);
+};
+
+const _plain = (body) => String(body || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);   // an HTML error page is not a reason
 
 async function creds() {
   // The REGISTERED app (grounded-sourcer, admin@example.com, 2026-08-13 — verified tier: 100/min,
@@ -26,7 +65,7 @@ async function creds() {
     method: "POST", headers: { "Content-Type": "application/json", "User-Agent": UA },
     body: JSON.stringify({ name: `grounded-media-${Date.now().toString(36)}`, description: "Candid image sourcing for grounded video references.", email: REG_EMAIL }),
   });
-  if (!res.ok) throw new Error(`library register ${res.status}: ${(await res.text()).slice(0, 160)}`);
+  if (!res.ok) { const err = new Error(`library register ${res.status}: ${_plain(await res.text())}`); err.status = res.status; throw err; }
   const c = await res.json();
   mkdirSync(CFG, { recursive: true });
   writeFileSync(CREDS, JSON.stringify(c, null, 2));
@@ -39,7 +78,7 @@ async function token(force = false) {
   const c = await creds();
   const body = new URLSearchParams({ grant_type: "client_credentials", client_id: c.client_id, client_secret: c.client_secret });
   const res = await fetch(`${API}/auth_tokens/token/`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": UA }, body });
-  if (!res.ok) throw new Error(`library token ${res.status}: ${(await res.text()).slice(0, 160)}`);
+  if (!res.ok) { const err = new Error(`library token ${res.status}: ${_plain(await res.text())}`); err.status = res.status; throw err; }
   _token = (await res.json()).access_token;
   return _token;
 }
@@ -64,11 +103,16 @@ export async function libraryImages(query, n = 40) {
   const ask = Math.min(Math.max(n, Number(process.env.OV_FREE_N || 40)), 100);
   const url = `${API}/images/?q=${encodeURIComponent(_clean)}&page_size=${ask}&mature=false`;
   const get = async (tok) => fetch(url, { headers: { "User-Agent": UA, Accept: "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) }, signal: AbortSignal.timeout(20000) });
+  if (libraryDown()) { console.log(`  [library] skipped — down since ${_state.down_since} (${_state.status ?? "network"}: ${_state.why}); the paid tiers carry this call`); return []; }
   try {
     let tok = await token();
     let res = await get(tok);
     if (res.status === 401 || res.status === 403) res = await get(await token(true));
-    if (!res.ok) { console.log(`  library ${res.status}`); return []; }
+    if (!res.ok) {
+      // the SERVICE failed (5xx / rate limit / auth a refresh did not cure) → outage; any other 4xx is our query
+      if (res.status >= 500 || res.status === 429 || res.status === 401 || res.status === 403) { markDown(res.status, `HTTP ${res.status} on /images`); return []; }
+      console.log(`  library ${res.status}`); return [];
+    }
     const json = await res.json();
     const seen = new Set(), out = [];
     for (const r of json?.results ?? []) {
@@ -78,8 +122,9 @@ export async function libraryImages(query, n = 40) {
         if (out.length >= ask) break;   // return the full FREE pool — downstream caps (ladder want, shortlist, judge stop) do the trimming; the spares absorb URL-dedupe and download deaths
       }
     }
+    markUp();
     return out;
-  } catch (e) { console.log(`  library error: ${e.message}`); return []; }
+  } catch (e) { markDown(e?.status ?? null, e.message); return []; }   // network, timeout, token/register endpoint → an outage, never a content miss
 }
 
 // CLI: [LIBRARY_EMAIL=you@x] node library.mjs "<query>" [n]
