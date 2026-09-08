@@ -5,7 +5,7 @@
 // either copy is edited. ZERO text change at extraction; _ground_prompt imports its own former text from here.
 // Model-visible doctrine lives in the clause functions; pure machinery (the deterministic dialogue builder,
 // the FINE_DETAIL regex) rides along. speechReach already lives in _gate_rules (shared there, not here).
-import { dialogueStamps, musicRequested } from "./_gate_rules.mjs";
+import { dialogueStamps, musicRequested, captureFormNoun } from "./_gate_rules.mjs";
 
 export const DIALOGUE_STAMPS = dialogueStamps(Number(process.env.BEAT_DURATION) || 4, Number(process.env.CUT_BUDGET) || 0);
 
@@ -277,6 +277,13 @@ export const workTitlesClause = () =>
   !process.env.WORK_TITLES ? "" :
   `⚠ NAMED WORKS IN THIS REQUEST: ${process.env.WORK_TITLES}. These are TITLES of works — never read a title's words as adjectives or verbs, whatever the user's casing.`;
 
+// FRAME ZERO'S REGISTER (owner 2026-09-08; _gate_rules.captureFormNoun): a capture form is stated at frame zero as what the
+// photograph IS — the plate's own register, not a camera word. The run repairs mechanically when the writer leaves it out.
+export const frameZeroRegisterClause = () => {
+  const n = captureFormNoun(process.env); if (!n) return "";
+  const shown = /^cctv$/i.test(n) ? "CCTV" : n.toLowerCase();
+  return `⚠ FRAME ZERO'S REGISTER IS PART OF THE PHOTOGRAPH: this photograph is ${shown} footage. Beat zero STATES it as what the footage is, before the action — "${n} footage: …" — exactly as it states the place. This is not a camera word: it frames, moves and directs nothing; it names what the plate already is, and every later beat stays inside that footage.\n`;
+};
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";
   if (!ELICITED_FORM.test(form)) return "";
