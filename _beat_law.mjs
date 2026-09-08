@@ -198,7 +198,13 @@ export const belongingClause = () =>
 /** FORM FIRST (owner 2026-09-07): the photographed places that ride behind the seat plate, in story order — facts the writer
  *  needs, never framing. Empty when the run set none (the unnamed-ride and single-photo paths). */
 /** The class's carry, by kind (owner 2026-09-07, class-wide): what moves the camera from one photograph into the next. */
-export const carryPhrase = () => ({ driven: "the road carries the vehicle", worn: "the wearer's own motion carries the camera" }[process.env.APPARATUS_KIND] || "the rails carry the car");
+// FORM AND CONTENT AWARENESS (owner 2026-09-08: «sometimes its not rails you see, sometimes its on water as well»): the seat plate's
+// second look reads what the ride travels ON and what carries the camera; the writer's words come from that reading, never from a
+// default. SEAT_WAY / SEAT_VEHICLE are set by _run from the seat plate's pick record; absent, the kind's own words stand.
+export const wayOf = () => { const w = String(process.env.SEAT_WAY || "").trim(); return w && w !== "unseen" ? w : (/boat|flume|rapids/i.test(process.env.APPARATUS_NOUN || "") ? "water channel" : "way ahead"); };
+export const vehicleOf = () => { const v = String(process.env.SEAT_VEHICLE || "").trim(); return v && v !== "unseen" && v !== "other" ? v : (/boat|flume|rapids/i.test(process.env.APPARATUS_NOUN || "") ? "boat" : "vehicle"); };
+export const carryPhrase = () => ({ driven: "the road carries the vehicle", worn: "the wearer's own motion carries the camera" }[process.env.APPARATUS_KIND]
+  || (process.env.DARK_RIDE_DRESSING === "1" || /dark ride|theme park/i.test(process.env.APPARATUS_NOUN || "") ? `the ${wayOf()} carries the ${vehicleOf()}` : "the rails carry the car"));
 /** A coaster's transitions are the ride's own (owner 2026-09-07: "tunnel mouths, show-scene openings and blackouts … a coaster never goes
  *  through a door"); every other travelling form keeps the door, the archway, the tunnel mouth. */
 export const transitionPhrase = () => (/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "through a tunnel mouth, a show-scene opening or a blackout \u2014 never a door" : "through a door, an archway, a tunnel mouth");
@@ -207,14 +213,15 @@ export function informantPlacesBlock() {
   // photograph rides — the rooms were READ for their things. Frame zero is the seat photograph with the replacements already in
   // place; later things arrive further along the same continuous take as the ride's own set pieces; the ride never enters a room.
   if (process.env.DARK_RIDE_DRESSING === "1") {
-    const src = String(process.env.WORLD_DRESSING_SOURCE || "").replace(/\s+/g, " ").trim();
     const later = String(process.env.LATER_THINGS || "").replace(/\s+/g, " ").trim();
-    return `⚠⚠ THE WORLD IS BUILT INTO THE RIDE: the seat photograph IS the ride — its vehicle, rails and scene architecture are the frame's constant from frame zero to the end. ` +
-      `No photograph of the world's rooms rides with it${src ? ` (its rooms — ${src} — were READ for their things, never entered)` : ""}. ` +
-      `Frame zero opens on the seat photograph with the world's replacements ALREADY IN PLACE (see THE WORLD'S THINGS) — stated as facts of the scene, not as changes. ` +
-      (later ? `Further along the same continuous take the ride's NEXT SCENES carry the later things, in this order: ${later} — each written as the ride's own set piece at the moment the rails reach it. ` : "") +
-      `The ride never enters the world's rooms: never "the vehicle enters the Gold Room" — write "the rails run on into the ride's ballroom scene, its walls dressed in gold". ` +
-      `The vehicle and the rails persist through every scene; there is no cut; ${carryPhrase()}.\n`;
+    const wayWord = wayOf(), vehWord = vehicleOf();
+    return `⚠⚠ THE WORLD IS BUILT INTO THE RIDE: the seat photograph IS the ride — its ${vehWord}, its ${wayWord} and its scene architecture are the frame's constant from frame zero to the end. ` +
+      `No photograph of the world rides with it, and the world's PLACES are never named — not a room, not a hall, not a maze, not the work: the world arrives only as THINGS on the ride's own surfaces. ` +
+      `Frame zero opens on the seat photograph with the replacements ALREADY IN PLACE (see THE WORLD'S THINGS), stated as facts of the scene, never as changes. ` +
+      (later ? `Further along the same continuous take these later things arrive in this order, each as the ride's own set piece: ${later}. ` : "") +
+      `WHERE THINGS SIT: beside the ${wayWord} — on the scene's walls, on raised platforms or banks next to it — or AHEAD, as a tableau the ${vehWord} approaches and veers away from before reaching it. ` +
+      `The ${wayWord}, the floor or bed the ride travels on, and the ${vehWord} are never dressed. ` +
+      `The scenes stay unnamed (the next scene, a turn, a blackout); the ${wayWord} runs on through every one of them; there is no cut; ${carryPhrase()}.\n`;
   }
   const raw = String(process.env.INFORMANT_PLACES || "").replace(/\s+/g, " ").trim();
   if (!raw) return "";
@@ -615,7 +622,7 @@ export const singleBlock = () => process.env.SINGLE_BLOCK === "1";
 // THE VEHICLE IS WRITTEN when the seat plate does not show it (owner 2026-09-08, dark rides) — stated once as frame zero's constant
 // foreground, by the ride's kind, and never looked at again.
 export const vehicleLine = () => (process.env.VEHICLE_PROMPTED === "1"
-  ? `\u26a0 THE VEHICLE IS WRITTEN: the seat photograph shows the ride's vantage but not its vehicle \u2014 state the vehicle once, in the first clause, as the frame's constant foreground (${/boat|flume|rapids/i.test(process.env.APPARATUS_NOUN || "") ? "the boat's bow" : /dark ride|theme park/i.test(process.env.APPARATUS_NOUN || "") ? "the ride car's edge or lap bar" : /coaster/i.test(process.env.APPARATUS_NOUN || "") ? "the car's nose or lap bar and the rails ahead" : "the vehicle's edge"}), then never look at it again. `
+  ? `\u26a0 THE VEHICLE IS WRITTEN: the seat photograph shows the ride's vantage but not its vehicle \u2014 state the vehicle once, in the first clause, as the frame's constant foreground (${/boat|flume|rapids/i.test(process.env.APPARATUS_NOUN || "") || String(process.env.SEAT_VEHICLE || "") === "boat" ? "the boat's bow" : /dark ride|theme park/i.test(process.env.APPARATUS_NOUN || "") ? "the ride car's edge or lap bar" : /coaster/i.test(process.env.APPARATUS_NOUN || "") ? "the car's nose or lap bar and the rails ahead" : "the vehicle's edge"}), then never look at it again. `
   : "");
 // PROMPTED DRESSING (owner 2026-09-08): the world's things, placed by a vision read on each photograph's OWN surfaces and spaces, written
 // as facts of the take — never an instruction, never an edit, never an image. Characters may stand where a plate has space.
@@ -624,7 +631,7 @@ export const dressingBlock = () => {
   if (!raw) return "";
   return `\u26a0\u26a0 THE WORLD'S THINGS, ON THE PHOTOGRAPHS' OWN SURFACES (a reading of each real photograph decided where each can sit): ${raw}. ` +
     `Write each as a FACT of the take at the moment the ride reaches it \u2014 "the rails, coloured in the carpet's orange-and-red hexagons, run into…", "at the far end of the corridor two girls in blue stand hand in hand" \u2014 never as an instruction, never "add" or "replace". ` +
-    `A thing placed on the rails or the vehicle is a colouring only. ${process.env.DARK_RIDE_DRESSING === "1" ? "On a theme park dark ride the things dress the ride's OWN scenes — the show building's walls, floor and set pieces at ride scale: a replacement is stated as already so at frame zero (the floor IS the hexagonal carpet), an addition stands where the reading placed it; never a room of the world entered. " : ""}${/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "On a coaster the world's things ride on the coaster's own architecture \u2014 the rails, the tunnel's walls, the structure \u2014 and the coaster never enters the world's rooms. " : "On a theme park ride they dress the furnished interiors the ride glides through. "}`;
+    `A thing placed on the rails or the vehicle is a colouring only. ${process.env.DARK_RIDE_DRESSING === "1" ? `On a dark ride the things sit BESIDE the ${wayOf()} (the scene's walls, raised platforms, banks) or AHEAD as a tableau the ${vehicleOf()} approaches and veers away from; a replacement is stated as already so at frame zero (the platform to the right IS laid with the hexagonal carpet), an addition stands where the reading placed it; the ${wayOf()}, the floor the ride travels on and the ${vehicleOf()} are never dressed; no place of the world is named. ` : ""}${/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "On a coaster the world's things ride on the coaster's own architecture \u2014 the rails, the tunnel's walls, the structure \u2014 and the coaster never enters the world's rooms. " : "On a theme park ride they dress the furnished interiors the ride glides through. "}`;
 };
 // FIGURES THE PROSE NEVER NAMES (owner 2026-09-08; _gate_rules.ipFigureModes): the run computes each figure's mode from the
 // resolver's verdicts — dename (described, never named) or omit (not written at all); public-domain figures never appear here.

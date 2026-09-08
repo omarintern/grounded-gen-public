@@ -40,15 +40,26 @@ elements = (Array.isArray(elements) ? elements : []).slice(0, 3);
 if (!elements.length) { console.log("  ◇ no world things to place"); process.exit(2); }
 
 const b64 = readFileSync(plate).toString("base64");
+// THE DARK RIDE'S SURFACE LAW (owner 2026-09-08: «usually these designs sit on the sides of a ride on walls and platforms or ahead where
+// the vehicle veers away from said spectacle» · «sometimes its not rails you see, sometimes its on water as well … form and content
+// awareness»): the spectacle sits BESIDE the way (walls, raised platforms, banks) or AHEAD of it (a tableau the vehicle approaches
+// and veers away from); the way itself — rails, a water channel, a groove, the floor the ride travels on — and the vehicle are never
+// dressed. The way's own word comes from the seat plate's reading (SEAT_WAY), never from a list of ours.
+const DARK = process.env.DARK_RIDE_DRESSING === "1";
+const WAY = String(process.env.SEAT_WAY || "").trim(); const wayWord = DARK ? (WAY && WAY !== "unseen" ? WAY : "way the ride travels on") : "rails";
+const WAY_RE = /(?:rails?|tracks?|track ?bed|channel|water(?:way)?|flume|groove|path(?:way)? ahead|floor ahead|the floor|bed|vehicle|car|boat|pod|lap ?bar|restraint)/i;
 const read = await providerJson([
   textPart(`This REAL photograph is ${role}, seen from aboard a ride. A themed world's THINGS will be written into the video as dressing on this photograph's own surfaces and spaces. ` +
     `For each thing below, decide whether THIS photograph has a surface or a space for it. Return ONLY JSON {"dressing":[{"name":string,"op":"replace|add|skip","where":string,"why":string}]}. ` +
-    `"where" names the photograph's OWN surface or space in plain words (the floor ahead, the left wall, the arch around the opening, the far end of the corridor, the ceiling, the rails' colouring). ` +
+    (DARK
+      ? `This is a DARK RIDE: the spectacle sits BESIDE the ${wayWord} — on the scene's left or right wall, on a raised platform or stage next to it, on the bank across it — or AHEAD, on the far wall as a tableau the vehicle approaches and veers away from. "where" names one of THIS photograph's own such surfaces in plain words. NEVER the ${wayWord} itself, never the floor or bed the ride travels on, never the vehicle: a thing that would only fit there is "skip". `
+      : `"where" names the photograph's OWN surface or space in plain words (the floor ahead, the left wall, the arch around the opening, the far end of the corridor, the ceiling, the rails' colouring). `) +
     `op = "replace" when the photograph has a counterpart the thing takes the place of (a floor's pattern, a wall's finish, the rails' colour); "add" when there is open space for it (a character can stand at the far end, a prop can sit on a ledge); "skip" when nothing plausible exists — never invent space. ` +
     `Never place anything ON the rails or the vehicle except a colouring. Things: ${JSON.stringify(elements.map((e) => ({ name: e.name, kind: e.kind, surface: e.surface })))}`),
   imagePart("image/jpeg", b64),
 ], { maxTokens: 700, temperature: 0.2 });
-const dressing = (Array.isArray(read?.dressing) ? read.dressing : []).filter((e) => e && (e.op === "replace" || e.op === "add") && String(e.name || "").trim() && String(e.where || "").trim()).slice(0, 3);
+const dressing = (Array.isArray(read?.dressing) ? read.dressing : []).filter((e) => e && (e.op === "replace" || e.op === "add") && String(e.name || "").trim() && String(e.where || "").trim())
+  .filter((e) => { if (DARK && WAY_RE.test(String(e.where))) { console.log(`  ◇ ${e.name}: skipped — "${e.where}" is the way or the vehicle, never dressed on a dark ride`); return false; } return true; }).slice(0, 3);
 for (const e of (Array.isArray(read?.dressing) ? read.dressing : [])) console.log(`  ◇ ${String(e?.name || "?")}: ${String(e?.op || "?").toUpperCase()}${e?.where ? ` @ ${e.where}` : ""}${e?.why ? ` — ${String(e.why).slice(0, 80)}` : ""}`);
 try { writeFileSync(`${plate}.dressing.json`, JSON.stringify({ role, dressing }, null, 2)); } catch {}
 if (!dressing.length) { console.log("  ◇ the photograph has no surface or space for the world's things here"); process.exit(2); }
