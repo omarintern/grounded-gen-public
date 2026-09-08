@@ -136,7 +136,15 @@ const capGuard = async (fn) => {
 };
 let res = await capGuard(submit);
 if (res.status === 409) { console.log(`[multiref] 409 consent → attest + resubmit`); payload.consents = { [CONSENT_KEY]: { confirmed_terms_and_privacy: true, confirmed_legal_right: true, confirmed_screening_acknowledged: true } }; res = await capGuard(submit); }
-if (!res.ok) { console.log(`[multiref] ${slug}: REJECTED (${res.status})\n${(await res.text()).slice(0, 300)}`); process.exit(2); }
+if (!res.ok) {
+  const body = (await res.text()).slice(0, 300);
+  console.log(`[multiref] ${slug}: REJECTED (${res.status})\n${body}`);
+  // THE REFUSAL IS RECORDED FOR THE RUN (owner 2026-09-08, job cde9617f: a 422 "content policy" refusal ended the run with the
+  // sourcing done and nothing repaired). Exit 2 stays the signal; the marker carries the status and body so _run can repair a
+  // POLICY refusal (re-ask the writer, resubmit — a refused submit is free) and leave every other refusal alone.
+  try { mkdirSync(join(HERE, "out", "_aspect"), { recursive: true }); writeFileSync(join(HERE, "out", "_aspect", `${slug}.reject.json`), JSON.stringify({ status: res.status, body, at: new Date().toISOString() })); } catch {}
+  process.exit(2);
+}
 const { queue_id, id } = await res.json(); const qid = queue_id ?? id;
 console.log(`[multiref] ${slug}: ACCEPTED queue_id=${qid} — polling…`);
 // ⚠ RECORDED BEFORE THE FIRST POLL, DELIBERATELY. The job is already accepted, so from this

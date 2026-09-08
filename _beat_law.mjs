@@ -425,6 +425,9 @@ export const beatZeroLaw = () => (
     (process.env.CAST_LEDGER_LINE ? `\u26a0\u26a0 ${process.env.CAST_LEDGER_LINE}\n` : "") +
     (process.env.PLATE_OCCUPANTS_LINE ? `\u26a0 ${process.env.PLATE_OCCUPANTS_LINE}\n` : "") +
     (process.env.VALIDATOR_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT VIOLATED THE CAST LEDGER: ${process.env.VALIDATOR_FEEDBACK}. Rewrite the beats obeying the ledger exactly \u2014 do not drop any figure; move each violation to its declared beat.\n` : "") +
+    // POLICY REPAIR (owner 2026-09-08): the video provider refused the previous draft on its content policy. The run says what to
+    // change; the writer keeps the story, the stops and the stamps and rewrites only what the note names.
+    (process.env.POLICY_FEEDBACK ? `\u26a0\u26a0 THE VIDEO PROVIDER REFUSED YOUR PREVIOUS DRAFT ON ITS CONTENT POLICY. Keep the same story, the same places in the same order and the same timestamps, and rewrite so that: ${process.env.POLICY_FEEDBACK} Return the full beat list and the dialogue block.\n` : "") +
     `\u26a0 BEAT ZERO IS AN ACTION, NOT A DESCRIPTION \u2014 its subject is MID-DOING from the first frame; a line that only says what the subject IS or WEARS lets the frame drift. `+
     // Owner 2026-08-13, restored from the golden gens (capybara ski counter, raccoon kiosk, fox hob, badger
     // tarp, capybara beer tap): every one staged beat zero ON the plate's named objects/occupants with THE.
