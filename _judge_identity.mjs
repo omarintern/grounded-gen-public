@@ -192,3 +192,27 @@ export async function aiRecheck(filePath, opts = {}) {
     return null;   // infra/unreadable → no opinion; the caller must not treat this as a pass or a veto
   }
 }
+
+// ── THE SECOND LOOK FOR THE SEAT (owner 2026-09-08, job cde9617f: "the dark ride we're seeing is not pov which is a red flag.
+// its also not dark, its outdoor slightly, and third person") ────────────────────────────────────────────────────────────
+// The first look answered first_person_apparatus TRUE with cues [lap bar, restraint, rails from the seat] for a daylight
+// photograph of EMPTY caterpillar cars at the Alice in Wonderland loading station, taken from the platform — a third-person
+// exterior with a lap bar in it. HARDWARE IN THE FRAME IS NOT A VANTAGE, and the rubric's own "FALSE for … a station" sentence
+// did not hold at 512px. So this look asks WHERE THE PHOTOGRAPHER IS, as evidence the code can check — the carrier's near
+// part at the bottom edge, the way ahead receding from that position, the third-person tells it can see, and the environment
+// around the camera — at 768px, only for frames the first look already called aboard (a handful per hunt). null on infra:
+// the caller fails CLOSED (no plate beats a wrong plate).
+export async function judgeAboard(filePath, opts = {}) {
+  const px = Number(opts.viewPx || process.env.ABOARD_VIEW_PX || 768);
+  try {
+    const b64 = await smallViewAt(filePath, px);
+    const j = await providerJson([
+      textPart(`Return ONLY JSON {"camera_position":"aboard|platform|beside|ground|queue|other","near_edge_at_bottom":bool,"way_ahead_recedes":bool,"tells":["empty seats"|"vehicle seen from its side"|"row of vehicles"|"whole vehicle visible"|"station platform"|"queue railing"|"people standing beside the track"|"daylight exterior"|"none"],"environment":"indoor show scene|tunnel|outdoor daylight|outdoor night|station|other","why":string}. camera_position is WHERE THE PHOTOGRAPHER IS. "aboard" ONLY when the photograph was taken from INSIDE or ON the moving carrier: its own nearest part (a lap bar across the rider, the car's nose, a boat's bow, a dashboard, handlebars) crosses the BOTTOM EDGE of the frame, close and large, and the track, water or road runs AWAY from that position into the distance. "platform" when the picture is taken from a loading area or station: empty seats, a row of cars seen from the side or from the front while standing, a railing between the camera and the vehicles, guests waiting. "beside" when standing next to the track or path. "ground" when the ride is seen from below or from outside. "queue" from a queue line. A lap bar, a restraint or rails VISIBLE IN THE PICTURE do not make the camera aboard: a bar seen from the side, or above an empty seat, belongs to a vehicle the photographer is NOT in. near_edge_at_bottom: the carrier's own part touches the bottom edge of the frame. way_ahead_recedes: the ride's path leads away from the camera's own position. tells: every third-person sign you can see, else ["none"]. environment: what surrounds the camera — an indoor ride scene with sets and theatrical light, a tunnel, open daylight, night outdoors, a station, other. why: one sentence naming what decided camera_position.`),
+      imagePart("image/jpeg", b64),
+    ], { maxTokens: 700, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
+    return j && typeof j === "object" ? j : null;
+  } catch (e) {
+    if (e?.name === "ProviderInfraError") throw e;
+    return null;   // unreadable / no opinion → the seat hunt fails CLOSED on this frame
+  }
+}
