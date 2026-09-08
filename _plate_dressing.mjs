@@ -6,6 +6,31 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
 
+// ── --things: READ A ROOM FOR ITS THINGS (owner 2026-09-08, the technicality: "it should state what in the dark ride ref gets added
+// or replaced with what from the world room (non-dark ride image)"). The world's room photographs never ride as references on a
+// dark ride; they are read here for the things a set designer would transfer onto the ride's own scenes — a pattern, a fixture, a
+// prop, signage, architecture, a figure described by clothing and posture (never a name, never an age). Writes <plate>.things.json.
+//   node _plate_dressing.mjs --things <room.jpg> "<world name>" [n=2]
+if (process.argv[2] === "--things") {
+  const [, , , roomPlate, worldName = "a themed world", nStr = "2"] = process.argv;
+  if (!roomPlate) { console.error('usage: node _plate_dressing.mjs --things <room.jpg> "<world name>" [n]'); process.exit(1); }
+  const n = Math.max(1, Math.min(3, Number(nStr) || 2));
+  const KINDS = new Set(["pattern", "prop", "fixture", "signage", "architecture", "character"]), SURFACES = new Set(["floor", "wall", "ceiling", "portal", "object", "exterior", "space"]);
+  const rb64 = readFileSync(roomPlate).toString("base64");
+  const rr = await providerJson([
+    textPart(`This REAL photograph shows a room or scene of ${worldName}. A theme park DARK RIDE is being built to carry this world: the ride keeps its own vehicle, rails and show-building architecture, and its scenes are SET-DRESSED with this room's distinctive things. ` +
+      `Name up to ${n} things from THIS photograph that a set designer would transfer onto a ride scene, most distinctive first. Return ONLY JSON {"things":[{"name":string,"kind":"pattern|prop|fixture|signage|architecture|character","surface":"floor|wall|ceiling|portal|object|exterior|space","why":string}]}. ` +
+      `"name" is concrete and short (a carpet's pattern in its colours, a pair of elevator doors, a chandelier, an archway, a hedge wall under snow). A figure is described by clothing and posture only — never a name, never an age word. Skip anything generic (a plain wall, a window, daylight).`),
+    imagePart("image/jpeg", rb64),
+  ], { maxTokens: 500, temperature: 0.2 });
+  const things = (Array.isArray(rr?.things) ? rr.things : []).map((t) => ({ name: String(t?.name || "").replace(/\s+/g, " ").trim().slice(0, 60), kind: String(t?.kind || "").toLowerCase().trim(), surface: String(t?.surface || "wall").toLowerCase().trim(), why: String(t?.why || "").slice(0, 120) }))
+    .filter((t) => t.name && KINDS.has(t.kind)).map((t) => ({ ...t, surface: SURFACES.has(t.surface) ? t.surface : "wall" })).slice(0, n);
+  for (const t of things) console.log(`  ◇ ${t.name} [${t.kind} · ${t.surface}]${t.why ? ` — ${t.why}` : ""}`);
+  try { writeFileSync(`${roomPlate}.things.json`, JSON.stringify({ world: worldName, things }, null, 2)); } catch {}
+  if (!things.length) { console.log("  ◇ the room offered nothing distinctive to transfer"); process.exit(2); }
+  console.log(`  ✓ ${things.length} thing(s) read off the room — to be written onto the ride, never painted`);
+  process.exit(0);
+}
 const [plate, elementsJson, role = "a photograph the ride passes through"] = process.argv.slice(2);
 if (!plate || !elementsJson) { console.error('usage: node _plate_dressing.mjs <plate.jpg> \'<elements json>\' "<role>"'); process.exit(1); }
 let elements = [];

@@ -203,6 +203,19 @@ export const carryPhrase = () => ({ driven: "the road carries the vehicle", worn
  *  through a door"); every other travelling form keeps the door, the archway, the tunnel mouth. */
 export const transitionPhrase = () => (/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "through a tunnel mouth, a show-scene opening or a blackout \u2014 never a door" : "through a door, an archway, a tunnel mouth");
 export function informantPlacesBlock() {
+  // ⭐⭐ THE WORLD IS BUILT INTO THE RIDE (owner 2026-09-08, the technicality): on a theme park dark ride of a NAMED world no room
+  // photograph rides — the rooms were READ for their things. Frame zero is the seat photograph with the replacements already in
+  // place; later things arrive further along the same continuous take as the ride's own set pieces; the ride never enters a room.
+  if (process.env.DARK_RIDE_DRESSING === "1") {
+    const src = String(process.env.WORLD_DRESSING_SOURCE || "").replace(/\s+/g, " ").trim();
+    const later = String(process.env.LATER_THINGS || "").replace(/\s+/g, " ").trim();
+    return `⚠⚠ THE WORLD IS BUILT INTO THE RIDE: the seat photograph IS the ride — its vehicle, rails and scene architecture are the frame's constant from frame zero to the end. ` +
+      `No photograph of the world's rooms rides with it${src ? ` (its rooms — ${src} — were READ for their things, never entered)` : ""}. ` +
+      `Frame zero opens on the seat photograph with the world's replacements ALREADY IN PLACE (see THE WORLD'S THINGS) — stated as facts of the scene, not as changes. ` +
+      (later ? `Further along the same continuous take the ride's NEXT SCENES carry the later things, in this order: ${later} — each written as the ride's own set piece at the moment the rails reach it. ` : "") +
+      `The ride never enters the world's rooms: never "the vehicle enters the Gold Room" — write "the rails run on into the ride's ballroom scene, its walls dressed in gold". ` +
+      `The vehicle and the rails persist through every scene; there is no cut; ${carryPhrase()}.\n`;
+  }
   const raw = String(process.env.INFORMANT_PLACES || "").replace(/\s+/g, " ").trim();
   if (!raw) return "";
   if (process.env.COASTER_ARCH === "1") return `PHOTOGRAPHED SECTIONS OF THE RIDE (coaster architecture \u2014 real photographs riding with the seat, in story order): ${raw}. ` +
@@ -611,7 +624,18 @@ export const dressingBlock = () => {
   if (!raw) return "";
   return `\u26a0\u26a0 THE WORLD'S THINGS, ON THE PHOTOGRAPHS' OWN SURFACES (a reading of each real photograph decided where each can sit): ${raw}. ` +
     `Write each as a FACT of the take at the moment the ride reaches it \u2014 "the rails, coloured in the carpet's orange-and-red hexagons, run into…", "at the far end of the corridor two girls in blue stand hand in hand" \u2014 never as an instruction, never "add" or "replace". ` +
-    `A thing placed on the rails or the vehicle is a colouring only. ${/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "On a coaster the world's things ride on the coaster's own architecture \u2014 the rails, the tunnel's walls, the structure \u2014 and the coaster never enters the world's rooms. " : "On a theme park ride they dress the furnished interiors the ride glides through. "}`;
+    `A thing placed on the rails or the vehicle is a colouring only. ${process.env.DARK_RIDE_DRESSING === "1" ? "On a theme park dark ride the things dress the ride's OWN scenes — the show building's walls, floor and set pieces at ride scale: a replacement is stated as already so at frame zero (the floor IS the hexagonal carpet), an addition stands where the reading placed it; never a room of the world entered. " : ""}${/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "On a coaster the world's things ride on the coaster's own architecture \u2014 the rails, the tunnel's walls, the structure \u2014 and the coaster never enters the world's rooms. " : "On a theme park ride they dress the furnished interiors the ride glides through. "}`;
+};
+// FIGURES THE PROSE NEVER NAMES (owner 2026-09-08; _gate_rules.ipFigureModes): the run computes each figure's mode from the
+// resolver's verdicts — dename (described, never named) or omit (not written at all); public-domain figures never appear here.
+export const ipFiguresLaw = () => {
+  let modes = []; try { modes = JSON.parse(process.env.IP_FIGURES || "[]"); } catch { modes = []; }
+  if (!Array.isArray(modes) || !modes.length) return "";
+  const dename = modes.filter((m) => m && m.mode === "dename"), omit = modes.filter((m) => m && m.mode === "omit");
+  return `⚠⚠ FIGURES THAT ARE NEVER NAMED (a public-domain figure is named and described; an owned character or a real person is not): ` +
+    (dename.length ? `${dename.map((m) => `"${m.name}" is written ONLY as a description of build, clothing and posture${m.guise ? ` — ${m.guise}` : ""} — never the name, not in a beat, not in a speaker label`).join("; ")}. ` : "") +
+    (omit.length ? `${omit.map((m) => `"${m.name}"`).join(", ")} ${omit.length > 1 ? "do" : "does"} not appear at all — the signature IS the name, and a description would still be it. ` : "") +
+    `The request's own words may name them; your beats and dialogue may not.\n`;
 };
 export const viewLaw = () => (
 `\u26a0\u26a0 THIS IS A VIEW HELD, NOT A STORY (the maker's words ask for nothing to happen and nothing to turn \u2014 no plot, no drama). ` +
