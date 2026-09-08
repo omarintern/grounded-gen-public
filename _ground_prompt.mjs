@@ -10,7 +10,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, informantPlacesBlock, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
@@ -106,6 +106,12 @@ const BEAT_SECS = Math.max(2, Math.round(Number(process.env.BEAT_DURATION || 4))
 const LEGAL = legalBeatCounts(BEAT_SECS);
 const COUNTS = LEGAL.length ? LEGAL : [Math.max(2, Math.ceil(BEAT_SECS / 2))];
 // Canon rides in from _run (the resolver's derivation over a CONFIRMED figure) — absent for John Does.
+// ON A DARK RIDE OF A NAMED WORLD (owner 2026-09-08, job bd19152d): the brief still gives the story's ORDER, but its place names never
+// reach the writer (redacted to "scene"), and its verbs do not bind — "enters a lavish Gold Room" was demanded by the checklist and
+// forbidden by the name law in the same instruction. The maker's own words are the request the laws are checked against.
+const _roomNames = () => [...String(process.env.WORLD_ROOM_NAMES || "").split(" → "), ...String(process.env.WORK_TITLES || "").split(/\s*(?:,|·|\|)\s*/)].map((s) => s.trim()).filter(Boolean);
+const narrativeForWriter = (p) => process.env.DARK_RIDE_DRESSING === "1" ? redactWorldNames(p, _roomNames()) : p;
+const requestForLaws = (p) => process.env.DARK_RIDE_DRESSING === "1" ? (process.env.RAW_USER_PROMPT || p) : p;
 const CHAR_CANON = (() => { try { const j = JSON.parse(process.env.CHAR_CANON || ""); return j && typeof j === "object" ? j : null; } catch { return null; } })();
 const charNames = charRefs.map((r) => (r.includes("=") ? r.split("=")[0] : "")).filter(Boolean);
 const charPaths = charRefs.map((r) => (r.includes("=") ? r.split("=").slice(1).join("=") : r));
@@ -253,7 +259,7 @@ if (BEAT_STYLE !== "template") {
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
     `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n` +
     (String(process.env.RAW_USER_PROMPT || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() !== userPrompt
-      ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns): "${userPrompt}"\n`
+      ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${process.env.DARK_RIDE_DRESSING === "1" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
     `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${apparatusClause()}\n${informantPlacesBlock()}${workTitlesClause()}${ipFiguresLaw()}${frameZeroRegisterClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
@@ -299,7 +305,7 @@ if (BEAT_STYLE !== "template") {
     // FINAL CHECKLIST, LAST ON PURPOSE. This instruction passed 10,000 characters of accumulated doctrine and new
     // rules buried mid-text stopped landing: a 7-second clip kept returning beats that stopped at [4s], and the
     // payoff verb kept vanishing, though both were stated above. Same law as the judges - ISOLATE WHAT YOU GATE ON.
-    finalChecklist(userPrompt) );
+    finalChecklist(requestForLaws(userPrompt)) );
   // ⚠ WRITER BUDGETS (measured 2026-09-07, job 32fc6c35): the fast model counts its REASONING against max_tokens, so a
   // 700-token budget was consumed before the first beat line; provider-llm then retried at 1400 → 2800 → 5600. The ledger
   // shows 26 physical calls for six logical steps and $… — the same writer at the budgets below is one call per step.
@@ -638,7 +644,7 @@ try {
 try {
   const { payoffVerdict, payoffActs } = await import("./_payoff_check.mjs");
   if (telling() === "observational") console.error("  [payoff] view held \u2014 no payoff is owed; the check and its re-ask are skipped");
-  const pv = telling() === "observational" ? { verdict: null } : await payoffVerdict(process.env.USER_PROMPT || userPrompt || "", beatLine);
+  const pv = telling() === "observational" ? { verdict: null } : await payoffVerdict(requestForLaws(process.env.USER_PROMPT || userPrompt || ""), beatLine);
   if (pv.verdict) console.error(`  [payoff:${payoffActs() ? "live" : "shadow"}] last beat ${pv.verdict.toUpperCase()}${pv.why ? ` — ${pv.why}` : ""}${payoffActs() ? "" : "  (recorded only)"}`);
   // ── THE REPAIR (owner 2026-08-19: "i dont see payoff") ──────────────────────────────────────────────────
   // ⚠⚠ THE CHECK WAS RIGHT AND DID NOTHING. payoffActs() existed but was read ONLY to change the word in the
@@ -676,7 +682,7 @@ try {
         // ⚠ VERIFY, DO NOT ASSUME. The retry is judged by the SAME check that failed it; a retry that still
         // only completes is not an improvement worth the risk of a worse-written beat.
         const rebuilt = rl.join("\n");
-        const pv2 = await payoffVerdict(process.env.USER_PROMPT || userPrompt || "", rebuilt);
+        const pv2 = await payoffVerdict(requestForLaws(process.env.USER_PROMPT || userPrompt || ""), rebuilt);
         if (pv2.verdict === "escalates") {
           beatLine = rebuilt + (_tail ? "\n" + _tail : "");
           console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`);

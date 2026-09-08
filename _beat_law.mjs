@@ -239,6 +239,12 @@ const MOUNT_TEXT =
   `the track toward the camera, the camera waiting on the rails — and the camera is taken up as the train arrives; from that ` +
   `moment every beat rides. One mount, at the opening, said plainly ("the train comes down the track toward the camera and takes ` +
   `it up as it passes; from the front seat the rails run on"); never a dismount after it. `;
+// THE NEVER-CUTS SENTENCE BY PATH (owner 2026-09-08, job bd19152d: the old sentence — "every place the story visits is ENTERED along
+// the way, each named in order" — stood in the same instruction as the dark-ride block that forbids naming a place; the writer split
+// the difference and named the rooms as "set pieces"). On a dark ride of a named world the scenes are the ride's own and unnamed.
+const neverCutsText = () => process.env.DARK_RIDE_DRESSING === "1"
+  ? `THE RIDE NEVER CUTS, AND ITS SCENES ARE UNNAMED: the take runs along the ${wayOf()} through the ride's own scenes in order — ${carryPhrase()} — each scene carrying the things listed for it and none named after a place of the world; the camera never dismounts, never stands in a room and watches the ride pass, and there is no "hard cut" — a cut restarts the scene without its ${wayOf()}. `
+  : `THE RIDE NEVER CUTS — class-wide: a ride, a drive and a walk alike (owner 2026-09-07: the world enters the form): every place the story visits is ENTERED along the way — ${carryPhrase()} ${transitionPhrase()} into the next photograph, each named in order inside the take; the camera never dismounts, never stands in a room and watches the ride pass, and there is no "hard cut" between a ride's places — a cut restarts the room without its rails. Two consecutive stops are ONE CONTINUOUS CARRY: the motion leaves one photograph and arrives in the next, both places named in order. `;
 export const apparatusClause = () =>
   !process.env.APPARATUS_NOTE ? "" :
   `⚠⚠ THE CAMERA IS PART OF THE SCENE'S OWN APPARATUS: ${process.env.APPARATUS_NOTE}. Compose EVERY beat from ` +
@@ -252,11 +258,7 @@ export const apparatusClause = () =>
   `only as the seat sees them — the backs of heads, shoulders and raised arms in the rows ahead when the camera sits ` +
   `mid-train or at the back — never a rider or vehicle looked at from outside the train (a figure on a trike watched ` +
   `from a doorway is a dismount). The seat's own cues (the rails running ahead, the bar, the hands, the row in front) ` +
-  `open every beat. THE RIDE NEVER CUTS — class-wide: a ride, a drive and a walk alike (owner 2026-09-07: the world enters the form): every place the story visits is ` +
-  `ENTERED along the way — ${carryPhrase()} ${transitionPhrase()} into the next photograph, ` +
-  `each named in order inside the take; the camera never dismounts, never stands in a room and watches the ride pass, and ` +
-  `there is no "hard cut" between a ride's places — a cut restarts the room without its rails. Two consecutive stops are ` +
-  `ONE CONTINUOUS CARRY: the motion leaves one photograph and arrives in the next, both places named in order. ` +
+  `open every beat. ${neverCutsText()}` +
   `${MOUNT_TEXT}` +
   `WHATEVER THE RAILS REACH IS MET AT SPEED (owner 2026-09-07): a figure the ride passes close is ACTED UPON by the passage — ` +
   `the wind of it lifts a coat, they step back, swing at the car, turn with it, are shoved aside — the ride is the event and ` +
@@ -452,6 +454,9 @@ export const beatZeroLaw = () => (
     (process.env.CAST_LEDGER_LINE ? `\u26a0\u26a0 ${process.env.CAST_LEDGER_LINE}\n` : "") +
     (process.env.PLATE_OCCUPANTS_LINE ? `\u26a0 ${process.env.PLATE_OCCUPANTS_LINE}\n` : "") +
     (process.env.VALIDATOR_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT VIOLATED THE CAST LEDGER: ${process.env.VALIDATOR_FEEDBACK}. Rewrite the beats obeying the ledger exactly \u2014 do not drop any figure; move each violation to its declared beat.\n` : "") +
+    // NAME VIOLATIONS ARE NOT TIMING VIOLATIONS (owner 2026-09-08, job bd19152d: framed as ledger feedback, the writer MOVED the room's
+    // name to another beat instead of removing it). A named place or figure is REMOVED — the scene stays, described by its things.
+    (process.env.NAME_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT NAMED WHAT MUST NOT BE NAMED: ${process.env.NAME_FEEDBACK}. Rewrite the SAME beats at the SAME stamps and REMOVE each such name: a place of the world is never named \u2014 the ride's own scene stays, described only by the things it carries ("the next scene, its walls hung with tiered black chandeliers"); a named figure is written by build, clothing and posture only. Never replace a name with another name of the same world.\n` : "") +
     // POLICY REPAIR (owner 2026-09-08): the video provider refused the previous draft on its content policy. The run says what to
     // change; the writer keeps the story, the stops and the stamps and rewrites only what the note names.
     (process.env.POLICY_FEEDBACK ? `\u26a0\u26a0 THE VIDEO PROVIDER REFUSED YOUR PREVIOUS DRAFT ON ITS CONTENT POLICY. Keep the same story, the same places in the same order and the same timestamps, and rewrite so that: ${process.env.POLICY_FEEDBACK} Return the full beat list and the dialogue block.\n` : "") +
