@@ -632,7 +632,7 @@ export const ipFiguresLaw = () => {
   let modes = []; try { modes = JSON.parse(process.env.IP_FIGURES || "[]"); } catch { modes = []; }
   if (!Array.isArray(modes) || !modes.length) return "";
   const dename = modes.filter((m) => m && m.mode === "dename"), omit = modes.filter((m) => m && m.mode === "omit");
-  return `⚠⚠ FIGURES THAT ARE NEVER NAMED (a public-domain figure is named and described; an owned character or a real person is not): ` +
+  return `⚠⚠ FIGURES THAT ARE NEVER NAMED (a public-domain figure and a work's lesser figures are named and described; a work's FACE and a real person are not): ` +
     (dename.length ? `${dename.map((m) => `"${m.name}" is written ONLY as a description of build, clothing and posture${m.guise ? ` — ${m.guise}` : ""} — never the name, not in a beat, not in a speaker label`).join("; ")}. ` : "") +
     (omit.length ? `${omit.map((m) => `"${m.name}"`).join(", ")} ${omit.length > 1 ? "do" : "does"} not appear at all — the signature IS the name, and a description would still be it. ` : "") +
     `The request's own words may name them; your beats and dialogue may not.\n`;
