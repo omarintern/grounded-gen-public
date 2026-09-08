@@ -206,12 +206,10 @@ export function informantPlacesBlock() {
   const raw = String(process.env.INFORMANT_PLACES || "").replace(/\s+/g, " ").trim();
   if (!raw) return "";
   if (process.env.COASTER_ARCH === "1") return `PHOTOGRAPHED SECTIONS OF THE RIDE (coaster architecture \u2014 real photographs riding with the seat, in story order): ${raw}. ` +
-    `The ride BEGINS as a legit roller coaster on its own rails (the seat photograph, one clause); the TUNNEL MOUTH is the ride's own portal from that open coaster into the world and comes first; the sections follow in order. ` +
     `Each section is DRESSED as the story's stop named beside it: the stop's things sit on the section's walls, floor and facades at track scale \u2014 ` +
     `a carpet pattern runs under the rails, a fireplace glows in a scene's wall, hedges flank the track, a door is a facade the rails dive through into blackout \u2014 ` +
     `never a room the car has entered. The take is written from the seat and rides each section in this order; there is no cut: ${carryPhrase()} into each ${transitionPhrase()}; a section not named here is never entered. ` +
-    `${process.env.WORLD_ELEMENTS ? `THE WORLD'S THINGS ALREADY IN THE TUNNEL PHOTOGRAPH: ${process.env.WORLD_ELEMENTS} \u2014 they are in the plate; name them as the car passes them and invent no others. ` : ""}` +
-    `No person, creature or character of the world appears \u2014 its things are its presence. The stops beyond the tunnel are written: the rails run on through each in order.\n`;
+    `The coaster never enters the world's rooms: the stops beyond the tunnel are written as what the coaster's own architecture carries \u2014 the rails run on in order.\n`;
   return `PHOTOGRAPHED PLACES BEYOND THIS FRAME (real photographs riding with this one, in story order): ${raw}. ` +
     `The take is written from the seat and ARRIVES in each of them in this order \u2014 the world enters the ride. ` +
     `There is no cut between them: ${carryPhrase()} into each \u2014 ${transitionPhrase()} \u2014 and a place not named here is never entered.\n`;
@@ -239,7 +237,7 @@ export const apparatusClause = () =>
   `each named in order inside the take; the camera never dismounts, never stands in a room and watches the ride pass, and ` +
   `there is no "hard cut" between a ride's places — a cut restarts the room without its rails. Two consecutive stops are ` +
   `ONE CONTINUOUS CARRY: the motion leaves one photograph and arrives in the next, both places named in order. ` +
-  `${coasterTake() ? "NO MOUNT ON THIS TAKE (coaster, owner 2026-09-07: time on the form is a moment, never an approach): the block opens aboard and already moving. " : MOUNT_TEXT}` +
+  `${MOUNT_TEXT}` +
   `WHATEVER THE RAILS REACH IS MET AT SPEED (owner 2026-09-07): a figure the ride passes close is ACTED UPON by the passage — ` +
   `the wind of it lifts a coat, they step back, swing at the car, turn with it, are shoved aside — the ride is the event and ` +
   `nothing it reaches is a statue; a figure may stand only far off, unreached. THE RAILS NEVER END ON SCREEN AND THE RIDE NEVER STOPS: a rollercoaster's ` +
@@ -402,7 +400,6 @@ export const proseFiguresBlock = () => (
 // vocabulary + re-attributes the sleeping-lady to the FRAME-0 CENSUS (her true violation: she was IN the
 // photograph). Closer now restates THE TEST. Middle clauses byte-identical, every scar intact.
 export const beatZeroLaw = () => (
-(coasterTake() ? `\u26a0\u26a0 ON THIS TAKE THE CENSUS OF FRAME ZERO IS THE VEHICLE \u2014 the seat, the bar, the rider's hands, the car's nose, the rails \u2014 never the photograph's surroundings, which the take leaves within its first sentence.\n` : "") +
 `\u26a0\u26a0 BEAT ZERO ESTABLISHES THE WHOLE SCENE - INCLUDING WHAT THE PHOTOGRAPH LACKS. The picture is ` +
     `the STARTING FRAME, not a limit on what may exist. If the story needs something the photo does not show, ` +
     `NAME IT IN THE FIRST BEAT as part of the opening state: "a woman is asleep in the bed", "a cat sits at the ` +
@@ -485,9 +482,8 @@ export const soundLaw = () => (
     `Ambient and diegetic only.\n\n`
 );
 
-export const asWhileCheck = () => (singleBlock()
-? `\u26a0 In one block the ride's succession of places is joined by "then"; split only a cause from its effect, never the ride's own sequence.\n`
-: `\u26a0\u26a0 THIS RULE IS ROUTINELY IGNORED - CHECK YOUR OWN OUTPUT BEFORE RETURNING IT. Re-read every beat for 'as' / 'while' / 'and then' and split any that joins an act to its result. A beat may hold a concurrent STATE; it may not hold an act and that act's consequence. `
+export const asWhileCheck = () => (
+`\u26a0\u26a0 THIS RULE IS ROUTINELY IGNORED - CHECK YOUR OWN OUTPUT BEFORE RETURNING IT. Re-read every beat for 'as' / 'while' / 'and then' and split any that joins an act to its result. A beat may hold a concurrent STATE; it may not hold an act and that act's consequence. `
 );
 
 export const cutLaw = () => (
@@ -600,16 +596,20 @@ export const telling = () => (process.env.TELLING === "observational" ? "observa
 // of continuous prose, no later stamps — the only ride gen that read as one take; every stamped one restarted at each place).
 // Set by the run when the take never cuts and more than one WORLD photograph rides in the bag (character refs never count).
 export const singleBlock = () => process.env.SINGLE_BLOCK === "1";
-// COASTER ONE-TAKE (owner 2026-09-07, coaster-specific by his word: "the refs carry a gen, and since we work with the form as frame0
-// in a rollercoaster, we want to move away from it asap to get to the gist … time on the form is important but it musnt be long,
-// because omitting is wrong but spending too much time is also wrong"). The seat is a VANTAGE, not a place.
-export const coasterTake = () => singleBlock() && /coaster/i.test(process.env.APPARATUS_NOUN || "");
-export const INHABIT_CLAUSE =
-  `\u26a0\u26a0 THE SEAT IS A VANTAGE, NOT A PLACE (coaster): the opening is a MOMENT on the form \u2014 the seat, the bar, the rails ahead, ONE ` +
-  `clause, never omitted and never a scene \u2014 and the first photographed place is entered within the first sentence, by the second at the ` +
-  `latest, the rails running straight into it. The seat photograph's own surroundings are never described or dwelt in. The rest of the ` +
-  `take lives inside the photographed places in order, the rails named through each, and the last sentence ends inside the last place. ` +
-  `The rider is never written \u2014 no hands, clothing or body; the vehicle is the bar, the nose, the rails. `;
+// THE VEHICLE IS WRITTEN when the seat plate does not show it (owner 2026-09-08, dark rides) — stated once as frame zero's constant
+// foreground, by the ride's kind, and never looked at again.
+export const vehicleLine = () => (process.env.VEHICLE_PROMPTED === "1"
+  ? `\u26a0 THE VEHICLE IS WRITTEN: the seat photograph shows the ride's vantage but not its vehicle \u2014 state the vehicle once, in the first clause, as the frame's constant foreground (${/boat|flume|rapids/i.test(process.env.APPARATUS_NOUN || "") ? "the boat's bow" : /dark ride|theme park/i.test(process.env.APPARATUS_NOUN || "") ? "the ride car's edge or lap bar" : /coaster/i.test(process.env.APPARATUS_NOUN || "") ? "the car's nose or lap bar and the rails ahead" : "the vehicle's edge"}), then never look at it again. `
+  : "");
+// PROMPTED DRESSING (owner 2026-09-08): the world's things, placed by a vision read on each photograph's OWN surfaces and spaces, written
+// as facts of the take — never an instruction, never an edit, never an image. Characters may stand where a plate has space.
+export const dressingBlock = () => {
+  const raw = String(process.env.PLATE_DRESSING || "").replace(/\s+/g, " ").trim();
+  if (!raw) return "";
+  return `\u26a0\u26a0 THE WORLD'S THINGS, ON THE PHOTOGRAPHS' OWN SURFACES (a reading of each real photograph decided where each can sit): ${raw}. ` +
+    `Write each as a FACT of the take at the moment the ride reaches it \u2014 "the rails, coloured in the carpet's orange-and-red hexagons, run into…", "at the far end of the corridor two girls in blue stand hand in hand" \u2014 never as an instruction, never "add" or "replace". ` +
+    `A thing placed on the rails or the vehicle is a colouring only. ${/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "On a coaster the world's things ride on the coaster's own architecture \u2014 the rails, the tunnel's walls, the structure \u2014 and the coaster never enters the world's rooms. " : "On a theme park ride they dress the furnished interiors the ride glides through. "}`;
+};
 export const viewLaw = () => (
 `\u26a0\u26a0 THIS IS A VIEW HELD, NOT A STORY (the maker's words ask for nothing to happen and nothing to turn \u2014 no plot, no drama). ` +
     `So: NO payoff, NO climax, NO twist, NO punchline, NO reveal, NO overstep \u2014 never manufacture an event to end on. ` +
@@ -729,7 +729,9 @@ singleBlock()
         `into"). NO further timestamps: on a travelling take a stamp per place reads as a CUT MARKER and restarts the place without ` +
         `its rails (measured 2026-09-07: the one-block take carried through; every stamped take restarted). Name the way ahead as each ` +
         `place is entered — the rails or path running on through the doorway, the archway, the tunnel mouth — so the track is drawn ` +
-        `INTO it; ${coasterTake() ? INHABIT_CLAUSE : "enter the first photographed place early and give each place its share of the take, in order; the opening is a moment, not a scene. "}` +
+        `INTO it; enter the first photographed place early and give each place its share of the take, in order; the opening is a moment, not a scene. ` +
+        `The rider is never written \u2014 no hands, clothing, legs or body; the vehicle is the bar, the nose, the bow, the rails. ` +
+        `${vehicleLine()}${dressingBlock()}` +
         `Each sentence describes ONLY what physically changes — a movement, the next place entered, what streams past. ` +
         `\u26a0 DO NOT DESCRIBE THE SCENE OR SETTING: the photographs carry the places; write nothing about the location, weather, ` +
         `lighting, time of day, surfaces or background, and name props only when the motion touches them.\n\n`

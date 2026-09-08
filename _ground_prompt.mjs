@@ -12,7 +12,7 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, coasterTake, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, informantPlacesBlock, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, informantPlacesBlock, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -325,17 +325,11 @@ if (BEAT_STYLE !== "template") {
   const _lawFails = (t) => {
     const fails = [];
     if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(t), BEAT_SECS, COUNTS)) fails.push(`stamps [${stampList(t).join(",")}] illegal for ${BEAT_SECS}s counts {${COUNTS.join(",")}}`);
-    // COASTER ONE-TAKE (owner 2026-09-07): the first photographed place is entered within the first sentence, by the second at the latest
-    if (coasterTake()) {
-      const places = String(process.env.INFORMANT_PLACES || "").split("\u2192").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    // THE RIDER IS NEVER WRITTEN (owner 2026-09-07/08: frozen plaid hands, frozen boots) — on any ride one-take the rider's clothing or body is a law fail
+    if (singleBlock()) {
       const body = (t.split("\n").find((l) => /^\s*\[\d+s\]/.test(l)) || "").replace(/^\s*\[\d+s\]\s*/, "");
-      const firstTwo = body.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ").toLowerCase();
-      const STOPW = new Set(["with", "from", "into", "through", "that", "this", "then", "their", "where", "which", "along", "toward", "towards", "hotel", "room"]);
-      const toks = (s) => s.split(/[^a-z0-9']+/).filter((w) => w.length >= 4 && !STOPW.has(w));
-      const named = places.some((p) => toks(p).some((w) => firstTwo.includes(w)));
-      if (places.length && !named) fails.push(`the block dwells on the seat: enter "${places[0]}" within the first sentence (by the second at the latest) — the seat gets one clause, never a scene`);
-      const _rider = body.match(/\b(?:shirt|sleeves?|plaid|gloves?|jacket|hoodie|wrist|watch|knuckles?|fingers?)\b/i);
-      if (_rider) fails.push(`the rider is written ("${_rider[0]}") — the rider is never described: no hands, clothing or body; the vehicle is the bar, the nose, the rails`);
+      const _rider = body.match(/\b(?:shirt|sleeves?|plaid|gloves?|jacket|hoodie|wrist|watch|knuckles?|fingers?|boots?|sneakers?|trousers|jeans|legs?|knees?)\b/i);
+      if (_rider) fails.push(`the rider is written ("${_rider[0]}") — the rider is never described: no hands, clothing, legs or body; the vehicle is the bar, the nose, the bow, the rails`);
     }
     const inc = incompleteBeatLines(t);
     if (inc.length) fails.push(`a beat ends mid-sentence ("…${inc[0].slice(-40)}")`);
