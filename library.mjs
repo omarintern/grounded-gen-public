@@ -21,14 +21,30 @@ const REG_EMAIL = process.env.LIBRARY_EMAIL || "dev@example.com";
 // exists" — so the pool read an outage as a content miss, every later call in the run paid the 20 s timeout
 // again, and nothing outside the log could tell. Now a failure of the SERVICE (5xx, 429, auth that a refresh
 // did not cure, network/timeout, the token or register endpoint) trips a circuit: the free tier is skipped
-// for OV_DOWN_TTL_MS (5 min) and answers [] at once, the reason is logged loudly ONCE per trip, and the state
+// for OV_DOWN_TTL_MS (60 s — owner: «it should act quickly»; the skip is instant, and a recovered tier is back
+// within a minute) and answers [] at once, the reason is logged loudly ONCE per trip, and the state
 // is written to out/_ledger/library.json so /health carries it. Callers still receive [] — the pool's web
 // leg and the ladders' paid tiers already carry a hunt whose free tier gave nothing (scrape.mjs now hands the
 // free tier's seat to the paid member outright and says why). A 4xx on the search itself (a bad query) is
 // OURS, not an outage, and does not trip anything.
 const STATUS_FILE = process.env.LIBRARY_STATUS_FILE || join(dirname(fileURLToPath(import.meta.url)), "out", "_ledger", "library.json");
-const DOWN_TTL_MS = Number(process.env.OV_DOWN_TTL_MS || 5 * 60_000);
-let _state = { ok: null, at: null, status: null, why: null, down_since: null };
+const DOWN_TTL_MS = Number(process.env.OV_DOWN_TTL_MS || 60_000);
+// HALF-OPEN: the first call after the window is a PROBE on a short leash (6 s, not 20 s) — a tier still hanging
+// costs a run at most six seconds a minute, a tier answering 500 costs nothing measurable, a healthy answer
+// closes the circuit on the spot.
+const PROBE_MS = Number(process.env.OV_PROBE_MS || 6000);
+// A RUN IS A FRESH PROCESS, so the circuit is inherited from the marker: a run that starts while the server's
+// probe (or the previous run) found the tier down 40 s ago skips it outright, and one that starts after the
+// window probes on the short leash — never the 20 s wait a process with no memory would pay (measured live
+// 2026-09-08: a hanging api.library.example cost a fresh process 20,013 ms before the first trip).
+const _seed = () => {
+  try {
+    const s = JSON.parse(readFileSync(STATUS_FILE, "utf8"));
+    if (s && s.at && Date.now() - Date.parse(s.at) < 10 * 60_000) return { ok: s.ok ?? null, at: s.at, status: s.status ?? null, why: s.why ?? null, down_since: s.down_since ?? null };
+  } catch { /* no marker, or an unreadable one → no memory */ }
+  return { ok: null, at: null, status: null, why: null, down_since: null };
+};
+let _state = _seed();
 let _lastWrite = 0;
 const _persist = (force) => {
   if (!force && Date.now() - _lastWrite < 60_000) return;   // a healthy tier is re-stamped at most once a minute
@@ -42,7 +58,7 @@ const markDown = (status, why) => {
   const clean = String(why || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);   // an HTML error page is not a reason
   _state = { ok: false, at: new Date().toISOString(), status: status ?? null, why: clean, down_since: first ? new Date().toISOString() : _state.down_since };
   _persist(true);
-  if (first) console.log(`  ⛔ library UNAVAILABLE (${status ?? "network"}: ${_state.why}) — free tier skipped for ${Math.round(DOWN_TTL_MS / 60000)} min; the paid tiers carry the hunt`);
+  if (first) console.log(`  ⛔ library UNAVAILABLE (${status ?? "network"}: ${_state.why}) — free tier skipped for ${Math.round(DOWN_TTL_MS / 1000)} s (then re-probed on a ${Math.round(PROBE_MS / 1000)} s leash); the paid tiers carry the hunt`);
 };
 const markUp = () => {
   const was = _state.ok === false;
@@ -53,7 +69,7 @@ const markUp = () => {
 
 const _plain = (body) => String(body || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);   // an HTML error page is not a reason
 
-async function creds() {
+async function creds(tmo = 15000) {
   // The REGISTERED app (grounded-sourcer, admin@example.com, 2026-08-13 — verified tier: 100/min,
   // 10k/day) rides env so it survives container swaps; the file cache and auto-registration remain the
   // local/fallback path. Env creds are the ONLY way the container keeps the verified tier.
@@ -64,6 +80,7 @@ async function creds() {
   const res = await fetch(`${API}/auth_tokens/register/`, {
     method: "POST", headers: { "Content-Type": "application/json", "User-Agent": UA },
     body: JSON.stringify({ name: `grounded-media-${Date.now().toString(36)}`, description: "Candid image sourcing for grounded video references.", email: REG_EMAIL }),
+    signal: AbortSignal.timeout(tmo),   // a hanging register endpoint is an outage, never an open wait
   });
   if (!res.ok) { const err = new Error(`library register ${res.status}: ${_plain(await res.text())}`); err.status = res.status; throw err; }
   const c = await res.json();
@@ -73,11 +90,11 @@ async function creds() {
 }
 
 let _token;
-async function token(force = false) {
+async function token(force = false, tmo = 15000) {
   if (_token && !force) return _token;
-  const c = await creds();
+  const c = await creds(tmo);
   const body = new URLSearchParams({ grant_type: "client_credentials", client_id: c.client_id, client_secret: c.client_secret });
-  const res = await fetch(`${API}/auth_tokens/token/`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": UA }, body });
+  const res = await fetch(`${API}/auth_tokens/token/`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": UA }, body, signal: AbortSignal.timeout(tmo) });   // the token endpoint had NO timeout — a black hole held a run open
   if (!res.ok) { const err = new Error(`library token ${res.status}: ${_plain(await res.text())}`); err.status = res.status; throw err; }
   _token = (await res.json()).access_token;
   return _token;
@@ -102,12 +119,14 @@ export async function libraryImages(query, n = 40) {
   const _clean = _q.replace(/\s+(?:iphone\s+)?(?:footage|video)\s*$/i, "").trim() || _q;
   const ask = Math.min(Math.max(n, Number(process.env.OV_FREE_N || 40)), 100);
   const url = `${API}/images/?q=${encodeURIComponent(_clean)}&page_size=${ask}&mature=false`;
-  const get = async (tok) => fetch(url, { headers: { "User-Agent": UA, Accept: "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) }, signal: AbortSignal.timeout(20000) });
+  const probing = _state.ok === false;   // the window has passed but the last word was "down" → half-open probe on the short leash
+  const tmo = probing ? PROBE_MS : 20000;
+  const get = async (tok) => fetch(url, { headers: { "User-Agent": UA, Accept: "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) }, signal: AbortSignal.timeout(tmo) });
   if (libraryDown()) { console.log(`  [library] skipped — down since ${_state.down_since} (${_state.status ?? "network"}: ${_state.why}); the paid tiers carry this call`); return []; }
   try {
-    let tok = await token();
+    let tok = await token(false, tmo);
     let res = await get(tok);
-    if (res.status === 401 || res.status === 403) res = await get(await token(true));
+    if (res.status === 401 || res.status === 403) res = await get(await token(true, tmo));
     if (!res.ok) {
       // the SERVICE failed (5xx / rate limit / auth a refresh did not cure) → outage; any other 4xx is our query
       if (res.status >= 500 || res.status === 429 || res.status === 401 || res.status === 403) { markDown(res.status, `HTTP ${res.status} on /images`); return []; }
