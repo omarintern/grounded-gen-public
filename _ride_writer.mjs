@@ -101,7 +101,7 @@ export function stillFigures(text, d) {
   }
   return out;
 }
-const WAY_END = /\b(?:rails?|track|tracks|channel|flume|way|path|road) (?:end|ends|ending|stop|stops|stopping|terminate|terminates|run out|runs out|give out|gives out|dead-?end|dead-?ends|halt|halts)\b/i;
+const WAY_END = /\b(?:rails?|track|tracks|channel|flume|way|path|road) (?:end|ends|ended|ending|stop|stops|stopped|stopping|terminat(?:e|es|ed|ing)|run(?:s)? out|ran out|running out|give(?:s)? out|gave out|giving out|dead-?end(?:s|ed|ing)?|halt(?:s|ed|ing)?|com(?:e|es|ing) to (?:a|an) (?:end|stop|halt))\b/i;   // job 4aa764e1: "the rails terminating in a snowy hedge maze" shipped
 const HARD_CUT = /\bhard cuts?\s+to\b/i;
 // THE MOUNT (owner 2026-09-07): the opening beat may see the train from outside AS IT ARRIVES AT THE CAMERA and take the camera up
 const MOUNT = /\b(?:toward|towards|to|at|straight at|right at|up to|onto) the (?:camera|lens|frame)\b|\breach(?:es|ing)? the (?:camera|lens)\b|\bnears? the (?:camera|lens)\b|\b(?:the camera|the lens|the frame|the view|the shot) (?:is )?(?:taken up|taken aboard|picked up|swept up|swept aboard|carried along|carried aboard|climbs aboard|drops into the (?:front |back )?seat|becomes the (?:front |back )?seat|is aboard|rides from here|goes aboard)\b|\btakes (?:it|the camera|the lens|us) up\b|\bfrom (?:that|this) moment (?:on )?(?:aboard|the seat|the ride|we ride|it rides)\b|\bfrom the (?:front |back )?seat from then on\b/i;

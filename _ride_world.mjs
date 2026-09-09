@@ -33,6 +33,24 @@ export function archSectionFor(place = "") {
 const _sh = (args, { cwd, env }) => { try { execFileSync("node", args, { cwd, stdio: "inherit", env }); return 0; } catch (e) { return e?.status ?? 1; } };
 const _json = (p) => { try { return JSON.parse(readFileSync(p, "utf8")); } catch { return null; } };
 /** READ THE WORLD'S ROOMS FOR THEIR THINGS (theme): a vision read per room photograph, most distinctive first, deduplicated by name. */
+// THE SAME THING TWICE IS ONE THING; A PHOTOGRAPH'S VIEWPOINT IS NOT A THING'S NAME (job 4aa764e1: "hexagonal patterned carpet in orange, brown,
+// and red" AND "orange and brown hexagon carpet pattern" both rode the take; "a figure … viewed from behind" named how the room photo saw him).
+const VIEWPOINT = /,?\s*(?:viewed|seen|photographed|shot|captured|pictured) from (?:behind|the back|the side|above|below|the front|a distance|afar)\b/gi;
+export const cleanThingName = (s) => String(s || "").replace(VIEWPOINT, "").replace(/\s{2,}/g, " ").replace(/\s+,/g, ",").trim();
+const _STOP = new Set(["with", "from", "that", "this", "into", "onto", "over", "under", "their", "there", "which", "where", "pattern", "patterned", "patterns", "color", "colour", "colored", "coloured", "matching", "wearing"]);
+const _cw = (s) => new Set(String(s || "").toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !_STOP.has(w)));
+export function dedupeThings(list) {
+  const out = [];
+  for (const e of Array.isArray(list) ? list : []) {
+    const name = cleanThingName(e?.name); if (!name) continue;
+    const a = _cw(name);
+    const dup = out.some((o) => { const b = _cw(o.name); const inter = [...a].filter((w) => b.has(w)).length; return inter > 0 && inter / Math.max(1, Math.min(a.size, b.size)) >= 0.5; });
+    if (!dup) out.push({ ...e, name });
+  }
+  return out;
+}
+// A 9-second take holds frame zero and a few stops, not a procession (job 4aa764e1: five later things → six scenes in nine seconds, nothing dwelt on)
+export const LATER_CAP = 3;
 export function readRoomThings({ roomPlates = [], worldName = "a themed world", perRoom = 2, cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const read = [];
   for (const wp of roomPlates) {
@@ -75,7 +93,7 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
   const seatRole = "the seat photograph (frame zero, the ride's own vantage)";
   if (mode === "theme") {
     const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 2, cwd, env, log });
-    const things = [...read, ...planThings.filter((e) => !read.some((r) => r.name.toLowerCase() === String(e.name).toLowerCase()))].slice(0, 6);
+    const things = dedupeThings([...read, ...planThings]).slice(0, 6);
     if (read.length) log(`  ✎ read off the world's rooms (things only): ${read.map((r) => r.name).join(" · ")}`);
     out.things = things;
     out.figures = things.filter(isFigureThing).map((e) => e.name);
@@ -86,13 +104,15 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     if (out.placements.length) log(`  ✓ frame zero's replacements, beside or ahead of the way: ${out.placements.map((l) => l.replace(`${seatRole}: `, "")).join(" | ").slice(0, 300)}`);
     else if (things.length) log(`  ◇ the seat photograph offered no surface beside or ahead of its way — every thing arrives later along the take`);
     const placed = out.placements.join(" | ").toLowerCase();
-    out.later = things.filter((e) => !placed.includes(String(e.name).toLowerCase())).map((e) => e.name);
+    const laterAll = things.filter((e) => !placed.includes(String(e.name).toLowerCase())).map((e) => e.name);
+    out.later = laterAll.slice(0, LATER_CAP);
+    if (laterAll.length > LATER_CAP) log(`  ◇ ${laterAll.length - LATER_CAP} later thing(s) left out — a take holds frame zero and ${LATER_CAP} stops, not a procession: ${laterAll.slice(LATER_CAP).join(" · ")}`);
     if (out.later.length) log(`  ◉ later along the take, in order: ${out.later.join(" → ")}`);
     if (!things.length) log(`  ◇ the rooms and the planner offered no things — the world arrives in the maker's words alone`);
     return out;
   }
   // architecture / places / setting: the planner's things, placed by a read on the seat plate and on each photographed place
-  const things = planThings.slice(0, 3);
+  const things = dedupeThings(planThings).slice(0, 3);
   out.things = things;
   if (!things.length) { log(`  ◇ the planner named no world things — the dressing is the maker's words`); return out; }
   log(`  ✎ dressing: ${things.length} of the world's things to place by prompt — ${things.map((e) => e.name).join(" · ")}`);
