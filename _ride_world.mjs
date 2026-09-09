@@ -54,7 +54,9 @@ export function placeOnPlate({ plate, things = [], role = "a photograph the ride
   const code = _sh(["_plate_dressing.mjs", plate, JSON.stringify(things.slice(0, 3)), role], { cwd, env: { ...env, DARK_RIDE_DRESSING: dark ? "1" : "", SEAT_WAY: dark ? String(way || "") : "" } });
   if (code !== 0 && code !== 2) log(`  ◇ placement read failed for ${role} (exit ${code})`);
   const d = _json(`${abs}.dressing.json`);
-  return (d?.dressing || []).map((x) => x.op === "replace" ? `${x.where} becomes ${x.name}` : `${x.name} at ${x.where}`);
+  const lines = (d?.dressing || []).map((x) => x.op === "replace" ? `${x.where} becomes ${x.name}` : `${x.name} at ${x.where}`);
+  lines.plateThings = Array.isArray(d?.plate_things) ? d.plate_things.map((x) => String(x || "").trim()).filter(Boolean) : [];
+  return lines;
 }
 /** THE WORLD BY MODE — pure in shape (reads happen through the two helpers above). Returns the dressing the writer hears:
  *  placements at frame zero (the seat plate) and on any later plate, the later things in order (theme), and the photographed
@@ -63,14 +65,16 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
   const mode = d?.world?.mode || "setting";
   const way = d?.words?.way || d?.seat?.reading?.way || "";
   const planThings = (Array.isArray(d?.world?.things) ? d.world.things : []).map((e) => ({ name: e.name, kind: e.kind, surface: e.surface }));
-  const out = { placements: [], later: [], places: laterPlates.map((x) => x.name).filter(Boolean), things: [] };
+  const out = { placements: [], later: [], places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [] };
   const seatRole = "the seat photograph (frame zero, the ride's own vantage)";
   if (mode === "theme") {
     const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 2, cwd, env, log });
     const things = [...read, ...planThings.filter((e) => !read.some((r) => r.name.toLowerCase() === String(e.name).toLowerCase()))].slice(0, 6);
     if (read.length) log(`  ✎ read off the world's rooms (things only): ${read.map((r) => r.name).join(" · ")}`);
     out.things = things;
-    out.placements = placeOnPlate({ plate: seatPlate, things: things.slice(0, 3), role: seatRole, dark: true, way, cwd, env, log }).map((l) => `${seatRole}: ${l}`);
+    const placedLines = placeOnPlate({ plate: seatPlate, things: things.slice(0, 3), role: seatRole, dark: true, way, cwd, env, log });
+    out.plateThings = placedLines.plateThings || [];
+    out.placements = placedLines.map((l) => `${seatRole}: ${l}`);
     if (out.placements.length) log(`  ✓ frame zero's replacements, beside or ahead of the way: ${out.placements.map((l) => l.replace(`${seatRole}: `, "")).join(" | ").slice(0, 300)}`);
     else if (things.length) log(`  ◇ the seat photograph offered no surface beside or ahead of its way — every thing arrives later along the take`);
     const placed = out.placements.join(" | ").toLowerCase();

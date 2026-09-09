@@ -24,6 +24,7 @@ export function rideBlock(d = rideFromEnv()) {
   const carrier = d.kind === "driven" ? `the ${w.vehicle} the camera drives` : d.kind === "worn" ? `the wearer's own apparatus (${w.vehicle})` : `the ${w.vehicle} the camera rides in`;
   const placements = (d.dressing?.placements || []).map((l) => String(l).replace(/^[^:]{0,80}\(frame zero[^)]*\):\s*/i, "").replace(/^the seat photograph[^:]*:\s*/i, "")).filter(Boolean);
   const later = (d.dressing?.later || []).filter(Boolean);
+  const plateThings = (d.dressing?.plateThings || []).filter(Boolean);
   const places = (d.dressing?.places || []).filter(Boolean);
   const otherPlacements = (d.dressing?.placements || []).filter((l) => !/frame zero|seat photograph/i.test(String(l)));
   let s = `⚠⚠ THE RIDE: the whole clip is ONE continuous take from the seat of a ${d.noun}. The photograph is FRAME ZERO, taken from the seat: the ${w.way} ${runs} ahead from the camera's own position` +
@@ -34,6 +35,7 @@ export function rideBlock(d = rideFromEnv()) {
     `The opening names the seat's own objects — the ${w.way}, ${vehicleShown ? `the ${w.vehicle}` : "the bar or nose"}, the rows ahead — so frame zero is the photograph. `;
   if (mode === "theme") {
     s += `THE WORLD IS BUILT INTO THE RIDE: the seat photograph IS the ride — its ${w.vehicle}, its ${w.way} and its scene architecture are the frame's constant from frame zero to the end. No photograph of the world rides with it, and the world's PLACES ARE NEVER NAMED — not a room, a hall, a maze, nor the work's title: the world arrives only as THINGS on the ride's own surfaces. ` +
+      `THE SEAT PHOTOGRAPH IS A SCENE OF ANOTHER RIDE, AND ITS OWN SET PIECES ARE REPLACED: everything it shows beside or ahead of the ${w.way} that is not of the world${plateThings.length ? ` — ${plateThings.join(", ")} —` : " (its props, figures, plants, tableaux, signs)"} is gone at frame zero, taken over by the world's things, and is NEVER NAMED; only the ${w.vehicle}, the ${w.way} and the show building's own walls, floor and ceiling remain from the photograph. ` +
       (placements.length ? `FRAME ZERO'S REPLACEMENTS, already in place at [0s] and stated as facts of the scene, never as changes: ${placements.join(" | ")}. ` : "") +
       (later.length ? `LATER THINGS arrive further along the same continuous take, in this order, each as the ride's own set piece: ${later.join(" → ")}. ` : "") +
       `WHERE THINGS SIT: beside the ${w.way} — on the scene's walls, on raised platforms or banks next to it — or AHEAD, as a tableau the ${w.vehicle} approaches and veers away from before reaching it; a figure of the world stands where a thing would, described by clothing and posture. The ${w.way}, the floor or bed the ride travels on, and the ${w.vehicle} are never dressed. The scenes stay unnamed (the next scene, a turn, a blackout); the ${w.way} runs on through every one of them. `;
@@ -68,7 +70,7 @@ const DISMOUNT_PARTS = [
   String.raw`\b(?:trike|tricycle|bike|bicycle|kart|sled|scooter)-borne\b`,
   String.raw`\b(?:the|a)\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|steers|brakes|aims|weaves)\b`,
   String.raw`\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|riders|cart|car|coaster|train)\b`,
-  String.raw`\b(?:from|on)\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway|curb|pavement)\b`,
+  String.raw`\bfrom\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway|curb|pavement)\b|\bon\s+the\s+(?:sidelines?|platform|shore|balcony|curb|pavement)\b`,   // "on the ground" is where a FIGURE stands, not where the camera is (job 9127e915's false positive)
   String.raw`\b(?:the|a)\s+(?:car|cart|coaster|train|ride|carriage)\s+(?:whips|carves|barrels|races|roars|plunges|swoops|tears|rips|hurtles|rockets|thunders|slaloms|spirals|screams|charges|blasts|slices|weaves)\s+(?:past|by|through|around|between|into)\s+(?:them|it|the crowd|the diners|the guests|the room|the tables|the figures|the people|everyone|the onlookers|the dancers|the patrons)\b`,
   String.raw`\b(?:the crowd|the diners|the guests|the room'?s?(?: gathered)? figures|the figures|the people|the onlookers|the patrons|the dancers|bystanders|everyone)\b[^.;]{0,50}\b(?:press(?:es|ed)? back|lean(?:s|ed|ing)? away|scatter(?:s|ed)?|part(?:s|ed)?|recoil(?:s|ed)?|flinch(?:es|ed)?|duck(?:s|ed)?|gasp(?:s|ed)?|startled|leap(?:s|ed)? (?:back|aside)|give(?:s)? (?:the turn|it|the car|the ride) room)\b`,
 ];
@@ -128,7 +130,11 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
     else if (d.interior && INVERSION.test(line)) add(line, `inverted indoors: "${line.match(INVERSION)[0]}" — a corridor or room hosts straight runs, dips and banks, never a loop`);
     else if (last && FACEFILL.test(line)) add(line, `payoff stops on a face: "${line.match(FACEFILL)[0]}" — the ride passes through or by at speed`);
   });
-  if (d.world?.mode === "theme") out.push(...worldNameFindings(text, roomBanList(d, workTitles)));
+  if (d.world?.mode === "theme") {
+    out.push(...worldNameFindings(text, roomBanList(d, workTitles)));
+    // the plate's own set pieces named = the other ride kept (job 9127e915: "beside the giant illuminated mushroom" kept the mushrooms in the video)
+    for (const x of worldNameFindings(text, (d.dressing?.plateThings || []).filter(Boolean))) out.push({ ...x, rule: "plate-thing", figure: x.figure.replace("names a place of the world — the ride's scenes are unnamed; the world arrives only as things on the ride's own surfaces (beside the way, or ahead and veered from)", "names a set piece of the seat photograph's OWN ride — it is replaced by the world's things at frame zero and never named") });
+  }
   return out;
 }
 

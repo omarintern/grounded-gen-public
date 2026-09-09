@@ -47,12 +47,15 @@ const b64 = readFileSync(plate).toString("base64");
 // dressed. The way's own word comes from the seat plate's reading (SEAT_WAY), never from a list of ours.
 const DARK = process.env.DARK_RIDE_DRESSING === "1";
 const WAY = String(process.env.SEAT_WAY || "").trim(); const wayWord = DARK ? (WAY && WAY !== "unseen" ? WAY : "way the ride travels on") : "rails";
-const WAY_RE = /(?:rails?|tracks?|track ?bed|channel|water(?:way)?|flume|groove|path(?:way)? ahead|floor ahead|the floor|bed|vehicle|car|boat|pod|lap ?bar|restraint)/i;
+// the guard names the WAY ITSELF — the ground BESIDE the way is a surface the world's things may take (owner 2026-09-09: "that should have
+// been replaced with relevant elements" — job 9127e915 skipped the carpet as "organic dirt surface", and the plate's mushroom stayed).
+// (The previous line carried literal backspace bytes where \b was meant and never matched at all.)
+const WAY_RE = /(?:\brails?\b|\btracks?\b|track ?bed|\bchannel\b|\bwater(?:way)?\b|\bflume\b|\bgroove\b|path(?:way)? ahead|floor ahead|ground ahead|\bbed\b|\bvehicle\b|\bcar\b|\bboat\b|\bpod\b|lap ?bar|restraint)/i;
 const read = await providerJson([
   textPart(`This REAL photograph is ${role}, seen from aboard a ride. A themed world's THINGS will be written into the video as dressing on this photograph's own surfaces and spaces. ` +
-    `For each thing below, decide whether THIS photograph has a surface or a space for it. Return ONLY JSON {"dressing":[{"name":string,"op":"replace|add|skip","where":string,"why":string}]}. ` +
+    `For each thing below, decide whether THIS photograph has a surface or a space for it. Return ONLY JSON {"plate_things":[string],"dressing":[{"name":string,"op":"replace|add|skip","where":string,"why":string}]}. ` +
     (DARK
-      ? `This is a DARK RIDE: the spectacle sits BESIDE the ${wayWord} — on the scene's left or right wall, on a raised platform or stage next to it, on the bank across it — or AHEAD, on the far wall as a tableau the vehicle approaches and veers away from. "where" names one of THIS photograph's own such surfaces in plain words. NEVER the ${wayWord} itself, never the floor or bed the ride travels on, never the vehicle: a thing that would only fit there is "skip". `
+      ? `This is a DARK RIDE, and this photograph is a scene of ANOTHER ride: everything it shows beside or ahead of the ${wayWord} that is not the ${wayWord}, not the vehicle and not the show building's own walls, floor and ceiling — its props, figures, plants, tableaux, signs — is the OTHER ride's set dressing, and the world's things TAKE ITS PLACE. First list those set pieces in "plate_things" (short plain names, most prominent first, up to 5). Then place each thing PREFERRING "replace": a figure takes the spot of the photograph's figure or its most prominent set piece; a wall pattern takes the face of the set piece or the scene wall beside the ${wayWord}; a floor pattern takes the ground beside the ${wayWord}; a fixture or prop takes the place of a set piece of like size. "where" names the set piece or surface replaced, in the photograph's own words ("the giant mushroom on the right", "the creature on the stand to the left", "the ground beside the rails on the left"). NEVER the ${wayWord} itself, never the ground the ride travels on, never the vehicle: a thing that would only fit there is "skip". `
       : `"where" names the photograph's OWN surface or space in plain words (the floor ahead, the left wall, the arch around the opening, the far end of the corridor, the ceiling, the rails' colouring). `) +
     `op = "replace" when the photograph has a counterpart the thing takes the place of (a floor's pattern, a wall's finish, the rails' colour); "add" when there is open space for it (a character can stand at the far end, a prop can sit on a ledge); "skip" when nothing plausible exists — never invent space. ` +
     `Never place anything ON the rails or the vehicle except a colouring. Things: ${JSON.stringify(elements.map((e) => ({ name: e.name, kind: e.kind, surface: e.surface })))}`),
@@ -61,6 +64,8 @@ const read = await providerJson([
 const dressing = (Array.isArray(read?.dressing) ? read.dressing : []).filter((e) => e && (e.op === "replace" || e.op === "add") && String(e.name || "").trim() && String(e.where || "").trim())
   .filter((e) => { if (DARK && WAY_RE.test(String(e.where))) { console.log(`  ◇ ${e.name}: skipped — "${e.where}" is the way or the vehicle, never dressed on a dark ride`); return false; } return true; }).slice(0, 3);
 for (const e of (Array.isArray(read?.dressing) ? read.dressing : [])) console.log(`  ◇ ${String(e?.name || "?")}: ${String(e?.op || "?").toUpperCase()}${e?.where ? ` @ ${e.where}` : ""}${e?.why ? ` — ${String(e.why).slice(0, 80)}` : ""}`);
-try { writeFileSync(`${plate}.dressing.json`, JSON.stringify({ role, dressing }, null, 2)); } catch {}
+const plateThings = (Array.isArray(read?.plate_things) ? read.plate_things : []).map((x) => String(x || "").replace(/\s+/g, " ").trim()).filter((x) => x && x.length <= 60).slice(0, 5);
+if (DARK && plateThings.length) console.log(`  ◇ the photograph's own set pieces (replaced, never named): ${plateThings.join(" · ")}`);
+try { writeFileSync(`${plate}.dressing.json`, JSON.stringify({ role, dressing, plate_things: plateThings }, null, 2)); } catch {}
 if (!dressing.length) { console.log("  ◇ the photograph has no surface or space for the world's things here"); process.exit(2); }
 console.log(`  ✓ ${dressing.length} thing(s) placed on the photograph's own space — written into the take, never painted`);
