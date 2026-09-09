@@ -274,7 +274,8 @@ export function denameSpeakers(block, modesJson = process.env.IP_FIGURES) {
     if (!mode) { out.push(l); continue; }
     if (mode.mode === "omit") continue;
     const guise = String(mode.guise || "").trim();
-    out.push(guise ? `${m[1]}${guise}${m[3]}${m[4]}` : l);
+    const label = guise || (rideFromEnv() ? "an animatronic figure" : "a figure");   // no guise on record: still never the name (dry-shining-1: the actor's name as the speaker)
+    out.push(`${m[1]}${label}${m[3]}${m[4]}`);
   }
   const kept = out.filter((l) => /:\s*"/.test(l) || /^\s*\S.*:\s*\S/.test(l)).length;
   return kept ? out.join("\n") : null;

@@ -193,18 +193,20 @@ export function rideWords(d) {
 // certain processes so they take reign more … whatever problem we encounter is often nested in something when it should sit
 // outside.» The facts the rule needs are known BEFORE the plan: the ride kind from the maker's own words, the named work from the
 // resolved entities (is_set). So the planner is told first, and the shape is right from the top.
-export function preambleFor(d) {
+export function preambleFor(d, { places = [] } = {}) {
   if (!d || d.family !== "dark ride" || !d.world?.named || !d.world?.title) return "";
+  const lead = (Array.isArray(places) ? places : []).map((p) => String(p || "").trim()).filter(Boolean).slice(0, 4);
   const kind = d.noun, w = d.world.title;
   return `FORM PREAMBLE — decided from the maker's own words BEFORE this plan; it outranks the request's rewrite and your own reading of the story:\n` +
     `• THE FORM IS A THEME PARK DARK RIDE ("${kind}"). The camera is the rider's seat; frame zero is a photograph taken from the seat; the world is what the ride carries past that seat.\n` +
     `• THE WORLD IS THE NAMED WORK "${w}", AND ON A DARK RIDE A NAMED WORK IS A THEME, NOT AN ITINERARY. The ride never enters the work's places; the work supplies THINGS that dress the ride's own scenes. Therefore, for THIS plan:\n` +
     `  – form.places = [] and slots.vantage = [] — no place of the work is a stop; execution.cuts = false. (This overrides any instruction below to list the places the request visits: on this form they are not visited, they are read.)\n` +
-    `  – world_theme = { work: "${w}", sources: up to 4 image-search queries for the work's rooms or scenes whose THINGS are worth reading, each shaped "${w} <room> scene" }.\n` +
+    `  – world_theme = { work: "${w}", sources: up to 4 image-search queries for the work's rooms or scenes whose THINGS are worth reading, each shaped "${w} <room> scene"${lead.length ? ` — the brief names the places the maker's video visits, and THEY LEAD, in this order: ${lead.map((p) => `"${w} ${p} scene"`).join(", ")}; add another room only after them` : ""} }.\n` +
     `  – world_elements: up to 6 of the work's most transferable THINGS — a pattern, a fixture, a prop, signage, architecture, a figure of the work described by clothing and posture — each with source = the world_theme source it is read from, and the surface it lives on.\n` +
     `  – the story is the ride's own scenes in order, UNNAMED (the next scene, a turn, a blackout), each carrying things; no scene is named after a place of the work, and read.restated says so.\n` +
     `  – figures: name the work's people as usual so they resolve; how each is written is decided later by the prose law (a lesser figure may be named; the work's face is described, never named).\n` +
-    `  – THE RIDE'S OWN VOICE: the plan's Dialogue block carries ONE line the ride itself plays — a figure of the work speaking as the seat passes it (labelled by that figure) or "Ride narrator" from the speakers; words the ride would play, never a caption.\n`;
+    `  – THE RIDE'S OWN VOICE: the plan's Dialogue block carries ONE line the ride itself plays — a figure of the work speaking as the seat passes it, or "Ride narrator" from the speakers; the speaker label is the figure by clothing and posture ("the caretaker in the red plaid jacket") or "Ride narrator" — never a real person's or an actor's name; words the ride would play, never a caption.\n` +
+    `  – figures name the work's CHARACTERS (the name the story gives them), never the actors who played them.\n`;
 }
 /** A zone or source query reduced to the room's own name for the prose ban and the writer's log: the work's title and a query
  *  suffix (scene / interior / footage / set) stripped. "The Shining Overlook Hotel lobby scene" → "Overlook Hotel lobby". */
