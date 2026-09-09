@@ -102,7 +102,7 @@ async function collect(query, ri) {
 const JOPTS = { noun: D.noun, kind: D.kind, family: D.family, viewPx: VIEW_PX };
 let judgeCalls = 0;
 const recs = [];
-const withVehicle = () => recs.filter((r) => r.aboard && r.j?.vehicle_in_foreground === true).length;
+const withVehicle = () => recs.filter((r) => r.aboard && r.j?.own_part === true).length;
 async function judgeAll(cands) {
   for (let base = 0; base < cands.length; base += JUDGE_PAR) {
     if (judgeCalls >= JUDGE_BUDGET) { console.log(`  (judge budget ${JUDGE_BUDGET} spent — the rest of the pool is unjudged)`); break; }
@@ -160,7 +160,7 @@ const j = pick.j || {};
 writeFileSync(join(OUTDIR, `world_${slug}.pick.json`), JSON.stringify({
   placeOnly: true, needsStandin: false, standin: 0, first_person: true,
   engine: pick.engine, host: pick.host, url: pick.url, query: pick.q, conceded: false, width: pick.W, height: pick.H, cropped,
-  reading: { camera_position: j.camera_position ?? null, riders: j.riders ?? null, vehicle_in_foreground: j.vehicle_in_foreground === true, way_recedes: j.way_recedes === true, environment: j.environment ?? null, way: j.way ?? null, vehicle: j.vehicle ?? null, text: j.text ?? null, ai_generated: Number.isFinite(Number(j.ai_generated)) ? Number(j.ai_generated) : null, why: j.why ?? null },
+  reading: { camera_position: j.camera_position ?? null, footing: j.footing ?? null, riders: j.riders ?? null, vehicle_in_foreground: j.own_part === true, own_part: j.own_part === true, signs: ["walkway_or_footprint_markings", "hazard_stripes", "queue_railing", "people_beside_track", "empty_seats_looked_at", "vehicle_seen_from_outside"].filter((k) => j[k] === true), lighting: j.lighting ?? null, way_recedes: j.way_recedes === true, environment: j.environment ?? null, way: j.way ?? null, vehicle: j.vehicle ?? null, text: j.text ?? null, ai_generated: Number.isFinite(Number(j.ai_generated)) ? Number(j.ai_generated) : null, why: j.why ?? null },
   aboard_look: { camera_position: j.camera_position ?? null, environment: j.environment ?? null, way: j.way ?? null, vehicle: j.vehicle ?? null },
   ranked: ranked.length, judged: recs.length, calls: judgeCalls,
 }, null, 2));
