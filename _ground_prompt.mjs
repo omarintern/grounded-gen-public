@@ -260,8 +260,14 @@ if (BEAT_STYLE !== "template") {
   const instruction = _dump(
     spanHeader() +
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
-    `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n` +
-    (String(process.env.RAW_USER_PROMPT || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() !== userPrompt
+    // ON A REMIX (2026-09-09): the reframed request is the user's request applied to the parent's video, and the remix words are the CHANGE —
+    // never the other way round (job 6280175e: the change was presented as the request and the parent's register, place and camera reference
+    // rode as demoted context; the beats lost them). The parent's request stands wherever the change is silent.
+    (String(process.env.REMIX_CHANGE || "").trim()
+      ? `WHAT THE USER ASKED FOR (their request, applied to the parent's video): "${userPrompt}"\n` +
+        `THE CHANGE THIS REMIX MAKES (the user's remix words): "${String(process.env.REMIX_CHANGE).trim()}" — everything the parent's request established and this change does not touch stays exactly as it was: what the footage is, the place as photographed, the cast it keeps, where the subject looks.\n`
+      : `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n`) +
+    (!String(process.env.REMIX_CHANGE || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() !== userPrompt
       ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${RIDE?.world?.mode === "theme" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +

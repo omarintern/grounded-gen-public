@@ -140,10 +140,11 @@ export function seatLadder(family = "") { return family === "dark ride" ? ["web"
  *  SETTING (the seat plate carries its world; the maker's places are informant plates hunted as places). */
 export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan = null, device = "", requiredForm = "" } = {}) {
   const p = plan && typeof plan === "object" ? plan : {};
-  const words = String(rawPrompt || "").trim() || String(prompt || "").trim();
   // THE MAKER'S RIDE KIND IS THE NOUN (owner 2026-09-08, job fa203849: "The Shining theme park dark ride" planned as "onboard ride footage",
   // so the noun fell to "ride" and every dark-ride rule stood aside). The planner's device phrase never outranks the maker's word.
-  const makerKind = rideKindOf(words) || rideKindOf(String(p.subject || p.form?.subject || ""));
+  // On a REMIX the raw words are the remix's own change ("its a T-rex instead of a bear"), which may name no ride at all — the reframed
+  // request (prompt) is read next, before the plan's subject (2026-09-09).
+  const makerKind = rideKindOf(String(rawPrompt || "").trim()) || rideKindOf(String(prompt || "").trim()) || rideKindOf(String(p.subject || p.form?.subject || ""));
   const form = String(device || requiredForm || p.form?.mediaForm || p.native_capture || "").trim() || (makerKind ? `${makerKind} POV footage` : "");
   const plateForm = String(p.native_capture || p.form?.mediaForm || requiredForm || form).trim();
   if (!(isApparatusForm(form) || makerKind)) return null;
