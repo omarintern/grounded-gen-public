@@ -300,7 +300,7 @@ export const goalBlock = () => (
     `lens and grade; the beats own TIME, CAUSALITY and INTENT. The CAMERA is NEVER written — no camera words, ` +
     `no framing, no shot-scale, no lens (a clause like "the camera tracks with it" is a law break): the ` +
     `reference's own framing IS the shot; write only what the SUBJECT does.` +
-    (rideFromEnv()?.kind === "ridden" ? ` THE ONE EXCEPTION IS THIS RIDE: the rider's own handheld camera may sway with the motion and turn a little to either side — see THE RIDE block; nothing else about the camera is written.` : "") + `\n\n`
+    (rideFromEnv()?.family === "dark ride" ? ` THE ONE EXCEPTION IS THIS DARK RIDE: the rider's own handheld camera may peer around — turn to look at what the ride passes and come back to the way ahead — see THE RIDE block; nothing else about the camera is written.` : "") + `\n\n`
 );
 
 export const framingConcessionBlock = (framingConceded) => (
@@ -746,8 +746,8 @@ export const hardConstraints = () => (
     `• EVERY BEAT IS A COMPLETE SENTENCE — a line that trails off unfinished corrupts the render it half-describes.\n` +
     `• A DIALOGUE LABEL NAMES ITS SPEAKER — a figure the beats established; never a generic label.\n` +
     `• NEVER mention how BIG, SMALL, NEAR or FAR the subject is, and never say it grows, shrinks or approaches.\n` +
-    (rideFromEnv()?.kind === "ridden" ? `• CAMERA ON THIS RIDE — the rider's own handheld camera: it may sway with the ride's motion and turn a little to either side (see THE RIDE); the ladder below otherwise stands — never a zoom, push-in, crane, dolly or reframe.\n` +
-      `• DIALOGUE ON THIS RIDE — "Ride narrator" (the ride's own speakers) and a speaking animatronic named as its figure are established speakers of the form; they need no listener in frame.\n` : "") +
+    (rideFromEnv()?.family === "dark ride" ? `• CAMERA ON THIS DARK RIDE — the rider's own handheld camera: it may peer around, turning to look at what the ride passes and coming back to the way ahead (see THE RIDE); the ladder below otherwise stands — never a zoom, push-in, crane, dolly or reframe.\n` : "") +
+    (rideFromEnv()?.kind === "ridden" ? `• DIALOGUE ON THIS RIDE — "Ride narrator" (the ride's own speakers) and a speaking animatronic named as its figure are established speakers of the form; they need no listener in frame.\n` : "") +
     `• CAMERA — FLY ON THE WALL. Owner doctrine 2026-07-29/30: the camera is a BYSTANDER that happened to be\n` +
     ` there. It does not reveal, follow drama, chase a subject, or reframe for effect. If something enters the\n` +
     ` frame, that is ENOUGH — you do NOT tilt or pan to find it. A sled falling out of the sky is simply VISIBLE\n` +
