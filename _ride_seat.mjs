@@ -13,6 +13,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, existsSync
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { lineagePlate } from "./_plate_skip.mjs";
 import { scrapeImages, IndexInfraError } from "./scrape.mjs";
 import { withSlot } from "./_provider_gate.mjs";
 import { isPlaceholderCard, isPaidStock } from "./_placeholder_card.mjs";
@@ -71,6 +72,7 @@ async function dl(url, path, sourceUrl = "") {
     const W = Number(meta.width) || 0, H = Number(meta.height) || 0;
     if (Math.min(W, H) < MIN_SIDE) return miss(`small<${MIN_SIDE}`);
     try { const st = await sharp(b).stats(); if (st.channels.length && st.channels.every((c) => c.mean < 16 && c.stdev < 10)) return miss("near-black"); } catch {}
+    if (await lineagePlate(b)) return miss("lineage-plate");   // the parent's seat plate, never served twice (WORLD_SKIP)
     writeFileSync(path, b); return { W, H };
   } catch { return miss("net"); }
 }

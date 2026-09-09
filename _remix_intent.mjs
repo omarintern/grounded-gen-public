@@ -41,7 +41,7 @@ export async function parseRemixIntent(state, intentText) {
     `LAW: a remix changes ONLY what the user names — everything else KEEPS. Never invent a change the words do not ask for.\n` +
     `Return ONLY JSON {\n` +
     ` "figures":[{"target":"<existing figure name>","op":"keep|swap|remove","to":"<replacement as the user named it, or null>"}] (one entry per EXISTING figure; append {"target":null,"op":"add","to":"..."} only for a genuinely new figure),\n` +
-    ` "world":{"op":"keep|change","to":"<new opening place or null>"},\n` +
+    ` "world":{"op":"keep|change","to":"<new opening place or null>","keep_explicit":true|false} (keep_explicit = the user's OWN WORDS keep the place — "same kitchen", "keep the room", "still in this hallway", "in the same place"; false when the words merely say nothing about the place),\n` +
     ` "cuts":[{"target":"<later place>","op":"keep|change|remove","to":null|"..."}] (one per later place),\n` +
     ` "action":{"op":"keep|rewrite","instruction":"<precisely what now happens, in the user's own words completed minimally — null when keep>"},\n` +
     ` "dialogue":{"op":"keep|rewrite|remove","instruction":null|"..."},\n` +
@@ -60,7 +60,7 @@ export function normalizeDiff(raw, state) {
   const places = Array.isArray(p.places) ? p.places : [];
   const laterPlaces = new Set(places.slice(1).map((x) => String(x).toLowerCase()));
   const d = {
-    figures: [], world: { op: "keep", to: null }, cuts: [], action: { op: "keep", instruction: null },
+    figures: [], world: { op: "keep", to: null, keepExplicit: false }, cuts: [], action: { op: "keep", instruction: null },
     dialogue: { op: "keep", instruction: null }, props: [], clearance_delta: [], vague: raw.vague === true, dropped: [],
   };
   for (const f of Array.isArray(raw.figures) ? raw.figures : []) {
@@ -71,6 +71,7 @@ export function normalizeDiff(raw, state) {
   }
   for (const name of knownFigures) if (!d.figures.some((f) => String(f.target || "").toLowerCase() === name)) d.figures.push({ target: name, op: "keep", to: null });
   if (raw.world?.op === "change" && raw.world?.to) d.world = { op: "change", to: String(raw.world.to) };
+  else if (raw.world?.keep_explicit === true) d.world.keepExplicit = true;   // the words keep the place → the parent's plate rides (WORLD_PIN); otherwise the environment is RE-SOURCED
   for (const c of Array.isArray(raw.cuts) ? raw.cuts : []) {
     const op = ["keep", "change", "remove"].includes(c?.op) ? c.op : "keep";
     if (!laterPlaces.has(String(c?.target || "").toLowerCase())) { if (op !== "keep") d.dropped.push(`cut place "${c?.target}" not in the parent`); continue; }
@@ -441,14 +442,18 @@ export function pinsFromPlan(plan, state) {
 export function routeStages(diff) {
   const figureChange = (diff.figures || []).some((f) => f.op !== "keep");
   const worldChange = diff.world?.op === "change";
+  // A REMIX RE-SOURCES ITS ENVIRONMENT UNLESS THE WORDS KEEP IT (owner 2026-09-09: "reusing environments, which we can do if prompted (else not),
+  // produces something repetitive"). A kept-by-silence world is hunted afresh (deep path; the parent's plate excluded from the pool and held as the
+  // free fallback); REMIX_REUSE_WORLD=1 restores the old reuse for a test.
+  const worldResource = diff.world?.op === "keep" && diff.world?.keepExplicit !== true && process.env.REMIX_REUSE_WORLD !== "1";
   const cutChange = (diff.cuts || []).some((c) => c.op !== "keep");
   const textChange = diff.action?.op === "rewrite" || diff.dialogue?.op !== "keep" || (diff.props || []).length > 0;
   const rerun = [];
   if (figureChange) rerun.push("entity");
-  if (worldChange) rerun.push("world");
+  if (worldChange || worldResource) rerun.push("world");
   if (cutChange) rerun.push("cuts");
   // beats rewrite whenever ANYTHING changes — the prompt must speak the new truth — and gen always re-runs
-  if (figureChange || worldChange || cutChange || textChange) rerun.push("writer");
+  if (figureChange || worldChange || worldResource || cutChange || textChange) rerun.push("writer");
   rerun.push("gen");
   return {
     rerun,
