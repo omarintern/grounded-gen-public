@@ -84,6 +84,12 @@ export function placeOnPlate({ plate, things = [], role = "a photograph the ride
 // person-noun, is a FIGURE: written like a thing (never inserted), performed like an animatronic (_ride_writer).
 const FIGURE_KIND = /^(?:character|characters|figure|figures|person|people|creature|animal|animatronic)$/i;
 const FIGURE_NOUN = /\b(?:figures?|twins?|girls?|boys?|man|men|woman|women|child(?:ren)?|bride|groom|ghost|butler|clown|witch|skeleton|creature|monster|beast|animatronic|doll|puppet|mannequin|guard|soldier|pirate|king|queen|maid|waiter|dancer|singer|couple|family|caretaker|bartender)\b/i;
+// THE WAY GUARD (shared with _plate_dressing): a placement ON the rails, the track bed, the vehicle or the floor AHEAD dresses the way; a placement
+// BESIDE the rails is a surface the world may take (owner 2026-09-09: the carpet takes the ground beside the rails; dry-shining-3: the guard read
+// "the dark floor beside the rails" as the rails and dropped the carpet).
+const WAY_RE = /(?:\brails?\b|\btracks?\b|track ?bed|\bchannel\b|\bwater(?:way)?\b|\bflume\b|\bgroove\b|path(?:way)? ahead|floor ahead|ground ahead|\bbed\b|\bvehicle\b|\bcar\b|\bboat\b|\bpod\b|lap ?bar|restraint)/i;
+const BESIDE_WAY = /\b(?:beside|next to|alongside|either side of|both sides of|along|flanking|around|by|near|bordering|lining|edging)\s+(?:the\s+)?(?:rails?|tracks?|track ?bed|channel|flume|way|water)\b/gi;
+export const dressesTheWay = (where) => WAY_RE.test(String(where || "").replace(BESIDE_WAY, " "));
 export const isFigureThing = (e) => FIGURE_KIND.test(String(e?.kind || "").trim()) || FIGURE_NOUN.test(String(e?.name || ""));
 export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], worldName = "", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const mode = d?.world?.mode || "setting";

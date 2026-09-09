@@ -75,6 +75,7 @@ export function rideBlock(d = rideFromEnv()) {
 const DISMOUNT_PARTS = [
   String.raw`\b(?:(?:a|the|one|another|some)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|kart|sled|board|skateboard|scooter|wagon|big wheel))\b`,
   String.raw`\b(?:trike|tricycle|bike|bicycle|kart|sled|scooter)-borne\b`,
+  String.raw`\ba rider (?:peers|looks|turns|leans|glances|stares|gazes)\b`,   // the camera's own rider is THE rider; "a rider" who peers is a rider looked at (dry-shining-3)
   String.raw`\b(?:the|a)\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|steers|brakes|aims|weaves)\b`,
   String.raw`\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|riders|cart|car|coaster|train)\b`,
   String.raw`\bfrom\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway|curb|pavement)\b|\bon\s+the\s+(?:sidelines?|platform|shore|balcony|curb|pavement)\b`,   // "on the ground" is where a FIGURE stands, not where the camera is (job 9127e915's false positive)
@@ -218,11 +219,11 @@ export function repairFrameZero(text, d) {
   const added = [];
   for (const f of facts) {
     const m = f.match(/^(.*?)\s+becomes\s+(.+)$/i) || f.match(/^(.+?)\s+at\s+(.+)$/i);
-    const name = m ? (/ becomes /i.test(f) ? m[2] : m[1]) : f;
-    const keys = _words(name);
-    if (!keys.length) continue;
-    const hit = keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(lines[i])).length;
-    if (hit * 2 >= keys.length) continue;   // half the thing's words already in beat zero: it is there
+    // A REPLACEMENT NAMES THE SET PIECE IT TOOK THE PLACE OF (owner 2026-09-10: "if the mushroom is replaced … its still named"; dry-shining-3 wrote the
+    // hedge walls and never the mushroom they stood in for): both sides of "X becomes Y" must be in beat zero, else the fact is appended.
+    const sides = m ? (/ becomes /i.test(f) ? [m[1], m[2]] : [m[1]]) : [f];
+    const inZero = (s) => { const keys = _words(s); if (!keys.length) return true; const hit = keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(lines[i])).length; return hit * 2 >= keys.length; };
+    if (sides.every(inZero)) continue;   // the set piece and what it became are both there
     const fact = / becomes /i.test(f) ? f.replace(/\s+becomes\s+/i, " is ") : f;
     lines[i] = lines[i].replace(/\.?\s*$/, `; ${fact}.`);
     added.push(fact);
