@@ -37,7 +37,7 @@ export function rideBlock(d = rideFromEnv()) {
     s += `THE WORLD IS BUILT INTO THE RIDE: the seat photograph IS the ride — its ${w.vehicle}, its ${w.way} and its scene architecture are the frame's constant from frame zero to the end. No photograph of the world rides with it, and the world's PLACES ARE NEVER NAMED — not a room, a hall, a maze, nor the work's title: the world arrives only as THINGS on the ride's own surfaces. ` +
       `THE SEAT PHOTOGRAPH IS A SCENE OF ANOTHER RIDE, AND ITS OWN SET PIECES ARE REPLACED: everything it shows beside or ahead of the ${w.way} that is not of the world${plateThings.length ? ` — ${plateThings.join(", ")} —` : " (its props, figures, plants, tableaux, signs)"} is gone at frame zero, taken over by the world's things, and is NEVER NAMED; only the ${w.vehicle}, the ${w.way} and the show building's own walls, floor and ceiling remain from the photograph. ` +
       (placements.length ? `FRAME ZERO'S REPLACEMENTS, already in place at [0s] and stated as facts of the scene, never as changes: ${placements.join(" | ")}. ` : "") +
-      (later.length ? `LATER THINGS arrive further along the same continuous take, in this order, each as the ride's own set piece: ${later.join(" → ")}. ` : "") +
+      (later.length ? `LATER THINGS arrive further along the same continuous take, in this order, each as the ride's own set piece: ${later.map((x) => FLOOR_THING.test(x) ? `${x} (a floor thing: it lies under and around the ${w.way}, with the ${w.way} continuing across it)` : x).join(" → ")}. ` : "") +
       `WHERE THINGS SIT: beside the ${w.way} — on the scene's walls, on raised platforms or banks next to it — or AHEAD, as a tableau the ${w.vehicle} approaches and veers away from before reaching it; a figure of the world stands where a thing would, described by clothing and posture. The ${w.way}, the floor or bed the ride travels on, and the ${w.vehicle} are never dressed. The scenes stay unnamed (the next scene, a turn, a blackout); the ${w.way} runs on through every one of them. `;
   } else if (mode === "architecture") {
     s += `THE COASTER IS ARCHITECTURE, THE WORLD IS DRESSING: the seat photograph is a legit coaster on its own rails and structure; the world's things are colouring on that structure (a pattern under the rails, a fixture in a scene's wall, hedges flanking the track, a facade the rails dive through into blackout), never a room the car has entered` +
@@ -53,8 +53,9 @@ export function rideBlock(d = rideFromEnv()) {
     `THE RIDE'S OWN VOICES: a ride narrator or announcer heard from the speakers, and a speaking animatronic in a tableau, are the form's own — they need no listener in frame and never address the camera as an audience; write them as Dialogue lines with a named speaker — the label "Ride narrator" for the ride's own voice (never the bare word "Narrator", which names nobody) and an animatronic by the figure it is — words the ride itself would play. `;
   s += `THE RIDE NEVER CUTS: no "hard cut", no new camera setup — the ${w.way} carries the ${w.vehicle} into each next scene inside the same take. ` +
     `THE MOUNT (the opening only): the ride MAY open outside the ${w.vehicle} as it comes down the ${w.way} toward the camera and takes it up; from that moment every beat rides, and there is never a dismount after it. ` +
-    (coaster ? `WHATEVER THE RAILS REACH IS MET AT SPEED: a figure the ride passes close is ACTED UPON by the passage — steps back, is blown, swings, turns with it — never a statue; a figure may stand only far off, unreached. ` : dark ? `The ride glides past standing figures and tableaux by design; they are the scene's, seen from the seat. ` : "") +
+    (coaster ? `WHATEVER THE RAILS REACH IS MET AT SPEED: a figure the ride passes close is ACTED UPON by the passage — steps back, is blown, swings, turns with it — never a statue; a figure may stand only far off, unreached. ` : dark ? `EVERY FIGURE OF THE WORLD ON THIS RIDE IS AN ANIMATRONIC, AND IT PERFORMS AS THE SEAT PASSES: one motion each, timed to the pass — a head turns to follow the rider, an arm beckons or swings, a body lurches forward, rises or drops, eyes light — and the ride's own voices sound as it is passed (a Ride narrator line or the figure's own line, as Dialogue). A figure never merely stands, waits or is held still; a maker's word such as "frozen" describes how the figure LOOKS (frost, ice, snow on it), never its stillness. ` : "") +
     `THE RIDE NEVER STOPS AND THE ${w.way.toUpperCase()} NEVER ${ends} ON SCREEN: in the final image the ride is still moving — the last words of the last beat say where it goes (the ${w.way} on through the doors, around the bend, out of the frame, or the ${w.vehicle} diving through what the payoff releases and swallowed by it). ` +
+    `THE ${w.vehicle.toUpperCase()} NEVER LEAVES THE ${w.way.toUpperCase()}: a floor thing of the world — a carpet, tiles, boards, a rug — lies under and around the ${w.way}, with the ${w.way} continuing across it; the ${w.vehicle} never glides, rolls or drives onto anything but its own ${w.way}. ` +
     (d.interior ? `THE MOTION IS WHAT THIS PLACE CAN HOST: straight runs, dips, banks at corners, a doorway taken at speed; never a loop, inversion or corkscrew indoors. ` : "") +
     `THE PAYOFF IS PASSED THROUGH OR BY AT SPEED: the frame never ends on a face, nothing fills the lens, and every figure keeps the scene's scale to the last frame.\n`;
   return s;
@@ -77,6 +78,29 @@ const DISMOUNT_PARTS = [
 export const DISMOUNT = new RegExp(DISMOUNT_PARTS.join("|"), "i");
 const INVERSION = /\b(?:loop(?:s|ing|ed)?|loop-the-loop|inversions?|upside[- ]down|inverted|corkscrews?|barrel[- ]rolls?)\b/i;
 const FACEFILL = /\b(?:fills? the (?:frame|lens|screen|shot)|filling the (?:frame|lens|screen)|faces? (?:fill|loom)s?\b|inches from (?:a|the|her|his|their) faces?|straight into (?:a|the|her|his|their) faces?|close-up (?:of|on) (?:a|the|her|his|their) faces?|between the two (?:girls|twins|figures))/i;
+// THE VEHICLE NEVER LEAVES ITS WAY (owner 2026-09-09, job eb329045: "the ride cart glides onto a hexagonal carpet pattern" — the rails ended at a
+// carpeted platform in the video). A floor thing lies under and around the way; the vehicle rides onto nothing but its own way.
+export const FLOOR_THING = /\b(?:carpets?|rugs?|tiles?|tiled|tiling|floorboards?|floors?|flooring|parquet|linoleum|paving|cobbles?|cobblestones?|stairs?|staircase|steps|marble floor)\b/i;
+const LEAVES_WAY = /\b(?:cars?|carts?|vehicles?|omnimover|boats?|trains?|coaster|ride|pods?|gondolas?|carriages?|trams?|karts?)\s+(?:\w+\s+){0,2}?(?:glides?|gliding|rolls?|rolling|drives?|driving|moves?|moving|travels?|travelling|traveling|slides?|sliding|coasts?|eases?|climbs?|pulls?|rides?|runs?|swings?|passes?)\s+(?:up |down |out |off |on |forward |straight )?onto\s+(?:a|an|the|its|this|that)\s+(?!(?:own )?(?:rails?|track|tracks|way|path|channel|flume|bridge|lift|conveyor|turntable|trestle|ramp|incline|hill|guide))/i;
+const LEAVES_RAILS = /\b(?:leaves?|leaving|left|jumps? off|comes? off|off) the (?:rails?|track|tracks)\b/i;
+// A DARK RIDE'S FIGURES PERFORM (owner 2026-09-09: "the characters are frozen, theres no life … yes Dark-ride figures are animatronics")
+const ANIMATE = /\b(?:turns?|turning|swivels?|beckons?|beckoning|waves?|waving|lunges?|lunging|rises?|rising|lifts?|lifting|raises?|raising|swings?|swinging|nods?|nodding|reach(?:es|ing)?|steps?|stepping|lurch(?:es|ing)?|jerks?|snaps?|tilts?|rotates?|rotating|opens?|opening|blinks?|points?|pointing|gestures?|gesturing|sways?|swaying|rocks?|rocking|bows?|bowing|leans?|leaning|lights? up|flicker(?:s|ing)?|flash(?:es|ing)?|glows? (?:on|alive|brighter)|mouths? mov\w*|jaws? (?:open|drop|snap|work)\w*|speaks?|speaking|sings?|singing|laughs?|laughing|shrieks?|screams?|calls?|whispers?|growls?|roars?|cackles?|creaks? (?:up|forward|to life|alive)|springs? (?:up|forward|to life|alive)|comes? (?:alive|to life)|whirs?|thrash(?:es|ing)?|claws?|clawing|strikes?|slams?|pounds?|shudders?|twitch(?:es|ing)?|drops? (?:down|from|toward)|swoops?|charges?|follows? the (?:rider|car|cart|seat|camera|lens)|tracks? the (?:rider|car|cart|seat|camera|lens)|eyes (?:snap|flick|follow|light|open|glow)|heads? (?:turn|snap|swivel|tilt|lift)|arms? (?:rise|lift|swing|reach)|hands? (?:rise|lift|reach|beckon))\b/i;
+/** Figures of the world the take mentions but never makes perform: [{ name, at }]. Pure. */
+export function stillFigures(text, d) {
+  const names = (d?.dressing?.figures || []).filter(Boolean);
+  if (!names.length) return [];
+  const lines = String(text || "").split("\n").map((l) => { const m = l.match(/^\s*\[(\d+(?:\.\d+)?)s\]\s*(.*)$/); return m ? { at: Number(m[1]), text: m[2] } : null; }).filter(Boolean);
+  const out = [];
+  for (const name of names) {
+    const keys = _words(name); if (!keys.length) continue;
+    const mention = lines.filter((l) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(l.text)).length * 2 >= keys.length);
+    if (!mention.length) continue;   // an absent figure is the ledger's matter, not stillness
+    const own = (t) => String(t).replace(/\b(?:the |a |its )?(?:rider|camera|seat|car|cart|omnimover|boat|vehicle|lens|phone|train|coaster)\b[^.;,]{0,24}?\b(?:turns?|turning|swings?|tilts?|rises?|drops?|pans?|swivels?|rotates?|leans?|dips?|points?|looks?)\b/gi, "");   // the rider's own turn is not the figure's performance
+    if (mention.some((l) => ANIMATE.test(own(l.text)) || REACTS.test(own(l.text)))) continue;
+    out.push({ name, at: mention[0].at });
+  }
+  return out;
+}
 const WAY_END = /\b(?:rails?|track|tracks|channel|flume|way|path|road) (?:end|ends|ending|stop|stops|stopping|terminate|terminates|run out|runs out|give out|gives out|dead-?end|dead-?ends|halt|halts)\b/i;
 const HARD_CUT = /\bhard cuts?\s+to\b/i;
 // THE MOUNT (owner 2026-09-07): the opening beat may see the train from outside AS IT ARRIVES AT THE CAMERA and take the camera up
@@ -114,6 +138,7 @@ const lastSentenceOf = (line) => { const s = String(line || "").replace(/^\s*\[\
  *  @fed the beats text and the ride decision; workTitles for the world-room ban under a theme. */
 export function rideFindings(text, d, { workTitles = [] } = {}) {
   const out = []; if (!d) return out;
+  const w = rideWords(d);
   const lines = String(text || "").split("\n").filter((l) => /^\s*\[\d+(?:\.\d+)?s\]/.test(l));
   const add = (line, why) => { const m = line.match(/^\s*\[(\d+(?:\.\d+)?)s\]/); out.push({ rule: "apparatus", figure: `camera (${why})`, at: m ? Number(m[1]) : 0 }); };
   lines.forEach((line, i) => {
@@ -125,11 +150,13 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
     else if (HARD_CUT.test(line) && !mounting) add(line, `"hard cut" — a travelling take never cuts between its places; its own motion carries into the next scene`);
     else if (opener && !mounting && !seatCue(line, d)) add(line, "no seat cue — the opening names the seat's own objects (the way ahead, the bar or nose, the rows ahead)");
     else if (d.family === "coaster" && statueIn(line)) add(line, `a figure the ride reaches is held still: "${statueIn(line)}" — the ride is the event; whatever the rails pass close is acted upon`);
+    else if (LEAVES_WAY.test(line) || LEAVES_RAILS.test(line)) add(line, `the ${w.vehicle} leaves its ${w.way}: "${(line.match(LEAVES_WAY) || line.match(LEAVES_RAILS))[0]}" — every floor thing lies under the ${w.way}, which continue across it; the ride rides onto nothing but its own ${w.way}`);
     else if (WAY_END.test(line)) add(line, `the way ends: "${line.match(WAY_END)[0]}" — the ride's way never ends on screen`);
     else if (last && !rideSentOn(lastSentenceOf(line), d)) add(line, "the payoff does not send the ride on — the last words say where the ride goes: on, through, out of the frame, or swallowed by what the payoff releases");
     else if (d.interior && INVERSION.test(line)) add(line, `inverted indoors: "${line.match(INVERSION)[0]}" — a corridor or room hosts straight runs, dips and banks, never a loop`);
     else if (last && FACEFILL.test(line)) add(line, `payoff stops on a face: "${line.match(FACEFILL)[0]}" — the ride passes through or by at speed`);
   });
+  if (d.family === "dark ride") for (const f of stillFigures(text, d)) out.push({ rule: "apparatus", figure: `camera (a figure of the world is passed without performing: "${f.name}" — on a dark ride every figure is an animatronic: one motion timed to the pass, and the ride's voices as it is passed)`, at: f.at });
   if (d.world?.mode === "theme") {
     out.push(...worldNameFindings(text, roomBanList(d, workTitles)));
     // the plate's own set pieces named = the other ride kept (job 9127e915: "beside the giant illuminated mushroom" kept the mushrooms in the video)

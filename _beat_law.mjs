@@ -257,6 +257,28 @@ export const FINE_DETAIL = /\b(?:with|in|using|between)\s+(?:its|his|her|their|b
 
 // ── THE DETERMINISTIC DIALOGUE BUILDER (moved verbatim; parameterized only at the boundary) ────────────────
 // Returns the terminal Dialogue block string, or null when planDialogue is empty. The caller appends + warns.
+/** A SYNTHESISED SPEAKER UNDER THE NAME LAW IS LABELLED BY ITS GUISE (owner 2026-09-09, job d8bd1a08: the plan's line was "the man (to T-rex)",
+ *  the guard copied that label, and the name law refused the run twice over it). A dename'd figure's speaker label becomes its guise (build,
+ *  clothing, posture) with the addressee kept; an omitted figure's line is dropped. Pure; null in, null out. */
+export function denameSpeakers(block, modesJson = process.env.IP_FIGURES) {
+  if (!block) return block;
+  let modes = []; try { modes = JSON.parse(modesJson || "[]"); } catch { modes = []; }
+  if (!Array.isArray(modes) || !modes.length) return block;
+  const lines = String(block).split("\n");
+  const out = [];
+  for (const l of lines) {
+    const m = l.match(/^(\s*)([^:\n(\[]{1,80}?)(\s*(?:\([^)]*\)\s*)*(?:\[\d+(?:\.\d+)?s\]\s*)?:)(.*)$/);
+    if (!m) { out.push(l); continue; }
+    const bare = m[2].trim().toLowerCase();
+    const mode = modes.find((x) => (x?.names || []).some((n) => String(n).toLowerCase() === bare));
+    if (!mode) { out.push(l); continue; }
+    if (mode.mode === "omit") continue;
+    const guise = String(mode.guise || "").trim();
+    out.push(guise ? `${m[1]}${guise}${m[3]}${m[4]}` : l);
+  }
+  const kept = out.filter((l) => /:\s*"/.test(l) || /^\s*\S.*:\s*\S/.test(l)).length;
+  return kept ? out.join("\n") : null;
+}
 export function buildDialogueBlock(planDialogue, stamps = DIALOGUE_STAMPS, fallbackSpeaker = null) {
   if (!(planDialogue || "").trim()) return null;
   const raw = planDialogue.replace(/^\s*Dialogue\s*:\s*/i, "").trim();

@@ -12,7 +12,7 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock } from "./_ride_writer.mjs";   // the ride's one block, from the run's decision (2026-09-09)
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
@@ -550,8 +550,9 @@ if (BEAT_STYLE !== "template") {
   if (spoken.length && !hasBlock) {
     const who = (process.env.PLAN_DIALOGUE || "").match(/\n\s*([^:\n]{1,80}?)\s*:/);
     const speaker = who ? who[1].trim() : "Speaker";
-    const block = "Dialogue:\n" + spoken.map((q, i) =>
-      `${speaker}${i ? " (continuing, over the cuts)" : ""}${q.at != null ? ` [${q.at}s]` : ""}: "${q.text}"`).join("\n");
+    // (the block below is passed through denameSpeakers — a speaker under the name law is labelled by its guise)
+    const block = denameSpeakers("Dialogue:\n" + spoken.map((q, i) =>
+      `${speaker}${i ? " (continuing, over the cuts)" : ""}${q.at != null ? ` [${q.at}s]` : ""}: "${q.text}"`).join("\n"));
     beatLine = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n\n" + block;
     console.warn(`[GUARD] dialogue: ${spoken.length} spoken line(s) were narrated INSIDE the beats and no Dialogue block existed — MOVED into one terminal block, timings preserved (doctrine drifting; fix the root).`);
     console.warn(`[GUARD] dialogue: left in place they would have shipped TWICE — _run re-attaches the plan's block whenever the beats carry none.`);
@@ -581,7 +582,7 @@ if (BEAT_STYLE !== "template") {
 // The writer's own block still wins whenever it produces one — this is a floor, not a replacement.
 if (!/(^|\n)\s*Dialogue\s*:/i.test(beatLine) && (process.env.PLAN_DIALOGUE || "").trim()) {
   // fallback speaker = the subject as the writer knows it (never "Speaker" — the label law's own bug site)
-  const _b = buildDialogueBlock(process.env.PLAN_DIALOGUE, undefined, String(intent?.target || "").toUpperCase() || null);
+  const _b = denameSpeakers(buildDialogueBlock(process.env.PLAN_DIALOGUE, undefined, String(intent?.target || "").toUpperCase() || null));
   beatLine += "\n\n" + _b.block;
   const stamps = _b.stamps;
   console.warn(`[GUARD] dialogue: the writer emitted no speech — SYNTHESISED a timed block from the plan's line across ${stamps.map((x) => `${x}s`).join(", ")} (deterministic; the writer's own block always wins when it produces one).`);

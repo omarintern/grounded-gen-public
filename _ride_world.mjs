@@ -61,17 +61,25 @@ export function placeOnPlate({ plate, things = [], role = "a photograph the ride
 /** THE WORLD BY MODE — pure in shape (reads happen through the two helpers above). Returns the dressing the writer hears:
  *  placements at frame zero (the seat plate) and on any later plate, the later things in order (theme), and the photographed
  *  places behind the seat in story order (places / setting / architecture). Never a room's name. */
+// A FIGURE AMONG THE WORLD'S THINGS (owner 2026-09-09: "whats with the trouble differentiating between things and figures" — the reading
+// labelled the twins a character; the writer heard a set piece). A thing the reading or the plan typed as a character, or whose name is a
+// person-noun, is a FIGURE: written like a thing (never inserted), performed like an animatronic (_ride_writer).
+const FIGURE_KIND = /^(?:character|characters|figure|figures|person|people|creature|animal|animatronic)$/i;
+const FIGURE_NOUN = /\b(?:figures?|twins?|girls?|boys?|man|men|woman|women|child(?:ren)?|bride|groom|ghost|butler|clown|witch|skeleton|creature|monster|beast|animatronic|doll|puppet|mannequin|guard|soldier|pirate|king|queen|maid|waiter|dancer|singer|couple|family|caretaker|bartender)\b/i;
+export const isFigureThing = (e) => FIGURE_KIND.test(String(e?.kind || "").trim()) || FIGURE_NOUN.test(String(e?.name || ""));
 export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], worldName = "", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const mode = d?.world?.mode || "setting";
   const way = d?.words?.way || d?.seat?.reading?.way || "";
   const planThings = (Array.isArray(d?.world?.things) ? d.world.things : []).map((e) => ({ name: e.name, kind: e.kind, surface: e.surface }));
-  const out = { placements: [], later: [], places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [] };
+  const out = { placements: [], later: [], places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [], figures: [] };
   const seatRole = "the seat photograph (frame zero, the ride's own vantage)";
   if (mode === "theme") {
     const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 2, cwd, env, log });
     const things = [...read, ...planThings.filter((e) => !read.some((r) => r.name.toLowerCase() === String(e.name).toLowerCase()))].slice(0, 6);
     if (read.length) log(`  ✎ read off the world's rooms (things only): ${read.map((r) => r.name).join(" · ")}`);
     out.things = things;
+    out.figures = things.filter(isFigureThing).map((e) => e.name);
+    if (out.figures.length) log(`  ◇ figures among them (animatronics on this ride): ${out.figures.join(" · ")}`);
     const placedLines = placeOnPlate({ plate: seatPlate, things: things.slice(0, 3), role: seatRole, dark: true, way, cwd, env, log });
     out.plateThings = placedLines.plateThings || [];
     out.placements = placedLines.map((l) => `${seatRole}: ${l}`);
