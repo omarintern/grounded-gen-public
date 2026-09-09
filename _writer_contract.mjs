@@ -113,32 +113,8 @@ export const SWAP_GRAMMAR = /\b(takes? (?:the )?place of|in place of|exactly whe
 // texts run STRUCTURALLY longer — the moment sentence (~90) + two swap clauses (~130) + a legit free-cut
 // (~180) put the measured legit ceiling ≈1650 over the mcgregor max; 1750 = that + margin, still tight
 // enough that paragraph bloat flags. CONTRACT CONSTANT — flagged to the owner's eye at landing.
-// APPARATUS LAW (owner 2026-09-05/06): in a ridden or worn form the camera IS the rider. A cut that looks AT the rider
-// or the vehicle from outside, or that carries no seat cue at all, has dismounted — 2026-09-05 the writer authored
-// "a trike-borne rider pumps hard down the patterned carpet" from a plate showing a boy on a trike, and the ride was
-// gone. Pure text predicates; the caller passes `apparatus: true` when the run recognised such a form.
-// Riders ARE seen in a POV when the camera sits mid-train or at the back (owner 2026-09-06): the backs of heads,
-// shoulders and raised arms in the rows ahead are the seat's own view. What dismounts is a rider or vehicle looked at
-// from OUTSIDE the train (a kid on a tricycle watched from a doorway) or a rider doing a driver's work (pumping,
-// pedalling, steering, swerving — impossible on rails, so always a view of someone else's ride).
-const DISMOUNT_PARTS = [
-  // a rider or figure on a non-train vehicle, looked at
-  String.raw`\b(?:(?:a|the|one|another|some)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|kart|sled|board|skateboard|scooter|wagon|big wheel))\b`,
-  String.raw`\b(?:trike|tricycle|bike|bicycle|kart|sled|scooter)-borne\b`,
-  // a rider doing a driver's work — impossible on rails, so always someone else's ride
-  String.raw`\b(?:the|a)\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|steers|brakes|aims|weaves)\b`,
-  String.raw`\bwatch(?:es|ing)?\s+(?:the|a)\s+(?:ride|rider|riders|cart|car|coaster|train)\b`,
-  String.raw`\b(?:from|on)\s+the\s+(?:sidelines?|platform|ground|shore|balcony|doorway|curb|pavement)\b`,
-  // the vehicle described from the ROOM (owner 2026-09-06: "the coaster carves past them" is the room's view, not the seat's)
-  String.raw`\b(?:the|a)\s+(?:car|cart|coaster|train|ride|carriage)\s+(?:whips|carves|barrels|races|roars|plunges|swoops|tears|rips|hurtles|rockets|thunders|slaloms|spirals|screams|charges|blasts|slices|weaves)\s+(?:past|by|through|around|between|into)\s+(?:them|it|the crowd|the diners|the guests|the room|the tables|the figures|the people|everyone|the onlookers|the dancers|the patrons)\b`,
-  // the room performing for the ride (owner 2026-09-06: the ride is voyeuristic — the riders see the room; it does not react)
-  String.raw`\b(?:the crowd|the diners|the guests|the room'?s?(?: gathered)? figures|the figures|the people|the onlookers|the patrons|the dancers|bystanders|everyone)\b[^.;]{0,50}\b(?:press(?:es|ed)? back|lean(?:s|ed|ing)? away|scatter(?:s|ed)?|part(?:s|ed)?|recoil(?:s|ed)?|flinch(?:es|ed)?|duck(?:s|ed)?|gasp(?:s|ed)?|startled|leap(?:s|ed)? (?:back|aside)|give(?:s)? (?:the turn|it|the car|the ride) room)\b`,
-];
-const DISMOUNT = new RegExp(DISMOUNT_PARTS.join("|"), "i");
+// THE RIDE'S LAWS (dismount, the seat cue, the mount, the rails, the statue, the payoff at speed) live in _ride_writer.mjs (2026-09-09).
 // a seat cue is a seat OBJECT, never a motion word (owner 2026-09-06: "the turn" alone let a ballroom cut through)
-const SEAT = /\b(?:rails?|tracks?|lap bar|restraint|harness(?:es)?|handlebars?|grab bar|safety bar|restraint bar|bar across (?:the|my|our|their) (?:laps?|chests?|waists?)|hands?|gloves|knuckles|car nose|nose of the car|the car'?s? (?:nose|front)|hood|visor|goggles|the seat|from the seat|rows? ahead|the row in front|backs? of (?:heads|riders|passengers)|behind the (?:riders|passengers)|passengers? (?:ahead|in front|in the (?:front|back|next) row)|the (?:front|back) row|train ahead|car ahead|seats? ahead)\b/i;   // the passengers in the row ahead ARE the seat's view (job 5fb30e2e: "From behind the passengers in the back row" read as no seat cue)
-const INVERSION = /\b(?:loop(?:s|ing|ed)?|loop-the-loop|inversions?|upside[- ]down|inverted|corkscrews?|barrel[- ]rolls?)\b/i;
-const FACEFILL = /\b(?:fills? the (?:frame|lens|screen|shot)|filling the (?:frame|lens|screen)|faces? (?:fill|loom)s?\b|inches from (?:a|the|her|his|their) faces?|straight into (?:a|the|her|his|their) faces?|close-up (?:of|on) (?:a|the|her|his|their) faces?|between the two (?:girls|twins|figures))/i;
 // REFERENCE-DEPENDENT GENS NEVER CUT TO AN UNPHOTOGRAPHED PLACE (owner 2026-09-06: "we do hard cut to unphotographed places
 // sometimes. however, where this is a reference-dependent gen like the overlook hotel and or a disney type ride, these can't
 // be unphotographed cuts"). A named work or venue is the reference; a cut the plates do not carry is a place the model
@@ -148,65 +124,9 @@ export function unphotographedCuts(text, cutPlates = 0) {
   const n = (String(text || "").match(HARD_CUT) || []).length;
   return Math.max(0, n - Math.max(0, Number(cutPlates) || 0));
 }
-// WHATEVER THE RAILS REACH IS MET AT SPEED (owner 2026-09-07, job 17b1f0fd: "Jack stands where the plate holds him … not swinging,
-// not yet … the coaster clatters past close enough to stir the powder near his boots, and he lets it go by without turning" — a
-// figure the ride passed close, written as a statue). A stillness phrase + a passage-close phrase + no reaction on the figure.
-const STILL = /\b(?:stands?|standing|stood) (?:where|still|motionless|there|at|by|in|beside|on)\b|\b(?:holds? (?:still|position)|motionless|frozen (?:in place|still)|unmoving|does not move|doesn't move|without moving|not moving|waits? there|waiting|lets? it (?:go|pass|rush|roll) by|without turning|does not turn|doesn't turn)\b/i;
-const CLOSE_PASS = /\b(?:clatters?|rattles?|roars?|rushes?|races?|sweeps?|whips?|passes?|goes|hurtles?|barrels?) (?:past|by)\b|\bclose enough\b|\binches? (?:from|past)\b|\bbrush(?:es|ing)? (?:past|by)\b|\bnear(?:ly)? (?:his|her|their) (?:boots|feet|shoulder|face|coat)\b|\bpast (?:him|her|them)\b/i;
-const REACTS = /\b(?:steps? (?:back|aside|away|clear|off)|leaps?|lunges?|dives?|ducks?|flinch(?:es|ing)?|recoils?|staggers?|stumbles?|scrambles?|swings? (?:the|his|her|at|it|round|around)|spins?|wheels? (?:round|around)|is (?:thrown|knocked|swept|shoved|blown|spun)|blown back|(?:coat|hair|scarf|hat|dress|sleeves?) (?:whips?|snaps?|lifts?|flies|tears?)|snatches?|jumps? (?:back|aside|clear)|bolts?|throws? (?:himself|herself|themselves)|shoved aside|pushed aside|knocked aside)\b/i;
-// THE RAILS NEVER END ON SCREEN (owner 2026-09-07: "a constant problem because that doesn't happen in rollercoaster"): no cut may
-// end the track, and the payoff cut must send the rails ON — through, past, out of the frame — as its final words.
-const RAILS_END = /\b(?:rails?|track|tracks) (?:end|ends|ending|stop|stops|stopping|terminate|terminates|run out|runs out|give out|gives out|dead-?end|dead-?ends|halt|halts)\b/i;
-// the RIDE goes on: the rails running, or the car/train diving through what the payoff releases (the 12-second Shining ride the owner
-// praised ends "submerging the car as the car dives into the red deluge" — engulfed at speed is a ride; a stopped track is not)
-const RAILS_ON = /\b(?:rails?|track|tracks|car|cars|train|coaster|ride)\b[^.!?]{0,90}\b(?:run|runs|running|carry|carries|carrying|continue|continues|continuing|race|races|racing|rush|rushes|rushing|stretch|stretches|stretching|curve|curves|curving|bank|banks|banking|drop|drops|dropping|climb|climbs|climbing|lead|leads|leading|plunge|plunges|plunging|dive|dives|diving|hurtle|hurtles|hurtling|barrel|barrels|barreling|tear|tears|tearing|vanish|vanishes|vanishing|disappear|disappears|disappearing|go|goes|going|carries? on|roll|rolls|rolling)\b[^.!?]{0,60}\b(?:on|onward|onwards|ahead|through|into|past|beyond|out of|away|around|down|up|off|under)\b/i;
-export function railsFinding(cutText, { last = false } = {}) {
-  const t = String(cutText || "");
-  const e = t.match(RAILS_END);
-  if (e) return `the rails end: "${e[0]}" — a rollercoaster's track never ends on screen; the rails run on through the payoff and out of the frame`;
-  if (last) {
-    const sentences = t.replace(/^\s*(?:Cut\s+\d+\s*:|\[\d+(?:\.\d+)?s\])\s*/i, "").split(/(?<=[.!?])\s+/).filter(Boolean);
-    const tail = sentences[sentences.length - 1] || t;
-    if (!RAILS_ON.test(tail)) return "the payoff does not send the ride on — the last words of the last cut say where it goes: the rails through the doors and out of the frame, or the car diving through what the payoff releases";
-  }
-  return null;
-}
-export function statueFinding(cutText) {
-  const t = String(cutText || "");
-  const s = t.match(STILL);
-  if (!s || !CLOSE_PASS.test(t) || REACTS.test(t)) return null;
-  return `a figure the ride reaches is held still: "${s[0]}" — the ride is the event; whatever the rails pass close is acted upon (steps back, is blown, swings, turns with it), never a statue`;
-}
-// THE MOUNT (owner 2026-09-07): the opening cut may see the train from outside AS IT ARRIVES AT THE CAMERA and take the camera up —
-// the 12-second Shining ride opened on a wooden train coming down the carpet toward the lens, then rode. Only the FIRST cut, and
-// only when the cut says the camera is taken aboard; after that a vehicle looked at from outside is a dismount as before.
-const MOUNT = /\b(?:toward|towards|to|at|straight at|right at|up to|onto) the (?:camera|lens|frame)\b|\breach(?:es|ing)? the (?:camera|lens)\b|\bnears? the (?:camera|lens)\b|\b(?:the camera|the lens|the frame|the view|the shot) (?:is )?(?:taken up|taken aboard|picked up|swept up|swept aboard|carried along|carried aboard|climbs aboard|drops into the (?:front |back )?seat|becomes the (?:front |back )?seat|is aboard|rides from here|goes aboard)\b|\btakes (?:it|the camera|the lens|us) up\b|\bfrom (?:that|this) moment (?:on )?(?:aboard|the seat|the ride|we ride|it rides)\b|\bfrom the (?:front |back )?seat from then on\b/i;
-// ⚠ THE SEAT CUE IS OWED BY A CUT'S OPENING (owner's law: "every cut opens from the seat"), not by every stamped line of one continuous
-// take. Job 4ed43401 (2026-09-07): "[6s] The red elevator doors begin to slide open, and a wave of blood surges forward to engulf the
-// car" — the camera never left the seat, the line simply did not restate the bar — failed twice and the run was refused. A caller
-// passes opener=false for a line that continues the take it is already in; the shot-set writer's cuts are all openers (default).
-export function apparatusFinding(cutText, { interior = false, last = false, first = false, opener = true } = {}) {
-  const t = String(cutText || "");
-  const mounting = first && MOUNT.test(t);
-  const m = t.match(DISMOUNT);
-  if (m && !mounting) return `dismounted: "${m[0]}" — the camera rides the train; riders appear only as the seat sees them (backs, shoulders, arms up in the rows ahead), never looked at from outside`;
-  if (/\bhard cuts?\s+to\b/i.test(t) && !mounting) return "a travelling take never cuts between its places — its own motion (the rails, the road, the walk) carries into the next photograph (a tunnel mouth, an opening, an archway; a coaster never through a door); write the arrival, not a cut";   // owner 2026-09-07, job f943d7d6: three hard cuts, three rooms without rails
-  if (opener && !SEAT.test(t) && !mounting) return "no seat cue — every cut opens from the seat (the rails ahead, the lap bar, the hands)";   // "the bar" alone is a LOUNGE ("around the bar" passed a doorway shot on job 4c0c2aff); a seat's bar is the lap/safety/restraint bar
-  // a still figure is a COASTER finding (owner 2026-09-07: "met at speed"); a dark ride glides past standing figures and tableaux by design
-  // (owner 2026-09-08, job fa203849: the twins "stand at" the far end of the corridor — the concept, refused three times as a statue)
-  const _noun = String(process.env.APPARATUS_NOUN || "");
-  const st = (_noun && !/coaster/i.test(_noun)) ? null : statueFinding(t);   // no noun (tests, other forms) or a coaster → the law stands; a named non-coaster ride glides past
-  if (st) return st;
-  const rl = railsFinding(t, { last });
-  if (rl) return rl;
-  const inv = interior ? t.match(INVERSION) : null;
-  if (inv) return `inverted indoors: "${inv[0]}" — a corridor or room hosts straight runs, dips and banks at corners, never a loop or inversion (owner 2026-09-06: the frame diffuses into nothing true)`;
-  const ff = last ? t.match(FACEFILL) : null;
-  if (ff) return `payoff stops on a face: "${ff[0]}" — the ride passes THROUGH or BY at speed; the frame never ends on a face and figures keep the room's scale`;
-  return null;
-}
 
-export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, apparatus = false, apparatusInterior = false, referenceDependent = false, cutPlates = 0, cutsAreMax = false } = {}) {
+
+export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts = 0, castNames = [], maxLines = 16, maxChars = 1750, requireSwap = false, durationSec = 0, partiesNamed = 0, dialogueWords = 0, stamps = [], handle = "", plateNouns = null, plateWords = null, swapSlots = 0, coGuises = [], ledger = null, context = null, referenceDependent = false, cutPlates = 0, cutsAreMax = false } = {}) {
   const t = String(text || "");
   const v = [];
   const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -235,7 +155,6 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
   const cuts = bareSingle ? bareBeats : labelled.length ? labelled : proseCapture ? [t.replace(/\n/g, " ")] : [];
   if (!cuts.length) return [{ rule: "no-cuts", cut: null }];
   const cutNums = bareSingle ? 1 : cutNumbersOf(t);
-  if (apparatus) cuts.forEach((c, i) => { const why = apparatusFinding(c, { interior: apparatusInterior, last: i === cuts.length - 1, first: i === 0 }); if (why) v.push({ rule: "apparatus", cut: i + 1, detail: why }); });
   if (referenceDependent) { const extra = unphotographedCuts(t, cutPlates); if (extra) v.push({ rule: "unphotographed-cut", cut: null, detail: `${extra} hard cut(s) to a place no plate carries — this gen depends on its references; the story reaches that place within a photographed plate or not at all` }); }
   // ⚠ ADVISORY, DELIBERATELY NOT FATAL. The law and the re-ask both now instruct the bare shape, so a labelled
   // single-cut script means the writer ignored an explicit instruction — worth SEEING, not worth killing a

@@ -191,86 +191,7 @@ export const belongingClause = () =>
   `The beats NAME it inside the action so the reference's pixels carry its look; the figure holding it in ` +
   `that reference is NOT in this video — the replacement takes its place entirely, belonging in hand.`;
 
-// ⭐⭐ THE CAMERA IS PART OF THE SCENE'S APPARATUS (owner 2026-09-05: a ride is a camera form). Keyed on the
-// run's APPARATUS_NOTE, set only when the recognised form is participant-worn/ridden. A reference frame of
-// the form rides with the beats (the form plate), so the writer names the apparatus in plain nouns and lets
-// the reference render it — the same shape as a kept belonging.
-/** FORM FIRST (owner 2026-09-07): the photographed places that ride behind the seat plate, in story order — facts the writer
- *  needs, never framing. Empty when the run set none (the unnamed-ride and single-photo paths). */
-/** The class's carry, by kind (owner 2026-09-07, class-wide): what moves the camera from one photograph into the next. */
-// FORM AND CONTENT AWARENESS (owner 2026-09-08: «sometimes its not rails you see, sometimes its on water as well»): the seat plate's
-// second look reads what the ride travels ON and what carries the camera; the writer's words come from that reading, never from a
-// default. SEAT_WAY / SEAT_VEHICLE are set by _run from the seat plate's pick record; absent, the kind's own words stand.
-export const wayOf = () => { const w = String(process.env.SEAT_WAY || "").trim(); return w && w !== "unseen" ? w : (/boat|flume|rapids/i.test(process.env.APPARATUS_NOUN || "") ? "water channel" : "way ahead"); };
-export const vehicleOf = () => { const v = String(process.env.SEAT_VEHICLE || "").trim(); return v && v !== "unseen" && v !== "other" ? v : (/boat|flume|rapids/i.test(process.env.APPARATUS_NOUN || "") ? "boat" : "vehicle"); };
-export const carryPhrase = () => ({ driven: "the road carries the vehicle", worn: "the wearer's own motion carries the camera" }[process.env.APPARATUS_KIND]
-  || (process.env.DARK_RIDE_DRESSING === "1" || /dark ride|theme park/i.test(process.env.APPARATUS_NOUN || "") ? `the ${wayOf()} carries the ${vehicleOf()}` : "the rails carry the car"));
-/** A coaster's transitions are the ride's own (owner 2026-09-07: "tunnel mouths, show-scene openings and blackouts … a coaster never goes
- *  through a door"); every other travelling form keeps the door, the archway, the tunnel mouth. */
-export const transitionPhrase = () => (/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "through a tunnel mouth, a show-scene opening or a blackout \u2014 never a door" : "through a door, an archway, a tunnel mouth");
-export function informantPlacesBlock() {
-  // ⭐⭐ THE WORLD IS BUILT INTO THE RIDE (owner 2026-09-08, the technicality): on a theme park dark ride of a NAMED world no room
-  // photograph rides — the rooms were READ for their things. Frame zero is the seat photograph with the replacements already in
-  // place; later things arrive further along the same continuous take as the ride's own set pieces; the ride never enters a room.
-  if (process.env.DARK_RIDE_DRESSING === "1") {
-    const later = String(process.env.LATER_THINGS || "").replace(/\s+/g, " ").trim();
-    const wayWord = wayOf(), vehWord = vehicleOf();
-    return `⚠⚠ THE WORLD IS BUILT INTO THE RIDE: the seat photograph IS the ride — its ${vehWord}, its ${wayWord} and its scene architecture are the frame's constant from frame zero to the end. ` +
-      `No photograph of the world rides with it, and the world's PLACES are never named — not a room, not a hall, not a maze, not the work: the world arrives only as THINGS on the ride's own surfaces. ` +
-      `Frame zero opens on the seat photograph with the replacements ALREADY IN PLACE (see THE WORLD'S THINGS), stated as facts of the scene, never as changes. ` +
-      (later ? `Further along the same continuous take these later things arrive in this order, each as the ride's own set piece: ${later}. ` : "") +
-      `WHERE THINGS SIT: beside the ${wayWord} — on the scene's walls, on raised platforms or banks next to it — or AHEAD, as a tableau the ${vehWord} approaches and veers away from before reaching it. ` +
-      `The ${wayWord}, the floor or bed the ride travels on, and the ${vehWord} are never dressed. ` +
-      `The scenes stay unnamed (the next scene, a turn, a blackout); the ${wayWord} runs on through every one of them; there is no cut; ${carryPhrase()}.\n`;
-  }
-  const raw = String(process.env.INFORMANT_PLACES || "").replace(/\s+/g, " ").trim();
-  if (!raw) return "";
-  if (process.env.COASTER_ARCH === "1") return `PHOTOGRAPHED SECTIONS OF THE RIDE (coaster architecture \u2014 real photographs riding with the seat, in story order): ${raw}. ` +
-    `Each section is DRESSED as the story's stop named beside it: the stop's things sit on the section's walls, floor and facades at track scale \u2014 ` +
-    `a carpet pattern runs under the rails, a fireplace glows in a scene's wall, hedges flank the track, a door is a facade the rails dive through into blackout \u2014 ` +
-    `never a room the car has entered. The take is written from the seat and rides each section in this order; there is no cut: ${carryPhrase()} into each ${transitionPhrase()}; a section not named here is never entered. ` +
-    `The coaster never enters the world's rooms: the stops beyond the tunnel are written as what the coaster's own architecture carries \u2014 the rails run on in order.\n`;
-  return `PHOTOGRAPHED PLACES BEYOND THIS FRAME (real photographs riding with this one, in story order): ${raw}. ` +
-    `The take is written from the seat and ARRIVES in each of them in this order \u2014 the world enters the ride. ` +
-    `There is no cut between them: ${carryPhrase()} into each \u2014 ${transitionPhrase()} \u2014 and a place not named here is never entered.\n`;
-}
-const MOUNT_TEXT =
-  `THE MOUNT (owner 2026-09-07, the ride he keeps returning to): the ride MAY open outside the car — the train seen coming down ` +
-  `the track toward the camera, the camera waiting on the rails — and the camera is taken up as the train arrives; from that ` +
-  `moment every beat rides. One mount, at the opening, said plainly ("the train comes down the track toward the camera and takes ` +
-  `it up as it passes; from the front seat the rails run on"); never a dismount after it. `;
-// THE NEVER-CUTS SENTENCE BY PATH (owner 2026-09-08, job bd19152d: the old sentence — "every place the story visits is ENTERED along
-// the way, each named in order" — stood in the same instruction as the dark-ride block that forbids naming a place; the writer split
-// the difference and named the rooms as "set pieces"). On a dark ride of a named world the scenes are the ride's own and unnamed.
-const neverCutsText = () => process.env.DARK_RIDE_DRESSING === "1"
-  ? `THE RIDE NEVER CUTS, AND ITS SCENES ARE UNNAMED: the take runs along the ${wayOf()} through the ride's own scenes in order — ${carryPhrase()} — each scene carrying the things listed for it and none named after a place of the world; the camera never dismounts, never stands in a room and watches the ride pass, and there is no "hard cut" — a cut restarts the scene without its ${wayOf()}. `
-  : `THE RIDE NEVER CUTS — class-wide: a ride, a drive and a walk alike (owner 2026-09-07: the world enters the form): every place the story visits is ENTERED along the way — ${carryPhrase()} ${transitionPhrase()} into the next photograph, each named in order inside the take; the camera never dismounts, never stands in a room and watches the ride pass, and there is no "hard cut" between a ride's places — a cut restarts the room without its rails. Two consecutive stops are ONE CONTINUOUS CARRY: the motion leaves one photograph and arrives in the next, both places named in order. `;
-export const apparatusClause = () =>
-  !process.env.APPARATUS_NOTE ? "" :
-  `⚠⚠ THE CAMERA IS PART OF THE SCENE'S OWN APPARATUS: ${process.env.APPARATUS_NOTE}. Compose EVERY beat from ` +
-  `inside it — what the rider sees, never a view OF the ride from outside; the apparatus is never introduced, ` +
-  `explained or looked at, it is simply the frame's constant foreground. Motion is the ride's own (the climb, ` +
-  `the drop, the turn, the rush) and is never a camera instruction. A rail-bound ride never steers, swerves or ` +
-  `aims a wheel — its path is the track's, and contact with the world is what the track brings past. The world is what streams past and what ` +
-  `the ride arrives at, so the payoff is something the ride RUNS INTO or THROUGH, seen coming. A reference ` +
-  `frame of this form rides with the beats; its pixels carry the apparatus's look, so name the apparatus in ` +
-  `plain nouns and let the reference render it. THE CAMERA'S OWN RIDER IS NEVER SEEN, and other riders appear ` +
-  `only as the seat sees them — the backs of heads, shoulders and raised arms in the rows ahead when the camera sits ` +
-  `mid-train or at the back — never a rider or vehicle looked at from outside the train (a figure on a trike watched ` +
-  `from a doorway is a dismount). The seat's own cues (the rails running ahead, the bar, the hands, the row in front) ` +
-  `open every beat. ${neverCutsText()}` +
-  `${MOUNT_TEXT}` +
-  `WHATEVER THE RAILS REACH IS MET AT SPEED (owner 2026-09-07): a figure the ride passes close is ACTED UPON by the passage — ` +
-  `the wind of it lifts a coat, they step back, swing at the car, turn with it, are shoved aside — the ride is the event and ` +
-  `nothing it reaches is a statue; a figure may stand only far off, unreached. THE RAILS NEVER END ON SCREEN AND THE RIDE NEVER STOPS: a rollercoaster's ` +
-  `track does not stop at a wall or a door, and the car never rolls to a halt — in the final image of EVERY cut, and above all ` +
-  `the payoff, the ride is still moving: the rails run on through the doors, along the floor, around the bend, out of the frame, ` +
-  `OR the car dives through what the payoff releases (a wall of blood, water, smoke) and is swallowed by it, emerging beyond ` +
-  `— being engulfed at speed is a ride, standing before a stopped track is not. Say where the ride goes as the cut's LAST words. ` +
-  `THE RIDE'S MOTION IS WHAT THIS PLACE CAN HOST: in a corridor, room or hall — straight runs, dips, banks at corners, ` +
-  `a doorway taken at speed; never a loop, inversion, corkscrew or upside-down pass indoors (they need height the place ` +
-  `does not have, and the frame diffuses into nothing true to the photographs). THE PAYOFF IS PASSED THROUGH OR BY AT ` +
-  `SPEED: the frame never ends on a face, nothing fills the lens, and every figure keeps the room's scale to the last frame.`;
+// THE RIDE'S BLOCK for the writer lives in _ride_writer.mjs (2026-09-09): one block from the ride decision, in the plate's own words.
 
 // NAMED WORKS ARE TITLES (owner 2026-09-06: "context carries here rather than a user's perfect punctuation/grammar"). The
 // run restores each resolved work's casing in the prompt the writer reads (restoreWorkTitles) and names them here, so a
@@ -631,20 +552,6 @@ export const telling = () => (process.env.TELLING === "observational" ? "observa
 // of continuous prose, no later stamps — the only ride gen that read as one take; every stamped one restarted at each place).
 // Set by the run when the take never cuts and more than one WORLD photograph rides in the bag (character refs never count).
 export const singleBlock = () => process.env.SINGLE_BLOCK === "1";
-// THE VEHICLE IS WRITTEN when the seat plate does not show it (owner 2026-09-08, dark rides) — stated once as frame zero's constant
-// foreground, by the ride's kind, and never looked at again.
-export const vehicleLine = () => (process.env.VEHICLE_PROMPTED === "1"
-  ? `\u26a0 THE VEHICLE IS WRITTEN: the seat photograph shows the ride's vantage but not its vehicle \u2014 state the vehicle once, in the first clause, as the frame's constant foreground (${/boat|flume|rapids/i.test(process.env.APPARATUS_NOUN || "") || String(process.env.SEAT_VEHICLE || "") === "boat" ? "the boat's bow" : /dark ride|theme park/i.test(process.env.APPARATUS_NOUN || "") ? "the ride car's edge or lap bar" : /coaster/i.test(process.env.APPARATUS_NOUN || "") ? "the car's nose or lap bar and the rails ahead" : "the vehicle's edge"}), then never look at it again. `
-  : "");
-// PROMPTED DRESSING (owner 2026-09-08): the world's things, placed by a vision read on each photograph's OWN surfaces and spaces, written
-// as facts of the take — never an instruction, never an edit, never an image. Characters may stand where a plate has space.
-export const dressingBlock = () => {
-  const raw = String(process.env.PLATE_DRESSING || "").replace(/\s+/g, " ").trim();
-  if (!raw) return "";
-  return `\u26a0\u26a0 THE WORLD'S THINGS, ON THE PHOTOGRAPHS' OWN SURFACES (a reading of each real photograph decided where each can sit): ${raw}. ` +
-    `Write each as a FACT of the take at the moment the ride reaches it \u2014 "the rails, coloured in the carpet's orange-and-red hexagons, run into…", "at the far end of the corridor two girls in blue stand hand in hand" \u2014 never as an instruction, never "add" or "replace". ` +
-    `A thing placed on the rails or the vehicle is a colouring only. ${process.env.DARK_RIDE_DRESSING === "1" ? `On a dark ride the things sit BESIDE the ${wayOf()} (the scene's walls, raised platforms, banks) or AHEAD as a tableau the ${vehicleOf()} approaches and veers away from; a replacement is stated as already so at frame zero (the platform to the right IS laid with the hexagonal carpet), an addition stands where the reading placed it; the ${wayOf()}, the floor the ride travels on and the ${vehicleOf()} are never dressed; no place of the world is named. ` : ""}${/coaster/i.test(process.env.APPARATUS_NOUN || "") ? "On a coaster the world's things ride on the coaster's own architecture \u2014 the rails, the tunnel's walls, the structure \u2014 and the coaster never enters the world's rooms. " : "On a theme park ride they dress the furnished interiors the ride glides through. "}`;
-};
 // FIGURES THE PROSE NEVER NAMES (owner 2026-09-08; _gate_rules.ipFigureModes): the run computes each figure's mode from the
 // resolver's verdicts — dename (described, never named) or omit (not written at all); public-domain figures never appear here.
 export const ipFiguresLaw = () => {
@@ -777,7 +684,6 @@ singleBlock()
         `place is entered — the rails or path running on through the doorway, the archway, the tunnel mouth — so the track is drawn ` +
         `INTO it; enter the first photographed place early and give each place its share of the take, in order; the opening is a moment, not a scene. ` +
         `The rider is never written \u2014 no hands, clothing, legs or body; the vehicle is the bar, the nose, the bow, the rails. ` +
-        `${vehicleLine()}${dressingBlock()}` +
         `Each sentence describes ONLY what physically changes — a movement, the next place entered, what streams past. ` +
         `\u26a0 DO NOT DESCRIBE THE SCENE OR SETTING: the photographs carry the places; write nothing about the location, weather, ` +
         `lighting, time of day, surfaces or background, and name props only when the motion touches them.\n\n`

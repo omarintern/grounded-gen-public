@@ -12,7 +12,9 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, apparatusClause, informantPlacesBlock, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { rideBlock } from "./_ride_writer.mjs";   // the ride's one block, from the run's decision (2026-09-09)
+import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 
@@ -109,9 +111,10 @@ const COUNTS = LEGAL.length ? LEGAL : [Math.max(2, Math.ceil(BEAT_SECS / 2))];
 // ON A DARK RIDE OF A NAMED WORLD (owner 2026-09-08, job bd19152d): the brief still gives the story's ORDER, but its place names never
 // reach the writer (redacted to "scene"), and its verbs do not bind — "enters a lavish Gold Room" was demanded by the checklist and
 // forbidden by the name law in the same instruction. The maker's own words are the request the laws are checked against.
-const _roomNames = () => [...String(process.env.WORLD_ROOM_NAMES || "").split(" → "), ...String(process.env.WORK_TITLES || "").split(/\s*(?:,|·|\|)\s*/)].map((s) => s.trim()).filter(Boolean);
-const narrativeForWriter = (p) => process.env.DARK_RIDE_DRESSING === "1" ? redactWorldNames(p, _roomNames()) : p;
-const requestForLaws = (p) => process.env.DARK_RIDE_DRESSING === "1" ? (process.env.RAW_USER_PROMPT || p) : p;
+const RIDE = rideFromEnv();   // the run's ride decision, or null (2026-09-09)
+const _roomNames = () => [...(RIDE?.world?.rooms || []), RIDE?.world?.title || "", ...String(process.env.WORK_TITLES || "").split(/\s*(?:,|·|\|)\s*/)].map((s) => String(s || "").trim()).filter(Boolean);
+const narrativeForWriter = (p) => RIDE?.world?.mode === "theme" ? redactWorldNames(p, _roomNames()) : p;
+const requestForLaws = (p) => RIDE?.world?.mode === "theme" ? (process.env.RAW_USER_PROMPT || p) : p;
 const CHAR_CANON = (() => { try { const j = JSON.parse(process.env.CHAR_CANON || ""); return j && typeof j === "object" ? j : null; } catch { return null; } })();
 const charNames = charRefs.map((r) => (r.includes("=") ? r.split("=")[0] : "")).filter(Boolean);
 const charPaths = charRefs.map((r) => (r.includes("=") ? r.split("=").slice(1).join("=") : r));
@@ -161,7 +164,7 @@ if (seen.standin_is_target) {
   // already embeds an article + the action → doubled words like "The the red fox trotting … trotting …").
   const T = String(intent.target).charAt(0).toUpperCase() + String(intent.target).slice(1);
   beatLine = `[0s] ${T} ${intent.action}${has(intent.secondary) ? `, with ${intent.secondary} in the scene` : ""}.`;
-} else if (has(seen.standin) && process.env.APPARATUS_NOTE) {
+} else if (has(seen.standin) && process.env.APPARATUS_FORM === "1") {
   // ⚠ A RIDDEN FORM NEVER SWAPS (owner 2026-09-06). "The rollercoaster replaces a young boy on a blue tricycle" was obeyed
   // to the letter: the boy stayed a beat, then faded. The ride is not a figure; the camera occupies the seat he had.
   mode = `VACATE: ${seen.standin} → the camera's own seat (apparatus form)`;
@@ -225,7 +228,7 @@ console.log(`seesaw : spec-density ${_density} (dense at ${SPEC_DENSE}) → ${BE
 if (BEAT_STYLE !== "template") {
   const swapClause = seen.standin_is_target
     ? `The ${intent.target} is ALREADY the creature in the photo — do not swap anything, just animate it.`
-    : (has(seen.standin) && process.env.APPARATUS_NOTE)
+    : (has(seen.standin) && process.env.APPARATUS_FORM === "1")
       ? `⚠ ${seen.standin} in the photograph is NOT in the video and is NEVER described, named or replaced by anything: under a ridden form the camera occupies that seat. Beat 1 opens on the rails ahead, the bar and the hands, everything else exactly as photographed.`
     : has(seen.standin)
       ? `Beat 1 MUST begin by replacing ${seen.standin} with ${intent.target}, which takes over that exact position.`
@@ -259,10 +262,10 @@ if (BEAT_STYLE !== "template") {
     `SCENE AS PHOTOGRAPHED: ${seen.scene}\n` +
     `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n` +
     (String(process.env.RAW_USER_PROMPT || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() !== userPrompt
-      ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${process.env.DARK_RIDE_DRESSING === "1" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
+      ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${RIDE?.world?.mode === "theme" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${apparatusClause()}\n${informantPlacesBlock()}${workTitlesClause()}${ipFiguresLaw()}${frameZeroRegisterClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${rideBlock(RIDE)}${workTitlesClause()}${ipFiguresLaw()}${frameZeroRegisterClause()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +
