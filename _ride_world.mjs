@@ -59,7 +59,7 @@ export function readRoomThings({ roomPlates = [], worldName = "a themed world", 
     const code = _sh(["_plate_dressing.mjs", "--things", wp, worldName, String(perRoom)], { cwd, env });
     if (code !== 0 && code !== 2) log(`  ◇ room read failed for ${wp.split("/").pop()} (exit ${code})`);
     const d = _json(`${abs}.things.json`);
-    for (const x of (d?.things || [])) if (x?.name && !read.some((r) => r.name.toLowerCase() === String(x.name).toLowerCase())) read.push({ name: x.name, kind: x.kind, surface: x.surface });
+    for (const x of (d?.things || [])) if (x?.name && !read.some((r) => r.name.toLowerCase() === String(x.name).toLowerCase())) read.push({ name: x.name, kind: x.kind, surface: x.surface, plate: wp });
   }
   return read;
 }
@@ -89,7 +89,7 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
   const mode = d?.world?.mode || "setting";
   const way = d?.words?.way || d?.seat?.reading?.way || "";
   const planThings = (Array.isArray(d?.world?.things) ? d.world.things : []).map((e) => ({ name: e.name, kind: e.kind, surface: e.surface }));
-  const out = { placements: [], later: [], places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [], figures: [] };
+  const out = { placements: [], later: [], places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [], figures: [], photographed: [] };
   const seatRole = "the seat photograph (frame zero, the ride's own vantage)";
   if (mode === "theme") {
     const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 2, cwd, env, log });
@@ -104,7 +104,13 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     if (out.placements.length) log(`  ✓ frame zero's replacements, beside or ahead of the way: ${out.placements.map((l) => l.replace(`${seatRole}: `, "")).join(" | ").slice(0, 300)}`);
     else if (things.length) log(`  ◇ the seat photograph offered no surface beside or ahead of its way — every thing arrives later along the take`);
     const placed = out.placements.join(" | ").toLowerCase();
-    const laterAll = things.filter((e) => !placed.includes(String(e.name).toLowerCase())).map((e) => e.name);
+    // PHOTOGRAPHS OF THE WORLD THAT RIDE WITH THE SEAT (owner 2026-09-09: "on a themed dark ride they are sent, not just read for their things"):
+    // each sent room rides as a reference and is written as its qualities — the things read off it — never by name; its things do not
+    // double as later things (they arrive with their photograph).
+    const sent = new Set(laterPlates.map((x) => x.plate).filter(Boolean));
+    out.photographed = laterPlates.filter((x) => x.plate && x.name).map((x) => ({ name: x.name, plate: x.plate, qualities: read.filter((r) => r.plate === x.plate).map((r) => r.name).slice(0, 4) }));
+    if (out.photographed.length) log(`  ◉ photographs of the world ride with the seat, in story order: ${out.photographed.map((p) => `${p.name} (${p.qualities.join(" · ") || "its own room"})`).join("; ")}`);
+    const laterAll = things.filter((e) => !placed.includes(String(e.name).toLowerCase()) && !(e.plate && sent.has(e.plate))).map((e) => e.name);
     out.later = laterAll.slice(0, LATER_CAP);
     if (laterAll.length > LATER_CAP) log(`  ◇ ${laterAll.length - LATER_CAP} later thing(s) left out — a take holds frame zero and ${LATER_CAP} stops, not a procession: ${laterAll.slice(LATER_CAP).join(" · ")}`);
     if (out.later.length) log(`  ◉ later along the take, in order: ${out.later.join(" → ")}`);
