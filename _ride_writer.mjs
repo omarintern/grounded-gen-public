@@ -99,8 +99,10 @@ export function stillFigures(text, d) {
   const lines = String(text || "").split("\n").map((l) => { const m = l.match(/^\s*\[(\d+(?:\.\d+)?)s\]\s*(.*)$/); return m ? { at: Number(m[1]), text: m[2] } : null; }).filter(Boolean);
   const out = [];
   for (const name of names) {
-    const keys = _words(name); if (!keys.length) continue;
-    const mention = lines.filter((l) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(l.text)).length * 2 >= keys.length);
+    const keys = [...new Set(_words(name))]; if (!keys.length) continue;
+    // a SHORTER later mention is still the figure ("the figure in the red winter jacket slowly turning its head" — dry-shining-4 was refused because a six-word name needed four hits)
+    const need = Math.min(2, Math.ceil(keys.length / 2));
+    const mention = lines.filter((l) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(l.text)).length >= need);
     if (!mention.length) continue;   // an absent figure is the ledger's matter, not stillness
     const own = (t) => String(t).replace(/\b(?:the |a |its )?(?:rider|camera|seat|car|cart|omnimover|boat|vehicle|lens|phone|train|coaster)\b[^.;,]{0,24}?\b(?:turns?|turning|swings?|tilts?|rises?|drops?|pans?|swivels?|rotates?|leans?|dips?|points?|looks?)\b/gi, "");   // the rider's own turn is not the figure's performance
     if (mention.some((l) => ANIMATE.test(own(l.text)) || REACTS.test(own(l.text)))) continue;
@@ -123,8 +125,11 @@ export function vehicleLeads(line, d) {
 export function replacedSetPieces(d) {
   const plate = (d?.dressing?.plateThings || []).filter(Boolean);
   const wheres = (d?.dressing?.placements || []).map((l) => String(l || "").replace(/^[^:]{0,80}\(frame zero[^)]*\):\s*/i, "").replace(/^the seat photograph[^:]*:\s*/i, "")).filter((l) => / becomes /i.test(l)).map((l) => l.split(/ becomes /i)[0]);
-  return plate.filter((p) => { const keys = _words(p); if (!keys.length) return false; return wheres.some((wh) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(wh)).length * 2 >= keys.length); });
+  return plate.filter((p) => { const keys = pieceKeys(p); if (keys.length < 2) return false; return wheres.some((wh) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(wh)).length * 2 >= keys.length); });
 }
+const SURFACE_KEYS = new Set(["rails", "rail", "track", "tracks", "trackbed", "ground", "ceiling", "background", "backdrop", "platform", "stand", "surface", "dark"]);
+/** A set piece's DISTINCTIVE words: never the way's, never a bare surface's; fewer than two = a surface, not a prop (dry-shining-4: "the floor beside the rails"). */
+export const pieceKeys = (p) => [...new Set(_words(p))].filter((k) => !SURFACE_KEYS.has(k));
 const REPLACEMENT_VERB = /\b(?:becomes?|became|is now|are now|in place of|in the place of|where [^.;,]{0,60} (?:stood|stands|was|were)|stands? where|replaced by|taken over by|gives? way to|instead of)\b/i;
 const WAY_END = /\b(?:rails?|track|tracks|channel|flume|way|path|road) (?:end|ends|ended|ending|stop|stops|stopped|stopping|terminat(?:e|es|ed|ing)|run(?:s)? out|ran out|running out|give(?:s)? out|gave out|giving out|dead-?end(?:s|ed|ing)?|halt(?:s|ed|ing)?|com(?:e|es|ing) to (?:a|an) (?:end|stop|halt))\b/i;   // job 4aa764e1: "the rails terminating in a snowy hedge maze" shipped
 const HARD_CUT = /\bhard cuts?\s+to\b/i;
@@ -189,7 +194,7 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
     // A REPLACED SET PIECE IS NAMED ONCE, IN ITS REPLACEMENT, AND NEVER AGAIN AS PRESENT (owner 2026-09-09: "if the mushroom is replaced … its still named"):
     // frame zero may name it (as what it becomes); a later beat that writes it as still there is the other ride kept (job 9127e915: "beside the giant illuminated mushroom" at 0s was a PLACEMENT, allowed now; the same words at 4s are not)
     for (const p of replacedSetPieces(d)) {
-      const keys = _words(p); if (!keys.length) continue;
+      const keys = pieceKeys(p); if (keys.length < 2) continue;   // a surface has no presence to police
       lines.forEach((line, i) => {
         if (i === 0) return;
         const hit = keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(line)).length;
