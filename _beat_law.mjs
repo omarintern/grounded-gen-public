@@ -288,7 +288,7 @@ export function buildDialogueBlock(planDialogue, stamps = DIALOGUE_STAMPS, fallb
   // validator ran). A label-less plan line takes the CALLER's subject; with no subject either, the block
   // is DROPPED — an unlabeled line violates the label law and an absent block degrades gracefully.
   const m = raw.match(/^([^:\n]{1,80}?)\s*:/);
-  const speaker = (m ? m[1] : (fallbackSpeaker || "")).trim();
+  const speaker = (m ? m[1] : (fallbackSpeaker || "")).trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").trim();   // never a quoted label (dry-shining-5: "\"the caretaker in the red plaid jacket\" [0s]:")
   if (!speaker) return null;
   const words = raw.replace(/^[^:\n]{1,80}?\s*:\s*/, "").replace(/^["'“]|["'”]$/g, "").trim();
   // ⚠ SENTENCES FIRST, COMMAS ONLY IF THAT IS NOT ENOUGH; ⚠ DO NOT MANUFACTURE FRAGMENTS (see the history at
