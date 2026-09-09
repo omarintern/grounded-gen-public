@@ -206,7 +206,14 @@ export const workTitlesClause = () =>
 export const frameZeroRegisterClause = () => {
   const n = captureFormNoun(process.env); if (!n) return "";
   const shown = /^cctv$/i.test(n) ? "CCTV" : n.toLowerCase();
-  return `⚠ FRAME ZERO'S REGISTER IS PART OF THE PHOTOGRAPH: this photograph is ${shown} footage. Beat zero STATES it as what the footage is, before the action — "${n} footage: …" — exactly as it states the place. This is not a camera word: it frames, moves and directs nothing; it names what the plate already is, and every later beat stays inside that footage. The recording device is a THING of the scene and may be ADDRESSED as one — a subject notices the ${shown === "CCTV" ? "security camera" : shown} and looks straight into its lens — that is the subject's action, not a camera word, and it holds the footage's look through the payoff (the bear that "recognized the lens of the overhead security camera" kept its CCTV; the T-rex that "looked directly up" lost it, job 6280175e).\n`;
+  // THE STATEMENT IS MANDATED ONLY WHEN THE WORDS ARE RE-AUTHORED AGAINST A KEPT PLATE (owner 2026-09-09, on the record: the badger, the
+  // cymbal monkeys and Redmond Barry kept their monochrome security-camera look with NO register word at beat zero — the plate carried it;
+  // the one loss was the T-rex REMIX, whose denser, larger action was re-authored against the parent's kept plate). A fresh gen may state
+  // it, as the bear's writer did by choice; a kept-plate remix must, and the run repairs it in when the writer leaves it out.
+  const kept = !!process.env.WORLD_PIN;
+  return `⚠ FRAME ZERO'S REGISTER IS PART OF THE PHOTOGRAPH: this photograph is ${shown} footage. ${kept
+    ? `Beat zero STATES it as what the footage is, before the action — "${n} footage: …" — exactly as it states the place.`
+    : `Beat zero MAY state it as what the footage is, before the action — "${n} footage: …" — the way it states the place; it is never wrong to.`} This is not a camera word: it frames, moves and directs nothing; it names what the plate already is, and every later beat stays inside that footage. The recording device is a THING of the scene and may be ADDRESSED as one — a subject notices the ${shown === "CCTV" ? "security camera" : shown} and looks straight into its lens — that is the subject's action, not a camera word, and it holds the footage's look through the payoff (the bear that "recognized the lens of the overhead security camera" kept its CCTV; the T-rex that "looked directly up" lost it, job 6280175e).\n`;
 };
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";
