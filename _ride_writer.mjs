@@ -195,7 +195,8 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
   const out = []; if (!d) return out;
   const w = rideWords(d);
   const lines = String(text || "").split("\n").filter((l) => /^\s*\[\d+(?:\.\d+)?s\]/.test(l));
-  const add = (line, why) => { const m = line.match(/^\s*\[(\d+(?:\.\d+)?)s\]/); out.push({ rule: "apparatus", figure: `camera (${why})`, at: m ? Number(m[1]) : 0 }); };
+  // rule "apparatus" = a WRONG video (fatal after the re-asks); rule "ride" = the ride's own flaw — re-asked once, never refused (owner 2026-09-11: draws refused on a static figure or a flat finale while everything else was right)
+  const add = (line, why, rule = "apparatus") => { const m = line.match(/^\s*\[(\d+(?:\.\d+)?)s\]/); out.push({ rule, figure: `camera (${why})`, at: m ? Number(m[1]) : 0 }); };
   lines.forEach((line, i) => {
     const first = i === 0, last = i === lines.length - 1;
     const opener = first || HARD_CUT.test(line) || /^\s*\[\d+(?:\.\d+)?s\]\s*cut\b/i.test(line);
@@ -204,14 +205,14 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
     if (dm && !mounting) add(line, `dismounted: "${dm[0]}" — the camera rides; riders appear only as the seat sees them, never looked at from outside`);
     else if (HARD_CUT.test(line) && !mounting) add(line, `"hard cut" — a travelling take never cuts between its places; its own motion carries into the next scene`);
     else if (opener && !mounting && !seatCue(line, d)) add(line, "no seat cue — the opening names the seat's own objects (the way ahead, the bar or nose, the rows ahead)");
-    else if (d.family === "coaster" && statueIn(line)) add(line, `a figure the ride reaches is held still: "${statueIn(line)}" — the ride is the event; whatever the rails pass close is acted upon`);
-    else if ((LEAVES_WAY.test(line) && !RAILS_KEPT.test(line)) || LEAVES_RAILS.test(line)) add(line, `the ${w.vehicle} leaves its ${w.way}: "${(line.match(LEAVES_WAY) || line.match(LEAVES_RAILS))[0]}" — every floor thing lies under the ${w.way}, which continue across it; the ride rides onto nothing but its own ${w.way}`);
+    else if (d.family === "coaster" && statueIn(line)) add(line, `a figure the ride reaches is held still: "${statueIn(line)}" — the ride is the event; whatever the rails pass close is acted upon`, "ride");
+    else if ((LEAVES_WAY.test(line) && !RAILS_KEPT.test(line)) || LEAVES_RAILS.test(line)) add(line, `the ${w.vehicle} leaves its ${w.way}: "${(line.match(LEAVES_WAY) || line.match(LEAVES_RAILS))[0]}" — every floor thing lies under the ${w.way}, which continue across it; the ride rides onto nothing but its own ${w.way}`, "ride");
     else if (WAY_END.test(line)) add(line, `the way ends: "${line.match(WAY_END)[0]}" — the ride's way never ends on screen`);
     else if (last && !rideSentOn(lastSentenceOf(line), d)) add(line, "the payoff does not send the ride on — the last words say where the ride goes: on, through, out of the frame, or swallowed by what the payoff releases");
-    else if (d.kind === "ridden" && !vehicleLeads(line, d)) add(line, `the ride vehicle does not lead this beat — the ${w.vehicle || "vehicle"} is what each beat does (glides, turns toward, rolls on, passes, looks to); figures and things are what it passes`);
-    else if (d.interior && INVERSION.test(line)) add(line, `inverted indoors: "${line.match(INVERSION)[0]}" — a corridor or room hosts straight runs, dips and banks, never a loop`);
-    else if (last && d.family === "dark ride" && !CORE_ONLY.on && !seatFeels(line)) add(line, `the finale is not felt by the seat — the ${w.vehicle} sways, jolts, dips or is splashed as the spectacle passes, and the riders gasp, scream or laugh from the rows ahead (owner: spectacle acts on the ride; the riders react)`);
-    else if (last && FACEFILL.test(line)) add(line, `payoff stops on a face: "${line.match(FACEFILL)[0]}" — the ride passes through or by at speed`);
+    else if (d.kind === "ridden" && !vehicleLeads(line, d)) add(line, `the ride vehicle does not lead this beat — the ${w.vehicle || "vehicle"} is what each beat does (glides, turns toward, rolls on, passes, looks to); figures and things are what it passes`, "ride");
+    else if (d.interior && INVERSION.test(line)) add(line, `inverted indoors: "${line.match(INVERSION)[0]}" — a corridor or room hosts straight runs, dips and banks, never a loop`, "ride");
+    else if (last && d.family === "dark ride" && !CORE_ONLY.on && !seatFeels(line)) add(line, `the finale is not felt by the seat — the ${w.vehicle} sways, jolts, dips or is splashed as the spectacle passes, and the riders gasp, scream or laugh from the rows ahead (owner: spectacle acts on the ride; the riders react)`, "ride");
+    else if (last && FACEFILL.test(line)) add(line, `payoff stops on a face: "${line.match(FACEFILL)[0]}" — the ride passes through or by at speed`, "ride");
   });
   // THE TAKE OPENS INSIDE THE FIRST RIDING PHOTOGRAPH, AND THE RIDE'S OWN SCENE IS PASSED LATER (owner 2026-09-11, the golden take; dry-cave-1's writer
   // opened on the plate's replacements and never passed the plate's scene later)
@@ -232,9 +233,9 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
     const qs = (p?.qualities || []).map((q) => [...new Set(_words(q))]).filter((k) => k.length);
     if (!qs.length) continue;
     const arrived = qs.some((keys) => lines.some((line) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(line)).length >= Math.min(2, Math.ceil(keys.length / 2))));
-    if (!arrived) out.push({ rule: "apparatus", figure: `camera (a riding photograph is never arrived at: ${p.name} — its qualities (${(p.qualities || []).join(", ")}) appear in no beat; the take arrives in each riding photograph, in order, without a cut)`, at: 0 });
+    if (!arrived) out.push({ rule: "ride", figure: `camera (a riding photograph is never arrived at: ${p.name} — its qualities (${(p.qualities || []).join(", ")}) appear in no beat; the take arrives in each riding photograph, in order, without a cut)`, at: 0 });
   }
-  if (d.family === "dark ride") for (const f of stillFigures(text, d)) out.push({ rule: "apparatus", figure: `camera (a figure of the world is passed without performing: "${f.name}" — on a dark ride every figure is an animatronic: one motion timed to the pass, and the ride's voices as it is passed)`, at: f.at });
+  if (d.family === "dark ride") for (const f of stillFigures(text, d)) out.push({ rule: "ride", figure: `camera (a figure of the world is passed without performing: "${f.name}" — on a dark ride every figure is an animatronic: one motion timed to the pass, and the ride's voices as it is passed)`, at: f.at });
   if (d.world?.mode === "theme") {
     // the work's TITLE is the one lexical check left (one string, never a list); the world's places are the place judge's (_judge_places, run by _run)
     out.push(...worldNameFindings(text, [...(Array.isArray(workTitles) ? workTitles : []), d.world?.title].filter(Boolean)));
