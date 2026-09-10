@@ -449,12 +449,12 @@ export const charSigBlock = (charSig) => (
 // MUSIC THE MAKER ASKED FOR (owner 2026-09-07): allowed, in the Sound block, DIEGETIC — its source is in the scene.
 const musicClause = () => (
   rideFromEnv()?.family === "dark ride"
-    ? `⚠ THE RIDE'S OWN SHOW MUSIC IS THE FORM'S (a dark ride plays music from its own speakers): write the Sound: line as the music the ride itself plays — by era and genre, NEVER a named song, album or artist — from its speakers, swelling as the vehicle nears one and thinning in the tunnels; with it the mechanical hum of the track and the sounds of each tableau as the vehicle passes it. It is diegetic and the only music: no score laid over the scene, and never "no music". `
+    ? `⚠ THE RIDE'S OWN SHOW MUSIC IS THE FORM'S (a dark ride plays music from its own speakers): write the Sound: line as the music the ride itself plays — by era and genre, NEVER a named song, album or artist — from its speakers, swelling as the vehicle nears one and thinning between scenes; with it the mechanical hum of the track and the sounds of each tableau as the vehicle passes it. It is diegetic and the only music: no score laid over the scene, and never "no music". `
     : musicRequested(process.env.RAW_USER_PROMPT || process.env.USER_PROMPT || "")
     ? `⚠ THE REQUEST NAMES MUSIC, SO MUSIC IS ALLOWED — write it in the Sound: line as DIEGETIC music with its SOURCE in the ` +
       `scene ("warped 1930s swing from the ride's own speakers", "a brass band on the stand", "a radio on the counter"), described ` +
       `by era and genre, NEVER a named song, album or artist (a named work trips the provider's copyright check). It plays where ` +
-      `its source is — it swells when the ride nears the speakers and fades in the tunnel — and it is the only music: no score, ` +
+      `its source is — it swells when the ride nears the speakers and fades between scenes — and it is the only music: no score, ` +
       `no soundtrack laid over the scene. `
     : `⚠ NEVER ask for MUSIC or a score — this is found footage, music breaks the realism AND the provider REFUSES generations ` +
       `whose invented soundtrack trips a copyright check (a warehouse clip was rejected outright on exactly that). `
