@@ -37,7 +37,8 @@ export function rideBlock(d = rideFromEnv()) {
     const photographed = (d.dressing?.photographed || []).filter((p) => p && p.name);
     s += `THE WORLD IS BUILT INTO THE RIDE: the seat photograph IS the ride — its ${w.vehicle}, its ${w.way} and its scene architecture are the frame's constant from frame zero to the end. ` +
       (photographed.length
-        ? `PHOTOGRAPHS OF THE WORLD RIDE WITH THIS FRAME, in story order — ${photographed.map((p) => `${p.name}${(p.qualities || []).length ? ` (${p.qualities.join(", ")})` : ""}`).join("; ")}: the take ARRIVES in each without a cut, the ${w.way} running on through it and the ${w.vehicle} never leaving the ${w.way}; each is written as its qualities — its floor, its walls, its fixtures, its figures — never by name; the photograph carries the rest. `
+        ? `PHOTOGRAPHS OF THE WORLD RIDE WITH THIS FRAME, in story order — ${photographed.map((p) => `${p.name}${(p.qualities || []).length ? ` (${p.qualities.join(", ")})` : ""}`).join("; ")}: the take ARRIVES in each without a cut, the ${w.way} running on through it and the ${w.vehicle} never leaving the ${w.way}; each is written as its qualities — its floor, its walls, its fixtures, its figures — never by name; the photograph carries the rest. ` +
+          `⚠ THE TAKE OPENS INSIDE THE FIRST RIDING PHOTOGRAPH (owner 2026-09-11, the golden take): frame zero is ${photographed[0].name} entered from the seat — the seat photograph's ${w.way}${vehicleShown ? ` and ${w.vehicle}` : ""} run into it, its qualities around the ${w.way} — and every riding photograph is arrived at by a beat of its own, in order. The seat photograph's OWN scene comes LATER in the take, never first; when it is on screen its set pieces are the world's things (the Set line), never the other ride's. `
         : `No photograph of the world rides with it: the world arrives as THINGS on the ride's own surfaces. `) +
       `FRAME ZERO NAMES EVERY SET PIECE OF THIS PHOTOGRAPH${plateThings.length ? ` — ${plateThings.join(", ")} —` : ""} (owner: frame zero is always grounded): each either as WHAT IT BECOMES — a replacement names the set piece it takes the place of ("where the <set piece> stands, <the world's thing> stands") — or as ITSELF, in its place, when nothing of the world takes its place; a set piece that is replaced is named once, in its replacement, and never again as present; the ${w.vehicle}, the ${w.way} and the show building's own walls, floor and ceiling remain as photographed. ` +
       (placements.length ? `FRAME ZERO'S REPLACEMENTS, already in place at [0s] and stated as facts of the scene, never as changes: ${placements.join(" | ")}. ` : "") +
@@ -187,6 +188,13 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
     else if (d.interior && INVERSION.test(line)) add(line, `inverted indoors: "${line.match(INVERSION)[0]}" — a corridor or room hosts straight runs, dips and banks, never a loop`);
     else if (last && FACEFILL.test(line)) add(line, `payoff stops on a face: "${line.match(FACEFILL)[0]}" — the ride passes through or by at speed`);
   });
+  // EVERY RIDING PHOTOGRAPH IS ARRIVED AT (owner 2026-09-11: the maze rode as the third reference and no beat travelled into it — the hedges never appeared)
+  for (const p of (d.dressing?.photographed || [])) {
+    const qs = (p?.qualities || []).map((q) => [...new Set(_words(q))]).filter((k) => k.length);
+    if (!qs.length) continue;
+    const arrived = qs.some((keys) => lines.some((line) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(line)).length >= Math.min(2, Math.ceil(keys.length / 2))));
+    if (!arrived) out.push({ rule: "apparatus", figure: `camera (a riding photograph is never arrived at: ${p.name} — its qualities (${(p.qualities || []).join(", ")}) appear in no beat; the take arrives in each riding photograph, in order, without a cut)`, at: 0 });
+  }
   if (d.family === "dark ride") for (const f of stillFigures(text, d)) out.push({ rule: "apparatus", figure: `camera (a figure of the world is passed without performing: "${f.name}" — on a dark ride every figure is an animatronic: one motion timed to the pass, and the ride's voices as it is passed)`, at: f.at });
   if (d.world?.mode === "theme") {
     // the work's TITLE is the one lexical check left (one string, never a list); the world's places are the place judge's (_judge_places, run by _run)
@@ -217,6 +225,7 @@ export function roomBanList(d, workTitles = []) {
 export function repairFrameZero(text, d) {
   const t = String(text || "");
   if (!d || d.world?.mode !== "theme") return { text: t, added: [] };
+  if ((d.dressing?.photographed || []).length) return { text: t, added: [] };   // photographs ride: the take opens inside the first of them, the Set line carries the plate's replacements (owner 2026-09-11)
   const lines = t.split("\n");
   const i = lines.findIndex((l) => /^\s*\[\d+(?:\.\d+)?s\]/.test(l));
   if (i < 0) return { text: t, added: [] };
