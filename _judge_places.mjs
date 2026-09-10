@@ -10,7 +10,7 @@ export const PLACE_QUESTION = (title) =>
   `THE RULE: a place of the world is written as its QUALITIES — the pattern of its floor, the finish of its walls, its fixtures, its figures, its light — ` +
   `never as a NAME and never as somewhere the ride is or goes. List every phrase that breaks it: a proper-noun location (a hotel, a house, a room by its name, ` +
   `a numbered room), a named room of the work, or a bare room noun written as where the ride is or goes ("into the lobby", "through the hallway", "in the maze", ` +
-  `"the ballroom"). A THING beside the way is NOT a place: a carpet, wallpaper, chandeliers, hedge walls, elevator doors, a door, a wall, a set of stairs, a tableau. ` +
+  `"the ballroom"). A THING beside the way is NOT a place: a carpet, wallpaper, chandeliers, hedge walls, elevator doors, a door, a wall, a set of stairs, a tableau. THE RIDE'S OWN PASSAGES ARE NOT PLACES OF THE WORLD: a tunnel, cave, cavern, corridor, hall, bend, dark stretch or "next scene" the ride itself travels through is the ride's architecture — never list it. ` +
   `The work's title is a name. Return ONLY JSON {"places":[{"words":"<the exact words as written>","at":<the beat's stamp in seconds, a number>}]} — ` +
   `{"places":[]} when nothing names a place.`;
 

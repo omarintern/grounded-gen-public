@@ -89,10 +89,28 @@ const FACEFILL = /\b(?:fills? the (?:frame|lens|screen|shot)|filling the (?:fram
 // THE VEHICLE NEVER LEAVES ITS WAY (owner 2026-09-09, job eb329045: "the ride cart glides onto a hexagonal carpet pattern" — the rails ended at a
 // carpeted platform in the video). A floor thing lies under and around the way; the vehicle rides onto nothing but its own way.
 export const FLOOR_THING = /\b(?:carpets?|rugs?|tiles?|tiled|tiling|floorboards?|floors?|flooring|parquet|linoleum|paving|cobbles?|cobblestones?|stairs?|staircase|steps|marble floor)\b/i;
-const LEAVES_WAY = /\b(?:cars?|carts?|vehicles?|omnimover|boats?|trains?|coaster|ride|pods?|gondolas?|carriages?|trams?|karts?)\s+(?:\w+\s+){0,2}?(?:glides?|gliding|rolls?|rolling|drives?|driving|moves?|moving|travels?|travelling|traveling|slides?|sliding|coasts?|eases?|climbs?|pulls?|rides?|runs?|swings?|passes?)\s+(?:up |down |out |off |on |forward |straight )?onto\s+(?:a|an|the|its|this|that)\s+(?!(?:own )?(?:rails?|track|tracks|way|path|channel|flume|bridge|lift|conveyor|turntable|trestle|ramp|incline|hill|guide))/i;
+const LEAVES_WAY = /\b(?:cars?|carts?|vehicles?|omnimover|boats?|trains?|coaster|ride|pods?|gondolas?|carriages?|trams?|karts?)\s+(?:\w+\s+){0,2}?(?:glides?|gliding|rolls?|rolling|drives?|driving|moves?|moving|travels?|travelling|traveling|slides?|sliding|coasts?|eases?|climbs?|pulls?|rides?|runs?|swings?|passes?)\s+(?:up |down |out |off |on |forward |straight )?onto\s+(?:a|an|the|its|this|that)\s+(?!(?:own |next |new |same |long |short |dark |lit |wide |narrow )?(?:rails?|track|tracks|way|path|channel|flume|bridge|lift|conveyor|turntable|trestle|ramp|incline|hill|guide|section|stretch|scene|part|area|length|run|span|curve|bend|straight|passage|tunnel|corridor|hall)\b)/i;
+// A BEAT THAT KEEPS THE RAILS UNDER THE FLOOR THING IS NOT LEAVING THEM (dry-cave-1 was refused on "rolls onto a section where a carpet lies under and around the rails" — the writer wrote exactly what the law asked)
+const RAILS_KEPT = /\b(?:under|beneath) (?:and around )?the (?:rails?|track|way)\b|\b(?:rails?|track) (?:run|runs|running|continue|continues|continuing|carry|carries|carrying|go|goes|going) (?:on|across|over|through|under|beneath)\b|\bwith the (?:rails?|track|way) continuing\b/i;
+const FLOOR_ONTO = /\b((?:cars?|carts?|vehicles?|omnimover|boats?|trains?|coaster|ride|pods?|gondolas?|carriages?|trams?|karts?)\s+(?:\w+\s+){0,2}?)(glides?|gliding|rolls?|rolling|drives?|driving|moves?|moving|travels?|travelling|traveling|slides?|sliding|coasts?|eases?|rides?|runs?|passes?)\s+(?:up |down |out |off |on |forward |straight )?onto\s+((?:a|an|the|its|this|that)\s+(?:[\w-]+\s+){0,4}?(?:carpets?|rugs?|tiles?|tiled floor|floorboards?|boards?|parquet|linoleum|paving|cobbles?|cobblestones?|grass|gravel|earth|dirt|sand|snow|ice))\b/i;
+/** THE WAY REPAIR (owner 2026-09-11, mechanical like repairFrameZero): "<vehicle> rolls onto the carpet" becomes "<vehicle> rolls on over the carpet lying
+ *  under the <way>" — the writer's sentence kept, the rails kept, no re-ask spent. A beat that already keeps the rails is left alone. Pure. */
+export function repairWay(text, d) {
+  const w = d ? rideWords(d) : { way: "rails" };
+  const way = w.way || "rails";
+  const lines = String(text || "").split("\n"); const fixed = [];
+  const out = lines.map((line) => {
+    if (!/^\s*\[\d+(?:\.\d+)?s\]/.test(line) || RAILS_KEPT.test(line)) return line;
+    const m = line.match(FLOOR_ONTO); if (!m) return line;
+    const repaired = line.replace(FLOOR_ONTO, (all, subj, verb, obj) => `${subj}${/^(?:glides?|gliding)$/i.test(verb) ? verb : /^rolls?$|^rolling$/i.test(verb) ? verb : verb} on over ${obj} lying under the ${way}`);
+    if (repaired !== line) fixed.push(m[0].trim());
+    return repaired;
+  });
+  return { text: out.join("\n"), fixed };
+}
 const LEAVES_RAILS = /\b(?:leaves?|leaving|left|jumps? off|comes? off|off) the (?:rails?|track|tracks)\b|\b(?:cars?|carts?|vehicles?|omnimover|boats?|trains?|coaster|ride|pods?|gondolas?|carriages?|trams?|karts?)\s+(?:\w+\s+){0,2}?(?:drifts?|drifting|settles?|settling|sinks?|sinking|lowers?|lowering|drops?|dropping|descends?|descending|comes?|coming|eases?|easing|dips?|dipping)\s+(?:back\s+)?down\s+(?:on)?to\s+(?:a|an|the|its)\s+(?:\w+\s+){0,3}?(?:floor|ground|carpet|rug|tiles|boards|earth|pavement)\b/i;   // "the omnimover drifts down to the patterned floor" (dry-shining-5) leaves the rails as surely as rolling onto it
 // A DARK RIDE'S FIGURES PERFORM (owner 2026-09-09: "the characters are frozen, theres no life … yes Dark-ride figures are animatronics")
-const ANIMATE = /\b(?:turns?|turning|swivels?|beckons?|beckoning|waves?|waving|lunges?|lunging|rises?|rising|lifts?|lifting|raises?|raising|swings?|swinging|nods?|nodding|reach(?:es|ing)?|steps?|stepping|lurch(?:es|ing)?|jerks?|snaps?|tilts?|rotates?|rotating|opens?|opening|blinks?|points?|pointing|gestures?|gesturing|sways?|swaying|rocks?|rocking|bows?|bowing|leans?|leaning|lights? up|flicker(?:s|ing)?|flash(?:es|ing)?|glows? (?:on|alive|brighter)|mouths? mov\w*|jaws? (?:open|drop|snap|work)\w*|speaks?|speaking|sings?|singing|laughs?|laughing|shrieks?|screams?|calls?|whispers?|growls?|roars?|cackles?|creaks? (?:up|forward|to life|alive)|springs? (?:up|forward|to life|alive)|comes? (?:alive|to life)|whirs?|thrash(?:es|ing)?|claws?|clawing|strikes?|slams?|pounds?|shudders?|twitch(?:es|ing)?|drops? (?:down|from|toward)|swoops?|charges?|follows? the (?:rider|car|cart|seat|camera|lens)|tracks? the (?:rider|car|cart|seat|camera|lens)|eyes (?:snap|flick|follow|light|open|glow)|heads? (?:turn|snap|swivel|tilt|lift)|arms? (?:rise|lift|swing|reach)|hands? (?:rise|lift|reach|beckon))\b/i;
+const ANIMATE = /\b(?:walks?|walking|wanders?|wandering|strolls?|strolling|march(?:es|ing)?|shuffles?|shuffling|turns?|turning|swivels?|beckons?|beckoning|waves?|waving|lunges?|lunging|rises?|rising|lifts?|lifting|raises?|raising|swings?|swinging|nods?|nodding|reach(?:es|ing)?|steps?|stepping|lurch(?:es|ing)?|jerks?|snaps?|tilts?|rotates?|rotating|opens?|opening|blinks?|points?|pointing|gestures?|gesturing|sways?|swaying|rocks?|rocking|bows?|bowing|leans?|leaning|lights? up|flicker(?:s|ing)?|flash(?:es|ing)?|glows? (?:on|alive|brighter)|mouths? mov\w*|jaws? (?:open|drop|snap|work)\w*|speaks?|speaking|sings?|singing|laughs?|laughing|shrieks?|screams?|calls?|whispers?|growls?|roars?|cackles?|creaks? (?:up|forward|to life|alive)|springs? (?:up|forward|to life|alive)|comes? (?:alive|to life)|whirs?|thrash(?:es|ing)?|claws?|clawing|strikes?|slams?|pounds?|shudders?|twitch(?:es|ing)?|drops? (?:down|from|toward)|swoops?|charges?|follows? the (?:rider|car|cart|seat|camera|lens)|tracks? the (?:rider|car|cart|seat|camera|lens)|eyes (?:snap|flick|follow|light|open|glow)|heads? (?:turn|snap|swivel|tilt|lift)|arms? (?:rise|lift|swing|reach)|hands? (?:rise|lift|reach|beckon))\b/i;
 /** Figures of the world the take mentions but never makes perform: [{ name, at }]. Pure. */
 export function stillFigures(text, d) {
   const names = (d?.dressing?.figures || []).filter(Boolean);
@@ -181,13 +199,27 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
     else if (HARD_CUT.test(line) && !mounting) add(line, `"hard cut" — a travelling take never cuts between its places; its own motion carries into the next scene`);
     else if (opener && !mounting && !seatCue(line, d)) add(line, "no seat cue — the opening names the seat's own objects (the way ahead, the bar or nose, the rows ahead)");
     else if (d.family === "coaster" && statueIn(line)) add(line, `a figure the ride reaches is held still: "${statueIn(line)}" — the ride is the event; whatever the rails pass close is acted upon`);
-    else if (LEAVES_WAY.test(line) || LEAVES_RAILS.test(line)) add(line, `the ${w.vehicle} leaves its ${w.way}: "${(line.match(LEAVES_WAY) || line.match(LEAVES_RAILS))[0]}" — every floor thing lies under the ${w.way}, which continue across it; the ride rides onto nothing but its own ${w.way}`);
+    else if ((LEAVES_WAY.test(line) && !RAILS_KEPT.test(line)) || LEAVES_RAILS.test(line)) add(line, `the ${w.vehicle} leaves its ${w.way}: "${(line.match(LEAVES_WAY) || line.match(LEAVES_RAILS))[0]}" — every floor thing lies under the ${w.way}, which continue across it; the ride rides onto nothing but its own ${w.way}`);
     else if (WAY_END.test(line)) add(line, `the way ends: "${line.match(WAY_END)[0]}" — the ride's way never ends on screen`);
     else if (last && !rideSentOn(lastSentenceOf(line), d)) add(line, "the payoff does not send the ride on — the last words say where the ride goes: on, through, out of the frame, or swallowed by what the payoff releases");
     else if (d.kind === "ridden" && !vehicleLeads(line, d)) add(line, `the ride vehicle does not lead this beat — the ${w.vehicle || "vehicle"} is what each beat does (glides, turns toward, rolls on, passes, looks to); figures and things are what it passes`);
     else if (d.interior && INVERSION.test(line)) add(line, `inverted indoors: "${line.match(INVERSION)[0]}" — a corridor or room hosts straight runs, dips and banks, never a loop`);
     else if (last && FACEFILL.test(line)) add(line, `payoff stops on a face: "${line.match(FACEFILL)[0]}" — the ride passes through or by at speed`);
   });
+  // THE TAKE OPENS INSIDE THE FIRST RIDING PHOTOGRAPH, AND THE RIDE'S OWN SCENE IS PASSED LATER (owner 2026-09-11, the golden take; dry-cave-1's writer
+  // opened on the plate's replacements and never passed the plate's scene later)
+  if ((d.dressing?.photographed || []).length && lines.length) {
+    const first = d.dressing.photographed[0];
+    const qs0 = (first?.qualities || []).map((q) => [...new Set(_words(q))]).filter((k) => k.length);
+    const opens = !qs0.length || qs0.some((keys) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(lines[0])).length >= Math.min(2, Math.ceil(keys.length / 2)));
+    if (!opens) out.push({ rule: "apparatus", figure: `camera (the take does not open inside the first riding photograph: ${first.name} (${(first.qualities || []).join(", ")}) — frame zero is that photograph entered from the seat, its qualities around the ${w.way}; the ride's own scene comes later)`, at: 0 });
+    const replaced = replacedSetPieces(d).map((p) => pieceKeys(p)).filter((k) => k.length >= 2);
+    if (replaced.length) {
+      const mentions = (line) => replaced.filter((keys) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(line)).length * 2 >= keys.length).length;
+      const atZero = mentions(lines[0]), later = lines.slice(1).some((l) => mentions(l) > 0);
+      if (atZero > 0 && !later) out.push({ rule: "apparatus", figure: `camera (the ride's own scene is written at frame zero and nowhere later — the take opens inside ${first.name}; the seat photograph's scene, with its set pieces replaced, is passed LATER in the take)`, at: 0 });
+    }
+  }
   // EVERY RIDING PHOTOGRAPH IS ARRIVED AT (owner 2026-09-11: the maze rode as the third reference and no beat travelled into it — the hedges never appeared)
   for (const p of (d.dressing?.photographed || [])) {
     const qs = (p?.qualities || []).map((q) => [...new Set(_words(q))]).filter((k) => k.length);
