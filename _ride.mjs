@@ -108,15 +108,27 @@ export function apparatusKind(form = "", noun = "") {
 // COASTERS keep their measured words ("<noun> front seat pov" / "<noun> onride pov footage") — owner: "its easier to find amongst the
 // search engines so lets leave as is". An interior world prefixes "indoor " for a coaster or another ridden kind, never for a dark ride
 // (its query is the owner's own) and never under coaster architecture (the coaster starts legit, indoors or out).
-export function seatQueries(form, { context = "", noun: nounOverride = "", indoor = false } = {}) {
+// QUERY-LEVEL DIFFUSION (owner 2026-09-10: one web search is ~35 rows and never pages — depth is more PHRASINGS): the seat's phrasings are a
+// pool per kind (the measured ones above, brand-free), and every run samples two of them, so different runs draw from different pools before
+// the seat diffusion (_judge_seat.diffuseSeat) picks among equals. `rand` is injectable (the batteries pass a constant).
+export const SEAT_PHRASINGS = {
+  "dark ride": ["theme park dark ride pov", "dark ride ride-through", "dark ride onboard pov footage", "dark ride vehicle interior scene", "onride dark ride pov"],
+  coaster: (noun) => [`${noun} front seat pov`, `${noun} onride pov footage`, `${noun} pov footage`, `${noun} first person ride`],
+};
+export function sampleQueries(pool, n = 2, rand = Math.random) {
+  const list = [...(Array.isArray(pool) ? pool : [])]; const out = [];
+  while (list.length && out.length < n) { const k = Math.min(list.length - 1, Math.max(0, Math.floor(rand() * list.length))); out.push(list.splice(k, 1)[0]); }
+  return out;
+}
+export function seatQueries(form, { context = "", noun: nounOverride = "", indoor = false, rand = Math.random } = {}) {
   const noun = String(nounOverride || "").trim() || formNoun(form);
   const kind = apparatusKind(form, noun);
-  if (kind === "ridden" && isDarkRideNoun(noun)) { const ctx = String(context || "").replace(/\s+/g, " ").trim(); return ["theme park dark ride pov", ctx ? `${ctx} dark ride pov` : "dark ride ride-through"]; }
+  if (kind === "ridden" && isDarkRideNoun(noun)) { const ctx = String(context || "").replace(/\s+/g, " ").trim(); const picks = sampleQueries(SEAT_PHRASINGS["dark ride"], 2, rand); return ctx ? [picks[0], `${ctx} dark ride pov`] : picks; }
   if (kind === "driven") return /\bkart\b/i.test(`${form} ${noun}`) ? ["go-kart pov footage", "go-kart onboard footage"] : ["dashcam footage", "dashcam pov driving footage"];
   if (kind === "worn") { const dev = wornDevice(form); return [`${dev} pov footage`, `first person ${dev} footage`]; }
   const pre = indoor ? "indoor " : "";
   if (!noun) { const q = formPlateQuery(form); return [`${pre}${q}`, `${pre}${q.replace(/\bpov\b/i, "onboard")}`]; }
-  return [`${pre}${noun} front seat pov`, `${pre}${noun} onride pov footage`];
+  return sampleQueries(SEAT_PHRASINGS.coaster(`${pre}${noun}`), 2, rand);
 }
 /** THE SEAT PLATE'S ENGINE LADDER, BY FAMILY (owner 2026-09-08, on the query study: «the paid index's web search is therefore the leader for this. so web
  *  the paid index then the free library as fallback then lastly [search] for dark ride form»). "web" = the paid index's web search (never the local scraper — owner: «it must
@@ -138,7 +150,7 @@ export function seatLadder(family = "") { return family === "dark ride" ? ["web"
  *  a themed setting = ARCHITECTURE (the seat plate, one tunnel mouth at most, the world's things as colouring); any other ridden,
  *  driven or worn form of a named world = PLACES (the world's photographs ride behind the seat in story order); an unnamed world =
  *  SETTING (the seat plate carries its world; the maker's places are informant plates hunted as places). */
-export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan = null, device = "", requiredForm = "" } = {}) {
+export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan = null, device = "", requiredForm = "", rand = Math.random } = {}) {
   const p = plan && typeof plan === "object" ? plan : {};
   // THE MAKER'S RIDE KIND IS THE NOUN (owner 2026-09-08, job fa203849: "The Shining theme park dark ride" planned as "onboard ride footage",
   // so the noun fell to "ride" and every dark-ride rule stood aside). The planner's device phrase never outranks the maker's word.
@@ -164,7 +176,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const worldWords = String(p.form?.world || "").replace(/\s+/g, " ").trim();
   const context = !named && worldWords && worldWords.split(" ").length <= 4 && !isRideNoun(worldWords) ? worldWords : "";
   const indoor = kind === "ridden" && family !== "dark ride" && mode !== "architecture" && (interior || (places.length > 0 && isInteriorWorld({ form: { world: places.join(" ") } })));
-  const queries = seatQueries(plateForm, { context, noun: makerKind || "", indoor });
+  const queries = seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand });
   const titles = plan ? workTitlesOf(p) : (title ? [title] : []);
   const rooms = mode === "theme" && Array.isArray(p.slots?.world?.shotSet) ? p.slots.world.shotSet.map((q) => roomNameOf(q, titles)).filter(Boolean) : [];
   return {
