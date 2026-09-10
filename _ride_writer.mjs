@@ -43,8 +43,8 @@ export function rideBlock(d = rideFromEnv()) {
       (photographed.length
         ? `PHOTOGRAPHS OF THE WORLD RIDE WITH THIS FRAME, in story order — ${photographed.map((p) => `${p.name}${(p.qualities || []).length ? ` (${p.qualities.join(", ")})` : ""}`).join("; ")}: references for the world's things, never scenes the take opens in — the take opens in the seat photograph with every set piece named as what it becomes (the replacements are these photographs' own things), then ARRIVES at what each photograph carries without a cut, the ${w.way} running on through it and the ${w.vehicle} never leaving the ${w.way}; each is written as its qualities — its floor, its walls, its fixtures, its figures — never by name; the photograph carries the rest. `
         : `No photograph of the world rides with it: the world arrives as THINGS on the ride's own surfaces. `) +
-      `FRAME ZERO NAMES EVERY SET PIECE OF THIS PHOTOGRAPH${plateThings.length ? ` — ${plateThings.join(", ")} —` : ""} (owner: frame zero is always grounded): each either as WHAT IT BECOMES — a replacement names the set piece it takes the place of ("where the <set piece> stands, <the world's thing> stands") — or as ITSELF, in its place, when nothing of the world takes its place; a set piece that is replaced is named once, in its replacement, and never again as present; the ${w.vehicle}, the ${w.way} and the show building's own walls, floor and ceiling remain as photographed. ` +
-      (placements.length ? `FRAME ZERO'S REPLACEMENTS, already in place at [0s] and stated as facts of the scene, never as changes: ${placements.join(" | ")}. ` : "") +
+      `FRAME ZERO NAMES EVERY SET PIECE OF THIS PHOTOGRAPH${plateThings.length ? ` — ${plateThings.join(", ")} —` : ""} (owner: frame zero is always grounded): each either as WHAT IT BECOMES — a replacement names the set piece it takes the place of ("<the world's thing> where the <set piece> stood") — or as ITSELF, in its place, when nothing of the world takes its place; a set piece that is replaced is named once, in its replacement, and never again as present; the ${w.vehicle}, the ${w.way} and the show building's own walls, floor and ceiling remain as photographed. ` +
+      (placements.length ? `FRAME ZERO'S REPLACEMENTS, already in place at [0s], stated as standing facts of the scene in this grammar — the world's thing where the set piece stood — never as a change (nothing becomes, turns into or is replaced on screen): ${placements.map(replacementFact).join(" | ")}. ` : "") +
       (later.length ? `LATER THINGS arrive further along the same continuous take, in this order, each as the ride's own set piece: ${later.map((x) => FLOOR_THING.test(x) ? `${x} (a floor thing: it lies under and around the ${w.way}, with the ${w.way} continuing across it)` : x).join(" → ")}. ` : "") +
       `WHERE THINGS SIT: beside the ${w.way} — on the scene's walls, on raised platforms or banks next to it — or AHEAD, as a tableau the ${w.vehicle} approaches and veers away from before reaching it; a figure of the world stands where a thing would, described by clothing and posture. The ${w.way}, the floor or bed the ride travels on, and the ${w.vehicle} are never dressed. ` +
       `THE WORLD'S PLACES ARE WRITTEN AS THEIR QUALITIES: a place of the work — its lobby, its maze, its hallway, a room by name, the work's title — never appears as a name and never as somewhere the ride goes; it appears as what it is made of, beside the ${w.way}: the pattern of its floor, the finish of its walls, its fixtures, its figures, its light (a ballroom is its parquet, its chandeliers and its band; a maze is its walls of clipped hedge). The ${w.way} runs on through every scene, unnamed (the next scene, a turn, a blackout). `;
@@ -144,6 +144,16 @@ export function vehicleLeads(line, d) {
   const rx = new RegExp(`\\b(?:${[...new Set(nouns)].map(_re).join("|")})\\b(?:\\s+\\w+){0,2}?\\s+${VEHICLE_MOTION.source.replace(/^\\b|\\b$/g, "")}`, "i");
   return rx.test(String(line || ""));
 }
+/** A REPLACEMENT IS A STANDING FACT IN THE GOLDEN GRAMMAR — "<the world's thing> where <the set piece> stood" (draw 5 render 1: "hedge maze walls where the
+ *  giant mushroom stood"). dry-cave-local-1 (2026-09-11) was handed "X becomes Y" and wrote "become" at 0s plus a [1s] beat where two more "became" — a morph
+ *  on screen. The placement's internal shape stays "X becomes Y"; this is how it is SHOWN to the writer and STATED by the repair. A surface reads "was". Pure. */
+const SURFACE_WORD = /\b(?:floor|ceiling|path|walkway|ground|bed|carpet|roof|surface|track)\b/i;
+export function replacementFact(f) {
+  const s = String(f || "").replace(/^[^:]{0,80}\(frame zero[^)]*\):\s*/i, "").replace(/^the seat photograph[^:]*:\s*/i, "").trim();
+  const m = s.match(/^(.*?)\s+becomes\s+(.+?)\.?$/i);
+  if (!m) return s;
+  return `${m[2].trim()} where ${m[1].trim()} ${SURFACE_WORD.test(m[1]) ? "was" : "stood"}`;
+}
 /** The set pieces a placement REPLACES (its "<where> becomes <name>" names the set piece) — pure. */
 export function replacedSetPieces(d) {
   const plate = (d?.dressing?.plateThings || []).filter(Boolean);
@@ -153,6 +163,7 @@ export function replacedSetPieces(d) {
 const SURFACE_KEYS = new Set(["rails", "rail", "track", "tracks", "trackbed", "ground", "ceiling", "background", "backdrop", "platform", "stand", "surface", "dark"]);
 /** A set piece's DISTINCTIVE words: never the way's, never a bare surface's; fewer than two = a surface, not a prop (dry-shining-4: "the floor beside the rails"). */
 export const pieceKeys = (p) => [...new Set(_words(p))].filter((k) => !SURFACE_KEYS.has(k));
+const TRANSFORM = /\b(?:becomes?|becoming|turns? into|turning into|transforms?(?: into)?|transforming|morphs?(?: into)?|morphing|(?:is|are|be|being) replaced (?:by|with)|changes? into|changing into|dissolves? into|melts? into|gives? way to)\b/i;
 const REPLACEMENT_VERB = /\b(?:becomes?|became|is now|are now|in place of|in the place of|where [^.;,]{0,60} (?:stood|stands|was|were)|stands? where|replaced by|taken over by|gives? way to|instead of)\b/i;
 // THE FINALE IS FELT BY THE SEAT (owner 2026-09-11): the vehicle reacts, or the riders do — else the spectacle passed nobody
 const SEAT_FEELS = /\b(?:swallow(?:s|ed|ing)? (?:the|it|them)|engulf(?:s|ed|ing)? (?:the|it|them)|plung(?:e|es|ed|ing) (?:through|into) the|through the (?:deluge|flood|surge|spray|torrent)|sways?|swaying|swayed|jolts?|jolting|jolted|lurch(?:es|ing|ed)?|dips?|dipping|bucks?|bucking|rocks?|rocking|rocked|shudders?|shuddering|shakes?|shaking|shook|tilts?|tilting|swerves?|swerving|is (?:splashed|sprayed|drenched|showered|thrown|shoved|jostled|rocked|shaken)|splash(?:es|ing)? (?:over|across|onto) the|sprays? (?:over|across|onto) the|(?:gasps?|screams?|shrieks?|laughter|laughs?|cheers?|whoops?|yelps?) (?:from|in|rise|ring|erupt|burst)|(?:from|in) the rows? ahead|riders?(?:'|’)? (?:gasp|scream|shriek|laugh|cheer|whoop|yelp|duck|flinch)|arms (?:fly|thrown|go|shoot) up|hands (?:fly|go|shoot) up)\b/i;
@@ -228,6 +239,9 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
   }
   if (d.family === "dark ride") for (const f of stillFigures(text, d)) out.push({ rule: "ride", figure: `camera (a figure of the world is passed without performing: "${f.name}" — on a dark ride every figure is an animatronic: one motion timed to the pass, and the ride's voices as it is passed)`, at: f.at });
   if (d.world?.mode === "theme") {
+    // A REPLACEMENT IS A STANDING FACT, NEVER A CHANGE ON SCREEN (dry-cave-local-1: "the stalagmite formations become hedge walls" at 0s and a [1s] beat of its own
+    // where two more "became" — a morph the vehicle did not lead). The ride's own flaw: re-asked once, never a refusal.
+    if ((d.dressing?.placements || []).length) lines.forEach((line) => { const m = line.match(TRANSFORM); if (m) add(line, `a replacement is written as a change on screen: "${m[0]}" — frame zero's replacements are standing facts (the world's thing where the set piece stood), already in place, never becoming`, "ride"); });
     // the work's TITLE is the one lexical check left (one string, never a list); the world's places are the place judge's (_judge_places, run by _run)
     out.push(...worldNameFindings(text, [...(Array.isArray(workTitles) ? workTitles : []), d.world?.title].filter(Boolean)));
     // A REPLACED SET PIECE IS NAMED ONCE, IN ITS REPLACEMENT, AND NEVER AGAIN AS PRESENT (owner 2026-09-09: "if the mushroom is replaced … its still named"):
@@ -268,7 +282,7 @@ export function repairFrameZero(text, d) {
     const sides = m ? (/ becomes /i.test(f) ? [m[1], m[2]] : [m[1]]) : [f];
     const inZero = (s) => { const keys = _words(s); if (!keys.length) return true; const hit = keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(lines[i])).length; return hit * 2 >= keys.length; };
     if (sides.every(inZero)) continue;   // the set piece and what it became are both there
-    const fact = / becomes /i.test(f) ? f.replace(/\s+becomes\s+/i, " is ") : f;
+    const fact = replacementFact(f);   // the golden grammar: "<the world's thing> where <the set piece> stood"
     lines[i] = lines[i].replace(/\.?\s*$/, `; ${fact}.`);
     added.push(fact);
   }
