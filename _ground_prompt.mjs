@@ -582,7 +582,23 @@ if (BEAT_STYLE !== "template") {
 // The writer's own block still wins whenever it produces one — this is a floor, not a replacement.
 if (!/(^|\n)\s*Dialogue\s*:/i.test(beatLine) && (process.env.PLAN_DIALOGUE || "").trim()) {
   // fallback speaker = the subject as the writer knows it (never "Speaker" — the label law's own bug site)
-  const _b = denameSpeakers(buildDialogueBlock(process.env.PLAN_DIALOGUE, undefined, String(intent?.target || "").toUpperCase() || null));
+  // A FIGURE'S LINE IS TIMED TO THE BEAT THAT PASSES THE FIGURE (owner 2026-09-11: "let me come in" played as narration at 0s and 7s while the caretaker
+  // was passed at 6s): the plan's speaker is looked for in the beats; its line lands on that beat's stamp (and two seconds on for a split), not the defaults.
+  const _figStamps = (() => {
+    try {
+      const who = ((process.env.PLAN_DIALOGUE || "").match(/\n\s*([^:\n]{1,80}?)\s*:/) || [])[1] || "";
+      if (!who || /^ride narrator$/i.test(who.trim())) return undefined;
+      const keys = [...new Set(String(who).toLowerCase().replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").split(/[^a-z0-9'-]+/).filter((k) => k.length >= 4 && !["with", "from", "that", "this", "their", "figure", "animatronic"].includes(k)))];
+      if (!keys.length) return undefined;
+      const lines = beatLine.split("\n").map((l) => l.match(/^\s*\[(\d+(?:\.\d+)?)s\]\s*(.*)$/)).filter(Boolean);
+      const hit = lines.find((m) => keys.filter((k) => new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(m[2])).length >= Math.min(2, Math.ceil(keys.length / 2)));
+      if (!hit) return undefined;
+      const at = Number(hit[1]); const end = Number(process.env.BEAT_DURATION) || (Math.max(...lines.map((m) => Number(m[1]))) + 1);
+      console.log(`  \u266a the plan's speaker (${who.trim()}) is passed at [${at}s] \u2014 its line lands there, not at the defaults`);
+      return [at, Math.min(at + 2, Math.max(at, end - 1))];
+    } catch { return undefined; }
+  })();
+  const _b = denameSpeakers(buildDialogueBlock(process.env.PLAN_DIALOGUE, _figStamps, String(intent?.target || "").toUpperCase() || null));
   beatLine += "\n\n" + _b.block;
   const stamps = _b.stamps;
   console.warn(`[GUARD] dialogue: the writer emitted no speech — SYNTHESISED a timed block from the plan's line across ${stamps.map((x) => `${x}s`).join(", ")} (deterministic; the writer's own block always wins when it produces one).`);
