@@ -598,10 +598,14 @@ if (!/(^|\n)\s*Dialogue\s*:/i.test(beatLine) && (process.env.PLAN_DIALOGUE || ""
       return [at, Math.min(at + 2, Math.max(at, end - 1))];
     } catch { return undefined; }
   })();
-  const _b = denameSpeakers(buildDialogueBlock(process.env.PLAN_DIALOGUE, _figStamps, String(intent?.target || "").toUpperCase() || null));
-  beatLine += "\n\n" + _b.block;
-  const stamps = _b.stamps;
-  console.warn(`[GUARD] dialogue: the writer emitted no speech — SYNTHESISED a timed block from the plan's line across ${stamps.map((x) => `${x}s`).join(", ")} (deterministic; the writer's own block always wins when it produces one).`);
+  // denameSpeakers reads the block TEXT (dry-cave-local-1, 2026-09-11: the built OBJECT was passed, came back null under IP_FIGURES, and the
+  // writer process crashed on `.block` — two re-asks lost); a null block (no speaker, or the figure omitted) ships no Dialogue, never a crash.
+  const _built = buildDialogueBlock(process.env.PLAN_DIALOGUE, _figStamps, String(intent?.target || "").toUpperCase() || null);
+  const _blk = _built ? denameSpeakers(_built.block) : null;
+  if (_blk) {
+    beatLine += "\n\n" + _blk;
+    console.warn(`[GUARD] dialogue: the writer emitted no speech — SYNTHESISED a timed block from the plan's line across ${_built.stamps.map((x) => `${x}s`).join(", ")} (deterministic; the writer's own block always wins when it produces one).`);
+  } else console.warn(`[GUARD] dialogue: the writer emitted no speech and the plan's line carries no speaker (or its figure is omitted) — no Dialogue block`);
 }
 
 // ── AND MEASURE WHETHER THE SPEECH ACTUALLY REACHES THE END ───────────────────────────────────────────────
