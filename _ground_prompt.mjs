@@ -333,7 +333,7 @@ if (BEAT_STYLE !== "template") {
   // disagreement with a prescribed list: it means an illegal COUNT (outside {${...}}), a DECIMAL stamp, an
   // opening that is not [0s], disorder, or a stamp past the duration. Vacuum-lab measured 7/7 legal under
   // this contract with counts varying by material — the variance is the point of the ruling.
-  const stampList = (t) => (t.match(/^\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));
+  const stampList = (t) => ((String(t).split(/^\s*Dialogue\s*:/im)[0]).match(/^\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));   // the beats only — a Dialogue block written "[3s] Speaker: …" is not a beat (dry-cave-local-2)
   // ⚠ COMPLETENESS + LABEL LAWS RIDE THE SAME VALIDATOR (owner 2026-08-21, penguin deep remix: beat [4s]
   // shipped ending "lets out a flat" and a line labeled "Speaker" — both are output defects the check-the-
   // output pattern owns; a fifth restatement in the ask is not the fix).
