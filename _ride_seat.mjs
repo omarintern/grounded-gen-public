@@ -18,7 +18,8 @@ import { scrapeImages, IndexInfraError } from "./scrape.mjs";
 import { withSlot } from "./_provider_gate.mjs";
 import { isPlaceholderCard, isPaidStock } from "./_placeholder_card.mjs";
 import { writeContactSheet, sheetLegend } from "./_contact_sheet.mjs";
-import { judgeSeat, seatVerdict, rankSeats, seatLabel } from "./_judge_seat.mjs";
+import { judgeSeat, seatVerdict, rankSeats, seatLabel, diffuseSeat, SEAT_BAND } from "./_judge_seat.mjs";
+const SEAT_BAND_LOG = SEAT_BAND;
 import { rideFromEnv } from "./_ride.mjs";
 
 const onFatal = (e) => {
@@ -130,7 +131,11 @@ if (QUERIES[1] && aboardN() < SECOND_AT && judgeCalls < JUDGE_BUDGET) {
 try { writeFileSync(join(OUTDIR, `world_${slug}.calls.json`), JSON.stringify({ judgeCalls })); } catch {}
 const seen = recs.map((r) => ({ p: r.p, host: r.host, url: r.url, engine: r.engine, q: r.q, W: r.W, H: r.H, verdict: r.aboard ? "pass" : "reject", why: r.aboard ? seatLabel(r).replace(/^✓ /, "") : r.why, reading: r.j }));
 const ranked = rankSeats(recs, { family: D.family });
-const pick = ranked[0] || null;
+// DIFFUSED SCRAPING (owner 2026-09-10): the seat is served at random among the equally good aboard frames, never the argmax — the same ride
+// every run was the rewrite's regression (three Shining gens, one laviezine plate)
+const _diff = diffuseSeat(ranked, { family: D.family });
+const pick = _diff.pick || null;
+if (pick && _diff.tier.length > 1) console.log(`  ⚄ diffused: ${_diff.tier.length} equally good seat(s) within ${SEAT_BAND_LOG} points of the best — served #${_diff.index + 1} (${pick.p.split("/").pop()} @${pick.host}), the others: ${_diff.tier.filter((r) => r !== pick).map((r) => `${r.p.split("/").pop()} @${r.host}`).join(", ")}`);
 if (pick) seen.forEach((s) => { if (s.p === pick.p) s.verdict = "pick"; });
 try { writeFileSync(join(OUTDIR, `world_${slug}.seen.json`), JSON.stringify(seen, null, 2)); } catch {}
 try {

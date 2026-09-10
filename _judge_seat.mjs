@@ -102,6 +102,19 @@ export function rankSeats(recs, opts = {}) {
   return (Array.isArray(recs) ? recs : []).map((r, i) => ({ r, i, s: seatScore(r, opts) })).filter((x) => x.r?.aboard === true)
     .sort((a, b) => (b.s - a.s) || (a.i - b.i)).map((x) => x.r);
 }
+/** DIFFUSED SCRAPING (owner 2026-09-10: "we set it up so that it greenboxes many and chooses randomly … 'diffused scraping'"): the rewrite of
+ *  2026-09-09 served ranked[0] — an argmax — and the same dark ride came back on every Shining run (same query, same web rows, same top
+ *  score). The scene hunt already shuffles its equal tiers (diffuseTies); the seat does the same: every aboard frame within SEAT_BAND
+ *  points of the best is an equally correct seat, and one of them is served at random. Pure given `rand`. */
+export const SEAT_BAND = 12;   // one "indoor" (12) or "no riders + clean text" (10) below the best still rides; a seat without its own vehicle (−40) or way (−20) never does
+export function diffuseSeat(ranked, { band = SEAT_BAND, rand = Math.random, family = "other ridden" } = {}) {
+  const list = Array.isArray(ranked) ? ranked.filter((r) => r?.aboard === true) : [];
+  if (!list.length) return { pick: null, tier: [] };
+  const top = seatScore(list[0], { family });
+  const tier = list.filter((r) => top - seatScore(r, { family }) <= band);
+  const k = Math.min(tier.length - 1, Math.max(0, Math.floor(rand() * tier.length)));
+  return { pick: tier[k], tier, index: k };
+}
 /** One log line's worth of evidence. */
 export function seatLabel(rec) {
   const j = rec?.j || {};
