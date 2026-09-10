@@ -35,10 +35,13 @@ export function rideBlock(d = rideFromEnv()) {
     `The opening names the seat's own objects — the ${w.way}, ${vehicleShown ? `the ${w.vehicle}` : "the bar or nose"}, the rows ahead — so frame zero is the photograph. `;
   if (mode === "theme") {
     const photographed = (d.dressing?.photographed || []).filter((p) => p && p.name);
+    // THE TAKE NEVER OPENS INSIDE A RIDING PHOTOGRAPH (owner 2026-09-11, measured on the same plate and words: frame zero naming the plate's set pieces
+    // as what they became = the plate grounds the take (its way, its vehicle, its scale) and the photographs dress it, one continuous track (draw 5 render 1,
+    // golden); frame zero naming only a photograph = that photograph with a lap bar, a hard cut at every next photograph, the plate arriving last, whole and
+    // unreplaced (dry-cave-3 render). What frame zero names is the ground of the take; a replacement only takes at frame zero.)
     s += `THE WORLD IS BUILT INTO THE RIDE: the seat photograph IS the ride — its ${w.vehicle}, its ${w.way} and its scene architecture are the frame's constant from frame zero to the end. ` +
       (photographed.length
-        ? `PHOTOGRAPHS OF THE WORLD RIDE WITH THIS FRAME, in story order — ${photographed.map((p) => `${p.name}${(p.qualities || []).length ? ` (${p.qualities.join(", ")})` : ""}`).join("; ")}: the take ARRIVES in each without a cut, the ${w.way} running on through it and the ${w.vehicle} never leaving the ${w.way}; each is written as its qualities — its floor, its walls, its fixtures, its figures — never by name; the photograph carries the rest. ` +
-          `⚠ THE TAKE OPENS INSIDE THE FIRST RIDING PHOTOGRAPH (owner 2026-09-11, the golden take): frame zero is ${photographed[0].name} entered from the seat — the seat photograph's ${w.way}${vehicleShown ? ` and ${w.vehicle}` : ""} run into it, its qualities around the ${w.way} — and every riding photograph is arrived at by a beat of its own, in order. The seat photograph's OWN scene comes LATER in the take, never first; when it is on screen its set pieces are the world's things (the Set line), never the other ride's. `
+        ? `PHOTOGRAPHS OF THE WORLD RIDE WITH THIS FRAME, in story order — ${photographed.map((p) => `${p.name}${(p.qualities || []).length ? ` (${p.qualities.join(", ")})` : ""}`).join("; ")}: references for the world's things, never scenes the take opens in — the take opens in the seat photograph with every set piece named as what it becomes (the replacements are these photographs' own things), then ARRIVES at what each photograph carries without a cut, the ${w.way} running on through it and the ${w.vehicle} never leaving the ${w.way}; each is written as its qualities — its floor, its walls, its fixtures, its figures — never by name; the photograph carries the rest. `
         : `No photograph of the world rides with it: the world arrives as THINGS on the ride's own surfaces. `) +
       `FRAME ZERO NAMES EVERY SET PIECE OF THIS PHOTOGRAPH${plateThings.length ? ` — ${plateThings.join(", ")} —` : ""} (owner: frame zero is always grounded): each either as WHAT IT BECOMES — a replacement names the set piece it takes the place of ("where the <set piece> stands, <the world's thing> stands") — or as ITSELF, in its place, when nothing of the world takes its place; a set piece that is replaced is named once, in its replacement, and never again as present; the ${w.vehicle}, the ${w.way} and the show building's own walls, floor and ceiling remain as photographed. ` +
       (placements.length ? `FRAME ZERO'S REPLACEMENTS, already in place at [0s] and stated as facts of the scene, never as changes: ${placements.join(" | ")}. ` : "") +
@@ -214,20 +217,8 @@ export function rideFindings(text, d, { workTitles = [] } = {}) {
     else if (last && d.family === "dark ride" && !CORE_ONLY.on && !seatFeels(line)) add(line, `the finale is not felt by the seat — the ${w.vehicle} sways, jolts, dips or is splashed as the spectacle passes, and the riders gasp, scream or laugh from the rows ahead (owner: spectacle acts on the ride; the riders react)`, "ride");
     else if (last && FACEFILL.test(line)) add(line, `payoff stops on a face: "${line.match(FACEFILL)[0]}" — the ride passes through or by at speed`, "ride");
   });
-  // THE TAKE OPENS INSIDE THE FIRST RIDING PHOTOGRAPH, AND THE RIDE'S OWN SCENE IS PASSED LATER (owner 2026-09-11, the golden take; dry-cave-1's writer
-  // opened on the plate's replacements and never passed the plate's scene later)
-  if ((d.dressing?.photographed || []).length && lines.length && !CORE_ONLY.on) {
-    const first = d.dressing.photographed[0];
-    const qs0 = (first?.qualities || []).map((q) => [...new Set(_words(q))]).filter((k) => k.length);
-    const opens = !qs0.length || qs0.some((keys) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(lines[0])).length >= Math.min(2, Math.ceil(keys.length / 2)));
-    if (!opens) out.push({ rule: "opening", figure: `camera (the take does not open inside the first riding photograph: ${first.name} (${(first.qualities || []).join(", ")}) — frame zero is that photograph entered from the seat, its qualities around the ${w.way}; the ride's own scene comes later)`, at: 0 });
-    const replaced = replacedSetPieces(d).map((p) => pieceKeys(p)).filter((k) => k.length >= 2);
-    if (replaced.length) {
-      const mentions = (line) => replaced.filter((keys) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(line)).length * 2 >= keys.length).length;
-      const atZero = mentions(lines[0]), later = lines.slice(1).some((l) => mentions(l) > 0);
-      if (atZero > 0 && !later) out.push({ rule: "opening", figure: `camera (the ride's own scene is written at frame zero and nowhere later — the take opens inside ${first.name}; the seat photograph's scene, with its set pieces replaced, is passed LATER in the take)`, at: 0 });
-    }
-  }
+  // NO OPENING FINDING (owner 2026-09-11): the take opens in the seat photograph whether photographs ride or not — repairFrameZero appends the plate's
+  // replacements to beat zero as facts, so no check polices the opening (the retired "opens inside the first riding photograph" law produced a slideshow).
   // EVERY RIDING PHOTOGRAPH IS ARRIVED AT (owner 2026-09-11: the maze rode as the third reference and no beat travelled into it — the hedges never appeared)
   for (const p of (d.dressing?.photographed || [])) {
     const qs = (p?.qualities || []).map((q) => [...new Set(_words(q))]).filter((k) => k.length);
@@ -265,7 +256,6 @@ export function roomBanList(d, workTitles = []) {
 export function repairFrameZero(text, d) {
   const t = String(text || "");
   if (!d || d.world?.mode !== "theme") return { text: t, added: [] };
-  if ((d.dressing?.photographed || []).length) return { text: t, added: [] };   // photographs ride: the take opens inside the first of them, the Set line carries the plate's replacements (owner 2026-09-11)
   const lines = t.split("\n");
   const i = lines.findIndex((l) => /^\s*\[\d+(?:\.\d+)?s\]/.test(l));
   if (i < 0) return { text: t, added: [] };
