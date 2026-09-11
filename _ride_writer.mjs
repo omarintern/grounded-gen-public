@@ -86,7 +86,7 @@ export function rideBlock(d = rideFromEnv()) {
     `THE FINALE IS SPECTACLE THAT ACTS ON THE RIDE (owner 2026-09-11): the last scene is an EVENT the world releases — a flood, a burst, a collapse, a lunge, a swing — and the seat FEELS it: the ${w.vehicle} sways, jolts, dips, bucks, is splashed or sprayed as it passes through; and THE RIDERS REACT, never seen but always heard and felt — gasps, screams or laughter from the rows ahead, arms thrown up in the rows ahead, the rider's own breath. ` +
     // THE CLIMAX IS RIDDEN, NOT TAPPED (owner 2026-09-11, on draw 6's render: "the ending is abrupt and doesn't let the climax sit … you want to experience the
     // climax instead of end on an ironic note"): the last beat opened at [8s] of 9 — five events in one second, then the exit doors. The climax gets the last third.
-    `THE CLIMAX IS RIDDEN, NOT TAPPED: the last beat opens ${secs >= 6 ? `by [${secs - 3}s]` : "with the last third of the take"} and the seat rides THROUGH the spectacle to the last frame — it unfolds across those seconds (the burst, then its heat and light on the rows ahead, then the ${w.way} running on through it), the ${w.vehicle} still inside it at the final image; ${makerEndsRide(process.env.RAW_USER_PROMPT) ? `the ride ends because the maker's words end it — ridden to the last frame, the ending itself the climax` : `the ride never ends itself — no exit doors, no unload, no station, no wink`} — the climax is experienced, not glanced at. ` +
+    `THE CLIMAX IS RIDDEN, NOT TAPPED: the last beat opens ${secs >= 6 ? `by [${secs - 3}s]` : "with the last third of the take"} and the seat rides THROUGH the spectacle to the last frame — it unfolds across those seconds (the burst, then its heat and light on the rows ahead, then the ${w.way} running on through it), the ${w.vehicle} still inside it at the final image; ${makerEndsRide(process.env.RAW_USER_PROMPT) ? `the ride ends because the maker's words end it — ridden to the last frame, the ending itself the climax` : `the ride never ends itself — no exit doors, no unload, no station, no wink`} — the climax is experienced, not glanced at; THE STAMPS FALL WHERE THE RIDE'S EVENTS FALL, never on a grid — a passage a second, a tableau two, the held stop two. ` +
     `THE PAYOFF NEVER ENDS ON A FACE: nothing fills the lens for long, and every figure keeps the scene's scale to the last frame.\n`;
   return s;
 }
@@ -281,6 +281,13 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
   if (d.kind === "ridden" && !CORE_ONLY.on && lines.length >= 2) {
     const lastLine = lines[lines.length - 1], lastAt = Number((lastLine.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0);
     if (secs >= 6 && lastAt > secs - 3) out.push({ rule: "ride", figure: `camera (the climax has ${secs - lastAt}s — the last beat opens by [${secs - 3}s] and the seat rides THROUGH the spectacle to the last frame, the ${w.vehicle || "vehicle"} still inside it at the final image)`, at: lastAt });
+    // A BEAT LASTS AS LONG AS ITS WEIGHT (owner 2026-09-11: "the lurch could comprise more space than others, like occurring from 8s till 13s … we seem to always produce equidistance which is too mechanical"):
+    // the stamps never sit on a grid, and the climax is the longest span of the take
+    if (secs >= 6 && lines.length >= 3) {
+      const at = lines.map((l) => Number((l.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0));
+      const gaps = at.slice(1).map((v, i) => v - at[i]);
+      if (gaps.length >= 4 && gaps.every((g) => g === gaps[0])) out.push({ rule: "ride", figure: `camera (the beats sit on a grid — every stamp ${gaps[0]}s apart: a beat lasts as long as its weight (a passage a second, a tableau two, the held stop two), the stamps fall where the ride's events fall)`, at: at[1] || 0 });
+    }
     const e = makerEndsRide(userWords) ? null : lastLine.match(RIDE_END); if (e) out.push({ rule: "ride", figure: `camera (the ride ends itself: "${e[0]}" — the last beat is the climax ridden, never the exit, the unload or a wink)`, at: lastAt });
     for (const dl of dialogueLines(text)) if (!saysHow(dl.line)) out.push({ rule: "ride", figure: `camera (a line does not say how it is said — "${dl.label}": the speaker label ends in a parenthetical of manner, two or three words — (sing-song, mocking))`, at: Number((dl.line.match(/\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0) });
   }

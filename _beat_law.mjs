@@ -721,8 +721,10 @@ singleBlock()
       : (process.env.BEAT_BLOCKS !== "0"
       ? `Return your beats one per line, each stamped "[Ns] …" in WHOLE seconds: ` +
         `${counts.length > 1 ? `choose a beat count from {${counts.join(", ")}} — whichever this material wants; different materials deserve different counts` : `exactly ${counts[0]} beats`}, ` +
-        `first beat at [0s], stamps ascending, all under ${secs}s. Spacing is yours — beats need not be evenly ` +
-        `spaced; two may land close and a third delayed. ` +
+        `first beat at [0s], stamps ascending, all under ${secs}s. A BEAT LASTS AS LONG AS ITS WEIGHT (owner 2026-09-11: "we seem to always produce ` +
+        `equidistance which is too mechanical"): the gap to the next stamp is the beat's screen time, so the stamps fall where the events fall, never on ` +
+        `a grid — a transition takes a second, a thing looked at two, a held moment two, and the climax as long as its register wants: ridden out when it ` +
+        `is spectacle, quick when it is a wink or an ironic turn; two beats may land a second apart and the next wait three. ` +
         // ⚠ A BEAT IS A FEELING, NOT AN ACTION COUNTED (owner 2026-08-21, on the first remix pair): «beats
         // arent actions in themselves, theyre a feeling … its about progression of emotion that finds climax
         // at the end (not a flat end) … it doesnt require escalation … but must find climax whether deadpan
