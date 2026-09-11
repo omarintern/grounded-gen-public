@@ -52,7 +52,7 @@ export function dedupeThings(list) {
 // A 9-second take holds frame zero and a few stops, not a procession (job 4aa764e1: five later things → six scenes in nine seconds, nothing dwelt on)
 export const LATER_CAP = 3;
 export function readRoomThings({ roomPlates = [], worldName = "a themed world", perRoom = 2, cwd = process.cwd(), env = process.env, log = console.log } = {}) {
-  const read = [];
+  const read = []; const surfaces = [];
   for (const wp of roomPlates) {
     const abs = join(cwd, wp);
     if (!existsSync(abs)) continue;
@@ -60,16 +60,18 @@ export function readRoomThings({ roomPlates = [], worldName = "a themed world", 
     if (code !== 0 && code !== 2) log(`  ◇ room read failed for ${wp.split("/").pop()} (exit ${code})`);
     const d = _json(`${abs}.things.json`);
     for (const x of (d?.things || [])) if (x?.name && !read.some((r) => r.name.toLowerCase() === String(x.name).toLowerCase())) read.push({ name: x.name, kind: x.kind, surface: x.surface, plate: wp });
+    for (const s of (d?.surfaces || [])) if (s?.kind && s?.name && !surfaces.some((x) => x.kind === s.kind)) surfaces.push({ kind: s.kind, name: s.name, plate: wp });   // one per kind, the first room in story order wins
   }
+  read.surfaces = surfaces;   // the world's own wall, ceiling, floor and light — what a THEMED surface of the seat plate becomes (owner 2026-09-11)
   return read;
 }
 /** PLACE THINGS ON A PLATE (a read of the real photograph's own surfaces): lines for the writer — "<where> becomes <name>" (a
  *  replacement) or "<name> at <where>" (an addition). On a dark ride the things sit BESIDE the way or AHEAD and veered from; the
  *  way and the vehicle are never dressed (_plate_dressing's surface law, told through env). */
-export function placeOnPlate({ plate, things = [], role = "a photograph the ride passes through", dark = false, way = "", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
+export function placeOnPlate({ plate, things = [], role = "a photograph the ride passes through", dark = false, way = "", surfaces = [], cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const abs = join(cwd, plate);
   if (!plate || !existsSync(abs) || !things.length) return [];
-  const code = _sh(["_plate_dressing.mjs", plate, JSON.stringify(things.slice(0, 6)), role], { cwd, env: { ...env, DARK_RIDE_DRESSING: dark ? "1" : "", SEAT_WAY: dark ? String(way || "") : "" } });
+  const code = _sh(["_plate_dressing.mjs", plate, JSON.stringify(things.slice(0, 6)), role], { cwd, env: { ...env, DARK_RIDE_DRESSING: dark ? "1" : "", SEAT_WAY: dark ? String(way || "") : "", WORLD_SURFACES: dark && surfaces.length ? JSON.stringify(surfaces.map((s) => ({ kind: s.kind, name: s.name }))) : "" } });
   if (code !== 0 && code !== 2) log(`  ◇ placement read failed for ${role} (exit ${code})`);
   const d = _json(`${abs}.dressing.json`);
   const lines = (d?.dressing || []).map((x) => x.op === "replace" ? `${x.where} becomes ${x.name}` : `${x.name} at ${x.where}`);
@@ -104,7 +106,9 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     out.things = things;
     out.figures = things.filter(isFigureThing).map((e) => e.name);
     if (out.figures.length) log(`  ◇ figures among them (animatronics on this ride): ${out.figures.join(" · ")}`);
-    const placedLines = placeOnPlate({ plate: seatPlate, things: things.slice(0, 6), role: seatRole, dark: true, way, cwd, env, log });   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
+    const surfaces = Array.isArray(read.surfaces) ? read.surfaces : [];
+    if (surfaces.length) log(`  ✎ the world's own surfaces, read off its rooms (what a themed surface of the seat plate becomes): ${surfaces.map((s) => `${s.kind} = ${s.name}`).join(" · ")}`);
+    const placedLines = placeOnPlate({ plate: seatPlate, things: things.slice(0, 6), role: seatRole, dark: true, way, surfaces, cwd, env, log });   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
     out.plateThings = placedLines.plateThings || [];
     out.placements = placedLines.map((l) => `${seatRole}: ${l}`);
     if (out.placements.length) log(`  ✓ frame zero's replacements, beside or ahead of the way: ${out.placements.map((l) => l.replace(`${seatRole}: `, "")).join(" | ").slice(0, 300)}`);
