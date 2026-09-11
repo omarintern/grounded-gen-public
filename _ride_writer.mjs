@@ -86,7 +86,7 @@ export function rideBlock(d = rideFromEnv()) {
     `THE FINALE IS SPECTACLE THAT ACTS ON THE RIDE (owner 2026-09-11): the last scene is an EVENT the world releases — a flood, a burst, a collapse, a lunge, a swing — and the seat FEELS it: the ${w.vehicle} sways, jolts, dips, bucks, is splashed or sprayed as it passes through; and THE RIDERS REACT, never seen but always heard and felt — gasps, screams or laughter from the rows ahead, arms thrown up in the rows ahead, the rider's own breath. ` +
     // THE CLIMAX IS RIDDEN, NOT TAPPED (owner 2026-09-11, on draw 6's render: "the ending is abrupt and doesn't let the climax sit … you want to experience the
     // climax instead of end on an ironic note"): the last beat opened at [8s] of 9 — five events in one second, then the exit doors. The climax gets the last third.
-    `THE CLIMAX IS RIDDEN, NOT TAPPED: the last beat opens ${secs >= 6 ? `by [${secs - 3}s]` : "with the last third of the take"} and the seat rides THROUGH the spectacle to the last frame — it unfolds across those seconds (the burst, then its heat and light on the rows ahead, then the ${w.way} running on through it), the ${w.vehicle} still inside it at the final image; the ride never ends itself — no exit doors, no unload, no station, no wink — the climax is experienced, not glanced at. ` +
+    `THE CLIMAX IS RIDDEN, NOT TAPPED: the last beat opens ${secs >= 6 ? `by [${secs - 3}s]` : "with the last third of the take"} and the seat rides THROUGH the spectacle to the last frame — it unfolds across those seconds (the burst, then its heat and light on the rows ahead, then the ${w.way} running on through it), the ${w.vehicle} still inside it at the final image; ${makerEndsRide(process.env.RAW_USER_PROMPT) ? `the ride ends because the maker's words end it — ridden to the last frame, the ending itself the climax` : `the ride never ends itself — no exit doors, no unload, no station, no wink`} — the climax is experienced, not glanced at. ` +
     `THE PAYOFF NEVER ENDS ON A FACE: nothing fills the lens for long, and every figure keeps the scene's scale to the last frame.\n`;
   return s;
 }
@@ -171,6 +171,9 @@ export const rideStops = (line) => STOPS.test(String(line || ""));
 // THE CLIMAX IS RIDDEN (owner 2026-09-11): the ride never ends itself in the last beat; every spoken line carries its manner
 const RIDE_END = /\b(?:exit doors?|the exit|exit gates?|unload(?:ing)?(?: area| station)?|the station|(?:end|close) of the ride|ride ends|gift shop|(?:back |out )?into (?:the )?daylight)\b/i;
 export const rideEndsItself = (line) => RIDE_END.test(String(line || ""));
+// …unless the MAKER ends it (owner 2026-09-11: "the ride can end if user prompts for it, it all depends"): the maker's own words asking for the exit, the unload, the station or the end stand the ban down
+const MAKER_ENDS = /\b(?:ends?|ending|exits?|exiting|unloads?|unloading|the station|gets? off|getting off|steps? off|the end of the ride|last stop|pulls? in(?:to)?)\b/i;
+export const makerEndsRide = (words) => MAKER_ENDS.test(String(words || ""));
 const MANNER_TAG = /\([^)\n]{2,60}\)\s*\[\d+(?:\.\d+)?s\]\s*:/;
 /** The Dialogue block's spoken lines: [{ label, line }] — the text after the Dialogue header, each "<label> [Ns]: …" line. */
 export function dialogueLines(text) {
@@ -269,7 +272,7 @@ export function formNameAsPlace(d) {
 }
 /** THE FINDINGS — the run's ledger shape ({ rule, figure, at }), fatal-class every one: a wrong video, never a style note.
  *  @fed the beats text and the ride decision; workTitles for the world-room ban under a theme. */
-export function rideFindings(text, d, { workTitles = [], secs = Number(process.env.BEAT_DURATION || 0) } = {}) {
+export function rideFindings(text, d, { workTitles = [], secs = Number(process.env.BEAT_DURATION || 0), userWords = process.env.RAW_USER_PROMPT || "" } = {}) {
   const out = []; if (!d) return out;
   const w = rideWords(d);
   const lines = beatLines(text);   // the beats only — never the Dialogue block's stamped lines (dry-cave-local-2)
@@ -278,7 +281,7 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
   if (d.kind === "ridden" && !CORE_ONLY.on && lines.length >= 2) {
     const lastLine = lines[lines.length - 1], lastAt = Number((lastLine.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0);
     if (secs >= 6 && lastAt > secs - 3) out.push({ rule: "ride", figure: `camera (the climax has ${secs - lastAt}s — the last beat opens by [${secs - 3}s] and the seat rides THROUGH the spectacle to the last frame, the ${w.vehicle || "vehicle"} still inside it at the final image)`, at: lastAt });
-    const e = lastLine.match(RIDE_END); if (e) out.push({ rule: "ride", figure: `camera (the ride ends itself: "${e[0]}" — the last beat is the climax ridden, never the exit, the unload or a wink)`, at: lastAt });
+    const e = makerEndsRide(userWords) ? null : lastLine.match(RIDE_END); if (e) out.push({ rule: "ride", figure: `camera (the ride ends itself: "${e[0]}" — the last beat is the climax ridden, never the exit, the unload or a wink)`, at: lastAt });
     for (const dl of dialogueLines(text)) if (!saysHow(dl.line)) out.push({ rule: "ride", figure: `camera (a line does not say how it is said — "${dl.label}": the speaker label ends in a parenthetical of manner, two or three words — (sing-song, mocking))`, at: Number((dl.line.match(/\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0) });
   }
   // rule "apparatus" = a WRONG video (fatal after the re-asks); rule "ride" = the ride's own flaw — re-asked once, never refused (owner 2026-09-11: draws refused on a static figure or a flat finale while everything else was right)
