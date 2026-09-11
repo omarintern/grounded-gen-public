@@ -97,7 +97,7 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
   const mode = d?.world?.mode || "setting";
   const way = d?.words?.way || d?.seat?.reading?.way || "";
   const planThings = (Array.isArray(d?.world?.things) ? d.world.things : []).map((e) => ({ name: e.name, kind: e.kind, surface: e.surface }));
-  const out = { placements: [], later: [], places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [], figures: [], photographed: [] };
+  const out = { placements: [], later: [], finale: "", places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [], figures: [], photographed: [] };
   const seatRole = "the seat photograph (frame zero, the ride's own vantage)";
   if (mode === "theme") {
     const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 2, cwd, env, log });
@@ -108,7 +108,9 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     if (out.figures.length) log(`  ◇ figures among them (animatronics on this ride): ${out.figures.join(" · ")}`);
     const surfaces = Array.isArray(read.surfaces) ? read.surfaces : [];
     if (surfaces.length) log(`  ✎ the world's own surfaces, read off its rooms (what a themed surface of the seat plate becomes): ${surfaces.map((s) => `${s.kind} = ${s.name}`).join(" · ")}`);
-    const placedLines = placeOnPlate({ plate: seatPlate, things: things.slice(0, 6), role: seatRole, dark: true, way, surfaces, cwd, env, log });   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
+    // FIGURES ARE HELD FOR THE RIDE'S OWN INTERIOR (owner 2026-09-11): only the world's things and surfaces take the seat photograph's set pieces at frame zero; a figure is passed inside, as a tableau
+    const nonFigures = things.filter((e) => !isFigureThing(e));
+    const placedLines = placeOnPlate({ plate: seatPlate, things: nonFigures.slice(0, 6), role: seatRole, dark: true, way, surfaces, cwd, env, log });   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
     out.plateThings = placedLines.plateThings || [];
     out.placements = placedLines.map((l) => `${seatRole}: ${l}`);
     if (out.placements.length) log(`  ✓ frame zero's replacements, beside or ahead of the way: ${out.placements.map((l) => l.replace(`${seatRole}: `, "")).join(" | ").slice(0, 300)}`);
@@ -120,8 +122,11 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     const sent = new Set(laterPlates.map((x) => x.plate).filter(Boolean));
     out.photographed = laterPlates.filter((x) => x.plate && x.name).map((x) => ({ name: x.name, plate: x.plate, qualities: read.filter((r) => r.plate === x.plate).map((r) => r.name).slice(0, 4) }));
     if (out.photographed.length) log(`  ◉ photographs of the world ride with the seat, in story order: ${out.photographed.map((p) => `${p.name} (${p.qualities.join(" · ") || "its own room"})`).join("; ")}`);
-    const laterAll = things.filter((e) => !placed.includes(String(e.name).toLowerCase()) && !(e.plate && sent.has(e.plate))).map((e) => e.name);
-    out.later = laterAll.slice(0, LATER_CAP);
+    const laterAll = nonFigures.filter((e) => !placed.includes(String(e.name).toLowerCase()) && !(e.plate && sent.has(e.plate))).map((e) => e.name);
+    // THE FINALE'S TABLEAU IS NEW (owner 2026-09-11: the twins met at the doors and again in the dark): the last unplaced thing is HELD BACK for the finale, never a later stop
+    out.finale = laterAll.length ? laterAll[laterAll.length - 1] : "";
+    out.later = laterAll.slice(0, Math.max(0, laterAll.length - 1)).slice(0, LATER_CAP);
+    if (out.finale) log(`  ◉ the finale's tableau, held back: ${out.finale}`);
     if (laterAll.length > LATER_CAP) log(`  ◇ ${laterAll.length - LATER_CAP} later thing(s) left out — a take holds frame zero and ${LATER_CAP} stops, not a procession: ${laterAll.slice(LATER_CAP).join(" · ")}`);
     if (out.later.length) log(`  ◉ later along the take, in order: ${out.later.join(" → ")}`);
     if (!things.length) log(`  ◇ the rooms and the planner offered no things — the world arrives in the maker's words alone`);
