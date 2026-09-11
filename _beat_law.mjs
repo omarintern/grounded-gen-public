@@ -127,6 +127,7 @@ export const dialogueClause = () => {
         // and hand them over, exactly as the beats get theirs.
         + `⚠ USE THESE EXACT TIMINGS FOR THE DIALOGUE LINES: ${DIALOGUE_STAMPS.map((t) => `[${t}s]`).join(" ")} `
         + `— one fragment per stamp, in order, breaking the sentence at its own natural clause boundaries. `
+        + `EVERY LINE SAYS HOW IT IS SAID: each speaker label ends in a short parenthetical of manner — (sing-song, mocking) — two or three words of delivery, never a body direction. `
         + `Two fragments at the top is the reflex and it is wrong: it lands the last words a third of the way `
         + `in and leaves the rest of the clip silent. The final stamp is deliberately late so the voice is `
         + `still going when the last image arrives. If the line genuinely cannot divide that many ways, use `

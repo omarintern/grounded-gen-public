@@ -13,7 +13,7 @@ import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_in
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
-import { rideBlock } from "./_ride_writer.mjs";   // the ride's one block, from the run's decision (2026-09-09)
+import { rideBlock, dialogueLines, saysHow } from "./_ride_writer.mjs";   // the ride's one block, from the run's decision (2026-09-09); the spoken line's manner (2026-09-12, every form)
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
@@ -340,6 +340,8 @@ if (BEAT_STYLE !== "template") {
   const _lawFails = (t) => {
     const fails = [];
     if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(t), BEAT_SECS, COUNTS)) fails.push(`stamps [${stampList(t).join(",")}] illegal for ${BEAT_SECS}s counts {${COUNTS.join(",")}}`);
+    // EVERY LINE SAYS HOW IT IS SAID (owner 2026-09-11/12, every form): a spoken line whose label carries no manner is a law fail — one corrective retry
+    { const bare = dialogueLines(t).filter((l) => !saysHow(l.line)); if (bare.length) fails.push(`a Dialogue line does not say how it is said ("${bare[0].label}") — end the speaker label with a short parenthetical of manner, two or three words: (sing-song, mocking)`); }
     // THE RIDER IS NEVER WRITTEN (owner 2026-09-07/08: frozen plaid hands, frozen boots) — on any ride one-take the rider's clothing or body is a law fail
     if (singleBlock()) {
       const body = (t.split("\n").find((l) => /^\s*\[\d+s\]/.test(l)) || "").replace(/^\s*\[\d+s\]\s*/, "");
