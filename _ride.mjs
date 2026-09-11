@@ -165,7 +165,10 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const family = kind === "driven" ? "driven" : kind === "worn" ? "worn" : (rideFamilyOf(noun) || "other ridden");
   const setEnt = (Array.isArray(resolved) ? resolved : []).find((e) => e?.is_set === true);
   const named = !!(p.world_clearance?.named || p.world_clearance?.isSet === true || setEnt);
-  const title = (plan ? workTitlesOf(p)[0] : "") || String(setEnt?.canonical_name || setEnt?.term || p.world_clearance?.setName || "").trim();
+  // THE WORLD'S TITLE IS THE WORK (dry run velocal6, 2026-09-11): the material identifiers are every term the maker's words identify — the work, but also its
+  // named figures ("The Shining ride", "jack torrence", "wendy") — and the first of them titled the world "The Shining Ride", which the sourceability judge
+  // then called invented. The planner's own statement of the work (world_theme.work) and the resolver's set name come first; the identifiers are the fallback.
+  const title = String(p.world_theme?.work || "").trim() || String(setEnt?.canonical_name || setEnt?.term || p.world_clearance?.setName || "").trim() || (plan ? workTitlesOf(p)[0] : "");
   const setting = String(p.form?.setting || "").replace(/\s+/g, " ").trim();
   const themedSetting = /\b(?:themed|dark ride|indoor|enclos\w*|show building)\b/i.test(setting);
   const mode = family === "dark ride" && named ? "theme" : family === "coaster" && (named || themedSetting) ? "architecture" : named ? "places" : "setting";
