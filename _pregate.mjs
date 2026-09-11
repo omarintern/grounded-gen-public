@@ -27,6 +27,7 @@
 import { mkdirSync, appendFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { rideFamilyOf } from "./_ride.mjs";   // pure: does the maker's request name a park ride?
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const LOGDIR = join(HERE, "out", "_pregate");   // the volume: survives a deployment, like every other record we keep
@@ -51,6 +52,12 @@ const log = (row) => {
 const STOP = new Set(["the", "a", "an", "of", "and", "from", "in", "on", "at", "by", "to", "mr", "mrs", "ms", "dr", "sir"]);
 const GENERIC = new Set(["twins", "twin", "brothers", "sisters", "family", "gang", "crew", "band", "boys", "girls", "kids", "cast", "character", "characters", "man", "woman"]);
 const _tok = (s) => String(s || "").toLowerCase().replace(/['\u2019]s\b/g, "").replace(/[^a-z0-9]+/g, " ").split(/\s+/).filter(Boolean);
+// ⭐⭐ ON A RIDE, THE WORK'S FACE IS AN ANIMATRONIC (owner 2026-09-11: "yes for a ride they're indeed animatronics so it works"). Every owned
+// figure that has ever worked on a ride entered through a real photograph of it in a scene and was WRITTEN BY ROLE AND LOOK — the caretaker in
+// the red plaid jacket, a figure in a red winter jacket — its name never reaching the take (the prose law bans it; the planner declares it by
+// role). So an owned CHARACTER the maker names in a request for a park ride is the ride's own figure, not a depiction: the door lets the name
+// through and everything downstream stays as it is. A real person is never an animatronic here; a transport "ride" (a car ride) is no park ride.
+export function animatronicOnRide(userPrompt, why) { return !!rideFamilyOf(userPrompt) && String(why || "") === "owned-character"; }
 export function namedInRequest(who, prompt) {
   const w = _tok(who), ptoks = _tok(prompt), p = new Set(ptoks);
   if (!w.length) return false;
@@ -109,8 +116,9 @@ export async function pregate(prompt, userPrompt = "") {
     // A real person is always canonical; an owned character refuses only when the model is CERTAIN it is the face
     // of its work. Unknown or false → falls through to the full gate, which fails closed on its own evidence.
     const canonicalBlock = j?.why === "celebrity" || j?.canonical === true;
-    const confident = owned && Number.isFinite(sure) && sure >= SURE && who.length > 0 && named && canonicalBlock;
-    log({ action: SHADOW ? "shadow" : confident ? "refused" : (owned && Number.isFinite(sure) && sure >= SURE && who && !named) ? (compiledOnly ? "ours-not-theirs" : "association") : (owned && Number.isFinite(sure) && sure >= SURE && who && named && !canonicalBlock) ? "non-canonical" : "passed", owned, who, why: j?.why, canonical: j?.canonical, sure, named, compiled_only: compiledOnly, model: MODEL, prompt: String(prompt).slice(0, 200), user_prompt: String(userPrompt || "").slice(0, 120) });
+    const animatronic = canonicalBlock && animatronicOnRide(userPrompt || prompt, j?.why);   // the work's face on a park ride: the ride's animatronic, never refused at the door
+    const confident = owned && Number.isFinite(sure) && sure >= SURE && who.length > 0 && named && canonicalBlock && !animatronic;
+    log({ action: SHADOW ? "shadow" : confident ? "refused" : (animatronic && owned && Number.isFinite(sure) && sure >= SURE && who && named) ? "ride-animatronic" : (owned && Number.isFinite(sure) && sure >= SURE && who && !named) ? (compiledOnly ? "ours-not-theirs" : "association") : (owned && Number.isFinite(sure) && sure >= SURE && who && named && !canonicalBlock) ? "non-canonical" : "passed", owned, who, why: j?.why, canonical: j?.canonical, sure, named, compiled_only: compiledOnly, model: MODEL, prompt: String(prompt).slice(0, 200), user_prompt: String(userPrompt || "").slice(0, 120) });
     if (!confident) return { refuse: false };
     if (SHADOW) { console.log(`  [pregate] SHADOW — would have refused "${who}" (${j?.why}, sure ${sure}); falling through as instructed`); return { refuse: false, shadow: true }; }
     return { refuse: true, who, why: String(j?.why || "owned"), sure };
