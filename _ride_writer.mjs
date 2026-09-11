@@ -20,6 +20,7 @@ export function rideBlock(d = rideFromEnv()) {
   const vehicleShown = r.vehicle_in_foreground === true;
   const env = r.environment && r.environment !== "other" ? r.environment : "";
   const dark = d.family === "dark ride", coaster = d.family === "coaster";
+  const secs = Number(process.env.BEAT_DURATION || 0);   // the take's length, when the run has told it (the climax's third is counted from it)
   const plural = /s$/.test(w.way), runs = plural ? "run" : "runs", ends = plural ? "END" : "ENDS";
   const carrier = d.kind === "driven" ? `the ${w.vehicle} the camera drives` : d.kind === "worn" ? `the wearer's own apparatus (${w.vehicle})` : `the ${w.vehicle} the camera rides in`;
   const placements = (d.dressing?.placements || []).map((l) => String(l).replace(/^[^:]{0,80}\(frame zero[^)]*\):\s*/i, "").replace(/^the seat photograph[^:]*:\s*/i, "")).filter(Boolean);
@@ -69,7 +70,7 @@ export function rideBlock(d = rideFromEnv()) {
   if (dark) s += `THE CAMERA IS THE RIDER'S OWN, HANDHELD — a dark ride alone lifts the no-camera rule (owner 2026-09-09: a rider on a slow dark ride films with a phone and PEERS AROUND — "less a sway than a peer around with the camera"): the rider turns the camera to LOOK at what the ride passes — to a tableau on the left, up at a figure on a platform, across to the far wall, back to the ${w.way} ahead — written as the rider's own unhurried look ("the camera turns to the left toward …", "the view drifts up to …", "the camera comes back to the ${w.way} ahead") — continuous and small, never a cut, a zoom, a push-in, a crane, a dolly or a reframe, and the seat's own objects (the ${w.way} ahead, the bar or nose) return to the frame within the beat. The ride's motion remains the frame's motion; a coaster and every other ride keep the camera fixed as their form does. `;
   if (d.kind === "ridden") s += `THE RIDE VEHICLE LEADS EVERY BEAT (owner 2026-09-09, the mushroom take's grammar): the ${w.vehicle || "vehicle"} is what each beat's sentence does — it glides, turns toward, rolls on, passes, slows before, halts before, holds, lurches back, looks to; the figures and the things are what it passes, never the subject of a beat on their own. ` +
     `THE RIDE'S OWN REGISTER — DECIDE, THEN WRITE (the decision is never written out): the ${w.vehicle}'s own motion grammar (an omnimover turns its seat to face each tableau; a boat drifts, bumps and drops; a coaster climbs, drops and banks; a trackless car pivots and reverses; a dark-ride car glides, slows before a tableau and jerks on); the trajectory through the scenes; and the ride's SOUND — the mechanism's hum and clatter, the ride's own music from its speakers, a narrator or announcer heard over the speakers, speaking animatronics — and which of these THIS take carries. Let the motion shape the beats and end with the Sound line naming the ride's own sound. ` +
-    `THE RIDE'S OWN VOICES: a ride narrator or announcer heard from the speakers, and a speaking animatronic in a tableau, are the form's own — they need no listener in frame and never address the camera as an audience; write them as Dialogue lines with a named speaker — the label "Ride narrator" for the ride's own voice (never the bare word "Narrator", which names nobody) and an animatronic by the figure it is — words the ride itself would play. A FIGURE THAT IS PASSED SPEAKS ITS OWN LINE (owner 2026-09-11: "narration is only where necessary"), timed to the beat it is passed in — its [Ns] is that beat's stamp, written in the Dialogue block as <speaker> [Ns]: "…" and never as a beat line; the Ride narrator speaks only when no figure of the scene can carry the words. `;
+    `THE RIDE'S OWN VOICES: a ride narrator or announcer heard from the speakers, and a speaking animatronic in a tableau, are the form's own — they need no listener in frame and never address the camera as an audience; write them as Dialogue lines with a named speaker — the label "Ride narrator" for the ride's own voice (never the bare word "Narrator", which names nobody) and an animatronic by the figure it is — words the ride itself would play. A FIGURE THAT IS PASSED SPEAKS ITS OWN LINE (owner 2026-09-11: "narration is only where necessary"), timed to the beat it is passed in — its [Ns] is that beat's stamp, written in the Dialogue block as <speaker> [Ns]: "…" and never as a beat line; the Ride narrator speaks only when no figure of the scene can carry the words. EVERY LINE SAYS HOW IT IS SAID (owner 2026-09-11): the speaker label ends in a short parenthetical of manner — the caretaker in the red plaid jacket (sing-song, mocking, through a grin) [2s]: "…" — two or three words of delivery, the figure's character compiled to voice; never a stage direction of the body, never a mood word in the beats. `;
   s += `THE RIDE NEVER CUTS: no "hard cut", no new camera setup — the ${w.way} carries the ${w.vehicle} into each next scene inside the same take. ` +
     `THE FORM'S NAME IS THE PHOTOGRAPH'S: the words "${d.noun}" name THIS ride — the photograph's own ${w.vehicle} and ${w.way} — and may describe the ${w.vehicle} ("the ${d.noun} ${w.vehicle}"); they never name a scene, a passage or a destination the take produces anew ("into the ${d.noun}", "a ${d.noun}'s interior"), which are written by their construction — the black-painted walls of the ride's own building, a track-lit passage, a tableau on a low platform under a spot — or the photograph returns whole. ` +
     `THE MOUNT (the opening only): the ride MAY open outside the ${w.vehicle} as it comes down the ${w.way} toward the camera and takes it up; from that moment every beat rides, and there is never a dismount after it. ` +
@@ -83,6 +84,9 @@ export function rideBlock(d = rideFromEnv()) {
     `THE ${w.vehicle.toUpperCase()} NEVER LEAVES THE ${w.way.toUpperCase()}: a floor thing of the world — a carpet, tiles, boards, a rug — lies under and around the ${w.way}, with the ${w.way} continuing across it; the ${w.vehicle} never glides, rolls or drives onto anything but its own ${w.way}. ` +
     (d.interior ? `THE MOTION IS WHAT THIS PLACE CAN HOST: straight runs, dips, banks at corners, a doorway taken at speed; never a loop, inversion or corkscrew indoors. ` : "") +
     `THE FINALE IS SPECTACLE THAT ACTS ON THE RIDE (owner 2026-09-11): the last scene is an EVENT the world releases — a flood, a burst, a collapse, a lunge, a swing — and the seat FEELS it: the ${w.vehicle} sways, jolts, dips, bucks, is splashed or sprayed as it passes through; and THE RIDERS REACT, never seen but always heard and felt — gasps, screams or laughter from the rows ahead, arms thrown up in the rows ahead, the rider's own breath. ` +
+    // THE CLIMAX IS RIDDEN, NOT TAPPED (owner 2026-09-11, on draw 6's render: "the ending is abrupt and doesn't let the climax sit … you want to experience the
+    // climax instead of end on an ironic note"): the last beat opened at [8s] of 9 — five events in one second, then the exit doors. The climax gets the last third.
+    `THE CLIMAX IS RIDDEN, NOT TAPPED: the last beat opens ${secs >= 6 ? `by [${secs - 3}s]` : "with the last third of the take"} and the seat rides THROUGH the spectacle to the last frame — it unfolds across those seconds (the burst, then its heat and light on the rows ahead, then the ${w.way} running on through it), the ${w.vehicle} still inside it at the final image; the ride never ends itself — no exit doors, no unload, no station, no wink — the climax is experienced, not glanced at. ` +
     `THE PAYOFF NEVER ENDS ON A FACE: nothing fills the lens for long, and every figure keeps the scene's scale to the last frame.\n`;
   return s;
 }
@@ -164,6 +168,16 @@ const WAY_NOUNS = ["rails", "rail", "track", "tracks", "way", "channel", "flume"
 const STOPS = new RegExp(`\\b(?:${VEHICLE_NOUNS.join("|")})\\b[^.;,]{0,40}?\\b(?:halts?|halting|halted|stops?(?: dead| short)?|stopping|stopped|comes? to a (?:stop|halt|standstill)|to a (?:stop|halt|standstill)|holds? (?:still|there|motionless|for a (?:moment|beat))|holding still|pauses?|pausing|paused|stands? still|sits? still|at a standstill)\\b`, "i");
 const SURPRISES = /\b(?:lurch(?:es|ing|ed)? (?:backward|backwards|back|sideways|forward)|(?:rolls?|glides?|slides?|jerks?|shoots?|is (?:pulled|dragged|yanked)) (?:backward|backwards|back)|revers(?:es|ing|ed)|in reverse|backwards?|spins?|spinning|spun|whips? (?:round|around|about)|wheels? (?:round|around)|swings? (?:hard|sharply|round|around|away|suddenly)|swung (?:hard|round|around)|turns? (?:sharply|hard|suddenly|away|abruptly)|veers?|banks? hard|drops?(?: away| suddenly)?|dropping|plunges?|plunging|falls? away|tilts? back|rocks? back|pitches?|shoots? forward|lunges? forward|jolts? (?:forward|sideways)|(?:sudden|unexpected|abrupt) (?:turn|drop|lurch|spin|jolt|dip))\b/i;
 export const rideStops = (line) => STOPS.test(String(line || ""));
+// THE CLIMAX IS RIDDEN (owner 2026-09-11): the ride never ends itself in the last beat; every spoken line carries its manner
+const RIDE_END = /\b(?:exit doors?|the exit|exit gates?|unload(?:ing)?(?: area| station)?|the station|(?:end|close) of the ride|ride ends|gift shop|(?:back |out )?into (?:the )?daylight)\b/i;
+export const rideEndsItself = (line) => RIDE_END.test(String(line || ""));
+const MANNER_TAG = /\([^)\n]{2,60}\)\s*\[\d+(?:\.\d+)?s\]\s*:/;
+/** The Dialogue block's spoken lines: [{ label, line }] — the text after the Dialogue header, each "<label> [Ns]: …" line. */
+export function dialogueLines(text) {
+  const parts = String(text || "").split(/^\s*Dialogue\s*:/im); if (parts.length < 2) return [];
+  return parts.slice(1).join("\n").split("\n").map((l) => { const m = l.match(/^\s*(.+?)\s*\[\d+(?:\.\d+)?s\]\s*:\s*\S/); return m ? { label: m[1].trim(), line: l } : null; }).filter(Boolean);
+}
+export const saysHow = (line) => MANNER_TAG.test(String(line || ""));
 export const rideSurprises = (line) => SURPRISES.test(String(line || ""));
 export function vehicleLeads(line, d) {
   const w = d ? rideWords(d) : { vehicle: "", way: "" };
@@ -255,10 +269,18 @@ export function formNameAsPlace(d) {
 }
 /** THE FINDINGS — the run's ledger shape ({ rule, figure, at }), fatal-class every one: a wrong video, never a style note.
  *  @fed the beats text and the ride decision; workTitles for the world-room ban under a theme. */
-export function rideFindings(text, d, { workTitles = [] } = {}) {
+export function rideFindings(text, d, { workTitles = [], secs = Number(process.env.BEAT_DURATION || 0) } = {}) {
   const out = []; if (!d) return out;
   const w = rideWords(d);
   const lines = beatLines(text);   // the beats only — never the Dialogue block's stamped lines (dry-cave-local-2)
+  // THE CLIMAX IS RIDDEN, NOT TAPPED (owner 2026-09-11, draw 6: the last beat at [8s] of 9 — a jolt, a burst, screams and the exit doors in one second):
+  // the last beat opens by [secs−3] and the seat rides through the spectacle; the ride never ends itself; every spoken line says how it is said. The ride's own flaws.
+  if (d.kind === "ridden" && !CORE_ONLY.on && lines.length >= 2) {
+    const lastLine = lines[lines.length - 1], lastAt = Number((lastLine.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0);
+    if (secs >= 6 && lastAt > secs - 3) out.push({ rule: "ride", figure: `camera (the climax has ${secs - lastAt}s — the last beat opens by [${secs - 3}s] and the seat rides THROUGH the spectacle to the last frame, the ${w.vehicle || "vehicle"} still inside it at the final image)`, at: lastAt });
+    const e = lastLine.match(RIDE_END); if (e) out.push({ rule: "ride", figure: `camera (the ride ends itself: "${e[0]}" — the last beat is the climax ridden, never the exit, the unload or a wink)`, at: lastAt });
+    for (const dl of dialogueLines(text)) if (!saysHow(dl.line)) out.push({ rule: "ride", figure: `camera (a line does not say how it is said — "${dl.label}": the speaker label ends in a parenthetical of manner, two or three words — (sing-song, mocking))`, at: Number((dl.line.match(/\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0) });
+  }
   // rule "apparatus" = a WRONG video (fatal after the re-asks); rule "ride" = the ride's own flaw — re-asked once, never refused (owner 2026-09-11: draws refused on a static figure or a flat finale while everything else was right)
   const add = (line, why, rule = "apparatus") => { const m = line.match(/^\s*\[(\d+(?:\.\d+)?)s\]/); out.push({ rule, figure: `camera (${why})`, at: m ? Number(m[1]) : 0 }); };
   lines.forEach((line, i) => {
