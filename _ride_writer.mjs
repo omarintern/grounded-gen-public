@@ -6,6 +6,7 @@
 // later things or the photographed places, the mode's own laws) and ONE findings function. Mechanical repairs for FACTS only —
 // a frame-zero placement missing from beat zero is appended as a fact; a surviving place name is redacted by the run.
 import { rideFromEnv, rideWords } from "./_ride.mjs";
+import { skeletonBlock } from "./_ride_skeleton.mjs";   // THE SKELETON (2026-09-12): the structure decided first, handed to the prose writer as facts
 import { worldNameFindings } from "./_gate_rules.mjs";
 
 const _re = (s) => String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -82,7 +83,7 @@ export function rideBlock(d = rideFromEnv()) {
     // not expected. whereas these gens are linear forward, not stopping — an element of ride ingenuity"): the old law said the ride NEVER stops, and every
     // draft glided forward from first beat to last. A dark ride halts at a scene, holds while the figure performs, then moves in a way the rider did not expect;
     // only the LAST image must still be moving.
-    (dark ? `THE RIDE IS PROGRAMMED — IT STOPS, WATCHES, THEN SURPRISES: at least one scene inside is met at a FULL STOP — the ${w.vehicle} halts before the tableau and holds while the figure performs its one motion — and then moves in a way the rider did not expect (lurches backward, spins to face the other way, swings hard into a turn, drops, rocks back, shoots forward), the surprise timed to the performance; the motion changes from beat to beat — never the same forward glide three beats running; the stop is never the last beat. ` : "") +
+    (dark && !d.skeleton ? `THE RIDE IS PROGRAMMED — IT STOPS, WATCHES, THEN SURPRISES: at least one scene inside is met at a FULL STOP — the ${w.vehicle} halts before the tableau and holds while the figure performs its one motion — and then moves in a way the rider did not expect (lurches backward, spins to face the other way, swings hard into a turn, drops, rocks back, shoots forward), the surprise timed to the performance; the motion changes from beat to beat — never the same forward glide three beats running; the stop is never the last beat. ` : "") +
     `THE LAST IMAGE IS STILL MOVING AND THE ${w.way.toUpperCase()} NEVER ${ends} ON SCREEN: in the final image the ride is moving — the last words of the last beat say where it goes (the ${w.way} on through the doors, around the bend, out of the frame, or the ${w.vehicle} diving through what the payoff releases and swallowed by it). ` +
     `THE ${w.vehicle.toUpperCase()} NEVER LEAVES THE ${w.way.toUpperCase()}: a floor thing of the world — a carpet, tiles, boards, a rug — lies under and around the ${w.way}, with the ${w.way} continuing across it; the ${w.vehicle} never glides, rolls or drives onto anything but its own ${w.way}. ` +
     (d.interior ? `THE MOTION IS WHAT THIS PLACE CAN HOST: straight runs, dips, banks at corners, a doorway taken at speed; never a loop, inversion or corkscrew indoors. ` : "") +
@@ -90,11 +91,12 @@ export function rideBlock(d = rideFromEnv()) {
     `THE FINALE IS THE STORY'S TURN, ACTING ON THE RIDE: the last scene is the world's own story reaching the seat, imagined from the work — a figure returns and pushes the ${w.vehicle} off its course into the maze, the doors shut behind it, the lights fail and a figure stands where the ${w.way} turns — never a stock effect chosen for size (a fire, a flood) unless the work's own story is one; and the seat FEELS it: the ${w.vehicle} sways, jolts, dips, is pushed, turned or splashed; and THE RIDERS REACT, never seen but always heard and felt — gasps, screams or laughter from the rows ahead, arms thrown up in the rows ahead, the rider's own breath. ` +
     // THE CLIMAX IS RIDDEN, NOT TAPPED (owner 2026-09-11, on draw 6's render: "the ending is abrupt and doesn't let the climax sit … you want to experience the
     // climax instead of end on an ironic note"): the last beat opened at [8s] of 9 — five events in one second, then the exit doors. The climax gets the last third.
-    (d.ending === "quick"
+    (d.skeleton ? "" : d.ending === "quick"
       ? `THE PAYOFF IS A BUTTON (the plan's decision, from the maker's words): the build takes the time and the payoff lands late and clean — one event in the last second or two, the ${w.vehicle} still moving as it lands; quick shortens the landing, never the event. `
       : `THE CLIMAX IS RIDDEN, NOT TAPPED (the plan's decision: held): the last beat opens ${secs >= 6 ? `by [${secs - 3}s]` : "with the last third of the take"} and the seat rides THROUGH the spectacle to the last frame — it unfolds across those seconds (the burst, then its heat and light on the rows ahead, then the ${w.way} running on through it), the ${w.vehicle} still inside it at the final image — the climax is experienced, not glanced at. `) +
     `${makerEndsRide(process.env.RAW_USER_PROMPT) ? `The ride ends because the maker's words end it — ridden to the last frame, the ending itself the payoff` : `The ride never ends itself — no exit doors, no unload, no station`}; THE STAMPS FALL WHERE THE RIDE'S EVENTS FALL, never on a grid — a passage a second, a tableau two, the held stop two. ` +
     `THE PAYOFF NEVER ENDS ON A FACE: nothing fills the lens for long, and every figure keeps the scene's scale to the last frame.\n`;
+  if (d.skeleton) s += skeletonBlock(d.skeleton, d);   // the structure, decided: the last thing the writer reads
   return s;
 }
 

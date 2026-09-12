@@ -13,7 +13,8 @@ import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_in
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
-import { rideBlock, dialogueLines, saysHow } from "./_ride_writer.mjs";   // the ride's one block, from the run's decision (2026-09-09); the spoken line's manner (2026-09-12, every form)
+import { rideBlock, dialogueLines, saysHow } from "./_ride_writer.mjs";
+import { skeletonStamps } from "./_ride_skeleton.mjs";   // the ride's one block, from the run's decision (2026-09-09); the spoken line's manner (2026-09-12, every form)
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
@@ -347,7 +348,9 @@ if (BEAT_STYLE !== "template") {
     if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(t), BEAT_SECS, COUNTS)) fails.push(`stamps [${stampList(t).join(",")}] illegal for ${BEAT_SECS}s counts {${COUNTS.join(",")}}`);
     // THE HELD CLIMAX IS A FORMAT LAW (owner 2026-09-12: "23 is much too long"): on a ride whose plan holds the ending, a last stamp later than [secs−3] is
     // corrected in the same cheap retry as the stamps and the camera clause — never a full writer pass (velocal7/8 wrote [8s] of 9 in every pass)
-    if (RIDE && RIDE.kind === "ridden" && RIDE.ending !== "quick" && BEAT_SECS >= 6) { const st = stampList(t); const last = st[st.length - 1]; if (st.length && last > BEAT_SECS - 3) fails.push(`the last beat opens at [${last}s] of ${BEAT_SECS}s — the plan decided the ending is HELD: open the last beat by [${BEAT_SECS - 3}s] and ride THROUGH the spectacle to the last frame (retime the stamps; keep the story)`); }
+    // THE DECIDED STAMPS ARE A FORMAT LAW (2026-09-12): under a skeleton the writer uses exactly its stamps — corrected in the same cheap retry, never a full pass
+    if (RIDE?.skeleton) { const want = skeletonStamps(RIDE.skeleton), got = stampList(t); if (want.length && (got.length !== want.length || got.some((v, i) => v !== want[i]))) fails.push(`use the DECIDED stamps exactly — [${want.map((v) => `${v}s`).join(", ")}] — you wrote [${got.map((v) => `${v}s`).join(", ")}]; keep every beat's prose at its own stamp`); }
+    if (RIDE && !RIDE.skeleton && RIDE.kind === "ridden" && RIDE.ending !== "quick" && BEAT_SECS >= 6) { const st = stampList(t); const last = st[st.length - 1]; if (st.length && last > BEAT_SECS - 3) fails.push(`the last beat opens at [${last}s] of ${BEAT_SECS}s — the plan decided the ending is HELD: open the last beat by [${BEAT_SECS - 3}s] and ride THROUGH the spectacle to the last frame (retime the stamps; keep the story)`); }
     // EVERY LINE SAYS HOW IT IS SAID (owner 2026-09-11/12, every form): a spoken line whose label carries no manner is a law fail — one corrective retry
     { const bare = dialogueLines(t).filter((l) => !saysHow(l.line)); if (bare.length) fails.push(`a Dialogue line does not say how it is said ("${bare[0].label}") — end the speaker label with a short parenthetical of manner, two or three words: (sing-song, mocking)`); }
     // THE RIDER IS NEVER WRITTEN (owner 2026-09-07/08: frozen plaid hands, frozen boots) — on any ride one-take the rider's clothing or body is a law fail
@@ -387,7 +390,7 @@ if (BEAT_STYLE !== "template") {
   // corrective call to delete it. A clause that only names the camera is deleted mechanically; anything that survives still fails the law below.
   { const before = text;
     const _camV = "(?:tracks?|tracking|follows?|following|pans?|panning|holds?|holding|stays?|staying|moves?|moving|glides?|gliding|pushes?|pushing|pulls?|pulling|swings?|swinging|drifts?|drifting|tilts?|tilting|turns?|turning|looks?|looking|swivels?|swivell?ing|veers?|veering|peers?|peering|whips?|whipping|sweeps?|sweeping|settles?|settling|lingers?|lingering|rises?|rising|drops?|dropping|dips?|dipping)";
-    text = text.replace(new RegExp(`,?\\s*(?:and|as|while)\\s+the camera\\s+${_camV}\\b(?:\\s+(?:to|toward|towards|left|right|up|down|back|ahead|slowly|sharply)\\b)*`, "gi"), "")
+    text = text.replace(new RegExp(`,?\\s*(?:and|as|while)\\s+the camera\\s+${_camV}\\b(?:\\s+(?:to|toward|towards|the|a|an|its|his|her|left|right|up|down|back|ahead|slowly|sharply)\\b)*`, "gi"), "")
                .replace(new RegExp(`\\bthe camera\\s+${_camV}\\b[^.;,]{0,60}(?:,\\s*(?:and\\s+)?|\\s+and\\s+)`, "gi"), "");
     if (text !== before) console.error(` (repair: a camera clause deleted — the camera is never a character; no retry spent)`); }
   const _fails1 = _lawFails(text);
