@@ -69,7 +69,7 @@ const read = await providerJson([
     `Never place anything ON the rails or the vehicle except a colouring. Things: ${JSON.stringify(elements.map((e) => ({ name: e.name, kind: e.kind, surface: e.surface })))}` +
     (DARK && process.env.WORLD_SURFACES ? ` World surfaces (the world's own, read off its photographs — for this photograph's themed surfaces to become): ${process.env.WORLD_SURFACES}` : "")),
   imagePart("image/jpeg", b64),
-], { maxTokens: 900, temperature: 0.2 });
+], { maxTokens: 900, temperature: 0.2, tag: "dressing" });
 const dressing = (Array.isArray(read?.dressing) ? read.dressing : []).filter((e) => e && (e.op === "replace" || e.op === "add") && String(e.name || "").trim() && String(e.where || "").trim())
   .filter((e) => { if (DARK && dressesTheWay(String(e.where))) { console.log(`  ◇ ${e.name}: skipped — "${e.where}" is the way or the vehicle, never dressed on a dark ride`); return false; } return true; }).slice(0, DARK ? 8 : 5);   // a themed plate may owe a replacement per surface as well as per prop
 for (const e of (Array.isArray(read?.dressing) ? read.dressing : [])) console.log(`  ◇ ${String(e?.name || "?")}: ${String(e?.op || "?").toUpperCase()}${e?.where ? ` @ ${e.where}` : ""}${e?.why ? ` — ${String(e.why).slice(0, 80)}` : ""}`);

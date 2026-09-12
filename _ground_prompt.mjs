@@ -325,7 +325,7 @@ if (BEAT_STYLE !== "template") {
   // 700-token budget was consumed before the first beat line; provider-llm then retried at 1400 → 2800 → 5600. The ledger
   // shows 26 physical calls for six logical steps and $… — the same writer at the budgets below is one call per step.
   // A budget BOUNDS the answer, it never spends it: over-provisioning costs nothing, under-provisioning pays every rung.
-  let { text } = await providerText(instruction, { maxTokens: 6000, temperature: 0.5 });
+  let { text } = await providerText(instruction, { maxTokens: 6000, temperature: 0.5, reasoning: process.env.WRITER_REASONING || "default", tag: "writer" });
 
   // ⚠ THE VALIDATOR MUST MATCH THE REQUESTED SHAPE. It filtered for /^\[\d+s\]/ unconditionally, so the moment
   // timestamps were switched off it rejected perfectly good continuous prose and silently fell back to the
@@ -516,7 +516,7 @@ if (BEAT_STYLE !== "template") {
         `vantage with nothing to ground it. Rewrite the SAME beats, keeping every event and the payoff exactly ` +
         `as they are, but describe the post-cut action by what the WHOLE BODY does at the distance the ` +
         `photograph was taken from. Do not name the limb or the object in the grip. Change nothing else.`,
-        { maxTokens: 4000, temperature: 0.2 });
+        { maxTokens: 4000, temperature: 0.2 , reasoning: "low", tag: "writer-retry" });
       const relines = t2.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, ACCEPTED_N);
       const stillBad = relines.filter((l) => FINE_DETAIL.test(l)).length;
       if (relines.length && !stillBad) { beatLine = relines.join("\n"); console.log(`[GUARD] beats: repaired on retry`); }
@@ -672,7 +672,7 @@ try {
           `the SAME timestamps, changing ONLY the opening beat so it states the subject's position in the frame and ` +
           `its facing, at the spot that body occupies. Do NOT mention the body being replaced — it is gone, the ` +
           `subject is simply there instead. Return the full beat list and nothing else.`,
-          { maxTokens: 4000, temperature: 0.3 });
+          { maxTokens: 4000, temperature: 0.3 , reasoning: "low", tag: "writer-retry" });
         const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
         if (rl.length !== ACCEPTED_N) console.warn(`  [swap] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
         else {
@@ -725,7 +725,7 @@ try {
         `supplies that the request never named. Do not introduce a new place, a new character, or a prop the ` +
         `frame cannot afford. If an earlier beat set up a turn that nothing answered, ANSWERING IT is the ` +
         `escalation. Return the full beat list and nothing else.`,
-        { maxTokens: 4000, temperature: 0.3 });
+        { maxTokens: 4000, temperature: 0.3 , reasoning: "low", tag: "writer-retry" });
       const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
       if (rl.length !== ACCEPTED_N) {
         console.warn(`  [payoff] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
