@@ -111,6 +111,11 @@ const COUNTS = LEGAL.length ? LEGAL : [Math.max(2, Math.ceil(BEAT_SECS / 2))];
 // ON A DARK RIDE OF A NAMED WORLD (owner 2026-09-08, job bd19152d): the brief still gives the story's ORDER, but its place names never
 // reach the writer (redacted to "scene"), and its verbs do not bind — "enters a lavish Gold Room" was demanded by the checklist and
 // forbidden by the name law in the same instruction. The maker's own words are the request the laws are checked against.
+// INFRASTRUCTURE IS EXIT 5 (owner 2026-09-12, velocal9: the provider unreachable — DNS — crashed the writer with a bare exit 1 and the run "fell back to draft"):
+// a transport failure is never a verdict on the words; it is named as infra so the run can fail clean instead of shipping the pre-scrape draft.
+const _infraExit = (e) => { if (e && (e.name === "ProviderInfraError" || /transport failure|ENOTFOUND|ETIMEDOUT|ECONNRESET|EAI_AGAIN|the provider could not be reached/i.test(String(e.message || "")))) { console.error(`\n✗ INFRASTRUCTURE UNAVAILABLE in the writer (${String(e.message || e).split("\n")[0].slice(0, 160)}) — exit 5, not a verdict on the words`); process.exit(5); } };
+process.on("unhandledRejection", (e) => { _infraExit(e); throw e; });
+process.on("uncaughtException", (e) => { _infraExit(e); console.error(e); process.exit(1); });
 const RIDE = rideFromEnv();   // the run's ride decision, or null (2026-09-09)
 const _roomNames = () => [...(RIDE?.world?.rooms || []), RIDE?.world?.title || "", ...String(process.env.WORK_TITLES || "").split(/\s*(?:,|·|\|)\s*/)].map((s) => String(s || "").trim()).filter(Boolean);
 const narrativeForWriter = (p) => RIDE?.world?.mode === "theme" ? redactWorldNames(p, _roomNames()) : p;
