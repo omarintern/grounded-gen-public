@@ -375,6 +375,12 @@ if (BEAT_STYLE !== "template") {
     }
     return fails;
   };
+  // THE CAMERA CLAUSE IS A REPAIR, NOT A RETRY (owner 2026-09-12: "23 is much too long"): every writer pass wrote "the camera tracks with it" and paid a full
+  // corrective call to delete it. A clause that only names the camera is deleted mechanically; anything that survives still fails the law below.
+  { const before = text;
+    text = text.replace(/,?\s*(?:and|as|while)\s+the camera\s+(?:tracks?|tracking|follows?|following|pans?|panning|holds?|holding|stays?|staying|moves?|moving|glides?|gliding|pushes?|pushing|pulls?|pulling|swings?|swinging|drifts?|drifting|tilts?|tilting)\b[^.;,]{0,60}/gi, "")
+               .replace(/\bthe camera\s+(?:tracks?|tracking|follows?|following|pans?|panning|holds?|holding|stays?|staying|moves?|moving|glides?|gliding|pushes?|pushing|pulls?|pulling|swings?|swinging|drifts?|drifting|tilts?|tilting)\b[^.;,]{0,60}(?:,\s*(?:and\s+)?|\s+and\s+)/gi, "");
+    if (text !== before) console.error(` (repair: a camera clause deleted — the camera is never a character; no retry spent)`); }
   const _fails1 = _lawFails(text);
   if (_fails1.length) {
     console.error(` (writer output broke the law: ${_fails1.join("; ")} - one corrective retry)`);
@@ -688,7 +694,8 @@ try {
   // ourselves (deleting a clause could delete the payoff the user asked for); carry the ORIGINAL contract so
   // the retry answers the question that failed; VERIFY the retry actually escalates; and ship the original
   // with a loud warning if it does not — a working clip with a flat payoff beats no clip.
-  if (payoffActs() && pv.verdict === "completes" && writerInstruction) {
+  if (RIDE && payoffActs() && pv.verdict === "completes" && writerInstruction) console.warn(`  [payoff] a ride: the ride's own finale laws own the ending (the story's turn, held or quick by the plan) — no escalation re-ask spent`);
+  if (!RIDE && payoffActs() && pv.verdict === "completes" && writerInstruction) {
     // The dialogue block is APPENDED as a trailing section, so beats and block separate cleanly and the
     // block's [Ns] stamps still line up as long as the retry keeps the same stamps (it is told to).
     const _bl = beatLine.split("\n");
