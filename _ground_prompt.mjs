@@ -340,6 +340,9 @@ if (BEAT_STYLE !== "template") {
   const _lawFails = (t) => {
     const fails = [];
     if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(t), BEAT_SECS, COUNTS)) fails.push(`stamps [${stampList(t).join(",")}] illegal for ${BEAT_SECS}s counts {${COUNTS.join(",")}}`);
+    // THE HELD CLIMAX IS A FORMAT LAW (owner 2026-09-12: "23 is much too long"): on a ride whose plan holds the ending, a last stamp later than [secs−3] is
+    // corrected in the same cheap retry as the stamps and the camera clause — never a full writer pass (velocal7/8 wrote [8s] of 9 in every pass)
+    if (RIDE && RIDE.kind === "ridden" && RIDE.ending !== "quick" && BEAT_SECS >= 6) { const st = stampList(t); const last = st[st.length - 1]; if (st.length && last > BEAT_SECS - 3) fails.push(`the last beat opens at [${last}s] of ${BEAT_SECS}s — the plan decided the ending is HELD: open the last beat by [${BEAT_SECS - 3}s] and ride THROUGH the spectacle to the last frame (retime the stamps; keep the story)`); }
     // EVERY LINE SAYS HOW IT IS SAID (owner 2026-09-11/12, every form): a spoken line whose label carries no manner is a law fail — one corrective retry
     { const bare = dialogueLines(t).filter((l) => !saysHow(l.line)); if (bare.length) fails.push(`a Dialogue line does not say how it is said ("${bare[0].label}") — end the speaker label with a short parenthetical of manner, two or three words: (sing-song, mocking)`); }
     // THE RIDER IS NEVER WRITTEN (owner 2026-09-07/08: frozen plaid hands, frozen boots) — on any ride one-take the rider's clothing or body is a law fail

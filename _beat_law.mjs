@@ -271,7 +271,9 @@ export function denameSpeakers(block, modesJson = process.env.IP_FIGURES) {
     const m = l.match(/^(\s*)([^:\n(\[]{1,80}?)(\s*(?:\([^)]*\)\s*)*(?:\[\d+(?:\.\d+)?s\]\s*)?:)(.*)$/);
     if (!m) { out.push(l); continue; }
     const bare = m[2].trim().toLowerCase();
-    const mode = modes.find((x) => (x?.names || []).some((n) => String(n).toLowerCase() === bare));
+    // a banned name INSIDE a label is the name too (velocal8: "A MENACING JACK TORRANCE ANIMATRONIC" passed the equality test and failed the run)
+    const _esc = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const mode = modes.find((x) => (x?.names || []).some((n) => { const k = String(n).toLowerCase(); return k.length >= 3 && (k === bare || new RegExp(`(?:^|[^a-z])${_esc(k)}(?=$|[^a-z])`).test(bare)); }));
     if (!mode) { out.push(l); continue; }
     if (mode.mode === "omit") continue;
     const guise = String(mode.guise || "").trim();
@@ -591,7 +593,7 @@ export const ipFiguresLaw = () => {
   if (!Array.isArray(modes) || !modes.length) return "";
   const dename = modes.filter((m) => m && m.mode === "dename"), omit = modes.filter((m) => m && m.mode === "omit");
   return `⚠⚠ FIGURES THAT ARE NEVER NAMED (a public-domain figure and a work's lesser figures are named and described; a work's FACE and a real person are not): ` +
-    (dename.length ? `${dename.map((m) => `"${m.name}" is written ONLY as a description of build, clothing and posture${m.guise ? ` — ${m.guise}` : ""} — never the name, not in a beat, not in a speaker label`).join("; ")}. ` : "") +
+    (dename.length ? `${dename.map((m) => `"${m.name}" is written ONLY as a description of build, clothing and posture${m.guise ? ` — ${m.guise}` : ""} — never the name, not in a beat, not in a speaker label; the name MAY be spoken inside a line ("Wendy, darling!") — a spoken name is words, never a picture`).join("; ")}. ` : "") +
     (omit.length ? `${omit.map((m) => `"${m.name}"`).join(", ")} ${omit.length > 1 ? "do" : "does"} not appear at all — the signature IS the name, and a description would still be it. ` : "") +
     `The request's own words may name them; your beats and dialogue may not.\n`;
 };
