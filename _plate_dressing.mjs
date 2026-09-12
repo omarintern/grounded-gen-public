@@ -24,7 +24,7 @@ if (process.argv[2] === "--things") {
       `"surfaces" names this room's OWN wall finish, ceiling, floor and light in a few concrete words each (cream walls with dark wood panelling; a white ceiling with pendant lamps; a hexagonal carpet in orange and brown; warm incandescent light) — one per kind, only those the photograph shows. ` +
       `"name" is concrete and short (a carpet's pattern in its colours, a pair of elevator doors, a chandelier, an archway, a hedge wall under snow). A figure is described by clothing and posture only — never a name, never an age word. Skip anything generic (a plain wall, a window, daylight).`),
     imagePart("image/jpeg", rb64),
-  ], { maxTokens: 700, temperature: 0.2 });
+  ], { reasoning: "low", maxTokens: 700, temperature: 0.2, tag: "read" });
   const _short = (x) => { const v = String(x || "").replace(/\s+/g, " ").trim(); if (v.length <= 90) return v; const cut = v.slice(0, 90); return cut.slice(0, Math.max(40, cut.lastIndexOf(" "))).trim(); };   // whole words: a thing's name is prose the writer repeats
   const things = (Array.isArray(rr?.things) ? rr.things : []).map((t) => ({ name: _short(t?.name), kind: String(t?.kind || "").toLowerCase().trim(), surface: String(t?.surface || "wall").toLowerCase().trim(), why: String(t?.why || "").slice(0, 120) }))
     .filter((t) => t.name && KINDS.has(t.kind)).map((t) => ({ ...t, surface: SURFACES.has(t.surface) ? t.surface : "wall" })).slice(0, n);
@@ -69,7 +69,7 @@ const read = await providerJson([
     `Never place anything ON the rails or the vehicle except a colouring. Things: ${JSON.stringify(elements.map((e) => ({ name: e.name, kind: e.kind, surface: e.surface })))}` +
     (DARK && process.env.WORLD_SURFACES ? ` World surfaces (the world's own, read off its photographs — for this photograph's themed surfaces to become): ${process.env.WORLD_SURFACES}` : "")),
   imagePart("image/jpeg", b64),
-], { maxTokens: 900, temperature: 0.2, tag: "dressing" });
+], { reasoning: "low", maxTokens: 900, temperature: 0.2, tag: "dressing" });   // placement is a judgement on an image — low, not minimal
 const dressing = (Array.isArray(read?.dressing) ? read.dressing : []).filter((e) => e && (e.op === "replace" || e.op === "add") && String(e.name || "").trim() && String(e.where || "").trim())
   .filter((e) => { if (DARK && dressesTheWay(String(e.where))) { console.log(`  ◇ ${e.name}: skipped — "${e.where}" is the way or the vehicle, never dressed on a dark ride`); return false; } return true; }).slice(0, DARK ? 8 : 5);   // a themed plate may owe a replacement per surface as well as per prop
 for (const e of (Array.isArray(read?.dressing) ? read.dressing : [])) console.log(`  ◇ ${String(e?.name || "?")}: ${String(e?.op || "?").toUpperCase()}${e?.where ? ` @ ${e.where}` : ""}${e?.why ? ` — ${String(e.why).slice(0, 80)}` : ""}`);
