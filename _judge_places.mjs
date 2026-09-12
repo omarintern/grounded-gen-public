@@ -21,7 +21,7 @@ export function shapePlaces(answer, text = "") {
   for (const p of list) {
     const words = String(p?.words || "").replace(/\s+/g, " ").trim();
     if (words.length < 3 || words.length > 80) continue;
-    if (/\b(?:built|black-painted|show-building|tableau|backdrop|painted flat|platform|staging|the ride's own)\b/i.test(words)) continue;   // the ride's own construction is never a place (velocal10)
+    if (/\b(?:built|black-painted|show-building|tableau|backdrop|painted flat|platform|staging|the ride's own|room of the world|scene of the world|doorway of the world|the world's doorway|scene built)\b/i.test(words)) continue;   // the ride's own construction is never a place (velocal10, draw 17)
     if (text && !new RegExp(words.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(text)) continue;   // the judge quotes what is there, or nothing
     const at = Number(p?.at); out.push({ words, at: Number.isFinite(at) ? at : 0 });
   }
