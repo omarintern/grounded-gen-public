@@ -10,7 +10,7 @@ export const PLACE_QUESTION = (title) =>
   `THE RULE: a place of the world is written as its QUALITIES — the pattern of its floor, the finish of its walls, its fixtures, its figures, its light — ` +
   `never as a NAME and never as somewhere the ride is or goes. List every phrase that breaks it: a proper-noun location (a hotel, a house, a room by its name, ` +
   `a numbered room), a named room of the work, or a bare room noun written as where the ride is or goes ("into the lobby", "through the hallway", "in the maze", ` +
-  `"the ballroom"). A THING beside the way is NOT a place: a carpet, wallpaper, chandeliers, hedge walls, elevator doors, a door, a wall, a set of stairs, a tableau. THE RIDE'S OWN PASSAGES ARE NOT PLACES OF THE WORLD: a tunnel, cave, cavern, corridor, hall, bend, dark stretch or "next scene" the ride itself travels through is the ride's architecture — never list it. ` +
+  `"the ballroom"). A THING beside the way is NOT a place: a carpet, wallpaper, chandeliers, hedge walls, elevator doors, a door, a wall, a set of stairs, a tableau. THE RIDE'S OWN PASSAGES ARE NOT PLACES OF THE WORLD: a tunnel, cave, cavern, corridor, hall, bend, dark stretch or "next scene" the ride itself travels through is the ride's architecture — never list it. THE RIDE'S OWN CONSTRUCTION IS NOT A PLACE EITHER: a room or scene BUILT around the rails, a built section, the black-painted walls of the ride's building, a platform, a flat, a backdrop, a tableau — the ride's staging, never listed. ` +
   `The work's title is a name. Return ONLY JSON {"places":[{"words":"<the exact words as written>","at":<the beat's stamp in seconds, a number>}]} — ` +
   `{"places":[]} when nothing names a place.`;
 
@@ -21,6 +21,7 @@ export function shapePlaces(answer, text = "") {
   for (const p of list) {
     const words = String(p?.words || "").replace(/\s+/g, " ").trim();
     if (words.length < 3 || words.length > 80) continue;
+    if (/\b(?:built|black-painted|show-building|tableau|backdrop|painted flat|platform|staging|the ride's own)\b/i.test(words)) continue;   // the ride's own construction is never a place (velocal10)
     if (text && !new RegExp(words.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(text)) continue;   // the judge quotes what is there, or nothing
     const at = Number(p?.at); out.push({ words, at: Number.isFinite(at) ? at : 0 });
   }

@@ -386,8 +386,9 @@ if (BEAT_STYLE !== "template") {
   // THE CAMERA CLAUSE IS A REPAIR, NOT A RETRY (owner 2026-09-12: "23 is much too long"): every writer pass wrote "the camera tracks with it" and paid a full
   // corrective call to delete it. A clause that only names the camera is deleted mechanically; anything that survives still fails the law below.
   { const before = text;
-    text = text.replace(/,?\s*(?:and|as|while)\s+the camera\s+(?:tracks?|tracking|follows?|following|pans?|panning|holds?|holding|stays?|staying|moves?|moving|glides?|gliding|pushes?|pushing|pulls?|pulling|swings?|swinging|drifts?|drifting|tilts?|tilting)\b[^.;,]{0,60}/gi, "")
-               .replace(/\bthe camera\s+(?:tracks?|tracking|follows?|following|pans?|panning|holds?|holding|stays?|staying|moves?|moving|glides?|gliding|pushes?|pushing|pulls?|pulling|swings?|swinging|drifts?|drifting|tilts?|tilting)\b[^.;,]{0,60}(?:,\s*(?:and\s+)?|\s+and\s+)/gi, "");
+    const _camV = "(?:tracks?|tracking|follows?|following|pans?|panning|holds?|holding|stays?|staying|moves?|moving|glides?|gliding|pushes?|pushing|pulls?|pulling|swings?|swinging|drifts?|drifting|tilts?|tilting|turns?|turning|looks?|looking|swivels?|swivell?ing|veers?|veering|peers?|peering|whips?|whipping|sweeps?|sweeping|settles?|settling|lingers?|lingering|rises?|rising|drops?|dropping|dips?|dipping)";
+    text = text.replace(new RegExp(`,?\\s*(?:and|as|while)\\s+the camera\\s+${_camV}\\b(?:\\s+(?:to|toward|towards|left|right|up|down|back|ahead|slowly|sharply)\\b)*`, "gi"), "")
+               .replace(new RegExp(`\\bthe camera\\s+${_camV}\\b[^.;,]{0,60}(?:,\\s*(?:and\\s+)?|\\s+and\\s+)`, "gi"), "");
     if (text !== before) console.error(` (repair: a camera clause deleted — the camera is never a character; no retry spent)`); }
   const _fails1 = _lawFails(text);
   if (_fails1.length) {
@@ -690,7 +691,7 @@ try {
 try {
   const { payoffVerdict, payoffActs } = await import("./_payoff_check.mjs");
   if (telling() === "observational") console.error("  [payoff] view held \u2014 no payoff is owed; the check and its re-ask are skipped");
-  const pv = telling() === "observational" ? { verdict: null } : await payoffVerdict(requestForLaws(process.env.USER_PROMPT || userPrompt || ""), beatLine);
+  const pv = (RIDE || telling() === "observational") ? { verdict: null } : await payoffVerdict(requestForLaws(process.env.USER_PROMPT || userPrompt || ""), beatLine);   // a ride's ending is the ride's own law (held|quick by the plan): the payoff judge is never called for it (velocal10: a paid call per pass, then ignored)
   if (pv.verdict) console.error(`  [payoff:${payoffActs() ? "live" : "shadow"}] last beat ${pv.verdict.toUpperCase()}${pv.why ? ` — ${pv.why}` : ""}${payoffActs() ? "" : "  (recorded only)"}`);
   // ── THE REPAIR (owner 2026-08-19: "i dont see payoff") ──────────────────────────────────────────────────
   // ⚠⚠ THE CHECK WAS RIGHT AND DID NOTHING. payoffActs() existed but was read ONLY to change the word in the
