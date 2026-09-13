@@ -465,8 +465,14 @@ if (BEAT_STYLE !== "template") {
   if (lines.length) {
     beatLine = lines.join("\n");
     if (emittedDialogue) {
-      beatLine += "\n\n" + emittedDialogue;
-      console.log(`  \u266a dialogue block kept from the writer (${emittedDialogue.split("\n").length - 1} line(s)) — it used to be dropped by the beat filter`);
+      // THE WRITER'S OWN BLOCK PASSES THE NAME LAW'S DE-NAMER TOO (job 69bb989b, 2026-09-13: "the twins in matching blue dresses to Wendy (creepy, unison) [3s]:"
+      // — a seat-cast name as the addressee — reached the check twice and spent both re-asks; the two synthesised blocks below have had this pass since
+      // velocal8, the kept block never did). A block left with only an omitted figure's lines ships no Dialogue, never a crash.
+      const _kept = denameSpeakers(emittedDialogue);
+      if (_kept) {
+        beatLine += "\n\n" + _kept;
+        console.log(`  ♪ dialogue block kept from the writer (${_kept.split("\n").length - 1} line(s))${_kept !== emittedDialogue ? " — a figure's name in a label written as its word" : ""}`);
+      } else console.log(`  ♪ the writer's dialogue block carried only an omitted figure's line(s) — dropped`);
     }
     mode += " + NARRATIVE";
     // ⚠ VALIDATE THE ASSEMBLY, NOT JUST THE DRAFT (owner 2026-08-22, the walrus): the law validator ran on
