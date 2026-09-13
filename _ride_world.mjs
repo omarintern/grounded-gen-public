@@ -101,7 +101,11 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
   const seatRole = "the seat photograph (frame zero, the ride's own vantage)";
   if (mode === "theme") {
     const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 2, cwd, env, log });
-    const things = dedupeThings([...read, ...planThings]).slice(0, 6);
+    // A SCENE INSIDE IS BUILT ONLY FROM A PHOTOGRAPH THAT RIDES (owner 2026-09-13: "if we're writing in rooms that aren't carried by plates then we're obviously
+    // gonna get lesser results"). Draw 19 rode the maze and the elevator hallway (cream walls, wainscoting, tan linoleum), and the writer built the twins' room
+    // from the plan's wallpaper and geometric carpet and the finale from the plan's splintered door — no photograph carried either, so the model had to invent
+    // them. The planner's own things no longer enter a themed ride's take: the world arrives as what its photographs show, and as the seat plate's replacements.
+    const things = dedupeThings(read).slice(0, 6);
     if (read.length) log(`  ✎ read off the world's rooms (things only): ${read.map((r) => r.name).join(" · ")}`);
     out.things = things;
     out.figures = things.filter(isFigureThing).map((e) => e.name);
@@ -129,7 +133,7 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     if (out.finale) log(`  ◉ the finale's tableau, held back: ${out.finale}`);
     if (laterAll.length > LATER_CAP) log(`  ◇ ${laterAll.length - LATER_CAP} later thing(s) left out — a take holds frame zero and ${LATER_CAP} stops, not a procession: ${laterAll.slice(LATER_CAP).join(" · ")}`);
     if (out.later.length) log(`  ◉ later along the take, in order: ${out.later.join(" → ")}`);
-    if (!things.length) log(`  ◇ the rooms and the planner offered no things — the world arrives in the maker's words alone`);
+    if (!things.length) log(`  ◇ the rooms offered no things — the world arrives in the maker's words alone (a themed take is built only from photographs that ride)`);
     return out;
   }
   // architecture / places / setting: the planner's things, placed by a read on the seat plate and on each photographed place
