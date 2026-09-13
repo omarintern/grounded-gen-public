@@ -92,7 +92,10 @@ const FIGURE_NOUN = /\b(?:figures?|twins?|girls?|boys?|man|men|woman|women|child
 const WAY_RE = /(?:\brails?\b|\btracks?\b|track ?bed|\bchannel\b|\bwater(?:way)?\b|\bflume\b|\bgroove\b|path(?:way)? ahead|floor ahead|ground ahead|\bbed\b|\bvehicle\b|\bcar\b|\bboat\b|\bpod\b|lap ?bar|restraint)/i;
 const BESIDE_WAY = /\b(?:beside|next to|alongside|either side of|both sides of|along|flanking|around|by|near|bordering|lining|edging)\s+(?:the\s+)?(?:rails?|tracks?|track ?bed|channel|flume|way|water)\b/gi;
 export const dressesTheWay = (where) => WAY_RE.test(String(where || "").replace(BESIDE_WAY, " "));
-export const isFigureThing = (e) => FIGURE_KIND.test(String(e?.kind || "").trim()) || FIGURE_NOUN.test(String(e?.name || ""));
+// THE HEAD NOUN DECIDES (draw 20, 2026-09-13: "twin mint-green sinks with chrome legs" read as a FIGURE on the word "twin" and was flagged silent): a thing is a figure when
+// the noun the phrase is ABOUT is a person-noun — the last word before its first modifier phrase — never because a person-word sits somewhere inside it.
+export const headNoun = (n) => { const s = String(n || "").toLowerCase().replace(/[^a-z' -]+/g, " ").trim(); const cut = s.search(/\s(?:in|with|of|on|at|under|over|holding|wearing|carrying|beside|behind|before|from|by|to|near|against|walking|standing|sitting|viewed)\s/); const core = cut > 0 ? s.slice(0, cut) : s; return core.trim().split(/\s+/).pop() || ""; };
+export const isFigureThing = (e) => FIGURE_KIND.test(String(e?.kind || "").trim()) || FIGURE_NOUN.test(headNoun(e?.name));
 export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], worldName = "", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const mode = d?.world?.mode || "setting";
   const way = d?.words?.way || d?.seat?.reading?.way || "";
