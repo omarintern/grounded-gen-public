@@ -13,7 +13,7 @@ import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_in
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
-import { rideBlock, dialogueLines, saysHow } from "./_ride_writer.mjs";
+import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { skeletonStamps } from "./_ride_skeleton.mjs";   // the ride's one block, from the run's decision (2026-09-09); the spoken line's manner (2026-09-12, every form)
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
@@ -355,6 +355,7 @@ if (BEAT_STYLE !== "template") {
     // on a dark ride is a format fail — the cheap retry writes it: each figure passed speaks its own line in character (the work's words are free in speech), with its manner, at its beat
     if (RIDE && RIDE.family === "dark ride" && !/(^|\n)\s*Dialogue\s*:/i.test(t)) fails.push(`a dark ride has voices — add the Dialogue block: each figure passed speaks its own line in character (the work's own words are free inside a spoken line), with its manner in the label — (sing-song, mocking) — at the stamp of the beat that passes it`);
     // EVERY LINE SAYS HOW IT IS SAID (owner 2026-09-11/12, every form): a spoken line whose label carries no manner is a law fail — one corrective retry
+    { const over = linesOutrun(t, BEAT_SECS); if (over.length) fails.push(`a spoken line outruns its beat or begins in the last second ("${over[0].label}" at [${over[0].at}s]: ${over[0].words} words, ${over[0].window}s until the next beat of a ${BEAT_SECS}s take) — a line never outruns the beat that carries it: shorten it, move its stamp earlier, or give its beat the seconds it needs`); }
     { const bare = dialogueLines(t).filter((l) => !saysHow(l.line)); if (bare.length) fails.push(`a Dialogue line does not say how it is said ("${bare[0].label}") — end the speaker label with a short parenthetical of manner, two or three words: (sing-song, mocking)`); }
     // THE RIDER IS NEVER WRITTEN (owner 2026-09-07/08: frozen plaid hands, frozen boots) — on any ride one-take the rider's clothing or body is a law fail
     if (singleBlock()) {

@@ -202,6 +202,23 @@ export function dialogueLines(text) {
   return parts.slice(1).join("\n").split("\n").map((l) => { const m = l.match(/^\s*(.+?)\s*\[\d+(?:\.\d+)?s\]\s*:\s*\S/); return m ? { label: m[1].trim(), line: l } : null; }).filter(Boolean);
 }
 export const saysHow = (line) => MANNER_TAG.test(String(line || ""));
+// A SPOKEN LINE NEVER OUTRUNS THE BEAT THAT CARRIES IT (owner 2026-09-13, on draw 23: four lines in nine seconds, three longer than the second they sat in, the caretaker's
+// seven words at 8s of 9). About three words a second; a line's time runs from its stamp to the next beat's stamp (or the take's end); no line begins in the last second.
+export const WORDS_PER_SEC = 2.8;
+export function linesOutrun(text, secs = 9) {
+  const t = String(text || ""); const stamps = beatLines(t).map((l) => Number((l.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1])).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
+  const out = [];
+  for (const dl of dialogueLines(t)) {
+    const at = Number((dl.line.match(/\[(\d+(?:\.\d+)?)s\]\s*:/) || [])[1]); if (!Number.isFinite(at)) continue;
+    const said = (dl.line.split(/\]\s*:\s*/)[1] || "").replace(/^["“'\s]+|["”'\s]+$/g, "");
+    const words = said.split(/\s+/).filter(Boolean).length; if (!words) continue;
+    const next = stamps.find((s) => s > at); const window = Math.max(0, (Number.isFinite(next) ? next : secs) - at);
+    const need = words / WORDS_PER_SEC;
+    if (at >= secs - 1) out.push({ at, label: dl.label, words, need: Number(need.toFixed(1)), window, kind: "last second" });
+    else if (need > window + 0.3) out.push({ at, label: dl.label, words, need: Number(need.toFixed(1)), window, kind: "outruns" });
+  }
+  return out;
+}
 export const rideSurprises = (line) => SURPRISES.test(String(line || ""));
 export function vehicleLeads(line, d) {
   const w = d ? rideWords(d) : { vehicle: "", way: "" };
@@ -367,6 +384,7 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
       if (gaps.length >= 4 && gaps.every((g) => g === gaps[0])) out.push({ rule: "ride", figure: `camera (the beats sit on a grid — every stamp ${gaps[0]}s apart: a beat lasts as long as its weight (a passage a second, a tableau two, the held stop two), the stamps fall where the ride's events fall)`, at: at[1] || 0 });
     }
     const e = makerEndsRide(userWords) ? null : lastLine.match(RIDE_END); if (e) out.push({ rule: "ride", figure: `camera (the ride ends itself: "${e[0]}" — the last beat is the climax ridden, never the exit, the unload or a wink)`, at: lastAt });
+    for (const x of linesOutrun(text, secs)) out.push({ rule: "ride", figure: x.kind === "last second" ? `camera (a line begins in the take's last second — "${x.label}" at [${x.at}s] of ${secs}s: it cannot be heard out; move it earlier or cut it)` : `camera (a line outruns its beat — "${x.label}" at [${x.at}s]: ${x.words} words need about ${x.need}s in a ${x.window}s window; a spoken line never outruns the beat that carries it — shorten it or move its stamp earlier)`, at: x.at });
     for (const dl of dialogueLines(text)) if (!saysHow(dl.line)) out.push({ rule: "ride", figure: `camera (a line does not say how it is said — "${dl.label}": the speaker label ends in a parenthetical of manner, two or three words — (sing-song, mocking))`, at: Number((dl.line.match(/\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0) });
   }
   // rule "apparatus" = a WRONG video (fatal after the re-asks); rule "ride" = the ride's own flaw — re-asked once, never refused (owner 2026-09-11: draws refused on a static figure or a flat finale while everything else was right)
