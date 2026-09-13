@@ -89,15 +89,20 @@ export const IMG_HEADERS = { "user-agent": "grounded-gen/1.0", referer: "https:/
 /** Fetch an image with the hardening every sourcer needs. Returns a Buffer, or null with a reason.
  *  @returns {Promise<{buf:Buffer}|{reason:string}>} */
 export async function fetchImage(url, { timeoutMs = 15000, minBytes = 8000 } = {}) {
-  let r;
+  let r, buf;
   try {
     r = await fetch(url, { headers: IMG_HEADERS, signal: AbortSignal.timeout(timeoutMs) });
+    if (!r.ok) return { reason: String(r.status) };
+    if (!/^image\//.test(r.headers.get("content-type") || "")) return { reason: "not-an-image" };
+    // ⚠ THE BODY IS READ INSIDE THE GUARD (dry-cave-local-18, 2026-09-13). The timeout signal stays attached to the body stream, so a
+    // host that answers its headers in time and then trickles the bytes rejects HERE, not at fetch() — and this read sat outside the
+    // try. One slow image host threw a raw DOMException TimeoutError up through the zone hunt, past onZoneError (it carries no infra
+    // name) and out of the top-level await: exit 1, four internal frames, $… of a run gone four minutes in. A slow candidate is a
+    // SKIPPED candidate; the run never dies for one image.
+    buf = Buffer.from(await r.arrayBuffer());
   } catch (e) {
-    return { reason: /timeout|abort/i.test(String(e.message)) ? "timeout" : "net" };
+    return { reason: /timeout|abort/i.test(String(e?.name || "") + " " + String(e?.message || "")) ? "timeout" : "net" };
   }
-  if (!r.ok) return { reason: String(r.status) };
-  if (!/^image\//.test(r.headers.get("content-type") || "")) return { reason: "not-an-image" };
-  const buf = Buffer.from(await r.arrayBuffer());
   if (buf.length < minBytes) return { reason: "too-small" };
   if (await isPlaceholderCard(buf)) return { reason: "placeholder-card" };
   return { buf };
