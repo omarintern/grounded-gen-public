@@ -22,6 +22,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, textPart } from "./provider-llm.mjs";
+import { seatCastTerms, isSeatCastTerm } from "./_gate_rules.mjs";   // the seat is decided from the comprehension, before any probe (2026-09-14)
+import { rideKindOf } from "./_ride.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // Paths are env-overridable so the seed/store merge can be exercised against real files in a test
@@ -286,6 +288,12 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
     const displaced = intent.subjects.filter((s) => s?.renders === false && String(s?.replaced_by || "").trim());
     console.log(`[comprehend] ${intent.subjects.length} named · ${displaced.length} displaced${displaced.length ? ` (${displaced.map((s) => `${s.term}→${s.replaced_by}`).join(", ")})` : ""}`);
   }
+  // A FIGURE CAST AS THE RIDERS IS THE SEAT — DECIDED HERE, BEFORE ANY PROBE (owner 2026-09-14, job 69bb989b: "wendy (The Shining)" was probed, given a
+  // canon and probed again as a material identifier before the run decided she was the seat). On a ride, the comprehension's own displacement is the
+  // fact; the seat is never seen, so it needs no identity — the term goes forward as a seat_cast record (its name still reaches the name law) and no
+  // call is spent on it.
+  const seatTerms = rideKindOf(userPrompt) ? seatCastTerms(intent?.subjects) : [];
+  if (seatTerms.length) console.log(`[comprehend] seat: ${seatTerms.join(", ")} — cast as the riders (the seat itself): not probed, no canon, no look`);
   const terms = await extractCandidates(userPrompt);
   // ⚠ THE CANDIDATE COUNT IS PART OF THE ANSWER, NOT AN INTERNAL DETAIL. This function returns only the
   // entities it could VERIFY, so an empty result means two very different things: "the prompt names nothing
@@ -303,6 +311,11 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   const resolved = [];
   let attestedGenerics = 0;
   for (const term of terms) {
+    if (seatTerms.length && isSeatCastTerm(term, seatTerms)) {
+      console.log(`[resolve] seat "${term}" → cast as the riders (the seat itself): not probed`);
+      resolved.push({ term, kind: "seat_cast", seat: true, specific_entity_found: true, confidence: 1, canonical_name: String(term).replace(/\s*\([^)]*\)\s*$/, "").trim(), what_it_is: "the figure the maker cast as the riders — the camera's own seat, never seen" });
+      continue;
+    }
     const key = norm(term);
     let r = store[key];
     // ⚠ A CLASSIFIER VALIDATION THAT READS THE CACHE VALIDATES NOTHING. The store is keyed on the user's term, so
@@ -366,6 +379,7 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
     .filter((t) => !already.has(norm(t)));
   const materialIdentifiers = [];
   for (const term of idTerms) {
+    if (seatTerms.length && isSeatCastTerm(term, seatTerms)) continue;   // the seat never finds the plate — it is never in it
     const key = norm(term);
     let r = store[key];
     if (process.env.FRESH_PROBE === "1") r = undefined;
