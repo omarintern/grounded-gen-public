@@ -290,7 +290,8 @@ export function silentFigures(text, d) {
     if (i < 0) continue;   // an absent figure is the ledger's matter
     const from = lines[i].at, to = i + 1 < lines.length ? lines[i + 1].at : Infinity;
     if (SOUND_WORDS.test(lines[i].text)) continue;
-    if (spoken.some((s) => s.at >= from && s.at < to && passes(s.label))) continue;
+    // a speaker LABEL is short by nature: "the figure in a bright red jacket" names the pair with three of its eight words (draw 23, 2026-09-13 — flagged silent while it spoke); two distinctive words in the label at the figure's beat are the figure
+    if (spoken.some((s) => s.at >= from && s.at < to && (passes(s.label) || hits(s.label).length >= 2))) continue;
     out.push({ name, at: from });
   }
   return out;
