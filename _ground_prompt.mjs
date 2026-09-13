@@ -10,7 +10,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
@@ -74,6 +74,17 @@ try {
     }
   }
 } catch { /* no entries or unparseable — raw extraction stands (the generic-subject case) */ }
+// THE SEAT-CAST FIGURE IS NEVER THE SUBJECT'S LOOK (job 69bb989b, 2026-09-13: "wendy as the riders" was extracted as "riders dressed as Wendy Torrance" and
+// that SUBJECT line rode into every draft beside the law that says she is the seat, never seen — the dressed row, by instruction). A clause that dresses,
+// likens or casts the subject as a seat-cast figure is cut; a bare name left over reads as the riders. $0, before the plate is read against the subject.
+try {
+  const _seatModes = JSON.parse(process.env.IP_FIGURES || "[]").filter((m) => m && m.seat);
+  if (_seatModes.length) for (const key of ["target", "secondary", "action"]) {
+    const cur = intent && intent[key]; if (!cur || typeof cur !== "string") continue;
+    const next = seatCastSubject(cur, _seatModes);
+    if (next !== cur) { console.log(`  [seat] intent.${key} "${String(cur).slice(0, 60)}" \u2192 "${String(next).slice(0, 60)}" (a seat-cast figure is never a look)`); intent[key] = next || (key === "target" ? "the riders" : next); }
+  }
+} catch { /* no modes — nothing to cut */ }
 
 // 2. READ THE SCRAPE (VLM) — what real STAND-IN is actually in the picked world-ref, and is it already the target?
 const b64 = readFileSync(worldRef).toString("base64");
