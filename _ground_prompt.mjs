@@ -48,7 +48,7 @@ if (framingConceded) console.log("framing: CONCEDED → beats pitched to the pla
 // the raw words rule whenever the door supplied them. The rewrite stays visible as narrative context.
 const intent = await providerJson([textPart(
   `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff (validated failure 2026-07-31)","secondary":"any OTHER creatures/props to CONJURE INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}".`
-)], { maxTokens: 2400, temperature: 0.2, reasoning: "low", tag: "intent" });   // budget bounds, never spends: the fast model reasons inside max_tokens (see WRITER BUDGETS below)
+)], { maxTokens: 2400, temperature: 0.2, tag: "intent" });   // budget bounds, never spends: the fast model reasons inside max_tokens (see WRITER BUDGETS below)
 // ⭐⭐ ENTITY NAMING IS NEVER RE-DERIVED FROM PROMPT TEXT — RAW OR REWRITE (owner 2026-08-29). The raw
 // words rule the subject ONLY when no resolved entity covers it (the cymbal-monkeys law). When the
 // plan's cast covers the extracted subject, the plan's OWN string replaces it: that string is already
@@ -519,7 +519,7 @@ if (BEAT_STYLE !== "template") {
         `vantage with nothing to ground it. Rewrite the SAME beats, keeping every event and the payoff exactly ` +
         `as they are, but describe the post-cut action by what the WHOLE BODY does at the distance the ` +
         `photograph was taken from. Do not name the limb or the object in the grip. Change nothing else.`,
-        { maxTokens: 4000, temperature: 0.2 , reasoning: "low", tag: "writer-retry" });
+        { maxTokens: 4000, temperature: 0.2 , tag: "writer-retry" });
       const relines = t2.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, ACCEPTED_N);
       const stillBad = relines.filter((l) => FINE_DETAIL.test(l)).length;
       if (relines.length && !stillBad) { beatLine = relines.join("\n"); console.log(`[GUARD] beats: repaired on retry`); }
@@ -675,7 +675,7 @@ try {
           `the SAME timestamps, changing ONLY the opening beat so it states the subject's position in the frame and ` +
           `its facing, at the spot that body occupies. Do NOT mention the body being replaced — it is gone, the ` +
           `subject is simply there instead. Return the full beat list and nothing else.`,
-          { maxTokens: 4000, temperature: 0.3 , reasoning: "low", tag: "writer-retry" });
+          { maxTokens: 4000, temperature: 0.3 , tag: "writer-retry" });
         const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
         if (rl.length !== ACCEPTED_N) console.warn(`  [swap] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
         else {
@@ -728,7 +728,7 @@ try {
         `supplies that the request never named. Do not introduce a new place, a new character, or a prop the ` +
         `frame cannot afford. If an earlier beat set up a turn that nothing answered, ANSWERING IT is the ` +
         `escalation. Return the full beat list and nothing else.`,
-        { maxTokens: 4000, temperature: 0.3 , reasoning: "low", tag: "writer-retry" });
+        { maxTokens: 4000, temperature: 0.3 , tag: "writer-retry" });
       const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
       if (rl.length !== ACCEPTED_N) {
         console.warn(`  [payoff] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
