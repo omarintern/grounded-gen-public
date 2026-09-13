@@ -245,7 +245,31 @@ const MENACE = /\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swingin
 export const boothIn = (line) => BOOTH.test(String(line || ""));
 // THE ROWS AHEAD ARE NEVER COSTUMED (draw 14 rendered, owner 2026-09-12: "we see the heads of two riders who are indeed the twins (because they're also wearing robes)")
 const COSTUMED_ROWS = /\b(?:riders?|rows? ahead|passengers?)\b[^.;]{0,60}\b(?:dressed(?: as| in| like)?|wearing|in (?:matching )?(?:bathrobes?|robes?|cardigans?|pinafores?|dresses|coats?|jackets?|overalls?|costumes?)|with (?:dark|blond|blonde|long|short|red|curly|lank) hair|(?:in )?bangs|pigtails|(?:their |the )?faces?|terrified expressions?|resembling|who look like)\b/i;
-export const costumedRows = (line) => COSTUMED_ROWS.test(String(line || ""));
+// A DESCRIBED PERSON ON A SEAT IS A DRESSED ROW WHATEVER THE WORD ORDER (draw 22, 2026-09-13: "On the rear seat, a terrified woman with dark hair in pigtails, wearing a
+// plaid shirt … holds a wooden baseball bat …, while another identical woman sits in the row ahead" passed the check above — the seat came first and the row last).
+// Strict: a seat phrase, a person, a look word, in that order within one sentence. Loose (the repair only): a person who sits in a row or on a seat.
+const SEAT_PHRASE = "(?:on|in) the (?:rear |back |front |second |next |first |last )?(?:seats?|rows?)(?: ahead| behind)?";
+const PERSON = "(?:woman|women|man|men|figures?|girls?|boys?|riders?|passengers?|twins?)";
+const LOOK = "(?:hair|pigtails|bangs|dress|dresses|shirt|jacket|pinafore|overalls?|cardigan|robe|bathrobe|coat|face|faces|expression|eyes|wide-eyed|wearing|dressed|holding|holds|clutching|bat|knife|axe)";
+const SEATED_FIGURE = new RegExp(`\\b${SEAT_PHRASE}\\b[^.;]{0,60}\\b${PERSON}\\b[^.;]{0,40}\\b${LOOK}\\b`, "i");
+const SEATED_LOOSE = new RegExp(`\\b${PERSON}\\b[^.;]{0,60}\\b(?:sits?|sitting|seated|rides?|riding|cowers?|cowering|huddles?|huddling)\\b[^.;]{0,30}\\b${SEAT_PHRASE}\\b`, "i");
+export const costumedRows = (line) => COSTUMED_ROWS.test(String(line || "")) || SEATED_FIGURE.test(String(line || ""));
+/** THE ROWS ARE UNDRESSED MECHANICALLY as a last resort (owner 2026-09-13: "wendy as the rider is an issue that keeps happening and we need to patch"): a sentence that
+ *  seats a described person is DROPPED from its beat — never reworded — and the beat's first sentence (the vehicle's own) is never touched. Pure. */
+export function uncostumeRows(text) {
+  return String(text || "").split("\n").map((l) => {
+    if (!/^\s*\[\d+(?:\.\d+)?s\]/.test(l)) return l;
+    const parts = l.split(/(?<=[.!?])\s+/); if (parts.length < 2) return l;
+    const kept = parts.filter((s, i) => i === 0 || !(COSTUMED_ROWS.test(s) || SEATED_FIGURE.test(s) || SEATED_LOOSE.test(s)));
+    return kept.join(" ");
+  }).join("\n");
+}
+/** THE MENACE IS SOFTENED MECHANICALLY as a last resort (owner 2026-09-13: "the axe brandished toward the track" must never ship): the aim is cut and the weapon stays —
+ *  "brandish his fire axe toward the track" → "brandish his fire axe"; the threat lives in the stance and the words, as the law says. Pure. */
+export function softenMenace(text) {
+  const AIM = /(\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;]{0,60}?)\s+(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?(?: in the (?:rows?|seats?)(?: ahead)?)?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/gi;
+  return String(text || "").split("\n").map((l) => (/^\s*\[\d+(?:\.\d+)?s\]/.test(l) ? l.replace(AIM, "$1") : l)).join("\n");
+}
 // EVERY FIGURE HAS ITS TURN (owner 2026-09-12: "ideally words 'speech' come from every animatronic or subject in a ride, given their turn of course. a non-speaking
 // animatronic should at least be making sound or motioning meaningfully"): a figure passed with no line of its own at its beat and no sound in the beat passes silent
 const SOUND_WORDS = /\b(?:laugh(?:s|ing|ter)?|giggl\w*|cackl\w*|chuckl\w*|hiss(?:es|ing)?|growl\w*|groan\w*|moan\w*|scream\w*|shriek\w*|whisper\w*|hum(?:s|ming)?|whirr?(?:s|ing)?|click(?:s|ing)?|creak\w*|rattl\w*|chim\w*|bell|sings?|singing|calls? out|cries|crying|whistl\w*|snarl\w*|roar\w*|mutter\w*|chant\w*|knock\w*|taps?|tapping|clatter\w*|its voice|says|speaks?|speaking|intones?|announces?)\b/i;
@@ -372,7 +396,7 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
     const arrived = qs.some((keys) => lines.some((line) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(line)).length >= Math.min(2, Math.ceil(keys.length / 2))));
     if (!arrived) out.push({ rule: "ride", figure: `camera (a riding photograph is never arrived at: ${p.name} — its qualities (${(p.qualities || []).join(", ")}) appear in no beat; the take arrives in each riding photograph, in order, without a cut)`, at: 0 });
   }
-  lines.forEach((line) => { const m = line.match(COSTUMED_ROWS); if (m) add(line, `the rows ahead are costumed or described: "${m[0]}" — the other riders are the backs of heads, shoulders and raised arms; a figure cast as the riders is carried by the ride's address to the seat, never by dressing the rows (draw 14: two robed riders became the twins)`, "ride"); });
+  lines.forEach((line) => { const m = line.match(COSTUMED_ROWS) || line.match(SEATED_FIGURE); if (m) add(line, `the rows ahead are costumed or described: "${m[0]}" — the other riders are the backs of heads, shoulders and raised arms; a figure cast as the riders is carried by the ride's address to the seat, never by dressing the rows (draw 14: two robed riders became the twins)`, "ride"); });
   lines.forEach((line) => { const m = line.match(MENACE); if (m) add(line, `menace toward the seat: "${m[0]}" — a weapon or a strike aimed at the ${w.vehicle || "vehicle"} or the rows is what the provider's gate refuses; the figure's threat lives in its words, its grin and its stance (the axe on the shoulder, the free hand gesturing)`, "ride"); });
   if (d.family === "dark ride" && !CORE_ONLY.on) for (const f of silentFigures(text, d)) out.push({ rule: "ride", figure: `camera (a figure passes silent: "${f.name}" — every figure has its turn as the seat passes it: its own words where the work gave it any (a Dialogue line at this beat), else the sound it would make, written in the beat)`, at: f.at });
   if (d.family === "dark ride") for (const f of stillFigures(text, d)) out.push({ rule: "ride", figure: `camera (a figure of the world is passed without performing: "${f.name}" — on a dark ride every figure is an animatronic: one motion timed to the pass, and the ride's voices as it is passed)`, at: f.at });
