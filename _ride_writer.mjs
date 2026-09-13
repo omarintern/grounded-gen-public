@@ -256,7 +256,7 @@ const SURFACE_KEYS = new Set(["rails", "rail", "track", "tracks", "trackbed", "g
 export const pieceKeys = (p) => [...new Set(_words(p))].filter((k) => !SURFACE_KEYS.has(k));
 // (THE STAGING GRAMMAR that stood here — a list of stage words a scene had to name two of — was DROPPED 2026-09-13 with the template; the booth below is the one staging flaw)
 // THE BOOTH (owner 2026-09-12): a scene written as a platform beside the way or a flat/screen with figures before it renders flat — the ride's own flaw
-const BOOTH = /\b(?:tableau on a (?:low |small |raised )?platform|painted flat|a flat of|flat behind|projected onto a screen|on a screen|a screen showing|a screen with)\b/i;   // a plate's own "raised platform" (dry-shining-4's set piece) is not a booth
+const BOOTH = /\b(?:tableau\b[^.;]{0,80}?\bon a (?:low |small |raised )?platform|painted flat|a flat of|flat behind|projected onto a screen|on a screen|a screen showing|a screen with)\b/i;   // a plate's own "raised platform" (dry-shining-4's set piece) is not a booth
 // MENACE TOWARD THE SEAT (owner 2026-09-12: "lunges toward the rails is a bit much. in fact the axe softening was what succeeded a failed gen"): a weapon or a strike aimed at the vehicle or the rows is what the provider's gate refuses
 const MENACE = /\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;]{0,60}\b(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/i;
 export const boothIn = (line) => BOOTH.test(String(line || ""));
@@ -276,13 +276,18 @@ export const costumedRows = (line) => COSTUMED_ROWS.test(String(line || "")) || 
 export function uncostumeRows(text) {
   return String(text || "").split("\n").map((l) => {
     if (!/^\s*\[\d+(?:\.\d+)?s\]/.test(l)) return l;
-    const parts = l.split(/(?<=[.!?])\s+/); if (parts.length < 2) return l;
+    // clauses joined by semicolons are statements of their own (draw 24, 2026-09-13: frame zero seated two dressed passengers between semicolons in one long sentence)
+    const parts = l.split(/(?<=[.!?;])\s+/); if (parts.length < 2) return l;
     const kept = parts.filter((s, i) => i === 0 || !(COSTUMED_ROWS.test(s) || SEATED_FIGURE.test(s) || SEATED_LOOSE.test(s)));
-    return kept.join(" ");
+    return kept.join(" ").replace(/;\s*$/, ".").replace(/;(\s*;)+/g, ";");
   }).join("\n");
 }
 /** THE MENACE IS SOFTENED MECHANICALLY as a last resort (owner 2026-09-13: "the axe brandished toward the track" must never ship): the aim is cut and the weapon stays —
  *  "brandish his fire axe toward the track" → "brandish his fire axe"; the threat lives in the stance and the words, as the law says. Pure. */
+/** THE PLATFORM IS CUT as a last resort (draws 20–24: "on a low platform" four runs running, the booth the 09-12 ruling retired): the phrase goes, the figure stays where it stood. Pure. */
+export function unplatform(text) {
+  return String(text || "").split("\n").map((l) => (/^\s*\[\d+(?:\.\d+)?s\]/.test(l) ? l.replace(/\s+(?:on|onto|atop) a (?:low |small |raised )?platform(?: (?:beside|next to|by) the (?:rails|track|way))?(?: (?:on|to) the (?:left|right))?\b/gi, "") : l)).join("\n");
+}
 export function softenMenace(text) {
   const AIM = /(\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;]{0,60}?)\s+(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?(?: in the (?:rows?|seats?)(?: ahead)?)?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/gi;
   return String(text || "").split("\n").map((l) => (/^\s*\[\d+(?:\.\d+)?s\]/.test(l) ? l.replace(AIM, "$1") : l)).join("\n");
@@ -441,7 +446,9 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
       lines.forEach((line, i) => {
         if (i === 0) return;
         const hit = keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(line)).length;
-        if (hit * 2 >= keys.length && !REPLACEMENT_VERB.test(line)) out.push({ rule: "plate-thing", figure: `"${p}" is written as still present after frame zero — it was replaced at frame zero by the world's thing; the other ride's set piece is gone`, at: Number((line.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0) });
+        // a set piece of ONE or TWO distinctive words returns only as the WHOLE phrase (draw 24, 2026-09-13: "the curved tunnel ceiling" read back as present in "the darkness of the tunnel" on the word tunnel alone, a false FATAL that refused the run)
+        const need = keys.length <= 2 ? keys.length : Math.ceil(keys.length / 2);
+        if (hit >= need && !REPLACEMENT_VERB.test(line)) out.push({ rule: "plate-thing", figure: `"${p}" is written as still present after frame zero — it was replaced at frame zero by the world's thing; the other ride's set piece is gone`, at: Number((line.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0) });
       });
     }
   }
