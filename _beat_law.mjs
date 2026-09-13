@@ -591,8 +591,9 @@ export const singleBlock = () => process.env.SINGLE_BLOCK === "1";
 export const ipFiguresLaw = () => {
   let modes = []; try { modes = JSON.parse(process.env.IP_FIGURES || "[]"); } catch { modes = []; }
   if (!Array.isArray(modes) || !modes.length) return "";
-  const dename = modes.filter((m) => m && m.mode === "dename"), omit = modes.filter((m) => m && m.mode === "omit");
+  const seat = modes.filter((m) => m && m.seat === true), dename = modes.filter((m) => m && m.mode === "dename" && m.seat !== true), omit = modes.filter((m) => m && m.mode === "omit");
   return `⚠⚠ FIGURES THAT ARE NEVER NAMED (a public-domain figure and a work's lesser figures are named and described; a work's FACE and a real person are not): ` +
+    (seat.length ? `${seat.map((m) => `"${m.name}" is the SEAT — the rows ahead the ride addresses by that name: never seen, never described, never seated (a rider given her hair, clothes, face or prop is a dressed row); the world speaks to her and acts on her, and the name MAY be spoken inside a line ("Wendy, darling!")`).join("; ")}. ` : "") +
     (dename.length ? `${dename.map((m) => `"${m.name}" is written ONLY as a description of build, clothing and posture${m.guise ? ` — ${m.guise}` : ""} — never the name, not in a beat, not in a speaker label; the name MAY be spoken inside a line ("Wendy, darling!") — a spoken name is words, never a picture`).join("; ")}. ` : "") +
     (omit.length ? `${omit.map((m) => `"${m.name}"`).join(", ")} ${omit.length > 1 ? "do" : "does"} not appear at all — the signature IS the name, and a description would still be it. ` : "") +
     `The request's own words may name them; your beats and dialogue may not.\n`;
