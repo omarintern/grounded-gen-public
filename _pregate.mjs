@@ -104,7 +104,7 @@ export async function pregate(prompt, userPrompt = "") {
       `general audience could not name (the Grady twins). Judge the character's own prominence, never the work's fame. ` +
       `A real famous PERSON is always canonical.\n` +
       `Return ONLY JSON {"owned":true|false,"who":"<the name, or empty>","why":"celebrity|owned-character|none","canonical":true|false,"sure":0..1}.`;
-    const { text } = await providerText(ask, { model: MODEL, maxTokens: 120, temperature: 0 });
+    const { text } = await providerText(ask, { model: MODEL, maxTokens: 400, temperature: 0 });
     let j = null; try { j = JSON.parse((String(text).match(/\{[\s\S]*\}/) || ["{}"])[0]); } catch {}
     if (!j) { log({ action: "unparseable", raw: String(text).slice(0, 160), model: MODEL }); return { refuse: false }; }
     const owned = j?.owned === true;

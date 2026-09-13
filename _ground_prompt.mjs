@@ -325,7 +325,7 @@ if (BEAT_STYLE !== "template") {
   // 700-token budget was consumed before the first beat line; provider-llm then retried at 1400 → 2800 → 5600. The ledger
   // shows 26 physical calls for six logical steps and $… — the same writer at the budgets below is one call per step.
   // A budget BOUNDS the answer, it never spends it: over-provisioning costs nothing, under-provisioning pays every rung.
-  let { text } = await providerText(instruction, { maxTokens: 6000, temperature: 0.5, reasoning: process.env.WRITER_REASONING || "default", tag: "writer" });
+  let { text } = await providerText(instruction, { maxTokens: 16000, temperature: 0.5, reasoning: process.env.WRITER_REASONING || "default", tag: "writer" });
 
   // ⚠ THE VALIDATOR MUST MATCH THE REQUESTED SHAPE. It filtered for /^\[\d+s\]/ unconditionally, so the moment
   // timestamps were switched off it rejected perfectly good continuous prose and silently fell back to the
@@ -405,7 +405,7 @@ if (BEAT_STYLE !== "template") {
       `Every beat a COMPLETE sentence. Dialogue labels name their speaker. ` +
       `Keep the same story and wording as far as possible. ` +
       `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines (and the Dialogue/Sound blocks if present).\n\n${text}`,
-      { maxTokens: 4000, temperature: 0.3 }
+      { maxTokens: 12000, temperature: 0.3 }
     ).catch(() => null);
     if (fix?.text && _lawFails(fix.text).length === 0) { text = fix.text; console.error(` (retry OK)`); }
     else if (fix?.text && _lawFails(fix.text).length < _fails1.length) { text = fix.text; console.error(` (retry improved: ${_lawFails(fix.text).join("; ")} — shipping with the residue, loudly)`); }
