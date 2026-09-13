@@ -255,13 +255,18 @@ export function silentFigures(text, d) {
   const spoken = dialogueLines(text).map((dl) => ({ label: dl.label.toLowerCase(), at: Number((dl.line.match(/\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0) }));
   const out = [];
   for (const name of names) {
-    const keys = [...new Set(_words(name))]; if (!keys.length) continue;
-    const need = Math.min(2, Math.ceil(keys.length / 2));
-    const hits = (t) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(t)).length;
-    const i = lines.findIndex((l) => hits(l.text) >= need); if (i < 0) continue;   // an absent figure is the ledger's matter
+    // THE FIGURE IS MATCHED BY ITS OWN WORDS, NOT BY TWO OF THEM (dry-cave-local-19, 2026-09-13: "a figure in a bright red jacket and blue jeans walking hand-in-hand with a
+    // smaller figure" matched the caretaker's "red corduroy jacket" at frame zero — two words — and was flagged silent at 0s while its own beat at 2s had the whir).
+    // The beat that passes a figure is the beat carrying MOST of its distinctive words (a majority, or its longest word), as every other check reads a figure.
+    const keys = pieceKeys(name); if (!keys.length) continue;
+    const head = [...keys].sort((a, b) => b.length - a.length)[0];
+    const hits = (t) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(t));
+    const passes = (t) => { const h = hits(t); return h.length * 2 >= keys.length || (head.length >= 7 && h.includes(head)); };
+    let i = -1, best = 0; lines.forEach((l, j) => { const n = hits(l.text).length; if (passes(l.text) && n > best) { best = n; i = j; } });
+    if (i < 0) continue;   // an absent figure is the ledger's matter
     const from = lines[i].at, to = i + 1 < lines.length ? lines[i + 1].at : Infinity;
     if (SOUND_WORDS.test(lines[i].text)) continue;
-    if (spoken.some((s) => s.at >= from && s.at < to && hits(s.label) >= need)) continue;
+    if (spoken.some((s) => s.at >= from && s.at < to && passes(s.label))) continue;
     out.push({ name, at: from });
   }
   return out;
