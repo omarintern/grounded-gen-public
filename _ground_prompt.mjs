@@ -656,7 +656,9 @@ const outFile = join(HERE, "out/_aspect", `${slug}_beats.txt`);
 // still free to invent. Only fires when a swap was actually instructed (a stand-in exists and is not already
 // the target); a plate with an empty action spot has nothing to take the position of.
 try {
-  if (has(seen.standin) && !seen.standin_is_target) {
+  // ON A RIDE THERE IS NO SUBJECT TO SWAP IN (draw 21, 2026-09-13: the seat plate's own passenger was vacated and the swap check re-asked the writer to seat a
+  // subject that does not exist — a writer pass bought for nothing). The seat is the vantage; hostability already steps aside; so does this.
+  if (!RIDE && has(seen.standin) && !seen.standin_is_target) {
     const { swapVerdict, swapActs } = await import("./_swap_check.mjs");
     const sv = await swapVerdict(seen.standin, seen.standin_placement, intent.target, beatLine);
     if (sv.verdict) console.error(`  [swap:${swapActs() ? "live" : "shadow"}] beat zero ${sv.verdict.toUpperCase()} — position ${JSON.stringify(sv.position)} · facing ${JSON.stringify(sv.facing)}${swapActs() ? "" : "  (recorded only)"}`);
