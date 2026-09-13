@@ -13,7 +13,7 @@ import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
 import { scrapeImages } from "./scrape.mjs";
 import { judgeKillshot, killshotFails, safetyOnlyFails, contentFlagFails } from "./_judge_killshot.mjs";   // SHARED minors/content kill-shot — this figure/char-ref sourcer was the ONE ref path that never ran it (the other four do)
 import { fetchImage, isPaidStock } from "./_placeholder_card.mjs";
-import { cacheRead, cacheWrite, characterKey, figureKey, slugify } from "./_ref_cache.mjs";
+// the subject-ref CACHE (_ref_cache read/write) is RETIRED (owner 2026-09-13: "we don't do that anymore"; the only refs kept are a delivered video's own, on the platform, for its remixes)
 import { bgCutout } from "./_plate_sane.mjs";
 import { ipRubric } from "./_charref_rubric.mjs";   // the ip class rubric lives in its own module so the cache back-fill judges the EXACT wording that ships — import, never paste   // owner 2026-08-14: char-refs keep their background — flattened cutouts reject   // shared subject-ref cache: read-before-scrape / write-provisional-then-promote. REF_CACHE=0 disables both halves.
 const dlFails = new Map();   // reason -> count, reported after the download loop so failures are never silent
@@ -67,21 +67,6 @@ async function dl(url, path) {
 }
 
 console.log(`\n─── entity search "${query}" ───`);
-// ── REF CACHE KEY — the CALLER owns slug stability: ENTITY_ID_SLUG = slugify(canonical_name), threaded from the
-// resolver so three phrasings of one subject file as ONE key. Falls back to a non-run-label slug, then the query
-// (worse but never wrong on a probe miss — a missed hit costs money, a wrong merge corrupts a gen). ──
-const idSlug = process.env.ENTITY_ID_SLUG || (slug && !/^(entity|t\d+|scene|test)$/i.test(slug) ? slug : slugify(query));
-const cacheKey = MODE === "ip" ? characterKey(idSlug) : figureKey(idSlug, process.env.ENTITY_ERA || "current");
-// ── REF CACHE (read) — a proven ref for this identity means NO scrape, NO judge, NO spend. cacheRead ranks
-// delivered-first; rotate among the top few so repeated gens of one subject don't all reuse the SAME frame. ──
-const hits = process.env.REF_CACHE_NO_READ === "1" ? [] : cacheRead(cacheKey, { minDepth: 1 });
-if (hits.length) {
-  const best = hits[Math.floor(Math.random() * Math.min(hits.length, 4))];
-  const out = join(OUTDIR, `entity_${slug}.jpg`);
-  await sharp(best.path).jpeg({ quality: 92 }).toFile(out);
-  console.log(`  [ref-cache] HIT ${cacheKey} (depth ${hits.length}) → reuse ${best.path.split("/").pop()} → ${out} — NO scrape / judge / spend`);
-  process.exit(0);
-}
 // ── SPEND CAP — figure-refs were the one sourcing stage OUTSIDE it ──────────────────────────────────
 // wouldExceed() was consulted only by _adaptive_source, which drives the WORLD ref. This path runs after it,
 // once per figure, and nothing bounded it: a scrape plus up to 12 identity judges, times however many figures
@@ -213,7 +198,7 @@ async function judgeOne(c) {
 // when a CLEAN passer exists, else extend to 6-12. Clean = pass plus, in ip mode, PHOTO and caption-free —
 // exactly the two axes the pick sort prefers below: settling on a demoted illustration would buy back ~$…
 // of judges by fixing in a worse ref class, and a drawn-only character (no photo exists) extends ONCE, then
-// its ref-cache entry retires the whole cost. The row=N stamp on the pick is the control's own report card:
+// (the ref cache that once retired the cost is gone, 2026-09-13). The row=N stamp on the pick is the control's own report card:
 // it tells us over time how often tranche 2 fires and where winners actually sit.
 const JUDGE_T1 = 5;
 const pool = cands.slice(0, 12);
@@ -226,21 +211,6 @@ if (ok.some(cleanPass)) {
   for (const c of pool.slice(JUDGE_T1)) { const e = await judgeOne(c); if (e) ok.push(e); }
 }
 
-// ── REF CACHE (write) ───────────────────────────────────────────────────────────────────────────────
-// This path is the CHEAPEST of the three to cache and the most valuable, for a reason that is structural
-// rather than incidental: a fictional character's canonical look is FIXED. Mario is Mario permanently, so a
-// character ref never expires and one scrape retires that character's sourcing cost forever. A named real
-// entity ages and so files under the figure keyspace, which carries an era.
-// Same free-fill economics as the scene path: `ok` holds every legible candidate and all but one is about to
-// be discarded, already scraped and already judged.
-// ⚠ THE CALLER OWNS SLUG STABILITY. The key is the slug, so two runs of the same character MUST pass the same
-// slug or they will file as two characters and neither will reach rotation depth. A run-label slug ("t1") is
-// unusable as a key, so a generic one falls back to the query — worse, but never wrong.
-try {
-  // Provisional write (delivered:false) under the SAME key the read uses above; the caller promotes on ship.
-  const stored = cacheWrite(cacheKey, ok, { kind: MODE === "ip" ? "character" : "figure", query, job: process.env.LEDGER_JOB });
-  if (ok.length) console.log(`  [ref-cache] +${stored} new provisional ref(s) under ${cacheKey} from ${ok.length} passer(s)`);
-} catch (e) { console.log(`  [ref-cache] write skipped: ${String(e?.message || e).slice(0, 80)}`); }
 
 // Best = (ip) a PHOTOGRAPH first, then caption-free, then most legible; resolution breaks ties.
 //
