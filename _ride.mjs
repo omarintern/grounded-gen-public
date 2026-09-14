@@ -143,7 +143,9 @@ export function seatQueries(form, { context = "", noun: nounOverride = "", indoo
   // the dark-ride branch with its setting; the setting leads here too, the bare device second.
   const ctx = String(context || "").replace(/\s+/g, " ").trim();
   if (kind === "driven") return /\bkart\b/i.test(`${form} ${noun}`) ? ["go-kart pov footage", "go-kart onboard footage"] : ctx ? [`${ctx} dashcam footage`, "dashcam pov driving footage"] : ["dashcam footage", "dashcam pov driving footage"];
-  if (kind === "worn") { const dev = wornDevice(form); return ctx ? [`${ctx} ${dev} pov footage`, `${dev} pov footage`] : [`${dev} pov footage`, `first person ${dev} footage`]; }
+  // …AND THE WEB TAGS A HELMET, CHEST OR ACTION CAM BY ITS BRAND (owner 2026-09-14: "it could have also known these are often go pro so gopro
+  // could have been in the query"): the second query asks in that word, on the setting. A bodycam and a dashcam keep their own tags.
+  if (kind === "worn") { const dev = wornDevice(form); const gp = dev !== "gopro" && dev !== "bodycam" ? `gopro ${dev}` : dev; return ctx ? [`${ctx} ${dev} pov footage`, `${ctx} ${gp} footage`] : [`${dev} pov footage`, `first person ${dev} footage`]; }
   const pre = indoor ? "indoor " : "";
   if (!noun) { const q = formPlateQuery(form); return [`${pre}${q}`, `${pre}${q.replace(/\bpov\b/i, "onboard")}`]; }
   return sampleQueries(SEAT_PHRASINGS.coaster(`${pre}${noun}`), 2, rand);
