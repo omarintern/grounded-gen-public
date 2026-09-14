@@ -193,6 +193,13 @@ if (seen.standin_is_target) {
   // already embeds an article + the action → doubled words like "The the red fox trotting … trotting …").
   const T = String(intent.target).charAt(0).toUpperCase() + String(intent.target).slice(1);
   beatLine = `[0s] ${T} ${intent.action}${has(intent.secondary) ? `, with ${intent.secondary} in the scene` : ""}.`;
+} else if (has(seen.standin) && process.env.APPARATUS_FORM === "1" && RIDE?.kind !== "ridden") {
+  // A DRIVEN OR WORN FORM KEEPS THE PHOTOGRAPH'S OWN OCCUPANTS (layer 2 cell l2b-08, 2026-09-14): the ridden vacate below reached a GoPro
+  // take — the plate's jet-ski rider was "vacated to the camera's own seat", the seal took his place astride the jet ski, and beat zero
+  // opened on "the rails ahead, the bar and the hands" of a speedboat. On a car or a wearer the occupants are the world's (the plain law:
+  // the photograph is frame zero); the subject is conjured where the words put it, and nothing is said about a seat.
+  mode = `CONJURE beside the world's own (${RIDE?.kind || "apparatus"} form): ${seen.standin} stays as photographed`;
+  beatLine = `[0s] ${intent.target} appears in the scene ${intent.action}; ${seen.standin} and everything else stay exactly as photographed.`;
 } else if (has(seen.standin) && process.env.APPARATUS_FORM === "1") {
   // ⚠ A RIDDEN FORM NEVER SWAPS (owner 2026-09-06). "The rollercoaster replaces a young boy on a blue tricycle" was obeyed
   // to the letter: the boy stayed a beat, then faded. The ride is not a figure; the camera occupies the seat he had.
@@ -257,6 +264,8 @@ console.log(`seesaw : spec-density ${_density} (dense at ${SPEC_DENSE}) → ${BE
 if (BEAT_STYLE !== "template") {
   const swapClause = seen.standin_is_target
     ? `The ${intent.target} is ALREADY the creature in the photo — do not swap anything, just animate it.`
+    : (has(seen.standin) && process.env.APPARATUS_FORM === "1" && RIDE?.kind !== "ridden")
+      ? `⚠ ${seen.standin} in the photograph stays exactly as photographed — the world's own, never replaced and never vacated; ${intent.target} is introduced where the words put it (${intent.action}), never in that place.`
     : (has(seen.standin) && process.env.APPARATUS_FORM === "1")
       ? `⚠ ${seen.standin} in the photograph is NOT in the video and is NEVER described, named or replaced by anything: under a ridden form the camera occupies that seat. Beat 1 opens on the rails ahead, the bar and the hands, everything else exactly as photographed.`
     : has(seen.standin)

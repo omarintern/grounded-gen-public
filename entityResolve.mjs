@@ -23,7 +23,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, textPart } from "./provider-llm.mjs";
 import { seatCastTerms, isSeatCastTerm } from "./_gate_rules.mjs";   // the seat is decided from the comprehension, before any probe (2026-09-14)
-import { rideKindOf } from "./_ride.mjs";
+import { rideKindOf, WORN_DEVICE } from "./_ride.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // Paths are env-overridable so the seed/store merge can be exercised against real files in a test
@@ -312,6 +312,9 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   const resolved = [];
   let attestedGenerics = 0;
   for (const term of terms) {
+    // THE APPARATUS IS NEVER A SUBJECT (2026-09-14): a brand or device word that names the capture form ("gopro footage") is not probed —
+    // the probe answered "a brand of rugged action cameras" and the cast carried it to a reference hunt and a frame-zero demand
+    if (WORN_DEVICE.test(String(term || ""))) { console.log(`[resolve] "${term}" names the capture apparatus \u2014 the form's word, never a subject: not probed`); continue; }
     if (seatTerms.length && isSeatCastTerm(term, seatTerms)) {
       console.log(`[resolve] seat "${term}" → cast as the riders (the seat itself): not probed`);
       resolved.push({ term, kind: "seat_cast", seat: true, specific_entity_found: true, confidence: 1, canonical_name: String(term).replace(/\s*\([^)]*\)\s*$/, "").trim(), what_it_is: "the figure the maker cast as the riders — the camera's own seat, never seen" });
