@@ -10,7 +10,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
@@ -373,7 +373,7 @@ if (BEAT_STYLE !== "template") {
   // disagreement with a prescribed list: it means an illegal COUNT (outside {${...}}), a DECIMAL stamp, an
   // opening that is not [0s], disorder, or a stamp past the duration. Vacuum-lab measured 7/7 legal under
   // this contract with counts varying by material — the variance is the point of the ruling.
-  const stampList = (t) => ((String(t).split(/^\s*Dialogue\s*:/im)[0]).match(/^[ \t]*\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));   // the beats only — a Dialogue block written "[3s] Speaker: …" is not a beat (dry-cave-local-2)
+  const stampList = (t) => ((normalizeDraftLayout(String(t)).split(/^\s*Dialogue\s*:/im)[0]).match(/^[ \t]*\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));   // the beats only — a Dialogue block written "[3s] Speaker: …" is not a beat (dry-cave-local-2)
   // ⚠ COMPLETENESS + LABEL LAWS RIDE THE SAME VALIDATOR (owner 2026-08-21, penguin deep remix: beat [4s]
   // shipped ending "lets out a flat" and a line labeled "Speaker" — both are output defects the check-the-
   // output pattern owns; a fifth restatement in the ask is not the fix).
@@ -474,6 +474,7 @@ if (BEAT_STYLE !== "template") {
     // filter did neither — so a stamp-first block shipped its speech as BEAT PROSE on top of the block re-attached
     // below (the same words twice), and a [2.5s] beat, legally re-asked and then shipped when the retry did not
     // improve, was deleted here without a word. One spelling, one ceiling.
+    text = normalizeDraftLayout(text);   // beats · Dialogue · Sound, wherever the writer put them (a header mid-beats swallowed the beats after it)
     lines = text.split(new RegExp(String.raw`^\s*${DIALOGUE_HEAD}`, "im"))[0].split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, Math.max(...COUNTS));
   } else {
     // Continuous prose: keep every non-empty line, but strip any timestamps the model emits out of habit.
