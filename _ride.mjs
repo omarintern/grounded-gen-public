@@ -148,6 +148,7 @@ export function seatQueries(form, { context = "", noun: nounOverride = "", indoo
   if (kind === "worn") { const dev = wornDevice(form); const gp = dev !== "gopro" && dev !== "bodycam" ? `gopro ${dev}` : dev; return ctx ? [`${ctx} ${dev} pov footage`, `${ctx} ${gp} footage`] : [`${dev} pov footage`, `first person ${dev} footage`]; }
   const pre = indoor ? "indoor " : "";
   if (!noun) { const q = formPlateQuery(form); return [`${pre}${q}`, `${pre}${q.replace(/\bpov\b/i, "onboard")}`]; }
+  if (ctx) return [`${ctx} ${noun} pov footage`, `${ctx} ${noun} onride pov footage`];   // a named attraction leads its own seat hunt (2026-09-14)
   return sampleQueries(SEAT_PHRASINGS.coaster(`${pre}${noun}`), 2, rand);
 }
 /** THE SEAT PLATE'S ENGINE LADDER, BY FAMILY (owner 2026-09-08, on the query study: «the paid index's web search is therefore the leader for this. so web
@@ -209,7 +210,13 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   // the seat's second query on a dark ride: the maker's world words when they are a theme, never a work's title (a title in a dark-ride
   // query returns film stills); "indoor" for a coaster or another ridden kind whose places are rooms, never under architecture
   const worldWords = String(p.form?.world || "").replace(/\s+/g, " ").trim();
-  const context = !named && worldWords && worldWords.split(" ").length <= 4 && !isRideNoun(worldWords) ? worldWords : "";
+  // A REAL ATTRACTION IS HUNTED UNDER ITS OWN NAME (layer 2, the Jungle Cruise, 2026-09-14): "jungle cruise boat ride at disneyland" resolved to a
+  // venue, the world was named, and the seat was hunted as "boat ride pov footage" bare — open ocean, no river, no jungle. A named WORK stays out of
+  // a seat query (film stills); a named VENUE is the ride itself, and its onride footage is on the web under that name. Dark rides keep their own hunt.
+  const venueEnt = (Array.isArray(resolved) ? resolved : []).find((e) => e?.kind === "venue" && e?.is_set !== true && (e?.canonical_name || e?.term));
+  const venueName = venueEnt ? String(venueEnt.canonical_name || venueEnt.term).replace(/\s+/g, " ").trim() : "";
+  const context = !named && worldWords && worldWords.split(" ").length <= 4 && !isRideNoun(worldWords) ? worldWords
+    : (kind === "ridden" && family !== "dark ride" && venueName && !isRideNoun(venueName) ? venueName : "");
   const indoor = kind === "ridden" && family !== "dark ride" && mode !== "architecture" && (interior || (places.length > 0 && isInteriorWorld({ form: { world: places.join(" ") } })));
   const queries = boatWord ? [`${boatWord} ${boatCam} pov footage`, `first person ${boatCam} ${boatWord} footage`] : seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand });
   const titles = plan ? workTitlesOf(p) : (title ? [title] : []);
