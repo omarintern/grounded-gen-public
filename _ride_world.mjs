@@ -97,7 +97,7 @@ export const dressesTheWay = (where) => WAY_RE.test(String(where || "").replace(
 // the noun the phrase is ABOUT is a person-noun — the last word before its first modifier phrase — never because a person-word sits somewhere inside it.
 export const headNoun = (n) => { const s = String(n || "").toLowerCase().replace(/[^a-z' -]+/g, " ").trim(); const cut = s.search(/\s(?:in|with|of|on|at|under|over|holding|wearing|carrying|beside|behind|before|from|by|to|near|against|walking|standing|sitting|viewed)\s/); const core = cut > 0 ? s.slice(0, cut) : s; return core.trim().split(/\s+/).pop() || ""; };
 export const isFigureThing = (e) => FIGURE_KIND.test(String(e?.kind || "").trim()) || FIGURE_NOUN.test(headNoun(e?.name));
-export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], worldName = "", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
+export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], worldName = "", dark = d?.family === "dark ride", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const mode = d?.world?.mode || "setting";
   const way = d?.words?.way || d?.seat?.reading?.way || "";
   const planThings = (Array.isArray(d?.world?.things) ? d.world.things : []).map((e) => ({ name: e.name, kind: e.kind, surface: e.surface }));
@@ -118,7 +118,7 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     if (surfaces.length) log(`  ✎ the world's own surfaces, read off its rooms (what a themed surface of the seat plate becomes): ${surfaces.map((s) => `${s.kind} = ${s.name}`).join(" · ")}`);
     // FIGURES ARE HELD FOR THE RIDE'S OWN INTERIOR (owner 2026-09-11): only the world's things and surfaces take the seat photograph's set pieces at frame zero; a figure is passed inside, as a tableau
     const nonFigures = things.filter((e) => !isFigureThing(e));
-    const placedLines = placeOnPlate({ plate: seatPlate, things: nonFigures.slice(0, 6), role: seatRole, dark: true, way, surfaces, cwd, env, log });   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
+    const placedLines = placeOnPlate({ plate: seatPlate, things: nonFigures.slice(0, 6), role: seatRole, dark, way, surfaces, cwd, env, log });   // dark = a dark ride's own words; an appropriating worn or driven form reads plainly (2026-09-14)   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
     out.plateThings = placedLines.plateThings || [];
     out.placements = placedLines.map((l) => `${seatRole}: ${l}`);
     if (out.placements.length) log(`  ✓ frame zero's replacements, beside or ahead of the way: ${out.placements.map((l) => l.replace(`${seatRole}: `, "")).join(" | ").slice(0, 300)}`);

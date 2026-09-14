@@ -221,7 +221,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
     kind, family, noun, form, plateForm, medium: String(p.native_capture || p.form?.mediaForm || ""), interior, ending,
     // AN EVENT IS A NAMED WORLD (owner 2026-09-14: "even for a plate, 9/11 should be recognized as something sourced"): the probe's event entity
     // is a set whose zones are its most photographed scenes; on a dark ride it is a theme like a work, told to the planner as an EVENT
-    world: { named, title, mode, setting, places, rooms, things: plan ? worldElements(p) : [], kind: setEnt?.kind === "event" ? "event" : (named ? "work" : ""), zones: Array.isArray(setEnt?.set_zones) ? setEnt.set_zones.map((z) => String(z || "").trim()).filter(Boolean) : [] },
+    world: { named, title, mode, setting, words: worldWords, places, rooms, things: plan ? worldElements(p) : [], kind: setEnt?.kind === "event" ? "event" : (named ? "work" : ""), zones: Array.isArray(setEnt?.set_zones) ? setEnt.set_zones.map((z) => String(z || "").trim()).filter(Boolean) : [] },
     seat: { queries, ladder: seatLadder(family), plate: "", reading: null },
     words: { way: "", vehicle: "" },
     dressing: { placements: [], later: [], places: [] },
