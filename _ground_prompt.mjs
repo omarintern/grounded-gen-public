@@ -18,6 +18,11 @@ import { skeletonStamps } from "./_ride_skeleton.mjs";   // the ride's one block
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
 import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
+// THE WRITER IS THE PROSE MODEL (owner 2026-09-14: "the prose model has always been a better writer than the fast model, which is why we had it"). The world-build writer
+// has written on it since 08-11; this single-take writer never did, and on 09-07 the ride was routed here for the seat plate, so the ride's
+// writer changed model with the route and nobody decided it. Now the draft and every rewrite below write on the prose model; the intent extraction,
+// the plate read and the judges stay on the default model (mechanics). PROVIDER_PROSE_MODEL overrides, as on the world-build writer.
+const WRITE_MODEL = process.env.PROVIDER_PROSE_MODEL || "prose-model";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const [worldRef, userPrompt, slug = "scene", ...charRefs] = process.argv.slice(2);
@@ -336,7 +341,9 @@ if (BEAT_STYLE !== "template") {
   // 700-token budget was consumed before the first beat line; provider-llm then retried at 1400 → 2800 → 5600. The ledger
   // shows 26 physical calls for six logical steps and $… — the same writer at the budgets below is one call per step.
   // A budget BOUNDS the answer, it never spends it: over-provisioning costs nothing, under-provisioning pays every rung.
-  let { text } = await providerText(instruction, { maxTokens: 16000, temperature: 0.5, reasoning: process.env.WRITER_REASONING || "default", tag: "writer" });
+  // (2026-09-14: the budgets were measured on the fast model, whose reasoning rides inside max_tokens. the prose model spends no reasoning tokens there, so the
+  // same ceilings bound it loosely at no cost; a prose-model pass on this ~12k-token instruction prices at roughly half a fast-model pass.)
+  let { text } = await providerText(instruction, { maxTokens: 16000, temperature: 0.5, model: WRITE_MODEL, reasoning: process.env.WRITER_REASONING || "default", tag: "writer" });
 
   // ⚠ THE VALIDATOR MUST MATCH THE REQUESTED SHAPE. It filtered for /^\[\d+s\]/ unconditionally, so the moment
   // timestamps were switched off it rejected perfectly good continuous prose and silently fell back to the
@@ -417,7 +424,7 @@ if (BEAT_STYLE !== "template") {
       `Every beat a COMPLETE sentence. Dialogue labels name their speaker. ` +
       `Keep the same story and wording as far as possible. ` +
       `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines (and the Dialogue/Sound blocks if present).\n\n${text}`,
-      { maxTokens: 12000, temperature: 0.3 }
+      { maxTokens: 12000, temperature: 0.3, model: WRITE_MODEL, tag: "writer-retry" }
     ).catch(() => null);
     if (fix?.text && _lawFails(fix.text).length === 0) { text = fix.text; console.error(` (retry OK)`); }
     else if (fix?.text && _lawFails(fix.text).length < _fails1.length) { text = fix.text; console.error(` (retry improved: ${_lawFails(fix.text).join("; ")} — shipping with the residue, loudly)`); }
@@ -537,7 +544,7 @@ if (BEAT_STYLE !== "template") {
         `vantage with nothing to ground it. Rewrite the SAME beats, keeping every event and the payoff exactly ` +
         `as they are, but describe the post-cut action by what the WHOLE BODY does at the distance the ` +
         `photograph was taken from. Do not name the limb or the object in the grip. Change nothing else.`,
-        { maxTokens: 4000, temperature: 0.2 , tag: "writer-retry" });
+        { maxTokens: 4000, temperature: 0.2, model: WRITE_MODEL, tag: "writer-retry" });
       const relines = t2.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, ACCEPTED_N);
       const stillBad = relines.filter((l) => FINE_DETAIL.test(l)).length;
       if (relines.length && !stillBad) { beatLine = relines.join("\n"); console.log(`[GUARD] beats: repaired on retry`); }
@@ -695,7 +702,7 @@ try {
           `the SAME timestamps, changing ONLY the opening beat so it states the subject's position in the frame and ` +
           `its facing, at the spot that body occupies. Do NOT mention the body being replaced — it is gone, the ` +
           `subject is simply there instead. Return the full beat list and nothing else.`,
-          { maxTokens: 4000, temperature: 0.3 , tag: "writer-retry" });
+          { maxTokens: 4000, temperature: 0.3, model: WRITE_MODEL, tag: "writer-retry" });
         const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
         if (rl.length !== ACCEPTED_N) console.warn(`  [swap] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
         else {
@@ -748,7 +755,7 @@ try {
         `supplies that the request never named. Do not introduce a new place, a new character, or a prop the ` +
         `frame cannot afford. If an earlier beat set up a turn that nothing answered, ANSWERING IT is the ` +
         `escalation. Return the full beat list and nothing else.`,
-        { maxTokens: 4000, temperature: 0.3 , tag: "writer-retry" });
+        { maxTokens: 4000, temperature: 0.3, model: WRITE_MODEL, tag: "writer-retry" });
       const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
       if (rl.length !== ACCEPTED_N) {
         console.warn(`  [payoff] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
