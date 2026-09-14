@@ -79,7 +79,7 @@ export const isDarkRideNoun = (noun = "") => rideKindOf(noun) === "dark ride";
 // branch, and its register CANNOT be conjured from an environment plate: a generator handed an empty room and the word
 // "rollercoaster" renders whatever machine it guesses (measured 2026-09-05: a floor polisher pushing down the Overlook corridor).
 // The register must be GROUNDED by a real frame OF THAT FORM — the seat plate.
-export const APPARATUS_FORM = /\b(?:pov|point[- ]of[- ]view|first[- ]person|front[- ]seat|on-?board|ride[- ]?cam|helmet ?cam|chest ?cam|go ?pro|action[- ]?cam(?:era)?|bodycam|body[- ]?worn|dashcam|dash ?cam|handlebar|rollercoaster|roller coaster|zip[- ]?line|water ?slide|ski[- ]?cam|kart)\b/i;
+export const APPARATUS_FORM = /\b(?:pov|point[- ]of[- ]view|first[- ]person|front[- ]seat|on-?board|ride[- ]?cam|helmet ?cam|chest ?cam|go ?pro|action[- ]?cam(?:era)?|bodycam|body[- ]?worn|dashcam|dash ?cam|handlebar|rollercoaster|roller coaster|zip[- ]?line|water ?slide|ski[- ]?cam|kart)\b|body camera|helmet camera|chest camera|body-worn camera/i;   // the deconstructor's full spellings count too (2026-09-14)
 /** @fed a capture-form string (the deconstructor's device / REQUIRED_FORM / mediaForm), never a prompt. */
 export function isApparatusForm(form) { return APPARATUS_FORM.test(String(form || "")); }
 /** The scrape query that reaches real footage OF THE FORM, place-free: the ride/device nouns in pov footage register. */
@@ -95,12 +95,15 @@ export function formNoun(form) {
     .replace(/\b(?:pov|point[- ]of[- ]view|first[- ]person|front[- ]seat|on-?board|on-?ride|ride[- ]?cam|helmet ?cam|chest ?cam|go ?pro|action[- ]?cam(?:era)?|mounted|camera|cam|footage|video|clip|shot)\b/g, " ")
     .replace(/[-_]/g, " ").replace(/\s{2,}/g, " ").trim();
 }
-export const WORN_DEVICE = /\b(helmet ?cam|chest ?cam|body ?cam|bodycam|body[- ]worn|go ?pro|action[- ]?cam(?:era)?|handlebar(?: cam)?|ski[- ]?cam)\b/i;
+// …WRITTEN OUT IN FULL TOO (layer 2, the bodycam cake raid, 2026-09-14): the app's deconstructor names the device "chest-mounted body camera" and
+// "helmet camera", which "body cam" and "helmet cam" with a word boundary never matched — so a bodycam prompt was never a worn form at all: the
+// plain photo-swap put the cake in a partygoer's seat and the officer, the camera's wearer, was written as a body.
+export const WORN_DEVICE = /\b(helmet ?cam(?:era)?|chest ?cam(?:era)?|body ?cam(?:era)?|bodycam(?:era)?|body[- ]worn(?: camera)?|go ?pro|action[- ]?cam(?:era)?|handlebar(?: cam)?|ski[- ]?cam(?:era)?)\b/i;
 /** The worn device's own name as the web tags it ("helmet cam", "bodycam", "gopro"); the activity noun when the form names no device. */
 export function wornDevice(form = "") {
   const s = String(form || "").toLowerCase();
   const m = s.match(WORN_DEVICE);
-  if (m) return m[1].replace(/\s+/g, " ").replace(/^go ?pro$/, "gopro").replace(/^action[- ]?camera$/, "action cam").replace(/^body ?cam$/, "bodycam").replace(/^body[- ]worn$/, "bodycam").replace(/^handlebar$/, "handlebar cam").trim();
+  if (m) return m[1].replace(/\s+/g, " ").replace(/^go ?pro$/, "gopro").replace(/^action[- ]?camera$/, "action cam").replace(/^body ?cam(?:era)?$/, "bodycam").replace(/^bodycamera$/, "bodycam").replace(/^body[- ]worn(?: camera)?$/, "bodycam").replace(/^helmet ?camera$/, "helmet cam").replace(/^chest ?camera$/, "chest cam").replace(/^ski[- ]?camera$/, "ski cam").replace(/^handlebar$/, "handlebar cam").trim();
   return formNoun(form) || "pov";
 }
 /** ridden | driven | worn — the class's kind, read from the form's words and the maker's noun. */
@@ -184,7 +187,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   // (a helmet cam, a bodycam, a chest cam) rides the boat's own queries in the gopro's place.
   const _stated = String(device || requiredForm || p.form?.mediaForm || p.native_capture || "").trim();
   const boatWord = !makerKind0 ? (boatPov(`${rawPrompt || ""} ${_stated}`.trim()) || boatPov(`${prompt || ""} ${_stated}`.trim())) : "";
-  const boatCam = boatWord ? (WORN_DEVICE.test(`${_stated} ${rawPrompt} ${prompt}`) ? wornDevice(`${_stated} ${rawPrompt} ${prompt}`) : "gopro") : "";
+  const boatCam = boatWord ? (WORN_DEVICE.test(`${rawPrompt} ${prompt} ${_stated}`) ? wornDevice(`${rawPrompt} ${prompt} ${_stated}`) : "gopro") : "";   // the maker's own word first ("gopro"), the deconstructor's paraphrase ("action camera") after
   const makerKind = boatWord ? "" : makerKind0;
   const form = boatWord ? `${boatCam} pov footage` : (_stated || (makerKind ? `${makerKind} POV footage` : ""));
   const plateForm = boatWord ? `${boatCam} pov footage` : String(p.native_capture || p.form?.mediaForm || requiredForm || form).trim();
