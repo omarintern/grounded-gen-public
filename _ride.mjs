@@ -219,7 +219,9 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const ending = String(p.read?.ending || "").trim().toLowerCase() === "quick" ? "quick" : "held";
   return {
     kind, family, noun, form, plateForm, medium: String(p.native_capture || p.form?.mediaForm || ""), interior, ending,
-    world: { named, title, mode, setting, places, rooms, things: plan ? worldElements(p) : [] },
+    // AN EVENT IS A NAMED WORLD (owner 2026-09-14: "even for a plate, 9/11 should be recognized as something sourced"): the probe's event entity
+    // is a set whose zones are its most photographed scenes; on a dark ride it is a theme like a work, told to the planner as an EVENT
+    world: { named, title, mode, setting, places, rooms, things: plan ? worldElements(p) : [], kind: setEnt?.kind === "event" ? "event" : (named ? "work" : ""), zones: Array.isArray(setEnt?.set_zones) ? setEnt.set_zones.map((z) => String(z || "").trim()).filter(Boolean) : [] },
     seat: { queries, ladder: seatLadder(family), plate: "", reading: null },
     words: { way: "", vehicle: "" },
     dressing: { placements: [], later: [], places: [] },
@@ -251,11 +253,13 @@ export function preambleFor(d, { places = [] } = {}) {
   if (!d || d.family !== "dark ride" || !d.world?.named || !d.world?.title) return "";
   const lead = (Array.isArray(places) ? places : []).map((p) => String(p || "").trim()).filter(Boolean).slice(0, 4);
   const kind = d.noun, w = d.world.title;
+  const ev = d.world?.kind === "event", what = ev ? "EVENT" : "WORK";   // an event is themed like a work: its most photographed scenes are its rooms (2026-09-14)
+  const zones = ev && !lead.length ? (Array.isArray(d.world?.zones) ? d.world.zones : []).slice(0, 4) : [];
   return `FORM PREAMBLE — decided from the maker's own words BEFORE this plan; it outranks the request's rewrite and your own reading of the story:\n` +
     `• THE FORM IS A THEME PARK DARK RIDE ("${kind}"). The camera is the rider's seat; frame zero is a photograph taken from the seat; the world is what the ride carries past that seat.\n` +
-    `• THE WORLD IS THE NAMED WORK "${w}", AND ON A DARK RIDE A NAMED WORK IS A THEME, NOT AN ITINERARY. The ride never enters the work's places; the work supplies THINGS that dress the ride's own scenes. Therefore, for THIS plan:\n` +
+    `• THE WORLD IS THE NAMED ${what} "${w}", AND ON A DARK RIDE A NAMED ${what} IS A THEME, NOT ${ev ? "A RE-ENACTMENT" : "AN ITINERARY"}. The ride never enters the ${ev ? "event's" : "work's"} places; the ${ev ? "event's most photographed scenes supply" : "work supplies"} THINGS that dress the ride's own scenes. Therefore, for THIS plan:\n` +
     `  – form.places = [] and slots.vantage = [] — no place of the work is a stop; execution.cuts = false. (This overrides any instruction below to list the places the request visits: on this form they are not visited, they are read.)\n` +
-    `  – world_theme = { work: "${w}", sources: up to 4 image-search queries for the work's rooms or scenes whose THINGS are worth reading, each shaped "${w} <room> scene"${lead.length ? ` — the brief names the places the maker's video visits, and THEY LEAD, in this order: ${lead.map((p) => `"${w} ${p} scene"`).join(", ")}; add another room only after them` : ""} }.\n` +
+    `  – world_theme = { work: "${w}", sources: up to 4 image-search queries for the work's rooms or scenes whose THINGS are worth reading, each shaped "${w} ${ev ? "<scene> photograph" : "<room> scene"}"${zones.length ? ` — its most photographed scenes, as the archives tag them: ${zones.join(" · ")}` : ""}${lead.length ? ` — the brief names the places the maker's video visits, and THEY LEAD, in this order: ${lead.map((p) => `"${w} ${p} scene"`).join(", ")}; add another room only after them` : ""} }.\n` +
     `  – world_elements: up to 6 of the work's most transferable THINGS — a pattern, a fixture, a prop, signage, architecture, a figure of the work described by clothing and posture — each with source = the world_theme source it is read from, and the surface it lives on.\n` +
     `  – the story is the ride's own scenes in order, UNNAMED (the next scene, a turn, a blackout), each carrying things; no scene is named after a place of the work, and read.restated says so; each scene is a room of the work BUILT around the track that the vehicle passes through (never a flat or a screen with figures before it); the last scene is the story's own turn acting on the ride, imagined from the work (a figure returns and pushes the vehicle off into the maze; the doors shut behind it), never a stock effect chosen for size.\n` +
     `  – read.ending DECIDES HOW THE PAYOFF LANDS, from the maker's words: "held" (the default on a ride — the rider is there to EXPERIENCE the climax: the last stretch of the take stays inside the event) or "quick" (a button — the payoff lands late and clean after the build, when the maker's words ask for irony, deadpan, a wink or a reversal). Deadpan is a register, never a size: quick shortens the landing, never the event.\n` +
