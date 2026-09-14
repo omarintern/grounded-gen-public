@@ -219,7 +219,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const venueEnt = (Array.isArray(resolved) ? resolved : []).find((e) => e?.kind === "venue" && e?.is_set !== true && (e?.canonical_name || e?.term));
   const venueName = venueEnt ? String(venueEnt.canonical_name || venueEnt.term).replace(/\s+/g, " ").trim() : "";
   const context = !named && worldWords && worldWords.split(" ").length <= 4 && !isRideNoun(worldWords) ? worldWords
-    : (kind === "ridden" && family !== "dark ride" && venueName && !isRideNoun(venueName) ? venueName : "");
+    : (family !== "dark ride" && venueName && !isRideNoun(venueName) ? venueName : "");   // …and a car or a wearer on a named street or place hunts there too (the long dashcam: three avenues resolved, a bare "dashcam pov driving footage" served)
   const indoor = kind === "ridden" && family !== "dark ride" && mode !== "architecture" && (interior || (places.length > 0 && isInteriorWorld({ form: { world: places.join(" ") } })));
   const queries = boatWord ? [`${boatWord} ${boatCam} pov footage`, `first person ${boatCam} ${boatWord} footage`] : seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand });
   const titles = plan ? workTitlesOf(p) : (title ? [title] : []);
