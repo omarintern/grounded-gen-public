@@ -19,7 +19,7 @@
 import { providerJson, textPart } from "./provider-llm.mjs";
 import { replacementFact } from "./_ride_writer.mjs";
 import { rideWords } from "./_ride.mjs";
-import { worldNameFindings, CAMERA_WORD_RE } from "./_gate_rules.mjs";
+import { worldNameFindings, CAMERA_WORD_RE, isRideNoun } from "./_gate_rules.mjs";
 
 const _re = (s) => String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const STOP = new Set(["the", "and", "with", "from", "that", "this", "into", "onto", "over", "under", "through", "their", "there", "where", "which", "while", "then", "than", "them", "they", "your", "have", "been", "were", "also", "just", "only", "very", "some", "each", "same", "like", "near", "left", "right", "side", "sides", "ahead", "behind", "beside", "above", "below", "its", "his", "her", "for", "off", "out", "all", "one", "two", "far", "way", "top", "end"]);
@@ -177,7 +177,20 @@ export function setFrameZero(text, d, frame0) {
   //  replaced piece". Stated plainly, 2026-09-14.)
   const kept = body.split(/(?<=[.!?;])\s+/).filter((s) => s.trim() && !names(s));
   // the writer's own way-opening goes: the stage's paragraph already states it, and keeping it opens beat zero with the way twice
-  const rest = kept.filter((s) => !/^\s*(?:the\s+)?(?:track bed|rails?|way)\b/i.test(s) || frameZeroHolds(s, d).ok).join(" ").trim();
+  // …AND SO DOES A SENTENCE THAT RESTATES THE GROUND (layer 2, the Woodstock retry, 2026-09-14): the writer opened with the ground in its own words
+  // ("a grassy hillside spreads in the foreground …; tall wooden scaffolding towers rise …; track remains"), the check called the ground dropped (no
+  // piece named as replaced), the stage set its paragraph in front and KEPT those sentences — the hillside, the towers and the tents twice, and
+  // "Track remains." as a sentence of its own. A sentence whose distinctive words the paragraph already carries, or that has none beyond the way
+  // and the vehicle, restates the ground and goes; a sentence with something of its own (the rows ahead, a figure, a sound) stays.
+  const ground = String(frame0.text || "");
+  const restates = (s) => {
+    if (s.trim().split(/\s+/).length <= 3 && isRideNoun(s)) return true;   // "track remains" — a stub about the way, in a synonym the way words do not carry
+    const keys = looseKeys(s, [i.way, i.vehicle]); if (!keys.length) return false;   // nothing distinctive to compare — the writer's own sentence, kept
+    const hit = keys.filter((k) => keyRx(k).test(ground)).length; return hit * 10 >= keys.length * 7;
+  };
+  // a restating clause the writer hung a fresh one on (", and the rows ahead lean forward") goes alone; the fresh clause stays, capitalised
+  const trimLead = (s) => { const m = s.match(/^(.*?),\s+(?:and|then|as|while)\s+(.*)$/); return m && restates(m[1]) ? m[2].charAt(0).toUpperCase() + m[2].slice(1) : s; };
+  const rest = kept.map(trimLead).filter((s) => (!/^\s*(?:the\s+)?(?:track bed|rails?|way)\b/i.test(s) || frameZeroHolds(s, d).ok) && !restates(s)).join(" ").trim();
   lines[n] = `${stamp} ${frame0.text.replace(/\.?\s*$/, ".")}${rest ? " " + rest : ""}`;
   return { text: lines.join("\n"), changed: true };
 }
