@@ -645,7 +645,8 @@ if (BEAT_STYLE !== "template") {
     // A QUOTED WORK TITLE IS NOT SPEECH (owner 2026-09-07: job 91366c45 shipped `Speaker [0s]: "The Shining"` from a "The Shining"-themed ride)
     for (const m of [...line.matchAll(QUOTED)]) {
       if (_isWorkTitle(m[1])) { out = out.replace(m[0], m[0].replace(/["\u201c]([^"\u201c\u201d]{2,})["\u201d]/, "$1")); continue; }
-      spoken.push({ at, text: m[1] }); out = out.replace(m[0], "");
+      { const before = line.slice(0, line.indexOf(m[0])); const clause = before.split(/[.;!?]\s+|,\s+(?=(?:and|as|while|then|but)\s)/).pop() || ""; const sentence = before.split(/[.;!?]\s+/).pop() || ""; spoken.push({ at, text: m[1], clause, sentence }); }
+      out = out.replace(m[0], "");
     }
     // what is left is a SENTENCE: a conjunction the quote hung from goes ("…and says, "No exit!"" never ships as "…and"), and a line
     // whose full stop lived inside the quote gets one back
@@ -655,11 +656,16 @@ if (BEAT_STYLE !== "template") {
   });
   if (spoken.length && !hasBlock) {
     const who = (process.env.PLAN_DIALOGUE || "").match(/\n\s*([^:\n]{1,80}?)\s*:/);
-    // the request's own subject speaks before a bare "Speaker" — a label that names nobody is the one the ride block bans (2026-09-14)
-    const speaker = who ? who[1].trim() : (String(intent?.target || "").replace(/\s+/g, " ").trim() || "Speaker");
+    // WHO SPEAKS IS WHO THE SENTENCE SAYS SPEAKS (layer 2, the Jurassic flume, 2026-09-14): the request's subject as the fallback labelled a
+    // t-rex with the ride narrator's line ("Please remain seated as we pass through the feeding grounds"). The clause the quote hung from
+    // names its speaker ("as the ride narrator's voice crackles over the speakers"), else the sentence's own subject ("The cat turns its
+    // head … letting out a low"); a bare "Speaker" only when neither reads — the ride block's own finding then sends it back to the writer.
+    const subjectOf = (txt) => { const m = String(txt || "").replace(/^\s*(?:and|as|while|then|but)\s+/i, "").match(/^\s*((?:the|a|an|its|his|her|their|our|one|two|three|[A-Z][a-z]+)\b(?:\s+[A-Za-z'-]+){0,4})/); if (!m) return "";
+      const words = m[1].split(/\s+/); const keep = []; for (const w of words) { if (keep.length && /[a-z]s$/.test(w) && !/'s$/.test(w)) break; keep.push(w); if (keep.length >= 5) break; } return keep.length >= 2 ? keep.join(" ") : ""; };
+    const speakerFor = (q) => who ? who[1].trim() : (subjectOf(q.clause) || subjectOf(q.sentence) || "Speaker");
     // (the block below is passed through denameSpeakers — a speaker under the name law is labelled by its guise)
     const block = denameSpeakers("Dialogue:\n" + spoken.map((q, i) =>
-      `${speaker}${i ? " (continuing, over the cuts)" : ""}${q.at != null ? ` [${q.at}s]` : ""}: "${q.text}"`).join("\n"));
+      `${speakerFor(q)}${i && speakerFor(q) === speakerFor(spoken[0]) ? " (continuing, over the cuts)" : ""}${q.at != null ? ` [${q.at}s]` : ""}: "${q.text}"`).join("\n"));
     // the block sits BEFORE a Sound line, the terminal order every reader expects (beats · Dialogue · Sound)
     const _soundAt = cleaned.findIndex((l) => /^\s*Sound\s*[:\u2014\u2013-]/i.test(l));
     const _beats = (_soundAt >= 0 ? cleaned.slice(0, _soundAt) : cleaned).join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
