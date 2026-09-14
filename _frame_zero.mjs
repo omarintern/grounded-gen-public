@@ -157,7 +157,10 @@ export function setFrameZero(text, d, frame0) {
   const body = lines[n].slice(stamp.length).trim();
   const i = frameZeroInputs(d);
   const names = (s) => i.replacements.some((r) => { const keys = looseKeys(r.piece, [i.way, i.vehicle]); return keys.length && keys.filter((k) => keyRx(k).test(s)).length * 2 >= keys.length; });
-  const kept = body.split(/(?<=[.!?;])\s+/).filter((s) => s.trim() && !names(s) && !frameZeroHolds(s, d).ok === false ? true : s.trim() && !names(s));
+  // (the frameZeroHolds term that stood in this filter folded to `true` on BOTH branches of its own ternary — it
+  //  read as a rule and could never change the result; the filter is, and always was, "a sentence that names no
+  //  replaced piece". Stated plainly, 2026-09-14.)
+  const kept = body.split(/(?<=[.!?;])\s+/).filter((s) => s.trim() && !names(s));
   const rest = kept.filter((s) => !/^\s*(?:the\s+)?(?:track bed|rails?|way)\b/i.test(s) || !frameZeroHolds(s, d).ok).join(" ").trim();
   lines[n] = `${stamp} ${frame0.text.replace(/\.?\s*$/, ".")}${rest ? " " + rest : ""}`;
   return { text: lines.join("\n"), changed: true };

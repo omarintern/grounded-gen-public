@@ -245,11 +245,17 @@ export const WORDS_PER_SEC = 2.8;
 export function linesOutrun(text, secs = 9) {
   const t = String(text || ""); const stamps = beatLines(t).map((l) => Number((l.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1])).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
   const out = [];
-  for (const dl of dialogueLines(t)) {
-    const at = Number((dl.line.match(/\[(\d+(?:\.\d+)?)s\]\s*:/) || [])[1]); if (!Number.isFinite(at)) continue;
+  // A LINE'S TIME ENDS WHERE THE NEXT VOICE BEGINS, NOT ONLY WHERE THE NEXT BEAT DOES (2026-09-14): the window was
+  // read off the BEAT stamps alone, so every line inside one beat was measured as if the others were not there —
+  // two lines on one stamp (the 9/11 draw) and a line still being said when the next begins (draw 27's [4s] before
+  // its [5s]) outran nothing at all. The voices share the beat; each one's window closes at the next voice.
+  const said_ = dialogueLines(t), spokenAt = said_.map((x) => Number((x.line.match(/\[(\d+(?:\.\d+)?)s\]\s*:/) || [])[1]));
+  for (const [i_, dl] of said_.entries()) {
+    const at = spokenAt[i_]; if (!Number.isFinite(at)) continue;
     const said = (dl.line.split(/\]\s*:\s*/)[1] || "").replace(/^["“'\s]+|["”'\s]+$/g, "");
     const words = said.split(/\s+/).filter(Boolean).length; if (!words) continue;
-    const next = stamps.find((s) => s > at); const window = Math.max(0, (Number.isFinite(next) ? next : secs) - at);
+    const next = Math.min(...[stamps.find((s) => s > at), spokenAt[i_ + 1]].filter((n) => Number.isFinite(n)), secs);
+    const window = Math.max(0, next - at);
     const need = words / WORDS_PER_SEC;
     if (at >= secs - 1) out.push({ at, label: dl.label, words, need: Number(need.toFixed(1)), window, kind: "last second" });
     else if (need > window + 0.3) out.push({ at, label: dl.label, words, need: Number(need.toFixed(1)), window, kind: "outruns" });
@@ -295,7 +301,10 @@ export const pieceKeys = (p) => [...new Set(_words(p))].filter((k) => !SURFACE_K
 // THE BOOTH (owner 2026-09-12): a scene written as a platform beside the way or a flat/screen with figures before it renders flat — the ride's own flaw
 const BOOTH = /\b(?:tableau\b[^.;]{0,80}?\bon a (?:low |small |raised )?platform|painted flat|a flat of|flat behind|projected onto a screen|on a screen|a screen showing|a screen with)\b/i;   // a plate's own "raised platform" (dry-shining-4's set piece) is not a booth
 // MENACE TOWARD THE SEAT (owner 2026-09-12: "lunges toward the rails is a bit much. in fact the axe softening was what succeeded a failed gen"): a weapon or a strike aimed at the vehicle or the rows is what the provider's gate refuses
-const MENACE = /\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;]{0,60}\b(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/i;
+// ⚠ THE AIM IS THE WEAPON'S OWN CLAUSE (2026-09-14): the window spanned commas, so a brass dial "swinging between
+// floors, and the man … leans toward the rows ahead" read as a strike at the seat and softenMenace then amputated an
+// innocent sentence. STOPS and stillFigures already stop at the comma; the strike and its aim share one clause.
+const MENACE = /\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;,]{0,60}\b(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/i;
 export const boothIn = (line) => BOOTH.test(String(line || ""));
 // THE ROWS AHEAD ARE NEVER COSTUMED (draw 14 rendered, owner 2026-09-12: "we see the heads of two riders who are indeed the twins (because they're also wearing robes)")
 const COSTUMED_ROWS = /\b(?:riders?|rows? ahead|passengers?)\b[^.;]{0,60}\b(?:dressed(?: as| in| like)?|wearing|in (?:matching )?(?:bathrobes?|robes?|cardigans?|pinafores?|dresses|coats?|jackets?|overalls?|costumes?)|with (?:dark|blond|blonde|long|short|red|curly|lank) hair|(?:in )?bangs|pigtails|(?:their |the )?faces?|terrified expressions?|resembling|who look like)\b/i;
@@ -326,7 +335,7 @@ export function unplatform(text) {
   return String(text || "").split("\n").map((l) => (/^\s*\[\d+(?:\.\d+)?s\]/.test(l) ? l.replace(/\s+(?:on|onto|atop) a (?:low |small |raised )?platform(?: (?:beside|next to|by) the (?:rails|track|way))?(?: (?:on|to) the (?:left|right))?\b/gi, "") : l)).join("\n");
 }
 export function softenMenace(text) {
-  const AIM = /(\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;]{0,60}?)\s+(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?(?: in the (?:rows?|seats?)(?: ahead)?)?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/gi;
+  const AIM = /(\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;,]{0,60}?)\s+(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?(?: in the (?:rows?|seats?)(?: ahead)?)?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/gi;
   return String(text || "").split("\n").map((l) => (/^\s*\[\d+(?:\.\d+)?s\]/.test(l) ? l.replace(AIM, "$1") : l)).join("\n");
 }
 // EVERY FIGURE HAS ITS TURN (owner 2026-09-12: "ideally words 'speech' come from every animatronic or subject in a ride, given their turn of course. a non-speaking
@@ -345,13 +354,18 @@ export function silentFigures(text, d) {
     const head = [...keys].sort((a, b) => b.length - a.length)[0];
     const hits = (t) => keys.filter((k) => new RegExp(`\\b${_re(k)}`, "i").test(t));
     const passes = (t) => { const h = hits(t); return h.length * 2 >= keys.length || (head.length >= 7 && h.includes(head)); };
-    let i = -1, best = 0; lines.forEach((l, j) => { const n = hits(l.text).length; if (passes(l.text) && n > best) { best = n; i = j; } });
-    if (i < 0) continue;   // an absent figure is the ledger's matter
-    const from = lines[i].at, to = i + 1 < lines.length ? lines[i + 1].at : Infinity;
-    if (SOUND_WORDS.test(lines[i].text)) continue;
+    // EVERY PASS COUNTS, NOT THE FIRST ONE THAT TIES (2026-09-14, measured on draw 27's live draws): a figure the
+    // take passes twice was pinned to the first beat that matched and judged only there, so a caretaker passed at
+    // [2s] and again at [6s], speaking at [6s], was reported silent — a "ride" finding that buys a full corrective
+    // writer pass on a draft that obeyed the law. A figure passes silent only when NO pass carries its sound and no
+    // pass's window carries its line; the finding still names its first pass.
+    const passing = lines.map((l, j) => (passes(l.text) ? j : -1)).filter((j) => j >= 0);
+    if (!passing.length) continue;   // an absent figure is the ledger's matter
     // a speaker LABEL is short by nature: "the figure in a bright red jacket" names the pair with three of its eight words (draw 23, 2026-09-13 — flagged silent while it spoke); two distinctive words in the label at the figure's beat are the figure
-    if (spoken.some((s) => s.at >= from && s.at < to && (passes(s.label) || hits(s.label).length >= 2))) continue;
-    out.push({ name, at: from });
+    const heard = passing.some((j) => { const from = lines[j].at, to = j + 1 < lines.length ? lines[j + 1].at : Infinity;
+      return SOUND_WORDS.test(lines[j].text) || spoken.some((s) => s.at >= from && s.at < to && (passes(s.label) || hits(s.label).length >= 2)); });
+    if (heard) continue;
+    out.push({ name, at: lines[passing[0]].at });
   }
   return out;
 }

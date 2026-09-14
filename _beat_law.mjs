@@ -790,8 +790,11 @@ export const incompleteBeatLines = (text) =>
     .filter((l) => !/[.!?…"”']$/.test(l));
 // ⚠ ONLY truly ANONYMOUS labels ban — "Woman"/"Bartender" name a figure the beats established and are
 // legitimate; "Speaker"/"Voice"/"Narrator" name nobody and hand the line to whoever happens to be visible.
+// ⚠ THE STAMP IS OPTIONAL (2026-09-14): this required a [Ns], so "Narrator:" — the bare word the ride block itself
+// bans because it "names nobody" — passed every check under candid, which is every grounded 1.0 run. The cinematic
+// backstop in _ground_prompt has had the optional stamp since the fisherman residues; this is that law's other half.
 export const genericSpeakerLabels = (text) =>
-  String(text || "").match(/^\s*(?:Speaker|Voice|Narrator|Someone)\s*\d*\s*(?:\([^)]*\))?\s*\[\d+s\]\s*:/gim) || [];
+  String(text || "").match(/^\s*(?:Speaker|Voice|Narrator|Someone)\s*\d*\s*(?:\([^)]*\))?\s*(?:\[\d+(?:\.\d+)?s\]\s*)?:/gim) || [];
 
 export const hardConstraints = () => (
 `⚠ HARD CONSTRAINTS — the photograph already determines these, and contradicting them corrupts the render:\n` +

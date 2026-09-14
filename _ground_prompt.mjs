@@ -10,7 +10,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
@@ -364,7 +364,7 @@ if (BEAT_STYLE !== "template") {
   // disagreement with a prescribed list: it means an illegal COUNT (outside {${...}}), a DECIMAL stamp, an
   // opening that is not [0s], disorder, or a stamp past the duration. Vacuum-lab measured 7/7 legal under
   // this contract with counts varying by material — the variance is the point of the ruling.
-  const stampList = (t) => ((String(t).split(/^\s*Dialogue\s*:/im)[0]).match(/^\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));   // the beats only — a Dialogue block written "[3s] Speaker: …" is not a beat (dry-cave-local-2)
+  const stampList = (t) => ((String(t).split(/^\s*Dialogue\s*:/im)[0]).match(/^[ \t]*\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));   // the beats only — a Dialogue block written "[3s] Speaker: …" is not a beat (dry-cave-local-2)
   // ⚠ COMPLETENESS + LABEL LAWS RIDE THE SAME VALIDATOR (owner 2026-08-21, penguin deep remix: beat [4s]
   // shipped ending "lets out a flat" and a line labeled "Speaker" — both are output defects the check-the-
   // output pattern owns; a fifth restatement in the ask is not the fix).
@@ -460,7 +460,12 @@ if (BEAT_STYLE !== "template") {
     // whole "payoff survives some runs, not others": it survived only when the model happened to pack it into beat 3.
     // The retry validator never fired because it inspects `text` (4 stamps, matched) BEFORE this slice cut it to 3.
     // Cap at the LARGEST legal count so parser, instruction and validator agree on one ceiling.
-    lines = text.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, Math.max(...COUNTS));
+    // ⚠ THE FILTER AND THE VALIDATOR READ THE SAME THING (2026-09-14). stampList above already cuts at the Dialogue
+    // header ("a Dialogue block written \"[3s] Speaker: …\" is not a beat") and already accepts a decimal stamp; this
+    // filter did neither — so a stamp-first block shipped its speech as BEAT PROSE on top of the block re-attached
+    // below (the same words twice), and a [2.5s] beat, legally re-asked and then shipped when the retry did not
+    // improve, was deleted here without a word. One spelling, one ceiling.
+    lines = text.split(new RegExp(String.raw`^\s*${DIALOGUE_HEAD}`, "im"))[0].split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, Math.max(...COUNTS));
   } else {
     // Continuous prose: keep every non-empty line, but strip any timestamps the model emits out of habit.
     lines = text.split("\n").map((l) => l.trim().replace(/^\[\d+s\]\s*/, ""))
@@ -490,7 +495,23 @@ if (BEAT_STYLE !== "template") {
   // the beat filter, same symptom, and it is the third bug in this family today (`$` under /m in slop_meter,
   // the `[\d+s]` beat filter, now this) — an end-of-input assumption that holds for every input except the
   // real one. Lift the `\n` into the Sound branch only.
-  const emittedDialogue = (text.match(/(^|\n)\s*Dialogue\s*:[\s\S]*?(?=\n\s*Sound\s*:|$)/i) || [""])[0].trim();
+  const emittedDialogue = (text.match(/(^|\n)\s*Dialogue\s*:[\s\S]*?(?=\n\s*Sound\s*:|$)/i) || text.match(new RegExp(String.raw`(^|\n)\s*${DIALOGUE_HEAD}[\s\S]*?(?=\n\s*Sound\s*[:\u2014\u2013-]|$)`, "i")) || [""])[0].trim();
+  // ⚠⚠ THE SOUND LINE SURVIVES THE BEAT FILTER TOO — THE SAME BUG, ONE BLOCK OVER. soundLaw() tells the writer in
+  // capitals to "End the beats with a Sound: line naming the DIEGETIC ambience of each world the clip visits", and
+  // the filter above then deleted exactly that line on every run and every form (measured 2026-09-14: 7 of 7 stored
+  // drafts and 6 of 6 live prose-model draws wrote one, 0 reached the beats file). _run's applyAudioFill then found no
+  // Sound directive and appended the fallback — "Natural ambient room tone of the scene; no music." over a ride the
+  // writer had scored with ringing phones and show music — which is the very fallback the law says not to leave it
+  // to. Captured beside the block and re-attached after it: the writer's audio is the writer's.
+  const emittedSound = (text.match(/(^|\n)\s*Sound\s*[:\u2014\u2013-][^\n]*/i) || [""])[0].trim();
+  // … AND ON A ONE-BLOCK FORM THE WRITER WRITES IT INSIDE THE BEAT (measured 2026-09-14: 5 of 5 driven-form drafts —
+  // "…the road ahead clears as it clears the lane. Sound: tires on asphalt, … no music." is ONE line, so no header
+  // starts a line, applyAudioFill sees no Sound directive and appends a SECOND one, and the first rides into the
+  // render as scene prose. The sentence is MOVED, never rewritten — the same deterministic split the inline-quote
+  // guard below makes for speech: a Sound: sentence that ENDS a beat line is the terminal line in the wrong place.
+  const INLINE_SOUND = /(?<=[.!?]\s)Sound\s*[:\u2014\u2013-]\s*[^\n]*$/i;
+  let inlineSound = "";
+  if (!emittedSound) lines = lines.map((l) => l.replace(INLINE_SOUND, (m) => { inlineSound = m.trim(); return ""; }).trimEnd());
   if (lines.length) {
     beatLine = lines.join("\n");
     if (emittedDialogue) {
@@ -503,6 +524,8 @@ if (BEAT_STYLE !== "template") {
         console.log(`  ♪ dialogue block kept from the writer (${_kept.split("\n").length - 1} line(s))${_kept !== emittedDialogue ? " — a figure's name in a label written as its word" : ""}`);
       } else console.log(`  ♪ the writer's dialogue block carried only an omitted figure's line(s) — dropped`);
     }
+    const _sound = emittedSound || inlineSound;
+    if (_sound) { beatLine += `${/(^|\n)\s*Dialogue\s*:/i.test(beatLine) ? "\n" : "\n\n"}${_sound}`; console.log(`  ♪ sound line kept from the writer${inlineSound && !emittedSound ? " (split out of the beat it was written inside)" : ""}: "${_sound.slice(0, 56)}…"`); }
     mode += " + NARRATIVE";
     // ⚠ VALIDATE THE ASSEMBLY, NOT JUST THE DRAFT (owner 2026-08-22, the walrus): the law validator ran on
     // the writer's RAW text, then THIS assembly moved an inline quote into the Dialogue block — stranding
@@ -511,7 +534,7 @@ if (BEAT_STYLE !== "template") {
     // this stage would re-open the whole draft — the residue ships visible, never silent).
     const _subj = String(intent?.target || "").toUpperCase().trim();
     if (_subj && genericSpeakerLabels(beatLine).length) {
-      beatLine = beatLine.replace(/^(\s*)(?:Speaker|Voice|Narrator|Someone)(\s*\d*\s*(?:\([^)]*\))?\s*\[\d+s\]\s*:)/gim, `$1${_subj}$2`);
+      beatLine = beatLine.replace(/^(\s*)(?:Speaker|Voice|Narrator|Someone)(\s*\d*\s*(?:\([^)]*\))?\s*(?:\[\d+(?:\.\d+)?s\]\s*)?:)/gim, `$1${_subj}$2`);
       console.error(`  ⚠ anonymous dialogue label REPAIRED to ${_subj} (the label law, post-assembly)`);
     }
     const _postInc = incompleteBeatLines(beatLine);
@@ -581,7 +604,11 @@ if (BEAT_STYLE !== "template") {
 {
   const _titles = String(process.env.WORK_TITLES || "").split(" \u00b7 ").map((s) => s.trim().toLowerCase()).filter(Boolean);
   const _isWorkTitle = (q) => { const s = String(q || "").trim().toLowerCase(); return _titles.some((w) => w === s || w === s.replace(/^the\s+/, "") || `the ${w}` === s); };
-  const QUOTED = /[:,]?\s*(?:\b(?:say(?:s|ing)?|tell(?:s|ing)?|call(?:s|ing)? out|continu\w*[^:"]*)\b[^:"]*)?[:,]?\s*"([^"]{2,})"/g;
+  // ⚠ THE CURLY PAIR IS A QUOTE TOO (2026-09-14): this matched only the straight `"`, while buildDialogueBlock,
+  // linesOutrun, redactSpeech, withoutSpeech and dialogueShape all already accept “ ” — so a line the prose model narrated
+  // inline in curly quotes was invisible here, no block existed, and _run re-attached the plan's block: the same
+  // speech shipped twice, which is the failure this guard was written from.
+  const QUOTED = /[:,]?\s*(?:\b(?:say(?:s|ing)?|tell(?:s|ing)?|call(?:s|ing)? out|continu\w*[^:"\u201c\u201d]*)\b[^:"\u201c\u201d]*)?[:,]?\s*["\u201c]([^"\u201c\u201d]{2,})["\u201d]/g;
   const bl = beatLine.split("\n");
   const hasBlock = /(^|\n)\s*(?:Dialogue|Sound)\s*:/i.test(beatLine);
   const spoken = [];
@@ -601,7 +628,7 @@ if (BEAT_STYLE !== "template") {
     let out = line;
     // A QUOTED WORK TITLE IS NOT SPEECH (owner 2026-09-07: job 91366c45 shipped `Speaker [0s]: "The Shining"` from a "The Shining"-themed ride)
     for (const m of [...line.matchAll(QUOTED)]) {
-      if (_isWorkTitle(m[1])) { out = out.replace(m[0], m[0].replace(/"([^"]{2,})"/, "$1")); continue; }
+      if (_isWorkTitle(m[1])) { out = out.replace(m[0], m[0].replace(/["\u201c]([^"\u201c\u201d]{2,})["\u201d]/, "$1")); continue; }
       spoken.push({ at, text: m[1] }); out = out.replace(m[0], "");
     }
     return out.replace(/\s{2,}/g, " ").replace(/\s+([.,;])/g, "$1").replace(/[,:;]\s*$/, ".").trimEnd();
