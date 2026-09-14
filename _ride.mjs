@@ -53,7 +53,10 @@ const BOAT = /\b(?:boats?|speedboats?|motorboats?|rowboats?|kayaks?|kayaking|can
 const PARK_BOAT = /\b(?:theme park|amusement park|amusement|attractions?|disney\w*|universal|jungle cruise|dark ride|log flume|flumes?|rapids|water ride|show building|ride vehicle|queue line|pirates of the caribbean|splash mountain)\b/i;
 const NOT_POV = /\b(?:drone|aerial|helicopter shot|from (?:the |a )?(?:shore|pier|dock|jetty|harbou?r|beach|bank|bridge|cliff|hill|window|balcony)|third[- ]person|watching from|seen from|viewed from|filmed from (?:the |a )?(?:shore|pier|dock|land)|cctv|security camera|dashcam|news|broadcast|documentary)\b/i;
 /** the words put the camera on a boat, and nothing in them states against a point of view — the boat's own word comes back, else "" */
-export function boatPov(text = "") { const s = String(text || ""); if (!BOAT.test(s) || PARK_BOAT.test(s) || NOT_POV.test(s)) return ""; return (s.match(BOAT) || [""])[0].toLowerCase().replace(/^sailing$/, "sailing"); }
+// A BOAT WORD IS NOT ALWAYS A VESSEL — the trap the bare word "ride" already has (NON_PARK_RIDE above): a gravy boat, a boat neck and
+// the boat race on tv wear the word and carry no camera. A word that owns the bare noun stands it down before the test.
+const NOT_A_VESSEL = /\b(?:gravy|sauce|butter|banana|dream|love|show)[- ]?boats?\b|\bboats?[- ](?:neck|race|races|racing|show|shoes?|hook|load|people|yard)\b/i;
+export function boatPov(text = "") { const s = String(text || "").replace(NOT_A_VESSEL, " "); if (!BOAT.test(s) || PARK_BOAT.test(s) || NOT_POV.test(s)) return ""; return (s.match(BOAT) || [""])[0].toLowerCase(); }
 const familyOf = (text) => {
   const s = String(text || "").toLowerCase();
   // specific words anywhere in the families win; the bare generic words only when no transport word owns them
@@ -92,10 +95,11 @@ export function formNoun(form) {
     .replace(/\b(?:pov|point[- ]of[- ]view|first[- ]person|front[- ]seat|on-?board|on-?ride|ride[- ]?cam|helmet ?cam|chest ?cam|go ?pro|action[- ]?cam(?:era)?|mounted|camera|cam|footage|video|clip|shot)\b/g, " ")
     .replace(/[-_]/g, " ").replace(/\s{2,}/g, " ").trim();
 }
+export const WORN_DEVICE = /\b(helmet ?cam|chest ?cam|body ?cam|bodycam|body[- ]worn|go ?pro|action[- ]?cam(?:era)?|handlebar(?: cam)?|ski[- ]?cam)\b/i;
 /** The worn device's own name as the web tags it ("helmet cam", "bodycam", "gopro"); the activity noun when the form names no device. */
 export function wornDevice(form = "") {
   const s = String(form || "").toLowerCase();
-  const m = s.match(/\b(helmet ?cam|chest ?cam|body ?cam|bodycam|body[- ]worn|go ?pro|action[- ]?cam(?:era)?|handlebar(?: cam)?|ski[- ]?cam)\b/);
+  const m = s.match(WORN_DEVICE);
   if (m) return m[1].replace(/\s+/g, " ").replace(/^go ?pro$/, "gopro").replace(/^action[- ]?camera$/, "action cam").replace(/^body ?cam$/, "bodycam").replace(/^body[- ]worn$/, "bodycam").replace(/^handlebar$/, "handlebar cam").trim();
   return formNoun(form) || "pov";
 }
@@ -167,12 +171,19 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   // request (prompt) is read next, before the plan's subject (2026-09-09).
   const makerKind0 = rideKindOf(String(rawPrompt || "").trim()) || rideKindOf(String(prompt || "").trim()) || rideKindOf(String(p.subject || p.form?.subject || ""));
   // ON A BOAT, THE CAMERA IS A GOPRO (owner 2026-09-14) — unless a park names the ride, or the words state against a point of view
-  const boatWord = !makerKind0 ? (boatPov(String(rawPrompt || "").trim()) || boatPov(String(prompt || "").trim())) : "";
+  // THE CAMERA THE INPUT NAMES IS THE CAMERA (owner: "unless stated otherwise by input") — the boat's gopro is the DEFAULT, never a
+  // replacement: the form the deconstructor or the plan states is read for the against-a-POV cues too, and a device the words name
+  // (a helmet cam, a bodycam, a chest cam) rides the boat's own queries in the gopro's place.
+  const _stated = String(device || requiredForm || p.form?.mediaForm || p.native_capture || "").trim();
+  const boatWord = !makerKind0 ? (boatPov(`${rawPrompt || ""} ${_stated}`.trim()) || boatPov(`${prompt || ""} ${_stated}`.trim())) : "";
+  const boatCam = boatWord ? (WORN_DEVICE.test(`${_stated} ${rawPrompt} ${prompt}`) ? wornDevice(`${_stated} ${rawPrompt} ${prompt}`) : "gopro") : "";
   const makerKind = boatWord ? "" : makerKind0;
-  const form = boatWord ? "gopro pov footage" : (String(device || requiredForm || p.form?.mediaForm || p.native_capture || "").trim() || (makerKind ? `${makerKind} POV footage` : ""));
-  const plateForm = boatWord ? "gopro pov footage" : String(p.native_capture || p.form?.mediaForm || requiredForm || form).trim();
+  const form = boatWord ? `${boatCam} pov footage` : (_stated || (makerKind ? `${makerKind} POV footage` : ""));
+  const plateForm = boatWord ? `${boatCam} pov footage` : String(p.native_capture || p.form?.mediaForm || requiredForm || form).trim();
   if (!boatWord && !(isApparatusForm(form) || makerKind)) return null;
-  const noun = boatWord ? "gopro" : (makerKind || formNoun(plateForm) || form.replace(/\s+camera$/i, ""));
+  // A FORM THAT IS ONLY A DEVICE HAS THE DEVICE FOR ITS NOUN (formNoun answers "" by contract for "helmet cam footage"): the whole form
+  // string as a noun reads back to the writer as "ONE continuous take from the helmet cam footage's own camera".
+  const noun = boatWord ? boatCam : (makerKind || formNoun(plateForm) || wornDevice(plateForm || form));
   const kind = boatWord ? "worn" : apparatusKind(plateForm || form, noun);
   const family = kind === "driven" ? "driven" : kind === "worn" ? "worn" : (rideFamilyOf(noun) || "other ridden");
   const setEnt = (Array.isArray(resolved) ? resolved : []).find((e) => e?.is_set === true);
@@ -193,7 +204,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const worldWords = String(p.form?.world || "").replace(/\s+/g, " ").trim();
   const context = !named && worldWords && worldWords.split(" ").length <= 4 && !isRideNoun(worldWords) ? worldWords : "";
   const indoor = kind === "ridden" && family !== "dark ride" && mode !== "architecture" && (interior || (places.length > 0 && isInteriorWorld({ form: { world: places.join(" ") } })));
-  const queries = boatWord ? [`${boatWord} gopro pov footage`, `first person gopro ${boatWord} footage`] : seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand });
+  const queries = boatWord ? [`${boatWord} ${boatCam} pov footage`, `first person ${boatCam} ${boatWord} footage`] : seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand });
   const titles = plan ? workTitlesOf(p) : (title ? [title] : []);
   const rooms = mode === "theme" && Array.isArray(p.slots?.world?.shotSet) ? p.slots.world.shotSet.map((q) => roomNameOf(q, titles)).filter(Boolean) : [];
   // HOW THE ENDING LANDS is the plan's decision (owner 2026-09-11: "climax doesn't need longest span. it all depends, because irony would have it end quick"):
@@ -211,9 +222,12 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
 /** The class's own words for the way and the vehicle: the seat plate's reading when it has one, else the kind's. */
 export function rideWords(d) {
   const r = d?.seat?.reading || {};
-  const _w = (v) => (typeof v === "string" ? v.trim() : "");
-  const way = String(d?.words?.way || (_w(r.way) !== "unseen" ? _w(r.way) : "")).trim();
-  const vehicle = String(d?.words?.vehicle || (!["unseen", "other"].includes(_w(r.vehicle)) ? _w(r.vehicle) : "")).trim();
+  // …AND THEY CARRY NO ARTICLE: every reader writes "the ${way}" and "THE ${way.toUpperCase()}", so a plate read that answers "the track
+  // bed" — as the dark-ride store's own ice-cave reading does — writes "the the track bed" into the writer's block and into frame zero
+  // (shipped in draw 25). The article is stripped once, here, where the class's words are decided.
+  const _w = (v) => (typeof v === "string" ? v.trim().replace(/^(?:the|a|an)\s+/i, "").trim() : "");
+  const way = String(_w(d?.words?.way) || (_w(r.way) !== "unseen" ? _w(r.way) : "")).trim();
+  const vehicle = String(_w(d?.words?.vehicle) || (!["unseen", "other"].includes(_w(r.vehicle)) ? _w(r.vehicle) : "")).trim();
   const watery = /boat|flume|rapids|water/i.test(String(d?.noun || ""));
   return {
     way: way || (d?.kind === "driven" ? "road" : d?.kind === "worn" ? "way ahead" : watery ? "water channel" : d?.family === "coaster" ? "rails" : "way ahead"),

@@ -19,13 +19,17 @@
 import { providerJson, textPart } from "./provider-llm.mjs";
 import { replacementFact } from "./_ride_writer.mjs";
 import { rideWords } from "./_ride.mjs";
-import { worldNameFindings } from "./_gate_rules.mjs";
+import { worldNameFindings, CAMERA_WORD_RE } from "./_gate_rules.mjs";
 
 const _re = (s) => String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const STOP = new Set(["the", "and", "with", "from", "that", "this", "into", "onto", "over", "under", "through", "their", "there", "where", "which", "while", "then", "than", "them", "they", "your", "have", "been", "were", "also", "just", "only", "very", "some", "each", "same", "like", "near", "left", "right", "side", "sides", "ahead", "behind", "beside", "above", "below", "its", "his", "her", "for", "off", "out", "all", "one", "two", "far", "way", "top", "end"]);
 const SURFACE_NOUNS = /^(?:walls?|ceilings?|floors?|grounds?|arch(?:es|way|ways)?|backgrounds?|backdrops?|lighting|lights?|glow|paths?|beds?|roofs?|tunnels?|passages?|corridors?|surfaces?)$/;
 const TRANSFORM = /\b(?:becomes?|becoming|became|turns? into|turning into|transforms?(?: into)?|transforming|morph(?:s|ing|ed)?(?: into)?|replaced by|is replaced|are replaced|gives? way to|changes? into)\b/i;
-const CAMERA = /\b(?:camera|lens|shot|frame(?:d|s)?\b(?! zero)|pans?|tilts?|zooms?|tracking shot|dolly|cut to)\b/i;
+// A CAMERA WORD IS AN INSTRUCTION, NOT A NOUN (measured 2026-09-14: "copper pans on a rail", "a framed photograph", "a hedge that tilts
+// in the wind" each threw away a composition that was otherwise whole, and the mechanical join shipped in its place). The engine's own
+// camera law is the tuned one — the camera, a zoom, a panning shot, a dolly, a tracking shot, a push, a pull — and the stage reads THAT,
+// plus the cut it may never write.
+const CAMERA = new RegExp(`${CAMERA_WORD_RE.source}|\\bcut to\\b`, "i");
 
 /** the distinctive words of a set piece (short material words kept: icy, ice, snowy), never the way's words nor a bare surface noun */
 export function looseKeys(piece, wayWords = []) {
@@ -35,7 +39,7 @@ export function looseKeys(piece, wayWords = []) {
 /** the surface noun of a set piece ("wall" of "the icy wall on the right"), or "" */
 export const surfaceNoun = (piece) => (String(piece || "").toLowerCase().split(/[^a-z0-9'-]+/).find((w) => SURFACE_NOUNS.test(w)) || "");
 const stem = (k) => k.replace(/-lit$/, "").replace(/y$/, "").replace(/ies$/, "y").replace(/s$/, "");
-const keyRx = (k) => new RegExp(`\\b${_re(stem(k))}(?:y|ies|s|ed|-lit)?\\b`, "i");
+const keyRx = (k) => new RegExp(`\\b${_re(stem(k))}(?:e|y|ies|es|s|ed|-lit)?\\b`, "i");   // a material's own root: "icy" stems to "ic" and must still reach the word "ice"
 
 const _read = (v) => (Array.isArray(v) ? v.map((x) => String(x ?? "").trim()).filter(Boolean).join(", ") : typeof v === "string" ? v : "").trim();
 const stripRole = (l) => String(l || "").replace(/^[^:]{0,80}\(frame zero[^)]*\):\s*/i, "").replace(/^the seat photograph[^:]*:\s*/i, "").trim();
@@ -55,12 +59,12 @@ export function frameZeroInputs(d) {
   const r = d?.seat?.reading || {};
   const direction = /veers? (?:to the )?left/i.test(String(r.way_direction || "")) ? "and veering away to the left" : /veers? (?:to the )?right/i.test(String(r.way_direction || "")) ? "and veering away to the right" : "";
   const fore = _read(r.foreground);
-  return { way: w.way || "the way", vehicle: w.vehicle || "the vehicle", direction, foreground: /^none\b/i.test(fore) ? "" : fore, environment: _read(r.environment), replacements, additions, kept, title: String(d?.world?.title || "").trim() };
+  return { way: w.way || "way ahead", vehicle: w.vehicle || "vehicle", direction, foreground: /^none\b/i.test(fore) ? "" : fore, environment: _read(r.environment), replacements, additions, kept, title: String(d?.world?.title || "").trim() };
 }
 /** the mechanical frame zero — the facts in the golden grammar, joined — the fallback when the composition fails, and the pre-stage behaviour */
 export function frameZeroFacts(d) {
   const i = frameZeroInputs(d);
-  const parts = [`${i.way} ${/s$/.test(i.way) ? "run" : "runs"} on ahead${i.direction ? " " + i.direction : ""}`];
+  const parts = [`the ${i.way} ${/s$/.test(i.way) ? "run" : "runs"} on ahead${i.direction ? " " + i.direction : ""}`];
   if (i.foreground) parts.push(i.foreground);
   parts.push(...i.replacements.map((r) => r.fact), ...i.additions.map((a) => a.fact), ...i.kept);
   return parts.filter(Boolean).join("; ") + ".";
@@ -68,7 +72,9 @@ export function frameZeroFacts(d) {
 /** does a beat-zero line carry the ground — both sides of every replacement, the addition, the kept pieces (half the words of each) */
 export function frameZeroHolds(line0, d) {
   const i = frameZeroInputs(d); const l = String(line0 || "");
-  const has = (s) => { const keys = looseKeys(s, [i.way, i.vehicle]); if (!keys.length) return true; return keys.filter((k) => keyRx(k).test(l)).length * 2 >= keys.length; };
+  // a side with no distinctive word of its own ("the ceiling", "the walls") is policed by its WHOLE phrase, never waved through: a
+  // replacement half-stated is the one thing this check exists to see (a recovery tool that always succeeds is a bug report)
+  const has = (s) => { const keys = looseKeys(s, [i.way, i.vehicle]); if (!keys.length) return new RegExp(`\\b${_re(String(s || "").replace(/^the\s+/i, ""))}\\b`, "i").test(l); return keys.filter((k) => keyRx(k).test(l)).length * 2 >= keys.length; };
   const missing = [];
   for (const r of i.replacements) if (!(has(r.piece) && has(r.by))) missing.push(r.fact);
   for (const a of i.additions) if (!has(a.thing)) missing.push(a.fact);
@@ -134,18 +140,27 @@ export function pieceReturns(text, d) {
 /** the last resort after the re-asks: a replaced piece named after frame zero reads as the world's thing (mechanical, logged by the caller) */
 export function carryReplacements(text, d) {
   const i = frameZeroInputs(d); const fixed = [];
+  const worldWords = new Set([...i.replacements.map((r) => r.by), ...i.additions.map((a) => a.thing), ...(d?.dressing?.later || []), ...((d?.dressing?.photographed || []).flatMap((p) => p?.qualities || []))].flatMap((s) => looseKeys(s)).map(stem));
   const lines = String(text || "").split("\n"); let seenZero = false;
   for (let n = 0; n < lines.length; n++) {
     const isBeat = /^\s*\[\d+(?:\.\d+)?s\]/.test(lines[n]); if (!isBeat) continue;
     if (!seenZero) { seenZero = true; continue; }
-    for (const r of i.replacements) {
-      const keys = looseKeys(r.piece, [i.way, i.vehicle]); const noun = surfaceNoun(r.piece); if (!keys.length) continue;
-      const before = lines[n];
-      // the whole phrase, then the core "<material> <surface>" ("icy wall", "ice wall", "snowy ground"), never a bare material word alone
-      lines[n] = lines[n].replace(new RegExp(`\\b(?:the\\s+)?${_re(r.piece.replace(/^the\s+/i, ""))}\\b`, "gi"), r.by);
-      if (noun) for (const k of keys) lines[n] = lines[n].replace(new RegExp(`\\b(?:the\\s+)?${_re(stem(k))}(?:y|ies|s|-lit)?(?:\\s+\\w+){0,2}?\\s+${_re(noun.replace(/s$/, ""))}s?\\b`, "gi"), r.by);
-      if (lines[n] !== before) fixed.push(`${r.piece} → ${r.by} @${(lines[n].match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1]}s`);
+    // THE WHOLE PHRASE FIRST, FOR EVERY PIECE: a shorter piece's core words sit inside a longer piece's phrase ("ice wall" inside "the
+    // blue-lit ice wall in the background"), so a core-first pass writes the wrong world thing into the longer one.
+    const hit = [];
+    for (const r of i.replacements) { const b = lines[n]; lines[n] = lines[n].replace(new RegExp(`\\b(?:the\\s+)?${_re(r.piece.replace(/^the\s+/i, ""))}\\b`, "gi"), r.by); if (lines[n] !== b) hit.push(r); }
+    // then the core — EVERY distinctive word of a piece, in its own order, before its surface noun ("icy rock … wall", "blue-lit ice …
+    // wall"), never one of them alone: one word is the left wall's and the right wall's alike, and the repair that takes it writes the
+    // WRONG world thing into the beat. The most distinctive piece claims the words first, so a shorter piece never takes a longer one's
+    // phrase; a piece whose every word the world's own things also carry is left alone, as the check leaves it (ambiguous by construction).
+    for (const r of [...i.replacements].sort((a, b) => looseKeys(b.piece).length - looseKeys(a.piece).length || b.piece.length - a.piece.length)) {
+      const keys = looseKeys(r.piece, [i.way, i.vehicle]); const noun = surfaceNoun(r.piece);
+      if (!keys.length || !noun || !keys.some((k) => !worldWords.has(stem(k)))) continue;
+      const b = lines[n];
+      lines[n] = lines[n].replace(new RegExp(`\\b(?:the\\s+)?${keys.map((k) => `${_re(stem(k))}(?:e|y|ies|es|s|-lit)?`).join("(?:\\s+\\w+){0,2}?\\s+")}(?:\\s+\\w+){0,2}?\\s+${_re(noun.replace(/s$/, ""))}s?\\b`, "gi"), r.by);
+      if (lines[n] !== b) hit.push(r);
     }
+    for (const r of hit) fixed.push(`${r.piece} → ${r.by} @${(lines[n].match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1]}s`);
   }
   return { text: lines.join("\n"), fixed };
 }
@@ -161,7 +176,8 @@ export function setFrameZero(text, d, frame0) {
   //  read as a rule and could never change the result; the filter is, and always was, "a sentence that names no
   //  replaced piece". Stated plainly, 2026-09-14.)
   const kept = body.split(/(?<=[.!?;])\s+/).filter((s) => s.trim() && !names(s));
-  const rest = kept.filter((s) => !/^\s*(?:the\s+)?(?:track bed|rails?|way)\b/i.test(s) || !frameZeroHolds(s, d).ok).join(" ").trim();
+  // the writer's own way-opening goes: the stage's paragraph already states it, and keeping it opens beat zero with the way twice
+  const rest = kept.filter((s) => !/^\s*(?:the\s+)?(?:track bed|rails?|way)\b/i.test(s) || frameZeroHolds(s, d).ok).join(" ").trim();
   lines[n] = `${stamp} ${frame0.text.replace(/\.?\s*$/, ".")}${rest ? " " + rest : ""}`;
   return { text: lines.join("\n"), changed: true };
 }

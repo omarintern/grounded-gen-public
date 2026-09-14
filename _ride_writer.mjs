@@ -151,11 +151,17 @@ export function rideBlock(d = rideFromEnv()) {
 // from outside, or that carries no seat cue at its opening, has dismounted. Riders ARE seen in a POV when the camera sits mid-train or
 // at the back (the backs of heads, shoulders, arms up in the rows ahead); what dismounts is a rider or vehicle looked at from OUTSIDE
 // (a kid on a tricycle watched from a doorway) or a rider doing a driver's work (pumping, pedalling, steering — impossible on rails).
+// THE TWO THAT BELONG TO NO FORM IN PARTICULAR: the thing the camera rides leaving the frame, and a figure handling it — a picture from
+// outside the mount on a ride, a car and a wearer alike. rideFindings reads THESE for every kind; the rest are the seat's own.
+const OUTSIDE_PARTS = [
+  String.raw`\b(?:the|a|its|our)\s+(?:ride\s+)?(?:vehicle|car|cart|omnimover|boat|train|coaster|pod|gondola|tram|kart|carriage|sled|trolley|buggy)\b[^.;]{0,80}\bout of (?:the )?frame\b`,   // the VEHICLE leaving the frame = the camera off it (draw 14 rendered the cart rolling away down the hedges)
+  String.raw`\b(?:pushes|pushing|shoves|shoving|drags|dragging|hauls|hauling|grabs|grabbing)\s+the\s+(?:ride\s+)?(?:vehicle|car|cart|omnimover|boat|train|coaster|pod|gondola|tram|kart|carriage|sled|trolley|buggy)\b`,   // a figure handling the vehicle is a picture from outside it; from the seat it is a jolt and hands on the bar (draw 14)
+];
+export const OUTSIDE = new RegExp(OUTSIDE_PARTS.join("|"), "i");
 const DISMOUNT_PARTS = [
   String.raw`\b(?:(?:a|the|one|another|some)\s+(?:[\w-]+\s+)?(?:rider|riders|cyclist|driver|passenger|boy|girl|kid|child|man|woman|figure)\s+(?:on|astride|aboard)\s+(?:a|the|his|her|their|its)\s+(?:trike|tricycle|bike|bicycle|kart|sled|board|skateboard|scooter|wagon|big wheel))\b`,
   String.raw`\b(?:trike|tricycle|bike|bicycle|kart|sled|scooter)-borne\b`,
-  String.raw`\b(?:the|a|its|our)\s+(?:ride\s+)?(?:vehicle|car|cart|omnimover|boat|train|coaster|pod|gondola|tram|kart|carriage|sled|trolley|buggy)\b[^.;]{0,80}\bout of (?:the )?frame\b`,   // the VEHICLE leaving the frame = the camera off it (draw 14 rendered the cart rolling away down the hedges)
-  String.raw`\b(?:pushes|pushing|shoves|shoving|drags|dragging|hauls|hauling|grabs|grabbing)\s+the\s+(?:ride\s+)?(?:vehicle|car|cart|omnimover|boat|train|coaster|pod|gondola|tram|kart|carriage|sled|trolley|buggy)\b`,   // a figure handling the vehicle is a picture from outside it; from the seat it is a jolt and hands on the bar (draw 14)
+  ...OUTSIDE_PARTS,
   String.raw`\b(?:the riders|the passengers|the rows ahead)\b[^.;]{0,40}\b(?:faces?|eyes|expressions?)\b(?!\s+(?:forward|ahead))`,   // the riders' faces are seen only from outside the vehicle
   String.raw`\ba rider (?:peers|looks|turns|leans|glances|stares|gazes)\b`,   // the camera's own rider is THE rider; "a rider" who peers is a rider looked at (dry-shining-3)
   String.raw`\b(?:the|a)\s+(?:rider|cyclist|driver|passenger)\s+(?:veers|swerves|pumps|pedals|steers|brakes|aims|weaves)\b`,
@@ -304,7 +310,7 @@ const BOOTH = /\b(?:tableau\b[^.;]{0,80}?\bon a (?:low |small |raised )?platform
 // ⚠ THE AIM IS THE WEAPON'S OWN CLAUSE (2026-09-14): the window spanned commas, so a brass dial "swinging between
 // floors, and the man … leans toward the rows ahead" read as a strike at the seat and softenMenace then amputated an
 // innocent sentence. STOPS and stillFigures already stop at the comma; the strike and its aim share one clause.
-const MENACE = /\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;,]{0,60}\b(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/i;
+const MENACE = /\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;,]{0,60}\b(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track(?! bed)|riders?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/i;
 export const boothIn = (line) => BOOTH.test(String(line || ""));
 // THE ROWS AHEAD ARE NEVER COSTUMED (draw 14 rendered, owner 2026-09-12: "we see the heads of two riders who are indeed the twins (because they're also wearing robes)")
 const COSTUMED_ROWS = /\b(?:riders?|rows? ahead|passengers?)\b[^.;]{0,60}\b(?:dressed(?: as| in| like)?|wearing|in (?:matching )?(?:bathrobes?|robes?|cardigans?|pinafores?|dresses|coats?|jackets?|overalls?|costumes?)|with (?:dark|blond|blonde|long|short|red|curly|lank) hair|(?:in )?bangs|pigtails|(?:their |the )?faces?|terrified expressions?|resembling|who look like)\b/i;
@@ -335,7 +341,7 @@ export function unplatform(text) {
   return String(text || "").split("\n").map((l) => (/^\s*\[\d+(?:\.\d+)?s\]/.test(l) ? l.replace(/\s+(?:on|onto|atop) a (?:low |small |raised )?platform(?: (?:beside|next to|by) the (?:rails|track|way))?(?: (?:on|to) the (?:left|right))?\b/gi, "") : l)).join("\n");
 }
 export function softenMenace(text) {
-  const AIM = /(\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;,]{0,60}?)\s+(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track|riders?(?: in the (?:rows?|seats?)(?: ahead)?)?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/gi;
+  const AIM = /(\b(?:axe|hatchet|knife|blade|bat|cleaver|machete|swings?|swinging|swung|lunges?|lunging|thrusts?|jabs?|slash(?:es|ing)?|strikes? out|charges?|rais(?:es|ing) (?:the|his|her|its) (?:axe|hatchet|knife|blade|bat))\b[^.;,]{0,60}?)\s+(?:toward|towards|at|into) the (?:vehicle|car|cart|rails|track(?! bed)|riders?(?: in the (?:rows?|seats?)(?: ahead)?)?|rows?(?: of (?:riders|passengers))?(?: ahead)?|seat|camera|lens|passengers)\b/gi;
   return String(text || "").split("\n").map((l) => (/^\s*\[\d+(?:\.\d+)?s\]/.test(l) ? l.replace(AIM, "$1") : l)).join("\n");
 }
 // EVERY FIGURE HAS ITS TURN (owner 2026-09-12: "ideally words 'speech' come from every animatronic or subject in a ride, given their turn of course. a non-speaking
@@ -449,14 +455,18 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
     const first = i === 0, last = i === lines.length - 1;
     const opener = first || HARD_CUT.test(line) || /^\s*\[\d+(?:\.\d+)?s\]\s*cut\b/i.test(line);
     const mounting = first && MOUNT.test(line);
-    const dm = line.match(DISMOUNT);
+    // A DRIVEN OR WORN FORM IS READ AGAINST THE PLAIN LAW ONLY (owner 2026-09-14) — but its take is still ONE take from ONE camera, and the
+    // form's own block says so ("never a view OF the car from outside"). The laws that belong to no form are read for every kind; the
+    // seat's own — the seat cue, the rows, the vehicle leading, the ride sent on, the finale felt — stay the ride's.
+    const ridden = d.kind === "ridden";
+    const dm = line.match(ridden ? DISMOUNT : OUTSIDE);
     if (dm && !mounting) add(line, `dismounted: "${dm[0]}" — the camera rides; riders appear only as the seat sees them, never looked at from outside`);
     else if (HARD_CUT.test(line) && !mounting) add(line, `"hard cut" — a travelling take never cuts between its places; its own motion carries into the next scene`);
-    else if (opener && !mounting && !seatCue(line, d)) add(line, "no seat cue — the opening names the seat's own objects (the way ahead, the bar or nose, the rows ahead)");
+    else if (ridden && opener && !mounting && !seatCue(line, d)) add(line, "no seat cue — the opening names the seat's own objects (the way ahead, the bar or nose, the rows ahead)");
     else if (d.family === "coaster" && statueIn(line)) add(line, `a figure the ride reaches is held still: "${statueIn(line)}" — the ride is the event; whatever the rails pass close is acted upon`, "ride");
     else if ((LEAVES_WAY.test(line) && !RAILS_KEPT.test(line)) || LEAVES_RAILS.test(line)) add(line, `the ${w.vehicle} leaves its ${w.way}: "${(line.match(LEAVES_WAY) || line.match(LEAVES_RAILS))[0]}" — every floor thing lies under the ${w.way}, which continue across it; the ride rides onto nothing but its own ${w.way}`, "ride");
     else if (WAY_END.test(line)) add(line, `the way ends: "${line.match(WAY_END)[0]}" — the ride's way never ends on screen`);
-    else if (last && !rideSentOn(lastSentenceOf(line), d)) add(line, "the payoff does not send the ride on — the last words say where the ride goes: on, through, out of the frame, or swallowed by what the payoff releases");
+    else if (ridden && last && !rideSentOn(lastSentenceOf(line), d)) add(line, "the payoff does not send the ride on — the last words say where the ride goes: on, through, out of the frame, or swallowed by what the payoff releases");
     else if (d.kind === "ridden" && !vehicleLeads(line, d)) add(line, `the ride vehicle does not lead this beat — the ${w.vehicle || "vehicle"} is what each beat does; figures and things are what it passes`, "ride");
     else if (d.interior && INVERSION.test(line)) add(line, `inverted indoors: "${line.match(INVERSION)[0]}" — a corridor or room hosts straight runs, dips and banks, never a loop`, "ride");
     else if (last && d.family === "dark ride" && !CORE_ONLY.on && !seatFeels(line)) add(line, `the finale is not felt by the seat — the ${w.vehicle} sways, jolts, dips or is splashed as the spectacle passes, and the riders gasp, scream or laugh from the rows ahead (owner: spectacle acts on the ride; the riders react)`, "ride");
