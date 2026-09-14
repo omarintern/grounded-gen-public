@@ -46,6 +46,14 @@ const AMBIGUOUS_PARK = /\b(?:attraction|theme park attraction|park ride|amusemen
 const EXPLICIT_DARK = /\b(?:dark ride|disney|disneyland|universal|haunted mansion|ghost ride|omnimover|boat ride)\b/i;
 const COASTER_CUES = /\b(?:loops?|looping|inversions?|corkscrews?|drops?|plunges?|lift hill|chain lift|launch(?:es|ed)?|airtime|g-?forces?|banked turns?|speeds? (?:down|through|along)|hurtl\w+)\b/i;
 const coasterFamily = () => RIDE_KIND_FAMILIES.find((f) => f.kinds[0] === "rollercoaster");
+// ── ON A BOAT, THE CAMERA IS A GOPRO (owner 2026-09-14: "anything on a boat should be go pro (pov) unless stated otherwise by input (stating against it)") ──
+// A boat is a ride only inside a park (a flume, the rapids, a Jungle Cruise); anywhere else the take is the wearer's own camera on the boat — WORN, with the
+// boat's own gopro queries for its plate — unless the words state against a point of view (a drone, a view from the pier, a third person, a news camera).
+const BOAT = /\b(?:boats?|speedboats?|motorboats?|rowboats?|kayaks?|kayaking|canoes?|canoeing|ferry|ferries|yachts?|sail(?:boat|boats|ing)|dinghy|dinghies|rafts?|rafting|jet[- ]?skis?|catamarans?|pontoons?|skiffs?|barges?|cruise ships?|paddle ?boards?)\b/i;
+const PARK_BOAT = /\b(?:theme park|amusement park|amusement|attractions?|disney\w*|universal|jungle cruise|dark ride|log flume|flumes?|rapids|water ride|show building|ride vehicle|queue line|pirates of the caribbean|splash mountain)\b/i;
+const NOT_POV = /\b(?:drone|aerial|helicopter shot|from (?:the |a )?(?:shore|pier|dock|jetty|harbou?r|beach|bank|bridge|cliff|hill|window|balcony)|third[- ]person|watching from|seen from|viewed from|filmed from (?:the |a )?(?:shore|pier|dock|land)|cctv|security camera|dashcam|news|broadcast|documentary)\b/i;
+/** the words put the camera on a boat, and nothing in them states against a point of view — the boat's own word comes back, else "" */
+export function boatPov(text = "") { const s = String(text || ""); if (!BOAT.test(s) || PARK_BOAT.test(s) || NOT_POV.test(s)) return ""; return (s.match(BOAT) || [""])[0].toLowerCase().replace(/^sailing$/, "sailing"); }
 const familyOf = (text) => {
   const s = String(text || "").toLowerCase();
   // specific words anywhere in the families win; the bare generic words only when no transport word owns them
@@ -53,6 +61,7 @@ const familyOf = (text) => {
   let f = specific;
   if (!f) { if (NON_PARK_RIDE.test(s)) return null; f = RIDE_KIND_FAMILIES.find((x) => x.kinds.some((k) => GENERIC_RIDE_WORDS.has(k) && kindRe(k).test(s))) || null; }
   if (f && f.kinds[0] === "dark ride" && AMBIGUOUS_PARK.test(s) && !EXPLICIT_DARK.test(s) && COASTER_CUES.test(s)) return coasterFamily();
+  if (f && f.kinds[0] === "boat ride" && boatPov(s)) return null;   // a boat ride outside a park is a boat (a gopro), not a ride (owner 2026-09-14)
   return f;
 };
 /** The maker's ride kind ("rollercoaster", "dark ride", "log flume" …) or "" when the text names no kind. @fed the maker's prompt, a subject, a noun. */
@@ -156,12 +165,15 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   // so the noun fell to "ride" and every dark-ride rule stood aside). The planner's device phrase never outranks the maker's word.
   // On a REMIX the raw words are the remix's own change ("its a T-rex instead of a bear"), which may name no ride at all — the reframed
   // request (prompt) is read next, before the plan's subject (2026-09-09).
-  const makerKind = rideKindOf(String(rawPrompt || "").trim()) || rideKindOf(String(prompt || "").trim()) || rideKindOf(String(p.subject || p.form?.subject || ""));
-  const form = String(device || requiredForm || p.form?.mediaForm || p.native_capture || "").trim() || (makerKind ? `${makerKind} POV footage` : "");
-  const plateForm = String(p.native_capture || p.form?.mediaForm || requiredForm || form).trim();
-  if (!(isApparatusForm(form) || makerKind)) return null;
-  const noun = makerKind || formNoun(plateForm) || form.replace(/\s+camera$/i, "");
-  const kind = apparatusKind(plateForm || form, noun);
+  const makerKind0 = rideKindOf(String(rawPrompt || "").trim()) || rideKindOf(String(prompt || "").trim()) || rideKindOf(String(p.subject || p.form?.subject || ""));
+  // ON A BOAT, THE CAMERA IS A GOPRO (owner 2026-09-14) — unless a park names the ride, or the words state against a point of view
+  const boatWord = !makerKind0 ? (boatPov(String(rawPrompt || "").trim()) || boatPov(String(prompt || "").trim())) : "";
+  const makerKind = boatWord ? "" : makerKind0;
+  const form = boatWord ? "gopro pov footage" : (String(device || requiredForm || p.form?.mediaForm || p.native_capture || "").trim() || (makerKind ? `${makerKind} POV footage` : ""));
+  const plateForm = boatWord ? "gopro pov footage" : String(p.native_capture || p.form?.mediaForm || requiredForm || form).trim();
+  if (!boatWord && !(isApparatusForm(form) || makerKind)) return null;
+  const noun = boatWord ? "gopro" : (makerKind || formNoun(plateForm) || form.replace(/\s+camera$/i, ""));
+  const kind = boatWord ? "worn" : apparatusKind(plateForm || form, noun);
   const family = kind === "driven" ? "driven" : kind === "worn" ? "worn" : (rideFamilyOf(noun) || "other ridden");
   const setEnt = (Array.isArray(resolved) ? resolved : []).find((e) => e?.is_set === true);
   const named = !!(p.world_clearance?.named || p.world_clearance?.isSet === true || setEnt);
@@ -181,7 +193,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const worldWords = String(p.form?.world || "").replace(/\s+/g, " ").trim();
   const context = !named && worldWords && worldWords.split(" ").length <= 4 && !isRideNoun(worldWords) ? worldWords : "";
   const indoor = kind === "ridden" && family !== "dark ride" && mode !== "architecture" && (interior || (places.length > 0 && isInteriorWorld({ form: { world: places.join(" ") } })));
-  const queries = seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand });
+  const queries = boatWord ? [`${boatWord} gopro pov footage`, `first person gopro ${boatWord} footage`] : seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand });
   const titles = plan ? workTitlesOf(p) : (title ? [title] : []);
   const rooms = mode === "theme" && Array.isArray(p.slots?.world?.shotSet) ? p.slots.world.shotSet.map((q) => roomNameOf(q, titles)).filter(Boolean) : [];
   // HOW THE ENDING LANDS is the plan's decision (owner 2026-09-11: "climax doesn't need longest span. it all depends, because irony would have it end quick"):
