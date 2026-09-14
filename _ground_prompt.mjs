@@ -608,9 +608,15 @@ if (BEAT_STYLE !== "template") {
   // linesOutrun, redactSpeech, withoutSpeech and dialogueShape all already accept “ ” — so a line the prose model narrated
   // inline in curly quotes was invisible here, no block existed, and _run re-attached the plan's block: the same
   // speech shipped twice, which is the failure this guard was written from.
-  const QUOTED = /[:,]?\s*(?:\b(?:say(?:s|ing)?|tell(?:s|ing)?|call(?:s|ing)? out|continu\w*[^:"\u201c\u201d]*)\b[^:"\u201c\u201d]*)?[:,]?\s*["\u201c]([^"\u201c\u201d]{2,})["\u201d]/g;
+  // ⚠ A LEAD-IN GOES WITH ITS QUOTE (layer 2 cell l2b-06, 2026-09-14): the writer narrated `letting out a low "mrrrow"`, the quote came
+  // out and the beat shipped "letting out a low." — a clause whose object WAS the quote. A comma-led participial phrase before the quote
+  // (", letting out a low", ", muttering under his breath", ", calling out") is that lead-in; it is removed with the words it introduced.
+  const QUOTED = /(?:,\s*(?:and\s+)?[A-Za-z]+ing\b(?:\s+[A-Za-z'-]+){0,4})?[:,]?\s*(?:\b(?:say(?:s|ing)?|tell(?:s|ing)?|call(?:s|ing)? out|continu\w*[^:"\u201c\u201d]*)\b[^:"\u201c\u201d]*)?[:,]?\s*["\u201c]([^"\u201c\u201d]{2,})["\u201d]/g;
   const bl = beatLine.split("\n");
-  const hasBlock = /(^|\n)\s*(?:Dialogue|Sound)\s*:/i.test(beatLine);
+  // ⚠ A BLOCK IS A DIALOGUE BLOCK, NEVER THE SOUND LINE (2026-09-14). The writer's Sound line now survives into beatLine (it used to be
+  // deleted before this guard ran), and this test counted it as "a block exists" — so an inline quote was STRIPPED as a duplicate of a
+  // block that was never there, the spoken words were lost, and their sentence shipped dangling. Only a Dialogue header is a block.
+  const hasBlock = new RegExp(String.raw`(^|\n)\s*${DIALOGUE_HEAD}`, "i").test(beatLine);
   const spoken = [];
   // ⚠⚠ THE STRIP STOPS AT THE FIRST BLOCK HEADER (owner 2026-08-20). This walk protected only lines that
   // START with Dialogue:/Sound: and ran the quote-strip inside the terminal blocks themselves. Measured on
@@ -631,15 +637,24 @@ if (BEAT_STYLE !== "template") {
       if (_isWorkTitle(m[1])) { out = out.replace(m[0], m[0].replace(/["\u201c]([^"\u201c\u201d]{2,})["\u201d]/, "$1")); continue; }
       spoken.push({ at, text: m[1] }); out = out.replace(m[0], "");
     }
-    return out.replace(/\s{2,}/g, " ").replace(/\s+([.,;])/g, "$1").replace(/[,:;]\s*$/, ".").trimEnd();
+    // what is left is a SENTENCE: a conjunction the quote hung from goes ("…and says, "No exit!"" never ships as "…and"), and a line
+    // whose full stop lived inside the quote gets one back
+    out = out.replace(/\s{2,}/g, " ").replace(/\s+([.,;])/g, "$1").replace(/[,:;]\s*$/, "").replace(/[,;]?\s+(?:and|or|but|then|as|while|before|after)\s*$/i, "").trimEnd();
+    if (out !== line && /[A-Za-z0-9\u201d"')]$/.test(out) && !/^\s*\[\d+(?:\.\d+)?s\]\s*$/.test(out)) out += ".";
+    return out;
   });
   if (spoken.length && !hasBlock) {
     const who = (process.env.PLAN_DIALOGUE || "").match(/\n\s*([^:\n]{1,80}?)\s*:/);
-    const speaker = who ? who[1].trim() : "Speaker";
+    // the request's own subject speaks before a bare "Speaker" — a label that names nobody is the one the ride block bans (2026-09-14)
+    const speaker = who ? who[1].trim() : (String(intent?.target || "").replace(/\s+/g, " ").trim() || "Speaker");
     // (the block below is passed through denameSpeakers — a speaker under the name law is labelled by its guise)
     const block = denameSpeakers("Dialogue:\n" + spoken.map((q, i) =>
       `${speaker}${i ? " (continuing, over the cuts)" : ""}${q.at != null ? ` [${q.at}s]` : ""}: "${q.text}"`).join("\n"));
-    beatLine = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n\n" + block;
+    // the block sits BEFORE a Sound line, the terminal order every reader expects (beats · Dialogue · Sound)
+    const _soundAt = cleaned.findIndex((l) => /^\s*Sound\s*[:\u2014\u2013-]/i.test(l));
+    const _beats = (_soundAt >= 0 ? cleaned.slice(0, _soundAt) : cleaned).join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
+    const _tail = _soundAt >= 0 ? "\n" + cleaned.slice(_soundAt).join("\n").trimEnd() : "";
+    beatLine = `${_beats}\n\n${block}${_tail}`;
     console.warn(`[GUARD] dialogue: ${spoken.length} spoken line(s) were narrated INSIDE the beats and no Dialogue block existed — MOVED into one terminal block, timings preserved (doctrine drifting; fix the root).`);
     console.warn(`[GUARD] dialogue: left in place they would have shipped TWICE — _run re-attaches the plan's block whenever the beats carry none.`);
   } else if (spoken.length) {
