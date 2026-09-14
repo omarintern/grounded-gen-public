@@ -83,6 +83,9 @@ export function frameZeroHolds(line0, d) {
 /** one call: compose frame zero from the facts; validated by code; the mechanical facts when the composition fails (loudly) */
 export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_MODEL || process.env.PROVIDER_LLM_MODEL || "fast-model", ask = null, log = console.log } = {}) {
   const i = frameZeroInputs(d);
+  // THE CAP SCALES WITH WHAT THERE IS TO SAY (the 9/11 re-run, 2026-09-14): seven pieces named as replaced came back at 139 words, over a flat 120,
+  // and a paragraph that was right was thrown away for the facts list. Sixty words plus fifteen a piece, never past two hundred.
+  const wordCap = Math.min(200, 60 + 15 * (i.replacements.length + i.additions.length));
   if (!i.replacements.length && !i.additions.length) return null;   // nothing to appropriate — the photograph is the world; the stage has no work
   const facts = [...i.replacements.map((r) => r.fact), ...i.additions.map((a) => a.fact)];
   const prompt =
@@ -90,7 +93,7 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     `${i.foreground ? `; in the foreground ${i.foreground}` : ""}${i.environment ? `; the scene around the seat is ${i.environment}` : ""}. ` +
     `The world's things already stand on this photograph at frame zero — standing facts, never changes: ${facts.join("; ")}.` +
     `${i.kept.length ? ` Kept as themselves: ${i.kept.join("; ")}.` : ""} ` +
-    `Write ONE paragraph, present tense, at most 100 words, that a video model reads as the first frame: it opens with ${i.way} running on ahead, then the foreground, then every fact above stated in exactly its grammar (the world's thing where the set piece stood), then what is kept. ` +
+    `Write ONE paragraph, present tense, at most ${wordCap} words, that a video model reads as the first frame: it opens with ${i.way} running on ahead, then the foreground, then every fact above stated in exactly its grammar (the world's thing where the set piece stood), then what is kept. ` +
     `Never a place's name, never a work's title, never a person's name, never a camera word, never a word of change (nothing becomes, turns into or is replaced on screen). ` +
     `Return ONLY JSON {"frame_zero":"the paragraph","state":"one sentence naming the world's standing surfaces from frame zero on — its walls, ceiling, floor and light — in the world's own terms, never the photograph's"}`;
   let out = null, why = "";
@@ -109,7 +112,7 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     else if (!wayFirst) why = "the way is not named first";
     else if (TRANSFORM.test(text)) why = `a change-verb: ${(text.match(TRANSFORM) || [""])[0]}`;
     else if (CAMERA.test(text)) why = `a camera word: ${(text.match(CAMERA) || [""])[0]}`;
-    else if (words > 120) why = `${words} words`;
+    else if (words > wordCap + 20) why = `${words} words (the cap is ${wordCap} for ${i.replacements.length + i.additions.length} piece(s))`;
     else if (i.title && worldNameFindings(text, [i.title]).length) why = "the work is named";
     if (!why) out = { text, state, replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "composed" };
   } catch (e) { if (e?.name === "ProviderInfraError" || e?.ledgerCap) throw e; why = String(e?.message || e).slice(0, 120); }
@@ -165,6 +168,25 @@ export function carryReplacements(text, d) {
   return { text: lines.join("\n"), fixed };
 }
 /** the last resort for beat zero: the stage's paragraph takes the opening; the writer's own beat-zero sentences that name no replaced piece follow it */
+/** BEAT ZERO OPENS WITH THE GROUND (owner 2026-09-14, on the 9/11 re-run: the writer opened beat zero with "The creators themed this attraction to
+ *  satire history as passengers ride through the exhibits." and the ground followed — "that is wrong, so we need to fix it"). The frame-zero ruling
+ *  says beat zero states the photograph and what the world lays on it and nothing else; the check above sees a MISSING ground, never a sentence
+ *  standing ahead of it. A leading sentence that carries none of the ground's distinctive words and no word of the way or the vehicle pictures
+ *  nothing of the first frame and goes; the first sentence that does opens the beat. Mechanical, logged, never a re-ask; never empties the beat. */
+export function openWithGround(text, d, frame0) {
+  const lines = String(text || "").split("\n"); const n = lines.findIndex((l) => /^\s*\[\d+(?:\.\d+)?s\]/.test(l));
+  if (n < 0 || !frame0?.text) return { text: String(text || ""), dropped: [] };
+  const stamp = (lines[n].match(/^\s*\[\d+(?:\.\d+)?s\]/) || ["[0s]"])[0];
+  const i = frameZeroInputs(d); const ground = String(frame0.text || "");
+  const groundKeys = new Set(looseKeys(ground, []).map(stem));
+  const pictures = (s) => { if (isRideNoun(s) || (i.way && keyRx(i.way).test(s)) || (i.vehicle && keyRx(i.vehicle).test(s))) return true; return looseKeys(s, [i.way, i.vehicle]).some((k) => groundKeys.has(stem(k))); };
+  const sentences = lines[n].slice(stamp.length).trim().split(/(?<=[.!?;])\s+/).filter((x) => x.trim());
+  const dropped = []; let k = 0;
+  while (k < sentences.length - 1 && !pictures(sentences[k])) { dropped.push(sentences[k]); k++; }
+  if (!dropped.length) return { text: String(text || ""), dropped: [] };
+  lines[n] = `${stamp} ${sentences.slice(k).join(" ")}`;
+  return { text: lines.join("\n"), dropped };
+}
 export function setFrameZero(text, d, frame0) {
   const lines = String(text || "").split("\n"); const n = lines.findIndex((l) => /^\s*\[\d+(?:\.\d+)?s\]/.test(l));
   if (n < 0 || !frame0?.text) return { text: String(text || ""), changed: false };
