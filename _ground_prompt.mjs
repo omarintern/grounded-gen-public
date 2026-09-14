@@ -136,7 +136,10 @@ const COUNTS = LEGAL.length ? LEGAL : [Math.max(2, Math.ceil(BEAT_SECS / 2))];
 // a transport failure is never a verdict on the words; it is named as infra so the run can fail clean instead of shipping the pre-scrape draft.
 const _infraExit = (e) => { if (e && (e.name === "ProviderInfraError" || /transport failure|ENOTFOUND|ETIMEDOUT|ECONNRESET|EAI_AGAIN|the provider could not be reached/i.test(String(e.message || "")))) { console.error(`\n✗ INFRASTRUCTURE UNAVAILABLE in the writer (${String(e.message || e).split("\n")[0].slice(0, 160)}) — exit 5, not a verdict on the words`); process.exit(5); } };
 process.on("unhandledRejection", (e) => { _infraExit(e); throw e; });
-process.on("uncaughtException", (e) => { _infraExit(e); console.error(e); process.exit(1); });
+// A BUDGET STOP IS OURS, NOT A BUG (2026-09-14): a LedgerCapExceeded reached this handler and exited 1, which the server reads as
+// "generation failed" and the worker bills as a real failure. Every sourcing child already exits 4; the writer does too.
+const _capExit = (e) => { if (e?.ledgerCap) { console.error(`\n✗ BUDGET CAP in the writer (${String(e.message || e).split("\n")[0].slice(0, 160)}) — exit 4, not a verdict on the words`); process.exit(4); } };
+process.on("uncaughtException", (e) => { _infraExit(e); _capExit(e); console.error(e); process.exit(1); });
 const RIDE = rideFromEnv();   // the run's ride decision, or null (2026-09-09)
 const _roomNames = () => [...(RIDE?.world?.rooms || []), RIDE?.world?.title || "", ...String(process.env.WORK_TITLES || "").split(/\s*(?:,|·|\|)\s*/)].map((s) => String(s || "").trim()).filter(Boolean);
 const narrativeForWriter = (p) => RIDE?.world?.mode === "theme" ? redactWorldNames(p, _roomNames()) : p;
@@ -174,7 +177,7 @@ if (charPaths.length) {
 // "replace <stand-in> with <target>": the REFERENCE already carries the motion + scale, so OVER-describing
 // size/pose/motion FIGHTS it and breaks physics (validated: a verbose "takes the exact size … rides upward"
 // made the penguin GROW up the escalator). Templated (not LLM-elaborated) to guarantee minimalism.
-const has = (s) => s && !/^none$/i.test(String(s).trim());
+const has = (s) => { const v = (Array.isArray(s) ? s.map((x) => String(x ?? "").trim()).filter(Boolean).join(", ") : typeof s === "string" ? s : "").trim(); return !!v && !/^none$/i.test(v); };
 let beatLine, mode;
 // ⚠ MODULE-SCOPED ON PURPOSE (2026-08-29). ACCEPTED_N was a const inside the fine-detail guard's block
 // (closed ~40 lines later), while BOTH later repairs — swap-anchor and payoff-escalation — read it from
@@ -429,7 +432,11 @@ if (BEAT_STYLE !== "template") {
       `Keep the same story and wording as far as possible. ` +
       `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines (and the Dialogue/Sound blocks if present).\n\n${text}`,
       { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" }
-    ).catch(() => null);
+    ).catch((e) => {   // an OUTAGE is exit 5 (never a verdict on the words); our own CEILING firing is said out loud and the original ships — the ceiling degrades, it never hides (2026-09-14)
+      if (e?.name === "ProviderInfraError") throw e;
+      if (e?.ledgerCap) console.error(`\n⊘ BUDGET CAP in the corrective repair (${String(e.message || e).split("\n")[0].slice(0, 120)}) — the original draft ships; the wall stopped the repair, not the words`);
+      return null;
+    });
     if (fix?.text && _lawFails(fix.text).length === 0) { text = fix.text; console.error(` (retry OK)`); }
     else if (fix?.text && _lawFails(fix.text).length < _fails1.length) { text = fix.text; console.error(` (retry improved: ${_lawFails(fix.text).join("; ")} — shipping with the residue, loudly)`); }
     else console.error(` (retry did not improve — shipping the original, loudly: ${_fails1.join("; ")})`);

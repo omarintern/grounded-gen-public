@@ -74,8 +74,9 @@ export function placeOnPlate({ plate, things = [], role = "a photograph the ride
   const code = _sh(["_plate_dressing.mjs", plate, JSON.stringify(things.slice(0, 6)), role], { cwd, env: { ...env, DARK_RIDE_DRESSING: dark ? "1" : "", SEAT_WAY: dark ? String(way || "") : "", WORLD_SURFACES: dark && surfaces.length ? JSON.stringify(surfaces.map((s) => ({ kind: s.kind, name: s.name }))) : "" } });
   if (code !== 0 && code !== 2) log(`  ◇ placement read failed for ${role} (exit ${code})`);
   const d = _json(`${abs}.dressing.json`);
-  const lines = (d?.dressing || []).map((x) => x.op === "replace" ? `${x.where} becomes ${x.name}` : `${x.name} at ${x.where}`);
-  lines.plateThings = Array.isArray(d?.plate_things) ? d.plate_things.map((x) => String(x || "").trim()).filter(Boolean) : [];
+  const _side = (v) => (Array.isArray(v) ? v.map((x) => String(x ?? "").trim()).filter(Boolean).join(", ") : typeof v === "string" ? v : "").trim();
+  const lines = (Array.isArray(d?.dressing) ? d.dressing : []).map((x) => { const w = _side(x?.where), n = _side(x?.name); return !w || !n ? "" : x?.op === "replace" ? `${w} becomes ${n}` : `${n} at ${w}`; }).filter(Boolean);
+  lines.plateThings = (Array.isArray(d?.plate_things) ? d.plate_things : []).map(_side).filter(Boolean);
   return lines;
 }
 /** THE WORLD BY MODE — pure in shape (reads happen through the two helpers above). Returns the dressing the writer hears:

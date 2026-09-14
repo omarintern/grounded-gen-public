@@ -33,7 +33,7 @@ export function formBlock(d) {
   if (!d) return "";
   const w = rideWords(d), r = d.seat?.reading || {};
   const vehicleShown = r.vehicle_in_foreground === true;
-  const env = r.environment && r.environment !== "other" ? r.environment : "";
+  const env = typeof r.environment === "string" && r.environment.trim() !== "other" ? r.environment.trim() : "";
   const occupant = d.kind === "driven" ? "the driver" : "the wearer";
   const mount = d.kind === "driven" ? `the ${w.vehicle}'s own hood or dashboard edge` : "the wearer's own apparatus";
   const placements = (d.dressing?.placements || []).map((l) => String(l).replace(/^[^:]{0,80}\(frame zero[^)]*\):\s*/i, "").replace(/^the seat photograph[^:]*:\s*/i, "")).filter(Boolean);
@@ -56,7 +56,7 @@ export function rideBlock(d = rideFromEnv()) {
   if (d.kind !== "ridden") return formBlock(d);   // the ride's block is the ride's (owner 2026-09-14): a car and a wearer get the plain law
   const w = rideWords(d), r = d.seat?.reading || {}, mode = d.world?.mode || "setting";
   const vehicleShown = r.vehicle_in_foreground === true;
-  const env = r.environment && r.environment !== "other" ? r.environment : "";
+  const env = typeof r.environment === "string" && r.environment.trim() !== "other" ? r.environment.trim() : "";
   const dark = d.family === "dark ride", coaster = d.family === "coaster";
   const secs = Number(process.env.BEAT_DURATION || 0);   // the take's length, when the run has told it (the climax's third is counted from it)
   const plural = /s$/.test(w.way), runs = plural ? "run" : "runs", ends = plural ? "END" : "ENDS";

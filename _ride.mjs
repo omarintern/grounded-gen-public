@@ -211,8 +211,9 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
 /** The class's own words for the way and the vehicle: the seat plate's reading when it has one, else the kind's. */
 export function rideWords(d) {
   const r = d?.seat?.reading || {};
-  const way = String(d?.words?.way || (r.way && r.way !== "unseen" ? r.way : "")).trim();
-  const vehicle = String(d?.words?.vehicle || (r.vehicle && r.vehicle !== "unseen" && r.vehicle !== "other" ? r.vehicle : "")).trim();
+  const _w = (v) => (typeof v === "string" ? v.trim() : "");
+  const way = String(d?.words?.way || (_w(r.way) !== "unseen" ? _w(r.way) : "")).trim();
+  const vehicle = String(d?.words?.vehicle || (!["unseen", "other"].includes(_w(r.vehicle)) ? _w(r.vehicle) : "")).trim();
   const watery = /boat|flume|rapids|water/i.test(String(d?.noun || ""));
   return {
     way: way || (d?.kind === "driven" ? "road" : d?.kind === "worn" ? "way ahead" : watery ? "water channel" : d?.family === "coaster" ? "rails" : "way ahead"),

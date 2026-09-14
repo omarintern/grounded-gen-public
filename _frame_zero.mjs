@@ -37,6 +37,7 @@ export const surfaceNoun = (piece) => (String(piece || "").toLowerCase().split(/
 const stem = (k) => k.replace(/-lit$/, "").replace(/y$/, "").replace(/ies$/, "y").replace(/s$/, "");
 const keyRx = (k) => new RegExp(`\\b${_re(stem(k))}(?:y|ies|s|ed|-lit)?\\b`, "i");
 
+const _read = (v) => (Array.isArray(v) ? v.map((x) => String(x ?? "").trim()).filter(Boolean).join(", ") : typeof v === "string" ? v : "").trim();
 const stripRole = (l) => String(l || "").replace(/^[^:]{0,80}\(frame zero[^)]*\):\s*/i, "").replace(/^the seat photograph[^:]*:\s*/i, "").trim();
 /** the stage's inputs, read off the ride decision: the replacements (piece → by), the additions, what is kept, the seat's own words */
 export function frameZeroInputs(d) {
@@ -53,7 +54,8 @@ export function frameZeroInputs(d) {
   const kept = (d?.dressing?.plateThings || []).filter((p) => p && !replacedSet.has(String(p).toLowerCase()));
   const r = d?.seat?.reading || {};
   const direction = /veers? (?:to the )?left/i.test(String(r.way_direction || "")) ? "and veering away to the left" : /veers? (?:to the )?right/i.test(String(r.way_direction || "")) ? "and veering away to the right" : "";
-  return { way: w.way || "the way", vehicle: w.vehicle || "the vehicle", direction, foreground: String(r.foreground || "").trim(), environment: String(r.environment || "").trim(), replacements, additions, kept, title: String(d?.world?.title || "").trim() };
+  const fore = _read(r.foreground);
+  return { way: w.way || "the way", vehicle: w.vehicle || "the vehicle", direction, foreground: /^none\b/i.test(fore) ? "" : fore, environment: _read(r.environment), replacements, additions, kept, title: String(d?.world?.title || "").trim() };
 }
 /** the mechanical frame zero — the facts in the golden grammar, joined — the fallback when the composition fails, and the pre-stage behaviour */
 export function frameZeroFacts(d) {
@@ -86,8 +88,12 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     `Never a place's name, never a work's title, never a person's name, never a camera word, never a word of change (nothing becomes, turns into or is replaced on screen). ` +
     `Return ONLY JSON {"frame_zero":"the paragraph","state":"one sentence naming the world's standing surfaces from frame zero on — its walls, ceiling, floor and light — in the world's own terms, never the photograph's"}`;
   let out = null, why = "";
+  // ⚠ THE BUDGET BOUNDS THE ANSWER, IT NEVER SPENDS IT — and 2400 did not bound this one. the fast model counts its reasoning against max_tokens (the
+  // writer's own lesson, _ground_prompt "WRITER BUDGETS"), so measured live 2026-09-14 on draw 27's inputs this call truncated at 2385 tokens
+  // on THREE draws of three and provider-llm paid the doubling rung every time: $… / $… / $… for two calls and ~33 s. At 8000
+  // one call answered as well (source "composed", holds), for $… in 16 s.
   try {
-    const j = ask ? await ask(prompt) : await providerJson([textPart(prompt)], { model, maxTokens: 2400, temperature: 0.2, tag: "frame0" });
+    const j = ask ? await ask(prompt) : await providerJson([textPart(prompt)], { model, maxTokens: 8000, temperature: 0.2, tag: "frame0" });
     const text = String(j?.frame_zero || "").replace(/\s+/g, " ").trim(), state = String(j?.state || "").replace(/\s+/g, " ").trim();
     const holds = frameZeroHolds(text, d);
     const wayFirst = new RegExp(`^(?:\\S+\\s+){0,12}?${_re(String(i.way).replace(/^the\s+/i, ""))}`, "i").test(text.replace(/^the\s+/i, ""));

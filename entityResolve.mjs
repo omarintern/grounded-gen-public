@@ -145,7 +145,7 @@ export async function extractCandidates(userPrompt) {
 export async function comprehend(userPrompt) {
   try {
     return await providerJson([textPart(
-      `Return ONLY JSON {"reads":"string","subjects":[{"term":"string","renders":bool,"identifies_material":bool,"replaced_by":"string"}]}. For EVERY thing this video prompt NAMES, answer two INDEPENDENT questions.\n\nreads = one plain sentence describing what the finished video shows.\n\nrenders = will this thing BE IN the finished video? TRUE if a viewer watching it would see this thing.\n\nidentifies_material = does NAMING it tell us what footage or scene to GO AND FIND? TRUE when the name pins down a particular place, work, staging or moment that must be sourced rather than invented.\n\n⚠ THESE TWO ARE INDEPENDENT. Both can be true, both can be false, and either can be true alone. A thing can identify the material without ever appearing in it, and a thing can appear without identifying anything.\n\nreplaced_by = when the prompt puts SOMETHING ELSE in this thing's place — substituting it, swapping it, or saying it is instead something else — give that other thing's term, copied exactly as the user wrote it. Empty string when nothing displaces it.\n\n⚠ A DISPLACED THING STILL MATTERS AND MUST STILL BE LISTED. It will not be seen, but it usually identifies the material, because the scene is found by what was originally in it.\n\nCopy every term exactly as the user phrased it. Do not list generic scene or action words. Return an empty subjects array if the prompt names nothing.\n\nPROMPT:\n"""${userPrompt}"""`
+      `Return ONLY JSON {"reads":"string","subjects":[{"term":"string","renders":bool,"identifies_material":bool,"replaced_by":"string","rides_as_the_seat":bool}]}. For EVERY thing this video prompt NAMES, answer two INDEPENDENT questions.\n\nreads = one plain sentence describing what the finished video shows.\n\nrenders = will this thing BE IN the finished video? TRUE if a viewer watching it would see this thing.\n\nidentifies_material = does NAMING it tell us what footage or scene to GO AND FIND? TRUE when the name pins down a particular place, work, staging or moment that must be sourced rather than invented.\n\n⚠ THESE TWO ARE INDEPENDENT. Both can be true, both can be false, and either can be true alone. A thing can identify the material without ever appearing in it, and a thing can appear without identifying anything.\n\nreplaced_by = when the prompt puts SOMETHING ELSE in this thing's place — substituting it, swapping it, or saying it is instead something else — give that other thing's term, copied exactly as the user wrote it. Empty string when nothing displaces it.\n\n⚠ A DISPLACED THING STILL MATTERS AND MUST STILL BE LISTED. It will not be seen, but it usually identifies the material, because the scene is found by what was originally in it.\n\nrides_as_the_seat = does the prompt put the AUDIENCE in this thing's place — cast it as whoever occupies the vehicle the camera rides in, so that the viewer watches AS this thing rather than watching it? TRUE for the thing the audience is cast as, however the prompt says it; FALSE for everything the video shows from outside, and FALSE when nothing is cast that way.\n\n⚠ THIS IS NOT THE SAME QUESTION AS renders. A thing cast as the audience is not seen, but so are many things that are merely replaced; answer this one about WHOSE PLACE THE VIEWER TAKES.\n\nCopy every term exactly as the user phrased it. Do not list generic scene or action words. Return an empty subjects array if the prompt names nothing.\n\nPROMPT:\n"""${userPrompt}"""`
     )], { reasoning: "default", maxTokens: 2400, temperature: 0.1 });
   } catch (e) {
     // ⚠ FAILS TO TODAY'S BEHAVIOUR, NEVER TO "NO SPECIAL INTENT". A null here means we could not look, and the
@@ -284,9 +284,10 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   // not read the request", which leaves every named thing an ordinary candidate — the behaviour that shipped
   // before this existed. It must never be allowed to mean "nothing is displaced".
   const intent = await comprehend(userPrompt);
-  if (intent?.subjects?.length) {
-    const displaced = intent.subjects.filter((s) => s?.renders === false && String(s?.replaced_by || "").trim());
-    console.log(`[comprehend] ${intent.subjects.length} named · ${displaced.length} displaced${displaced.length ? ` (${displaced.map((s) => `${s.term}→${s.replaced_by}`).join(", ")})` : ""}`);
+  const subjects = Array.isArray(intent?.subjects) ? intent.subjects : [];   // a borrowed field fails open
+  if (subjects.length) {
+    const displaced = subjects.filter((s) => s?.renders === false && String(s?.replaced_by || "").trim());
+    console.log(`[comprehend] ${subjects.length} named · ${displaced.length} displaced${displaced.length ? ` (${displaced.map((s) => `${s.term}→${s.replaced_by}`).join(", ")})` : ""}`);
   }
   // A FIGURE CAST AS THE RIDERS IS THE SEAT — DECIDED HERE, BEFORE ANY PROBE (owner 2026-09-14, job 69bb989b: "wendy (The Shining)" was probed, given a
   // canon and probed again as a material identifier before the run decided she was the seat). On a ride, the comprehension's own displacement is the
@@ -373,7 +374,7 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   // whenever a location failed to verify, which is an expensive answer to a question nobody asked. Extraction
   // decides the BRANCH; comprehension decides the QUERY. Separate inputs, separate consumers.
   const already = new Set(terms.map(norm));
-  const idTerms = (intent?.subjects || [])
+  const idTerms = subjects
     .filter((s) => s?.identifies_material === true && String(s?.term || "").trim())
     .map((s) => String(s.term).trim())
     .filter((t) => !already.has(norm(t)));
