@@ -137,8 +137,13 @@ export function seatQueries(form, { context = "", noun: nounOverride = "", indoo
   const noun = String(nounOverride || "").trim() || formNoun(form);
   const kind = apparatusKind(form, noun);
   if (kind === "ridden" && isDarkRideNoun(noun)) { const ctx = String(context || "").replace(/\s+/g, " ").trim(); const picks = sampleQueries(SEAT_PHRASINGS["dark ride"], 2, rand); return ctx ? [picks[0], `${ctx} dark ride pov`] : picks; }
-  if (kind === "driven") return /\bkart\b/i.test(`${form} ${noun}`) ? ["go-kart pov footage", "go-kart onboard footage"] : ["dashcam footage", "dashcam pov driving footage"];
-  if (kind === "worn") { const dev = wornDevice(form); return [`${dev} pov footage`, `first person ${dev} footage`]; }
+  // A WORN DEVICE GOES WHERE ITS WEARER GOES, AND A CAR WHERE ITS ROAD IS (layer 2 cell l2b-19, 2026-09-14): "helmet cam of a mountain
+  // bike trail" hunted "helmet cam pov footage" bare and seated the take in a Formula 1 cockpit — the halo, the wheel's display, a race
+  // car ahead — and the writer had to thread a dirt trail off a paved track. The boat branch already leads with the boat's own word and
+  // the dark-ride branch with its setting; the setting leads here too, the bare device second.
+  const ctx = String(context || "").replace(/\s+/g, " ").trim();
+  if (kind === "driven") return /\bkart\b/i.test(`${form} ${noun}`) ? ["go-kart pov footage", "go-kart onboard footage"] : ctx ? [`${ctx} dashcam footage`, "dashcam pov driving footage"] : ["dashcam footage", "dashcam pov driving footage"];
+  if (kind === "worn") { const dev = wornDevice(form); return ctx ? [`${ctx} ${dev} pov footage`, `${dev} pov footage`] : [`${dev} pov footage`, `first person ${dev} footage`]; }
   const pre = indoor ? "indoor " : "";
   if (!noun) { const q = formPlateQuery(form); return [`${pre}${q}`, `${pre}${q.replace(/\bpov\b/i, "onboard")}`]; }
   return sampleQueries(SEAT_PHRASINGS.coaster(`${pre}${noun}`), 2, rand);
