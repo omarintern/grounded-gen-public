@@ -139,7 +139,7 @@ export function rideBlock(d = rideFromEnv()) {
     // climax instead of end on an ironic note"): the last beat opened at [8s] of 9 — five events in one second, then the exit doors. The climax gets the last third.
     (d.skeleton ? "" : d.ending === "quick"
       ? `THE PAYOFF IS A BUTTON (the plan's decision, from the maker's words): the build takes the time and the payoff lands late and clean — one event in the last second or two, the ${w.vehicle} still moving as it lands; quick shortens the landing, never the event. `
-      : `THE CLIMAX IS RIDDEN, NOT TAPPED (the plan's decision: held): the last beat opens ${secs >= 6 ? `by [${secs - 3}s]` : "with the last third of the take"} and the seat rides THROUGH the spectacle to the last frame — it unfolds across those seconds (the burst, then its heat and light on ${d.kind === "ridden" ? "the rows ahead" : d.kind === "driven" ? "the hood and the windscreen" : "the wearer"}, then the ${w.way} running on through it), the ${w.vehicle} still inside it at the final image — the climax is experienced, not glanced at. `) +
+      : `THE CLIMAX IS RIDDEN, NOT TAPPED (the plan's decision: held): the climax owns at least ${climaxSecs(secs)} seconds — never fewer than four, never less than a third of the take — so the beat that OPENS it is stamped ${secs >= 6 ? `by [${secs - climaxSecs(secs)}s]` : "early enough to leave it those seconds"} (the climax may run over more than one beat; every beat after it opens is inside it) and the seat rides THROUGH the spectacle to the last frame — it unfolds across those seconds (the burst, then its heat and light on ${d.kind === "ridden" ? "the rows ahead" : d.kind === "driven" ? "the hood and the windscreen" : "the wearer"}, then the ${w.way} running on through it); THE SURPRISE IS INSIDE THE CLIMAX, NOT ITS EXIT: after the ${w.vehicle}'s lurch or spin the spectacle keeps acting on the seat and the last beat is still inside it — never through a door into a place the take has not built, never away from the figure to somewhere else — the ${w.vehicle} still inside it at the final image — the climax is experienced, not glanced at. `) +
     `${makerEndsRide(process.env.RAW_USER_PROMPT) ? `The ride ends because the maker's words end it — ridden to the last frame, the ending itself the payoff` : `The ride never ends itself — no exit doors, no unload, no station`}; THE STAMPS FALL WHERE THE RIDE'S EVENTS FALL, never on a grid — a passage a second, a tableau two, the held stop two. ` +
     `THE PAYOFF NEVER ENDS ON A FACE: nothing fills the lens for long, and every figure keeps the scene's scale to the last frame.\n`;
   if (d.skeleton) s += skeletonBlock(d.skeleton, d);   // the structure, decided: the last thing the writer reads
@@ -245,6 +245,10 @@ export function dialogueLines(text) {
   return parts.slice(1).join("\n").split("\n").map((l) => { const m = l.match(/^\s*(.+?)\s*\[\d+(?:\.\d+)?s\]\s*:\s*\S/); return m ? { label: m[1].trim(), line: l } : null; }).filter(Boolean);
 }
 export const saysHow = (line) => MANNER_TAG.test(String(line || ""));
+// THE CLIMAX OWNS AT LEAST FOUR SECONDS, AND NEVER LESS THAN A THIRD (owner 2026-09-15, live 2516f272: "i never like for the last turns / climaxes of the ride to be
+// 2-3 seconds … a minimum of 4 seconds … i dont mean last turn is 4 seconds, i mean the climax of a rider should be that at least"): the 09-11 "last third" (secs−3)
+// let a 9 s take open its last beat at [6s] and leave the figure after a second and a half. One number, read by the block, the check, the cheap format retry and the skeleton.
+export const climaxSecs = (secs) => Math.max(4, Math.ceil(Number(secs || 0) / 3));
 // THE RIDERS ARE HEARD AS LINES (owner 2026-09-15, live 2516f272: "we dont hear the ride occupants saying anything or screaming" — the screams sat in a beat and in the
 // Sound line, and neither is a voice; the two lines that were voiced were Dialogue lines): a Dialogue line whose SPEAKER is the rows ahead, the riders or the seats.
 // The label's head only — an addressee tail ("the caretaker to the rows ahead (sing-song)") and the manner are not the speaker.
@@ -439,16 +443,17 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
   const w = rideWords(d);
   const lines = beatLines(text);   // the beats only — never the Dialogue block's stamped lines (dry-cave-local-2)
   // THE CLIMAX IS RIDDEN, NOT TAPPED (owner 2026-09-11, draw 6: the last beat at [8s] of 9 — a jolt, a burst, screams and the exit doors in one second):
-  // the last beat opens by [secs−3] and the seat rides through the spectacle; the ride never ends itself; every spoken line says how it is said. The ride's own flaws.
+  // the ride never ends itself; every spoken line says how it is said. The ride's own flaws. THE CLIMAX'S OPENING IS NO LONGER READ OFF THE LAST STAMP (owner 2026-09-15:
+  // the climax owns at least four seconds and may run over more than one beat — the stop, the blow, the surprise, the way running on) — _judge_climax asks where it opens;
+  // a six-beat 9 s draft whose last beat opened by [5s] could only sit on a one-second grid, which the grid law below forbids.
   if (d.kind === "ridden" && !CORE_ONLY.on && lines.length >= 2) {
     const lastLine = lines[lines.length - 1], lastAt = Number((lastLine.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0);
-    if (d.ending !== "quick" && secs >= 6 && lastAt > secs - 3) out.push({ rule: "ride", figure: `camera (the climax has ${secs - lastAt}s — the plan decided it is HELD: the last beat opens by [${secs - 3}s] and the seat rides THROUGH the spectacle to the last frame, the ${w.vehicle || "vehicle"} still inside it at the final image)`, at: lastAt });
     // A BEAT LASTS AS LONG AS ITS WEIGHT (owner 2026-09-11: "the lurch could comprise more space than others, like occurring from 8s till 13s … we seem to always produce equidistance which is too mechanical"):
     // the stamps never sit on a grid, and the climax is the longest span of the take
     if (secs >= 6 && lines.length >= 3) {
       const at = lines.map((l) => Number((l.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0));
       const gaps = at.slice(1).map((v, i) => v - at[i]);
-      if (gaps.length >= 4 && gaps.every((g) => g === gaps[0])) out.push({ rule: "ride", figure: `camera (the beats sit on a grid — every stamp ${gaps[0]}s apart: a beat lasts as long as its weight (a passage a second, a tableau two, the held stop two), the stamps fall where the ride's events fall)`, at: at[1] || 0 });
+      if (gaps.length >= 4 && gaps.every((g) => g === gaps[0]) && secs - at[at.length - 1] <= gaps[0]) out.push({ rule: "ride", figure: `camera (the beats sit on a grid — every stamp ${gaps[0]}s apart: a beat lasts as long as its weight (a passage a second, a tableau two, the held stop two), the stamps fall where the ride's events fall)`, at: at[1] || 0 });
     }
     const e = makerEndsRide(userWords) ? null : lastLine.match(RIDE_END); if (e) out.push({ rule: "ride", figure: `camera (the ride ends itself: "${e[0]}" — the last beat is the climax ridden, never the exit, the unload or a wink)`, at: lastAt });
     for (const x of linesOutrun(text, secs)) out.push({ rule: "ride", figure: x.kind === "last second" ? `camera (a line begins in the take's last second — "${x.label}" at [${x.at}s] of ${secs}s: it cannot be heard out; move it earlier or cut it)` : `camera (a line outruns its beat — "${x.label}" at [${x.at}s]: ${x.words} words need about ${x.need}s in a ${x.window}s window; a spoken line never outruns the beat that carries it — shorten it or move its stamp earlier)`, at: x.at });

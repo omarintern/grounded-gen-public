@@ -380,11 +380,11 @@ if (BEAT_STYLE !== "template") {
   const _lawFails = (t) => {
     const fails = [];
     if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(t), BEAT_SECS, COUNTS)) fails.push(`stamps [${stampList(t).join(",")}] illegal for ${BEAT_SECS}s counts {${COUNTS.join(",")}}`);
-    // THE HELD CLIMAX IS A FORMAT LAW (owner 2026-09-12: "23 is much too long"): on a ride whose plan holds the ending, a last stamp later than [secs−3] is
-    // corrected in the same cheap retry as the stamps and the camera clause — never a full writer pass (velocal7/8 wrote [8s] of 9 in every pass)
+    // THE HELD CLIMAX LEFT THE FORMAT RETRY (owner 2026-09-15: the climax owns at least four seconds and is not the last stamp — it may run over more than one beat, so a
+    // last stamp says nothing about where it opens); the 09-12 clause (a last stamp later than [secs−3], corrected in this cheap retry) is gone — where the climax opens is
+    // a judge question in _run (_judge_climax), its finding a re-ask. stampsLegal still refuses a stamp at or past the duration.
     // THE DECIDED STAMPS ARE A FORMAT LAW (2026-09-12): under a skeleton the writer uses exactly its stamps — corrected in the same cheap retry, never a full pass
     if (RIDE?.skeleton) { const want = skeletonStamps(RIDE.skeleton), got = stampList(t); if (want.length && (got.length !== want.length || got.some((v, i) => v !== want[i]))) fails.push(`use the DECIDED stamps exactly — [${want.map((v) => `${v}s`).join(", ")}] — you wrote [${got.map((v) => `${v}s`).join(", ")}]; keep every beat's prose at its own stamp`); }
-    if (RIDE && !RIDE.skeleton && RIDE.kind === "ridden" && RIDE.ending !== "quick" && BEAT_SECS >= 6) { const st = stampList(t); const last = st[st.length - 1]; if (st.length && last > BEAT_SECS - 3) fails.push(`the last beat opens at [${last}s] of ${BEAT_SECS}s — the plan decided the ending is HELD: open the last beat by [${BEAT_SECS - 3}s] and ride THROUGH the spectacle to the last frame (retime the stamps; keep the story)`); }
     // A DARK RIDE HAS VOICES (draw 17: the planner wrote no lines, the writer wrote none, and the voice check fired only after the wall had closed): no Dialogue block
     // on a dark ride is a format fail — the cheap retry writes it: each figure passed speaks its own line in character (the work's words are free in speech), with its manner, at its beat
     if (RIDE && RIDE.family === "dark ride" && !/(^|\n)\s*Dialogue\s*:/i.test(t)) fails.push(`a dark ride has voices — add the Dialogue block: each figure passed speaks its own line in character (the work's own words are free inside a spoken line), with its manner in the label — (sing-song, mocking) — at the stamp of the beat that passes it`);
