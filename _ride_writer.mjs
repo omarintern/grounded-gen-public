@@ -23,8 +23,37 @@ export function frameZeroSection(d) {
     (f.state ? `THE WORLD STANDS FROM FRAME ZERO ON: ${String(f.state).trim().replace(/\.?$/, ".")} ` : "") +
     `AFTER FRAME ZERO THE PHOTOGRAPH'S OWN SCENERY IS NEVER NAMED AGAIN${replaced.length ? ` (${replaced.join("; ")})` : ""} — the world's things stand where those stood, and every later beat names them as the world's. `;
 }
+/** THE RIDE'S BLOCK IS THE RIDE'S (owner 2026-09-14: "i dont think we work in terms of motion words and such, i think thats only for rider form (coasters)";
+ *  "yes 'The ride's block goes back to being the ride's'"). The 09-09 rewrite typed every camera-on-a-thing as ridden, driven or worn and handed all three the
+ *  rider's laws with the nouns swapped; dry-form-dashcam-1 then wrote a bar, a bow and rails onto a country road. The windshield gens that worked (08-15 deer
+ *  over the bonnet, 08-23 Punch Monkey on the windshield) had no form word and no motion law: the photograph was frame zero and the writer named what stood
+ *  in front of the camera. A driven or worn form keeps the plate hunt and gets exactly that: the photograph is frame zero, the camera and its mount are never
+ *  looked at, the photographed places and the world's things where the run placed them, the maker's named figures by role. Nothing about how it moves. */
+export function formBlock(d) {
+  if (!d) return "";
+  const w = rideWords(d), r = d.seat?.reading || {};
+  const vehicleShown = r.vehicle_in_foreground === true;
+  const env = r.environment && r.environment !== "other" ? r.environment : "";
+  const occupant = d.kind === "driven" ? "the driver" : "the wearer";
+  const mount = d.kind === "driven" ? `the ${w.vehicle}'s own hood or dashboard edge` : "the wearer's own apparatus";
+  const placements = (d.dressing?.placements || []).map((l) => String(l).replace(/^[^:]{0,80}\(frame zero[^)]*\):\s*/i, "").replace(/^the seat photograph[^:]*:\s*/i, "")).filter(Boolean);
+  const otherPlacements = (d.dressing?.placements || []).filter((l) => !/frame zero|seat photograph/i.test(String(l)));
+  const places = (d.dressing?.places || []).filter(Boolean);
+  let s = `\u26a0\u26a0 THE FORM: the whole clip is ONE continuous take from the ${d.noun}'s own camera. The photograph is FRAME ZERO, as it is: the ${w.way} runs ahead from the camera's own position` +
+    (vehicleShown ? `, ${mount} in the foreground` : `; ${mount} is out of frame and is never looked for`) + (env ? `; the scene around the camera is ${env}` : "") + `. ` +
+    `Compose EVERY beat from inside it — what this camera sees, never a view OF the ${d.kind === "driven" ? w.vehicle : "wearer"} from outside; the camera and its mount are never introduced, explained or looked at; ${occupant} is never seen${d.kind === "worn" ? " (no face, no body — only what the apparatus itself shows)" : ""}. ` +
+    `The opening names what the photograph shows — the ${w.way}${vehicleShown ? `, ${mount}` : ""} — so frame zero is the photograph; what happens, happens in front of this camera. `;
+  if (d.frame0?.text) s += frameZeroSection(d);
+  if (places.length) s += `PHOTOGRAPHED PLACES BEYOND THIS FRAME (real photographs riding with this one, in story order): ${places.join(" \u2192 ")}. The take is written from this camera and ARRIVES in each of them in this order — the world enters the frame, the camera never leaves its mount. `;
+  if (otherPlacements.length || placements.length) s += `THE WORLD'S THINGS, on the photographs' own surfaces (a reading of each real photograph decided where each can sit): ${[...placements, ...otherPlacements].join(" | ")} — written as facts of the scene, never as changes. `;
+  { let modes = []; try { modes = JSON.parse(process.env.IP_FIGURES || "[]"); } catch { modes = []; }
+    const dn = (Array.isArray(modes) ? modes : []).filter((m) => m && m.mode === "dename" && m.name);
+    if (dn.length) s += `THE MAKER'S NAMED FIGURES ARE WRITTEN BY ROLE IN THE BEATS: ${dn.map((m) => `"${m.name}" is ${m.guise ? m.guise : "written by role and look"}`).join("; ")} — a beat or a speaker label never carries the name in any form; the name is free ONLY inside a spoken line. `; }
+  return s;
+}
 export function rideBlock(d = rideFromEnv()) {
   if (!d) return "";
+  if (d.kind !== "ridden") return formBlock(d);   // the ride's block is the ride's (owner 2026-09-14): a car and a wearer get the plain law
   const w = rideWords(d), r = d.seat?.reading || {}, mode = d.world?.mode || "setting";
   const vehicleShown = r.vehicle_in_foreground === true;
   const env = r.environment && r.environment !== "other" ? r.environment : "";
