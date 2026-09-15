@@ -32,12 +32,6 @@ const TRANSFORM = /\b(?:becomes?|becoming|became|turns? into|turning into|transf
 const CAMERA = new RegExp(`${CAMERA_WORD_RE.source}|\\bcut to\\b`, "i");
 // A STATEMENT OF STASIS IS NOT A THING IN THE FRAME (owner 2026-09-15: B1's "remain still", "stay exactly as they are" — the golden beat zero moves)
 export const STASIS = /\b(?:remains?|stays?|stands?|keeps?|sits?)\s+(?:exactly\s+)?(?:as (?:it is|they are|they were|it was|photographed|before)|still|unchanged|the same|in place|untouched)\b|\bexactly as (?:it is|they are)\b|\bunchanged\b/i;
-/** the first of the world's figures named in a beat-zero text (half its distinctive words present), or "" */
-export function figureAtZero(text, d) {
-  const l = String(text || "");
-  for (const f of (d?.dressing?.figures || [])) { const keys = looseKeys(f); if (keys.length < 2) continue; if (keys.filter((k) => keyRx(k).test(l)).length * 2 >= keys.length) return f; }
-  return "";
-}
 
 /** the distinctive words of a set piece (short material words kept: icy, ice, snowy), never the way's words nor a bare surface noun */
 export function looseKeys(piece, wayWords = []) {
@@ -65,7 +59,7 @@ export function frameZeroInputs(d) {
   const replacedSet = new Set(replacements.map((r) => r.piece.toLowerCase()));
   const kept = (d?.dressing?.plateThings || []).filter((p) => p && !replacedSet.has(String(p).toLowerCase()));
   const r = d?.seat?.reading || {};
-  const direction = /veers? (?:to the )?left/i.test(String(r.way_direction || "")) ? "and veering away to the left" : /veers? (?:to the )?right/i.test(String(r.way_direction || "")) ? "and veering away to the right" : "";
+  const direction = "";   // the way's direction from the reading is archived (owner 2026-09-15: stale) — the take turns where the story turns
   const fore = _read(r.foreground);
   // THE SEAT'S OWN FOREGROUND IS ALWAYS NAMED (owner 2026-09-15, A': "the latest gen had no riders/cart in bottom of frame" — the judge read no foreground on the plate, so nothing named the
   // vehicle, and once every set piece was replaced the model had no seat to keep): the form's constant is written whether or not the photograph shows it — the block has said so since 09-13
@@ -139,7 +133,6 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     else if (TRANSFORM.test(text)) why = `a change-verb: ${(text.match(TRANSFORM) || [""])[0]}`;
     else if (CAMERA.test(text)) why = `a camera word: ${(text.match(CAMERA) || [""])[0]}`;
     else if (STASIS.test(text)) why = `a statement of stasis: ${(text.match(STASIS) || [""])[0]}`;   // beat zero is a movement; nothing "remains" or "stays" (owner 2026-09-15)
-    else if (figureAtZero(text, d)) why = `a figure at frame zero: ${figureAtZero(text, d)}`;   // the world's figures are met later along the way
     else if (words > wordCap + 20) why = `${words} words (the cap is ${wordCap} for ${i.replacements.length + i.additions.length} piece(s))`;
     else if (i.title && worldNameFindings(text, [i.title]).length) why = "the work is named";
     if (!why) out = { text, replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "composed" };
