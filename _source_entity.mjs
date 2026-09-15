@@ -172,7 +172,7 @@ async function judgeOne(c) {
     // one. A dishonest rejection label is worse than none: it sends the reader to fix something that is not
     // broken. The reasons are tested in the SAME ORDER the gate applies them, so the label is the verdict.
     const _why = !ks ? "UNSCREENED"
-      : ks.shows_minor ? "MINOR"
+      : (ks.shows_minor === true && String(ks.content_flag) === "nudity") ? "MINOR+NUDITY"   // a child alone never rejects (2026-09-15: the label is the verdict)
       // ⚠ THE FLAG, NOT THE OBJECT. contentFlagFails takes a STRING; passing the verdict object made it
       // stringify to "[object Object]", which is neither "none" nor a known flag, so it returned TRUE for
       // every candidate and the label printed whatever content_flag happened to be — reviving the exact
