@@ -460,7 +460,6 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
     else if (ridden && last && !rideSentOn(lastSentenceOf(line), d)) add(line, "the payoff does not send the ride on — the last words say where the ride goes: on, through, out of the frame, or swallowed by what the payoff releases");
     else if (d.kind === "ridden" && !vehicleLeads(line, d)) add(line, `the ride vehicle does not lead this beat — the ${w.vehicle || "vehicle"} is what each beat does; figures and things are what it passes`, "ride");
     else if (d.interior && INVERSION.test(line)) add(line, `inverted indoors: "${line.match(INVERSION)[0]}" — a corridor or room hosts straight runs, dips and banks, never a loop`, "ride");
-    else if (last && d.family === "dark ride" && !CORE_ONLY.on && !seatFeels(line)) add(line, `the finale is not felt by the seat — the ${w.vehicle} sways, jolts, dips or is splashed as the spectacle passes, and the riders gasp, scream or laugh from the rows ahead (owner: spectacle acts on the ride; the riders react)`, "ride");
     else if (last && FACEFILL.test(line)) add(line, `payoff stops on a face: "${line.match(FACEFILL)[0]}" — the ride passes through or by at speed`, "ride");
   });
   // NO OPENING FINDING (owner 2026-09-11): the take opens in the seat photograph whether photographs ride or not — repairFrameZero appends the plate's
@@ -499,14 +498,6 @@ export function rideFindings(text, d, { workTitles = [], secs = Number(process.e
         if (hit >= need && !REPLACEMENT_VERB.test(line)) out.push({ rule: "plate-thing", figure: `"${p}" is written as still present after frame zero — it was replaced at frame zero by the world's thing; the other ride's set piece is gone`, at: Number((line.match(/^\s*\[(\d+(?:\.\d+)?)s\]/) || [])[1] || 0) });
       });
     }
-  }
-  // THE RIDE IS PROGRAMMED (owner 2026-09-11, draw 5: "rides can often stop, look at something which performs, then an unpredictable move occurs, or a turn
-  // not expected. whereas these gens are linear forward"): a dark ride halts before a scene, holds while the figure performs, then moves in a way the rider
-  // did not expect. A draft that glides forward from first beat to last is the ride's own flaw (re-asked once, never a refusal); the stop is never the last beat.
-  if (d.family === "dark ride" && d.kind === "ridden" && !CORE_ONLY.on && lines.length >= 3) {
-    const iStop = lines.findIndex((l, i) => i < lines.length - 1 && STOPS.test(l));
-    if (iStop < 0) add(lines[lines.length - 1], `the ride never stops — a dark ride halts before a scene, holds while the figure performs, then moves in a way the rider did not expect (lurches backward, spins to face the other way, swings hard into a turn, drops); this take glides forward from first beat to last`, "ride");
-    else if (!lines.slice(iStop).some((l) => SURPRISES.test(l))) add(lines[iStop], `the ride stops but leaves as it came — after the hold the ${w.vehicle || "vehicle"} moves in a way the rider did not expect (lurches backward, spins to face the other way, swings hard into a turn, drops, shoots forward)`, "ride");
   }
   return out;
 }

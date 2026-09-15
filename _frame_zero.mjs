@@ -125,7 +125,9 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     const j = ask ? await ask(prompt) : await providerJson([textPart(prompt)], { model, maxTokens: 8000, temperature: 0.2, tag: "frame0" });
     const text = String(j?.frame_zero || "").replace(/\s+/g, " ").trim();
     const holds = frameZeroHolds(text, d);
-    const wayFirst = new RegExp(`^(?:\\S+\\s+){0,12}?${_re(String(i.way).replace(/^the\s+/i, ""))}`, "i").test(text.replace(/^the\s+/i, ""));
+    // THE SUBJECT LEADS (B3, 2026-09-15: a composition that began "The omnimover glides forward…" was thrown away as "the way is not named first" and the static facts
+    // shipped as beat zero): the movement grammar puts the VEHICLE first; the way may follow the foreground. The vehicle within the first three words, or the way within the first twelve.
+    const wayFirst = new RegExp(`^(?:\\S+\\s+){0,12}?${_re(String(i.way).replace(/^the\s+/i, ""))}`, "i").test(text.replace(/^the\s+/i, "")) || new RegExp(`^(?:\\S+\\s+){0,2}?${_re(String(i.vehicle).replace(/^the\s+/i, ""))}\\b`, "i").test(text.replace(/^the\s+/i, ""));
     const words = text.split(/\s+/).filter(Boolean).length;
     if (!text) why = "empty";
     else if (!holds.ok) why = `missing: ${holds.missing.join(" | ").slice(0, 160)}`;
