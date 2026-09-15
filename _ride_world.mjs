@@ -96,6 +96,16 @@ export const dressesTheWay = (where) => WAY_RE.test(String(where || "").replace(
 // THE HEAD NOUN DECIDES (draw 20, 2026-09-13: "twin mint-green sinks with chrome legs" read as a FIGURE on the word "twin" and was flagged silent): a thing is a figure when
 // the noun the phrase is ABOUT is a person-noun — the last word before its first modifier phrase — never because a person-word sits somewhere inside it.
 export const headNoun = (n) => { const s = String(n || "").toLowerCase().replace(/[^a-z' -]+/g, " ").trim(); const cut = s.search(/\s(?:in|with|of|on|at|under|over|holding|wearing|carrying|beside|behind|before|from|by|to|near|against|walking|standing|sitting|viewed)\s/); const core = cut > 0 ? s.slice(0, cut) : s; return core.trim().split(/\s+/).pop() || ""; };
+/** A THING'S NAME NEVER CARRIES A PLACE (owner 2026-09-15, B2: "tall green hedge walls forming a maze" rode into frame zero and the Set line): the run passes the read's
+ *  names once through the places judge; the words it flags leave every name here, with the connector that led to them, before anything downstream reads them. Pure. */
+export function stripPlaceWords(dressing, words = []) {
+  const ws = [...new Set((Array.isArray(words) ? words : []).map((w) => String(w || "").trim()).filter(Boolean))].sort((a, b) => b.length - a.length);
+  if (!ws.length || !dressing) return dressing;
+  const clean = (s) => { let t = String(s || ""); for (const w of ws) t = t.replace(new RegExp(`\\s*(?:\\b(?:forming|making|of|in|inside|within|at|around|from|to|for|through|into)\\s+)?\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"), ""); return t.replace(/\s+/g, " ").replace(/\s+([,;.])/g, "$1").replace(/\s+(?:forming|making|of|in|inside|within|at|around|from|to|for|through|into|and|with)\s*$/i, "").trim(); };
+  const list = (a) => (Array.isArray(a) ? a.map(clean).filter(Boolean) : a);
+  return { ...dressing, placements: list(dressing.placements), later: list(dressing.later), finale: clean(dressing.finale), plateThings: list(dressing.plateThings), figures: list(dressing.figures),
+    photographed: Array.isArray(dressing.photographed) ? dressing.photographed.map((p) => ({ ...p, qualities: list(p.qualities) })) : dressing.photographed };
+}
 export const isFigureThing = (e) => FIGURE_KIND.test(String(e?.kind || "").trim()) || FIGURE_NOUN.test(headNoun(e?.name));
 export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], worldName = "", dark = d?.family === "dark ride", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const mode = d?.world?.mode || "setting";
