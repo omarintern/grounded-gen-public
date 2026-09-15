@@ -128,6 +128,12 @@ if (QUERIES[1] && aboardN() < SECOND_AT && judgeCalls < JUDGE_BUDGET) {
   console.log(`  ${aboardN()} aboard after the first query — the second query joins the pool`);
   await judgeAll(await collect(QUERIES[1], 1));
 }
+// THE FALLBACK QUERIES (owner 2026-09-15, the water route: "with fallback queries as well in place"): a decision may carry more than two phrasings; each one past the
+// second is walked only while NOTHING is aboard and the judge budget holds — a boat dark ride's hunt does not die on its first two phrasings.
+for (let qi = 2; qi < QUERIES.length && aboardN() === 0 && judgeCalls < JUDGE_BUDGET; qi++) {
+  console.log(`  nothing aboard after ${qi} queries — fallback query ${qi} joins the pool ("${QUERIES[qi]}")`);
+  await judgeAll(await collect(QUERIES[qi], qi));
+}
 try { writeFileSync(join(OUTDIR, `world_${slug}.calls.json`), JSON.stringify({ judgeCalls })); } catch {}
 const seen = recs.map((r) => ({ p: r.p, host: r.host, url: r.url, engine: r.engine, q: r.q, W: r.W, H: r.H, verdict: r.aboard ? "pass" : "reject", why: r.aboard ? seatLabel(r).replace(/^✓ /, "") : r.why, reading: r.j }));
 const ranked = rankSeats(recs, { family: D.family });

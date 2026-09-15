@@ -29,7 +29,7 @@ const RIDE_KIND_FAMILIES = [
   // bases here"). The specific families above and below are matched FIRST; these words are the dark-ride family, and the bare "ride" /
   // "attraction" belong to it too — except beside a non-park transport word ("car ride", "bike ride", "horse ride": NON_PARK_RIDE below).
   { kinds: ["dark ride", "theme park ride", "theme park dark ride", "disney ride", "disneyland ride", "disney world ride", "universal ride", "universal studios ride", "amusement park ride", "amusement ride", "fairground ride", "fair ride", "park ride", "theme park attraction", "haunted mansion ride", "ghost ride", "attraction", "ride"], keep: "dark" }, { kinds: ["ghost train"] }, { kinds: ["log flume", "flume ride", "flume"] },
-  { kinds: ["river rapids", "rapids ride"] }, { kinds: ["boat ride"] }, { kinds: ["water ride"], keep: "water" },
+  { kinds: ["river rapids", "rapids ride"] }, { kinds: ["boat ride"] }, { kinds: ["water ride"], keep: "water" }, { kinds: ["log flume", "flume ride", "flume"] },   // a flume is its own kind (2026-09-15, the water route)
   { kinds: ["shooter ride", "interactive ride"] }, { kinds: ["trackless ride"] }, { kinds: ["monorail"] }, { kinds: ["tram ride", "tram"] },
   { kinds: ["trolley"] }, { kinds: ["train ride"] }, { kinds: ["carousel", "merry-go-round"] }, { kinds: ["ferris wheel"] },
   { kinds: ["drop tower"] }, { kinds: ["bumper cars"] }, { kinds: ["gondola"] }, { kinds: ["chairlift"] }, { kinds: ["cable car"] }, { kinds: ["go-kart"] },
@@ -56,6 +56,12 @@ const NOT_POV = /\b(?:drone|aerial|helicopter shot|from (?:the |a )?(?:shore|pie
 // A BOAT WORD IS NOT ALWAYS A VESSEL — the trap the bare word "ride" already has (NON_PARK_RIDE above): a gravy boat, a boat neck and
 // the boat race on tv wear the word and carry no camera. A word that owns the bare noun stands it down before the test.
 const NOT_A_VESSEL = /\b(?:gravy|sauce|butter|banana|dream|love|show)[- ]?boats?\b|\bboats?[- ](?:neck|race|races|racing|show|shoes?|hook|load|people|yard)\b/i;
+// ── THE WATER ROUTE (owner 2026-09-15: "it should also allow for different experiences, like floating on water"; "with fallback queries as well in place") ──
+// A water word in the maker's words puts the seat on a boat: a water DARK RIDE (a boat through show scenes) hunts boat phrasings instead of the rails shelf, a flume or
+// the rapids hunt their own noun, both on the park ladder with two fallback queries behind the two the run samples. The class's words follow (rideWords: the channel,
+// the boat) until the plate's own reading speaks. A boat OUTSIDE a park is still the GoPro form (boatPov, below), never this.
+export const WATER_WORDS = /\b(?:boats?|flumes?|log (?:flume|ride)|rapids|water ride|canal|waterway|rafts?|jungle cruise|bayou|splash(?:down)?)\b/i;
+export const isWaterRide = (text = "") => { const s = String(text || "").replace(NOT_A_VESSEL, " "); return WATER_WORDS.test(s); };
 export function boatPov(text = "") { const s = String(text || "").replace(NOT_A_VESSEL, " "); if (!BOAT.test(s) || PARK_BOAT.test(s) || NOT_POV.test(s)) return ""; return (s.match(BOAT) || [""])[0].toLowerCase(); }
 const familyOf = (text) => {
   const s = String(text || "").toLowerCase();
@@ -130,15 +136,21 @@ export function apparatusKind(form = "", noun = "") {
 export const SEAT_PHRASINGS = {
   "dark ride": ["theme park dark ride pov", "dark ride ride-through", "dark ride onboard pov footage", "dark ride vehicle interior scene", "onride dark ride pov"],
   coaster: (noun) => [`${noun} front seat pov`, `${noun} onride pov footage`, `${noun} pov footage`, `${noun} first person ride`],
+  // THE WATER POOLS (2026-09-15, unmeasured — the first dry run on a water ride measures them): a boat dark ride's four, and a flume's or the rapids' four led by their own noun.
+  "water dark ride": ["boat dark ride onride pov", "indoor boat ride pov footage", "dark ride boat ride-through", "theme park boat ride pov"],
+  water: (noun) => [`${noun} onride pov`, `${noun} pov footage`, "theme park boat ride onride pov", "water ride onride pov footage"],
 };
 export function sampleQueries(pool, n = 2, rand = Math.random) {
   const list = [...(Array.isArray(pool) ? pool : [])]; const out = [];
   while (list.length && out.length < n) { const k = Math.min(list.length - 1, Math.max(0, Math.floor(rand() * list.length))); out.push(list.splice(k, 1)[0]); }
   return out;
 }
-export function seatQueries(form, { context = "", noun: nounOverride = "", indoor = false, rand = Math.random } = {}) {
+export function seatQueries(form, { context = "", noun: nounOverride = "", indoor = false, rand = Math.random, water = false } = {}) {
   const noun = String(nounOverride || "").trim() || formNoun(form);
   const kind = apparatusKind(form, noun);
+  // THE WATER ROUTE: two sampled, the other two behind them as fallbacks (the hunt walks them while nothing is aboard)
+  // …and a named venue still leads (2026-09-14: "Jungle Cruise boat ride pov footage" first), the pool's phrasings behind it
+  if (kind === "ridden" && (water || WATER_WORDS.test(noun))) { const wctx = String(context || "").replace(/\s+/g, " ").trim(); const pool = isDarkRideNoun(noun) ? SEAT_PHRASINGS["water dark ride"] : SEAT_PHRASINGS.water(noun); const picks = sampleQueries(pool, wctx ? 1 : 2, rand); return [...(wctx ? [`${wctx} ${noun} pov footage`] : []), ...picks, ...pool.filter((q) => !picks.includes(q))]; }
   if (kind === "ridden" && isDarkRideNoun(noun)) { const ctx = String(context || "").replace(/\s+/g, " ").trim(); const picks = sampleQueries(SEAT_PHRASINGS["dark ride"], 2, rand); return ctx ? [picks[0], `${ctx} dark ride pov`] : picks; }
   // A WORN DEVICE GOES WHERE ITS WEARER GOES, AND A CAR WHERE ITS ROAD IS (layer 2 cell l2b-19, 2026-09-14): "helmet cam of a mountain
   // bike trail" hunted "helmet cam pov footage" bare and seated the take in a Formula 1 cockpit — the halo, the wheel's display, a race
@@ -158,7 +170,7 @@ export function seatQueries(form, { context = "", noun: nounOverride = "", indoo
  *  the paid index then the free library as fallback then lastly [search] for dark ride form»). "web" = the paid index's web search (never the local scraper — owner: «it must
  *  be the paid index because its a deeper pool and truer test»), "library" = the free tier (skipped by its own circuit while down), "scoped" =
  *  search-on-reddit. Every other family takes the form route as it stands (null). scrape.mjs walks the ladder under SEAT_LADDER. */
-export function seatLadder(family = "") { return family === "dark ride" ? ["web", "library", "scoped"] : null; }
+export function seatLadder(family = "", water = false) { return family === "dark ride" || water ? ["web", "library", "scoped"] : null; }   // a water ride of any family rides the park ladder (2026-09-15)
 
 // ── THE DECISION ──────────────────────────────────────────────────────────────────────────────────────────
 /** ONE object, computed from facts known before the plan (the maker's words, the resolved entities) and completed after it (the
@@ -197,6 +209,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const noun = boatWord ? boatCam : (makerKind || formNoun(plateForm) || wornDevice(plateForm || form));
   const kind = boatWord ? "worn" : apparatusKind(plateForm || form, noun);
   const family = kind === "driven" ? "driven" : kind === "worn" ? "worn" : (rideFamilyOf(noun) || "other ridden");
+  const water = !boatWord && kind === "ridden" && (isWaterRide(rawPrompt) || isWaterRide(prompt) || WATER_WORDS.test(noun));   // the water route (2026-09-15): the maker's words put the seat on a boat
   const setEnt = (Array.isArray(resolved) ? resolved : []).find((e) => e?.is_set === true);
   const named = !!(p.world_clearance?.named || p.world_clearance?.isSet === true || setEnt);
   // THE WORLD'S TITLE IS THE WORK (dry run velocal6, 2026-09-11): the material identifiers are every term the maker's words identify — the work, but also its
@@ -221,18 +234,18 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const context = !named && worldWords && worldWords.split(" ").length <= 4 && !isRideNoun(worldWords) ? worldWords
     : (family !== "dark ride" && venueName && !isRideNoun(venueName) ? venueName : "");   // …and a car or a wearer on a named street or place hunts there too (the long dashcam: three avenues resolved, a bare "dashcam pov driving footage" served)
   const indoor = kind === "ridden" && family !== "dark ride" && mode !== "architecture" && (interior || (places.length > 0 && isInteriorWorld({ form: { world: places.join(" ") } })));
-  const queries = boatWord ? [`${boatWord} ${boatCam} pov footage`, `first person ${boatCam} ${boatWord} footage`] : seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand });
+  const queries = boatWord ? [`${boatWord} ${boatCam} pov footage`, `first person ${boatCam} ${boatWord} footage`] : seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand, water });
   const titles = plan ? workTitlesOf(p) : (title ? [title] : []);
   const rooms = mode === "theme" && Array.isArray(p.slots?.world?.shotSet) ? p.slots.world.shotSet.map((q) => roomNameOf(q, titles)).filter(Boolean) : [];
   // HOW THE ENDING LANDS is the plan's decision (owner 2026-09-11: "climax doesn't need longest span. it all depends, because irony would have it end quick"):
   // held = experienced, the take stays in the event; quick = a button after the build. A ride defaults to held; the plan says otherwise only on the maker's words.
   const ending = String(p.read?.ending || "").trim().toLowerCase() === "quick" ? "quick" : "held";
   return {
-    kind, family, noun, form, plateForm, medium: String(p.native_capture || p.form?.mediaForm || ""), interior, ending,
+    kind, family, noun, form, plateForm, medium: String(p.native_capture || p.form?.mediaForm || ""), interior, ending, water,
     // AN EVENT IS A NAMED WORLD (owner 2026-09-14: "even for a plate, 9/11 should be recognized as something sourced"): the probe's event entity
     // is a set whose zones are its most photographed scenes; on a dark ride it is a theme like a work, told to the planner as an EVENT
     world: { named, title, mode, setting, words: worldWords, places, rooms, things: plan ? worldElements(p) : [], kind: setEnt?.kind === "event" ? "event" : (named ? "work" : ""), zones: Array.isArray(setEnt?.set_zones) ? setEnt.set_zones.map((z) => String(z || "").trim()).filter(Boolean) : [] },
-    seat: { queries, ladder: seatLadder(family), plate: "", reading: null },
+    seat: { queries, ladder: seatLadder(family, water), plate: "", reading: null },
     words: { way: "", vehicle: "" },
     dressing: { placements: [], later: [], places: [] },
     worldQueries: plan ? stripWorldMedium(p.slots?.world?.queries || [], p) : [],
@@ -247,7 +260,7 @@ export function rideWords(d) {
   const _w = (v) => (typeof v === "string" ? v.trim().replace(/^(?:the|a|an)\s+/i, "").trim() : "");
   const way = String(_w(d?.words?.way) || (_w(r.way) !== "unseen" ? _w(r.way) : "")).trim();
   const vehicle = String(_w(d?.words?.vehicle) || (!["unseen", "other"].includes(_w(r.vehicle)) ? _w(r.vehicle) : "")).trim();
-  const watery = /boat|flume|rapids|water/i.test(String(d?.noun || ""));
+  const watery = d?.water === true || /boat|flume|rapids|water/i.test(String(d?.noun || ""));   // the decision's own water flag first (2026-09-15)
   return {
     way: way || (d?.kind === "driven" ? "road" : d?.kind === "worn" ? "way ahead" : watery ? "water channel" : d?.family === "coaster" ? "rails" : "way ahead"),
     vehicle: vehicle || (d?.kind === "driven" ? "vehicle" : d?.kind === "worn" ? "wearer's own apparatus" : watery ? "boat" : d?.family === "coaster" ? "car" : "vehicle"),
