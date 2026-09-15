@@ -62,7 +62,7 @@ export function readRoomThings({ roomPlates = [], worldName = "a themed world", 
     for (const x of (d?.things || [])) if (x?.name && !read.some((r) => r.name.toLowerCase() === String(x.name).toLowerCase())) read.push({ name: x.name, kind: x.kind, surface: x.surface, plate: wp });
     for (const s of (d?.surfaces || [])) if (s?.kind && s?.name && !surfaces.some((x) => x.kind === s.kind)) surfaces.push({ kind: s.kind, name: s.name, plate: wp });   // one per kind, the first room in story order wins
   }
-  read.surfaces = surfaces;   // the world's own wall, ceiling, floor and light — what a THEMED surface of the seat plate becomes (owner 2026-09-11)
+  read.surfaces = surfaces;   // empty since 2026-09-15: the room read no longer names surfaces — the plate's construction is never replaced (kept for shape)
   return read;
 }
 /** PLACE THINGS ON A PLATE (a read of the real photograph's own surfaces): lines for the writer — "<where> becomes <name>" (a
@@ -71,7 +71,7 @@ export function readRoomThings({ roomPlates = [], worldName = "a themed world", 
 export function placeOnPlate({ plate, things = [], role = "a photograph the ride passes through", dark = false, way = "", surfaces = [], cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const abs = join(cwd, plate);
   if (!plate || !existsSync(abs) || !things.length) return [];
-  const code = _sh(["_plate_dressing.mjs", plate, JSON.stringify(things.slice(0, 6)), role], { cwd, env: { ...env, DARK_RIDE_DRESSING: dark ? "1" : "", SEAT_WAY: dark ? String(way || "") : "", WORLD_SURFACES: dark && surfaces.length ? JSON.stringify(surfaces.map((s) => ({ kind: s.kind, name: s.name }))) : "" } });
+  const code = _sh(["_plate_dressing.mjs", plate, JSON.stringify(things.slice(0, 6)), role], { cwd, env: { ...env, DARK_RIDE_DRESSING: dark ? "1" : "", SEAT_WAY: dark ? String(way || "") : "" } });
   if (code !== 0 && code !== 2) log(`  ◇ placement read failed for ${role} (exit ${code})`);
   const d = _json(`${abs}.dressing.json`);
   const _side = (v) => (Array.isArray(v) ? v.map((x) => String(x ?? "").trim()).filter(Boolean).join(", ") : typeof v === "string" ? v : "").trim();
@@ -114,23 +114,22 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     out.things = things;
     out.figures = things.filter(isFigureThing).map((e) => e.name);
     if (out.figures.length) log(`  ◇ figures among them (animatronics on this ride): ${out.figures.join(" · ")}`);
-    const surfaces = Array.isArray(read.surfaces) ? read.surfaces : [];
-    if (surfaces.length) log(`  ✎ the world's own surfaces, read off its rooms (what a themed surface of the seat plate becomes): ${surfaces.map((s) => `${s.kind} = ${s.name}`).join(" · ")}`);
-    // FIGURES ARE HELD FOR THE RIDE'S OWN INTERIOR (owner 2026-09-11): only the world's things and surfaces take the seat photograph's set pieces at frame zero; a figure is passed inside, as a tableau
+    // THE PLATE'S CONSTRUCTION IS NEVER REPLACED (owner 2026-09-15, the set test): the world's surfaces are no longer read off its rooms and no longer become the plate's
+    // wall, ceiling, floor or light — those are the ride's own; only the plate's set pieces take the world's things. FIGURES ARE NEVER AT FRAME ZERO (owner 2026-09-11):
+    // only the world's things take the seat photograph's set pieces at frame zero; a figure is met later along the way, as a tableau
     const nonFigures = things.filter((e) => !isFigureThing(e));
-    const placedLines = placeOnPlate({ plate: seatPlate, things: nonFigures.slice(0, 6), role: seatRole, dark, way, surfaces, cwd, env, log });   // dark = a dark ride's own words; an appropriating worn or driven form reads plainly (2026-09-14)   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
+    const placedLines = placeOnPlate({ plate: seatPlate, things: nonFigures.slice(0, 6), role: seatRole, dark, way, cwd, env, log });   // dark = a dark ride's own words; an appropriating worn or driven form reads plainly (2026-09-14)   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
     out.plateThings = placedLines.plateThings || [];
     out.placements = placedLines.map((l) => `${seatRole}: ${l}`);
     if (out.placements.length) log(`  ✓ frame zero's replacements, beside or ahead of the way: ${out.placements.map((l) => l.replace(`${seatRole}: `, "")).join(" | ").slice(0, 300)}`);
     else if (things.length) log(`  ◇ the seat photograph offered no surface beside or ahead of its way — every thing arrives later along the take`);
     const placed = out.placements.join(" | ").toLowerCase();
     // PHOTOGRAPHS OF THE WORLD THAT RIDE WITH THE SEAT (owner 2026-09-09: "on a themed dark ride they are sent, not just read for their things"):
-    // each sent room rides as a reference and is written as its qualities — the things read off it — never by name; its things do not
-    // double as later things (they arrive with their photograph).
-    const sent = new Set(laterPlates.map((x) => x.plate).filter(Boolean));
+    // each sent room rides as a REFERENCE FOR THE THINGS PLACED (owner 2026-09-15: never a place the take arrives in): its things ARE the
+    // later things — the replacements and the tableaux are made of what the photograph shows; it is never written as somewhere the ride goes.
     out.photographed = laterPlates.filter((x) => x.plate && x.name).map((x) => ({ name: x.name, plate: x.plate, qualities: read.filter((r) => r.plate === x.plate).map((r) => r.name).slice(0, 4) }));
     if (out.photographed.length) log(`  ◉ photographs of the world ride with the seat, in story order: ${out.photographed.map((p) => `${p.name} (${p.qualities.join(" · ") || "its own room"})`).join("; ")}`);
-    const laterAll = nonFigures.filter((e) => !placed.includes(String(e.name).toLowerCase()) && !(e.plate && sent.has(e.plate))).map((e) => e.name);
+    const laterAll = nonFigures.filter((e) => !placed.includes(String(e.name).toLowerCase())).map((e) => e.name);
     // THE FINALE'S TABLEAU IS NEW (owner 2026-09-11: the twins met at the doors and again in the dark): the last unplaced thing is HELD BACK for the finale, never a later stop
     out.finale = laterAll.length ? laterAll[laterAll.length - 1] : "";
     out.later = laterAll.slice(0, Math.max(0, laterAll.length - 1)).slice(0, LATER_CAP);

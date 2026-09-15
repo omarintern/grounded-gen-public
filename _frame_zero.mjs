@@ -69,6 +69,17 @@ export function frameZeroFacts(d) {
   parts.push(...i.replacements.map((r) => r.fact), ...i.additions.map((a) => a.fact), ...i.kept);
   return parts.filter(Boolean).join("; ") + ".";
 }
+/** THE SET LINE — the replacements as CONSTANTS of the whole take (owner 2026-09-15, re-reading the set test of 09-11: same plate, same three references, same
+ *  beats; one untimed "Set:" line, and the take stayed on the plate and painted the world's things into it, where render 1 without it opened in the maze
+ *  photograph and came back to the unreplaced plate at the end). The run appends it after the Sound line — the stage's own facts, no writer; never a beat,
+ *  never a spoken line. The construction clause states the other half of the set test: the ride's own building stays. */
+export function frameZeroSetLine(d) {
+  const i = frameZeroInputs(d);
+  const art = (s) => (/^(?:the|a|an|its|their)\s/i.test(String(s || "")) ? String(s) : `the ${s}`);
+  const parts = [...i.replacements.map((r) => `${art(r.piece)} is ${r.by}`), ...i.additions.map((a) => `${a.thing} stands at ${a.where}`)];
+  if (!parts.length) return "";
+  return `Set: for the whole take, ${parts.join("; ")}; the ride's own building — its walls and scenery, ceiling, floor, ${i.way} and light — stays as photographed.`;
+}
 /** does a beat-zero line carry the ground — both sides of every replacement, the addition, the kept pieces (half the words of each) */
 export function frameZeroHolds(line0, d) {
   const i = frameZeroInputs(d); const l = String(line0 || "");
@@ -95,7 +106,8 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     `${i.kept.length ? ` Kept as themselves: ${i.kept.join("; ")}.` : ""} ` +
     `Write ONE paragraph, present tense, at most ${wordCap} words, that a video model reads as the first frame: it opens with ${i.way} running on ahead, then the foreground, then every fact above stated in exactly its grammar (the world's thing where the set piece stood), then what is kept. ` +
     `Never a place's name, never a work's title, never a person's name, never a camera word, never a word of change (nothing becomes, turns into or is replaced on screen). ` +
-    `Return ONLY JSON {"frame_zero":"the paragraph","state":"one sentence naming the world's standing surfaces from frame zero on — its walls, ceiling, floor and light — in the world's own terms, never the photograph's"}`;
+    `The photograph's own construction — its walls and scenery, ceiling, floor, ${i.way} and light — stays exactly as it is and is never named as changed. ` +
+    `Return ONLY JSON {"frame_zero":"the paragraph"}`;
   let out = null, why = "";
   // ⚠ THE BUDGET BOUNDS THE ANSWER, IT NEVER SPENDS IT — and 2400 did not bound this one. the fast model counts its reasoning against max_tokens (the
   // writer's own lesson, _ground_prompt "WRITER BUDGETS"), so measured live 2026-09-14 on draw 27's inputs this call truncated at 2385 tokens
@@ -103,7 +115,7 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
   // one call answered as well (source "composed", holds), for $… in 16 s.
   try {
     const j = ask ? await ask(prompt) : await providerJson([textPart(prompt)], { model, maxTokens: 8000, temperature: 0.2, tag: "frame0" });
-    const text = String(j?.frame_zero || "").replace(/\s+/g, " ").trim(), state = String(j?.state || "").replace(/\s+/g, " ").trim();
+    const text = String(j?.frame_zero || "").replace(/\s+/g, " ").trim();
     const holds = frameZeroHolds(text, d);
     const wayFirst = new RegExp(`^(?:\\S+\\s+){0,12}?${_re(String(i.way).replace(/^the\s+/i, ""))}`, "i").test(text.replace(/^the\s+/i, ""));
     const words = text.split(/\s+/).filter(Boolean).length;
@@ -114,11 +126,11 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     else if (CAMERA.test(text)) why = `a camera word: ${(text.match(CAMERA) || [""])[0]}`;
     else if (words > wordCap + 20) why = `${words} words (the cap is ${wordCap} for ${i.replacements.length + i.additions.length} piece(s))`;
     else if (i.title && worldNameFindings(text, [i.title]).length) why = "the work is named";
-    if (!why) out = { text, state, replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "composed" };
+    if (!why) out = { text, replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "composed" };
   } catch (e) { if (e?.name === "ProviderInfraError" || e?.ledgerCap) throw e; why = String(e?.message || e).slice(0, 120); }
   if (!out) {
     log(`  ⚠ FRAME ZERO: the composition failed validation (${why}) — the mechanical facts stand as frame zero (read this: it is the stage failing, not the writer)`);
-    out = { text: frameZeroFacts(d), state: "", replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "facts", why };
+    out = { text: frameZeroFacts(d), replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "facts", why };
   }
   return out;
 }
