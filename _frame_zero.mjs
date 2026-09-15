@@ -67,7 +67,11 @@ export function frameZeroInputs(d) {
   const r = d?.seat?.reading || {};
   const direction = /veers? (?:to the )?left/i.test(String(r.way_direction || "")) ? "and veering away to the left" : /veers? (?:to the )?right/i.test(String(r.way_direction || "")) ? "and veering away to the right" : "";
   const fore = _read(r.foreground);
-  return { way: w.way || "way ahead", vehicle: w.vehicle || "vehicle", direction, foreground: /^none\b/i.test(fore) ? "" : fore, environment: _read(r.environment), replacements, additions, kept, title: String(d?.world?.title || "").trim() };
+  // THE SEAT'S OWN FOREGROUND IS ALWAYS NAMED (owner 2026-09-15, A': "the latest gen had no riders/cart in bottom of frame" — the judge read no foreground on the plate, so nothing named the
+  // vehicle, and once every set piece was replaced the model had no seat to keep): the form's constant is written whether or not the photograph shows it — the block has said so since 09-13
+  const vehicle = w.vehicle || "vehicle";
+  const foreground = (/^none\b/i.test(fore) || !fore) ? (d?.kind === "ridden" ? `the ${vehicle}'s own nose and lap bar at the bottom of the frame, the rows ahead` : "") : fore;
+  return { way: w.way || "way ahead", vehicle, direction, foreground, environment: _read(r.environment), replacements, additions, kept, title: String(d?.world?.title || "").trim() };
 }
 /** the mechanical frame zero — the facts in the golden grammar, joined — the fallback when the composition fails, and the pre-stage behaviour */
 export function frameZeroFacts(d) {
@@ -86,7 +90,7 @@ export function frameZeroSetLine(d) {
   const art = (s) => (/^(?:the|a|an|its|their)\s/i.test(String(s || "")) ? String(s) : `the ${s}`);
   const parts = [...i.replacements.map((r) => `${art(r.piece)} is ${r.by}`), ...i.additions.map((a) => `${a.thing} stands at ${a.where}`)];
   if (!parts.length) return "";
-  return `Set: for the whole take, ${parts.join("; ")}; nothing of the photograph's own set dressing remains, in any scene the ride passes.`;   // A's own clause (owner 2026-09-15: A' is the standard)
+  return `Set: for the whole take, ${parts.join("; ")}; the ride's own ${i.vehicle} — its nose and lap bar in the foreground, the rows ahead — and ${art(i.way)} stay as photographed; nothing of the photograph's own set dressing remains, in any scene the ride passes.`;   // A's own clause + the form's constant (owner 2026-09-15: A' is the standard, and A' lost the cart)
 }
 /** does a beat-zero line carry the ground — both sides of every replacement, the addition, the kept pieces (half the words of each) */
 export function frameZeroHolds(line0, d) {
