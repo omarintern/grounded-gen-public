@@ -19,7 +19,8 @@ const STOP = new Set(["with", "from", "that", "this", "into", "onto", "over", "u
  *  perform the appropriation itself, and the photograph's own scenery is never named again after it. Pure. */
 export function frameZeroSection(d) {
   const f = d?.frame0 || {}; const replaced = (f.replaced || []).map((r) => r?.piece).filter(Boolean);
-  return `FRAME ZERO IS WRITTEN — a stage of its own composed it from the photograph and the world. The [0s] line OPENS WITH THIS GROUND, kept whole (tightened only, never contradicted, nothing put before it): \u00ab${String(f.text || "").trim()}\u00bb ` +
+  const way = rideWords(d).way || "way";
+  return `FRAME ZERO IS WRITTEN — a stage of its own composed it from the photograph and the world. The [0s] line IS THIS GROUND, kept whole (tightened only, never contradicted, nothing put before it, no figure of the world added to it, no sentence about what stays or remains — the figures are met later along the ${way}): \u00ab${String(f.text || "").trim()}\u00bb ` +
     `THE PHOTOGRAPH'S CONSTRUCTION STANDS FOR THE WHOLE TAKE — its walls and scenery, its ceiling, floor, way and light are the ride's own, never replaced, never renamed as the world's (owner 2026-09-15). ` +
     `AFTER FRAME ZERO THE PHOTOGRAPH'S OWN SCENERY IS NEVER NAMED AGAIN${replaced.length ? ` (${replaced.join("; ")})` : ""} — the world's things stand where those stood, and every later beat names them as the world's. `;
 }

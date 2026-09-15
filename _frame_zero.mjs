@@ -30,6 +30,14 @@ const TRANSFORM = /\b(?:becomes?|becoming|became|turns? into|turning into|transf
 // camera law is the tuned one — the camera, a zoom, a panning shot, a dolly, a tracking shot, a push, a pull — and the stage reads THAT,
 // plus the cut it may never write.
 const CAMERA = new RegExp(`${CAMERA_WORD_RE.source}|\\bcut to\\b`, "i");
+// A STATEMENT OF STASIS IS NOT A THING IN THE FRAME (owner 2026-09-15: B1's "remain still", "stay exactly as they are" — the golden beat zero moves)
+export const STASIS = /\b(?:remains?|stays?|stands?|keeps?|sits?)\s+(?:exactly\s+)?(?:as (?:it is|they are|they were|it was|photographed|before)|still|unchanged|the same|in place|untouched)\b|\bexactly as (?:it is|they are)\b|\bunchanged\b/i;
+/** the first of the world's figures named in a beat-zero text (half its distinctive words present), or "" */
+export function figureAtZero(text, d) {
+  const l = String(text || "");
+  for (const f of (d?.dressing?.figures || [])) { const keys = looseKeys(f); if (keys.length < 2) continue; if (keys.filter((k) => keyRx(k).test(l)).length * 2 >= keys.length) return f; }
+  return "";
+}
 
 /** the distinctive words of a set piece (short material words kept: icy, ice, snowy), never the way's words nor a bare surface noun */
 export function looseKeys(piece, wayWords = []) {
@@ -100,14 +108,16 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
   if (!i.replacements.length && !i.additions.length) return null;   // nothing to appropriate — the photograph is the world; the stage has no work
   const facts = [...i.replacements.map((r) => r.fact), ...i.additions.map((a) => a.fact)];
   const prompt =
-    `Write FRAME ZERO of one continuous take filmed from the seat of a ${d.noun || "dark ride"}. The photograph is the seat's own view: ${i.way} running on ahead${i.direction ? " " + i.direction : ""}` +
+    `Write BEAT ZERO of one continuous take filmed from the seat of a ${d.noun || "dark ride"}. The photograph is the seat's own view: ${i.way} running on ahead${i.direction ? " " + i.direction : ""}` +
     `${i.foreground ? `; in the foreground ${i.foreground}` : ""}${i.environment ? `; the scene around the seat is ${i.environment}` : ""}. ` +
     `The world's things already stand on this photograph at frame zero — standing facts, never changes: ${facts.join("; ")}.` +
     `${i.kept.length ? ` Kept as themselves: ${i.kept.join("; ")}.` : ""} ` +
-    `Write ONE paragraph, present tense, at most ${wordCap} words, that a video model reads as the first frame: it opens with ${i.way} running on ahead, then the foreground, then every fact above stated in exactly its grammar (the world's thing where the set piece stood), then what is kept. ` +
-    `Never a place's name, never a work's title, never a person's name, never a camera word, never a word of change (nothing becomes, turns into or is replaced on screen). ` +
-    `The photograph's own construction — its walls and scenery, ceiling, floor, ${i.way} and light — stays exactly as it is and is never named as changed. ` +
-    `Return ONLY JSON {"frame_zero":"the paragraph"}`;
+    // THE GOLDEN GRAMMAR IS A MOVEMENT, NOT A FRAME (owner 2026-09-15, on B1 against the set test: "look at draw5 A. it doesnt write like that"): A's beat zero is
+    // the vehicle gliding along the way past the world's things where the set pieces stood; B1's was an inventory — "remain still", a sentence about the walls and
+    // light staying (my own instruction, transcribed), figures appended. The stage composes the movement; nothing about the construction is written at all.
+    `Write BEAT ZERO in the golden grammar — ONE or TWO sentences of MOTION, present tense, at most ${wordCap} words, with the ${i.vehicle} as their subject: the ${i.vehicle} glides forward along ${i.way}${i.direction ? " " + i.direction : ""}, past <the world's thing> where <the set piece> stood, and turns or rolls on toward <the next thing> where <its set piece> stood — every fact above INSIDE that motion, in exactly its grammar (the world's thing where the set piece stood)${i.foreground ? `, the foreground (${i.foreground}) named once` : ""}${i.kept.length ? ", what is kept named as itself in its place" : ""}. ` +
+    `Nothing else: no figure of the world (they are met later along the way), not a word about the photograph's own walls, scenery, ceiling, floor or light (they are the photograph and need no sentence), nothing that remains, stays or stands still, never a place's name, a work's title, a person's name or a camera word, never a word of change (nothing becomes, turns into or is replaced on screen). ` +
+    `Return ONLY JSON {"frame_zero":"the sentences"}`;
   let out = null, why = "";
   // ⚠ THE BUDGET BOUNDS THE ANSWER, IT NEVER SPENDS IT — and 2400 did not bound this one. the fast model counts its reasoning against max_tokens (the
   // writer's own lesson, _ground_prompt "WRITER BUDGETS"), so measured live 2026-09-14 on draw 27's inputs this call truncated at 2385 tokens
@@ -124,6 +134,8 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     else if (!wayFirst) why = "the way is not named first";
     else if (TRANSFORM.test(text)) why = `a change-verb: ${(text.match(TRANSFORM) || [""])[0]}`;
     else if (CAMERA.test(text)) why = `a camera word: ${(text.match(CAMERA) || [""])[0]}`;
+    else if (STASIS.test(text)) why = `a statement of stasis: ${(text.match(STASIS) || [""])[0]}`;   // beat zero is a movement; nothing "remains" or "stays" (owner 2026-09-15)
+    else if (figureAtZero(text, d)) why = `a figure at frame zero: ${figureAtZero(text, d)}`;   // the world's figures are met later along the way
     else if (words > wordCap + 20) why = `${words} words (the cap is ${wordCap} for ${i.replacements.length + i.additions.length} piece(s))`;
     else if (i.title && worldNameFindings(text, [i.title]).length) why = "the work is named";
     if (!why) out = { text, replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "composed" };
