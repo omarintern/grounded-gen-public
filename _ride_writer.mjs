@@ -228,11 +228,15 @@ export const rideEndsItself = (line) => RIDE_END.test(String(line || ""));
 // …unless the MAKER ends it (owner 2026-09-11: "the ride can end if user prompts for it, it all depends"): the maker's own words asking for the exit, the unload, the station or the end stand the ban down
 const MAKER_ENDS = /\b(?:ends?|ending|exits?|exiting|unloads?|unloading|the station|gets? off|getting off|steps? off|the end of the ride|last stop|pulls? in(?:to)?)\b/i;
 export const makerEndsRide = (words) => MAKER_ENDS.test(String(words || ""));
-const MANNER_TAG = /\([^)\n]{2,60}\)\s*\[\d+(?:\.\d+)?s\]\s*:/;
+// A LABEL MAY END IN AN ADDRESSEE TAIL (B5, 2026-09-15: "the twins in matching dresses (monotone, in unison) [2s] to the rows ahead:" — the line's time, its manner
+// and the riders' voice were all read off a shape that had no room for the tail, so such a line was never measured at all). One tail, read by every parser here.
+const ADDRESSEE_TAIL = "(?:\\s+(?:to|at|toward|towards)\\s+[^:\\n]{1,80})?";
+const STAMP_COLON = new RegExp(`\\[(\\d+(?:\\.\\d+)?)s\\]${ADDRESSEE_TAIL}\\s*:`);
+const MANNER_TAG = new RegExp(`\\([^)\\n]{2,60}\\)\\s*\\[\\d+(?:\\.\\d+)?s\\]${ADDRESSEE_TAIL}\\s*:`);
 /** The Dialogue block's spoken lines: [{ label, line }] — the text after the Dialogue header, each "<label> [Ns]: …" line. */
 export function dialogueLines(text) {
   const parts = String(text || "").split(/^\s*Dialogue\s*:/im); if (parts.length < 2) return [];
-  return parts.slice(1).join("\n").split("\n").map((l) => { const m = l.match(/^\s*(.+?)\s*\[\d+(?:\.\d+)?s\]\s*:\s*\S/); return m ? { label: m[1].trim(), line: l } : null; }).filter(Boolean);
+  return parts.slice(1).join("\n").split("\n").map((l) => { const m = l.match(new RegExp(`^\\s*(.+?)\\s*\\[\\d+(?:\\.\\d+)?s\\]${ADDRESSEE_TAIL}\\s*:\\s*\\S`)); return m ? { label: m[1].trim(), line: l } : null; }).filter(Boolean);
 }
 export const saysHow = (line) => MANNER_TAG.test(String(line || ""));
 // THE CLIMAX OWNS AT LEAST FOUR SECONDS, AND NEVER LESS THAN A THIRD (owner 2026-09-15, live 2516f272: "i never like for the last turns / climaxes of the ride to be
@@ -254,10 +258,10 @@ export function linesOutrun(text, secs = 9) {
   // read off the BEAT stamps alone, so every line inside one beat was measured as if the others were not there —
   // two lines on one stamp (the 9/11 draw) and a line still being said when the next begins (draw 27's [4s] before
   // its [5s]) outran nothing at all. The voices share the beat; each one's window closes at the next voice.
-  const said_ = dialogueLines(t), spokenAt = said_.map((x) => Number((x.line.match(/\[(\d+(?:\.\d+)?)s\]\s*:/) || [])[1]));
+  const said_ = dialogueLines(t), spokenAt = said_.map((x) => Number((x.line.match(STAMP_COLON) || [])[1]));
   for (const [i_, dl] of said_.entries()) {
     const at = spokenAt[i_]; if (!Number.isFinite(at)) continue;
-    const said = (dl.line.split(/\]\s*:\s*/)[1] || "").replace(/^["“'\s]+|["”'\s]+$/g, "");
+    const said = (dl.line.split(STAMP_COLON).slice(2).join("") || "").replace(/^\s*:?\s*/, "").replace(/^["“'\s]+|["”'\s]+$/g, "");
     const words = said.split(/\s+/).filter(Boolean).length; if (!words) continue;
     const next = Math.min(...[stamps.find((s) => s > at), spokenAt[i_ + 1]].filter((n) => Number.isFinite(n)), secs);
     const window = Math.max(0, next - at);
