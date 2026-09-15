@@ -17,7 +17,7 @@
 // snowy) and keep the surface noun as the second half of the whole; a key that is also one of the world's own words (snow in a maze under snow)
 // is never policed, because it is ambiguous by construction.
 import { providerJson, textPart } from "./provider-llm.mjs";
-import { replacementFact } from "./_ride_writer.mjs";
+import { replacementFact, vehicleLeads } from "./_ride_writer.mjs";   // the composer is measured by the beat law it feeds (B6, 2026-09-15)
 import { rideWords } from "./_ride.mjs";
 import { worldNameFindings, CAMERA_WORD_RE, isRideNoun } from "./_gate_rules.mjs";
 
@@ -105,6 +105,10 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
   const wordCap = Math.min(200, 60 + 15 * (i.replacements.length + i.additions.length));
   if (!i.replacements.length && !i.additions.length) return null;   // nothing to appropriate — the photograph is the world; the stage has no work
   const facts = [...i.replacements.map((r) => r.fact), ...i.additions.map((a) => a.fact)];
+  // THE FOREGROUND IS THE VEHICLE'S OWN, AFTER ITS VERB (B6, 2026-09-15: "The omnimover, carrying the omnimover's own nose and lap bar at the bottom of the frame, the rows
+  // ahead, glides forward" — the seat's constant handed as a fact became a thing the vehicle carries, the vehicle named twice and its verb seventeen words out, and the
+  // run's own vehicle-leads check refused the line it could not re-ask): the composer is told where the foreground goes and is measured by that same check below
+  const foreOwn = String(i.foreground || "").replace(new RegExp(`^the ${_re(String(i.vehicle))}'s own\\s+`, "i"), "its ");
   const prompt =
     `Write BEAT ZERO of one continuous take filmed from the seat of a ${d.noun || "dark ride"}. The photograph is the seat's own view: ${i.way} running on ahead${i.direction ? " " + i.direction : ""}` +
     `${i.foreground ? `; in the foreground ${i.foreground}` : ""}${i.environment ? `; the scene around the seat is ${i.environment}` : ""}. ` +
@@ -113,7 +117,7 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     // THE GOLDEN GRAMMAR IS A MOVEMENT, NOT A FRAME (owner 2026-09-15, on B1 against the set test: "look at draw5 A. it doesnt write like that"): A's beat zero is
     // the vehicle gliding along the way past the world's things where the set pieces stood; B1's was an inventory — "remain still", a sentence about the walls and
     // light staying (my own instruction, transcribed), figures appended. The stage composes the movement; nothing about the construction is written at all.
-    `Write BEAT ZERO in the golden grammar — ONE or TWO sentences of MOTION, present tense, at most ${wordCap} words, with the ${i.vehicle} as their subject: the ${i.vehicle} glides forward along ${i.way}${i.direction ? " " + i.direction : ""}, past <the world's thing> where <the set piece> stood, and turns or rolls on toward <the next thing> where <its set piece> stood — every fact above INSIDE that motion, in exactly its grammar (the world's thing where the set piece stood)${i.foreground ? `, the foreground (${i.foreground}) named once` : ""}${i.kept.length ? ", what is kept named as itself in its place" : ""}. ` +
+    `Write BEAT ZERO in the golden grammar — ONE or TWO sentences of MOTION, present tense, at most ${wordCap} words, with the ${i.vehicle} as their subject: the ${i.vehicle} glides forward along ${i.way}${i.direction ? " " + i.direction : ""}, past <the world's thing> where <the set piece> stood, and turns or rolls on toward <the next thing> where <its set piece> stood — every fact above INSIDE that motion, in exactly its grammar (the world's thing where the set piece stood)${i.foreground ? `, the seat's own foreground named ONCE as the ${i.vehicle}'s own and AFTER its verb — "the ${i.vehicle} glides forward along ${i.way}, ${foreOwn}, past …" — never as a thing the ${i.vehicle} carries or holds, never the ${i.vehicle} named twice` : ""}${i.kept.length ? ", what is kept named as itself in its place" : ""}. ` +
     `Nothing else: no figure of the world (they are met later along the way), not a word about the light, nothing that remains, stays or stands still, never a place's name, a work's title, a person's name or a camera word, never a word of change (nothing becomes, turns into or is replaced on screen). ` +
     `Return ONLY JSON {"frame_zero":"the sentences"}`;
   let out = null, why = "";
@@ -121,8 +125,12 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
   // writer's own lesson, _ground_prompt "WRITER BUDGETS"), so measured live 2026-09-14 on draw 27's inputs this call truncated at 2385 tokens
   // on THREE draws of three and provider-llm paid the doubling rung every time: $… / $… / $… for two calls and ~33 s. At 8000
   // one call answered as well (source "composed", holds), for $… in 16 s.
-  try {
-    const j = ask ? await ask(prompt) : await providerJson([textPart(prompt)], { model, maxTokens: 8000, temperature: 0.2, tag: "frame0" });
+  // ONE RE-ASK BEFORE THE FACTS (B6, 2026-09-15 — LAW in the prompt → REPAIR in the re-ask → the mechanical facts LAST): a refused composition is asked
+  // again with its reason; only then do the facts stand in. A second call is spent only on a refusal.
+  try { for (let attempt = 0; attempt < 2 && !out; attempt++) {
+    const p = attempt ? `${prompt}\n⚠ Your previous answer was refused: ${why}. Write it again, obeying that; return the same JSON.` : prompt;
+    why = "";
+    const j = ask ? await ask(p, attempt) : await providerJson([textPart(p)], { model, maxTokens: 8000, temperature: 0.2, tag: "frame0" });
     const text = String(j?.frame_zero || "").replace(/\s+/g, " ").trim();
     const holds = frameZeroHolds(text, d);
     // THE SUBJECT LEADS (B3, 2026-09-15: a composition that began "The omnimover glides forward…" was thrown away as "the way is not named first" and the static facts
@@ -132,15 +140,17 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     if (!text) why = "empty";
     else if (!holds.ok) why = `missing: ${holds.missing.join(" | ").slice(0, 160)}`;
     else if (!wayFirst) why = "the way is not named first";
+    else if (d?.kind === "ridden" && !vehicleLeads(text, d)) why = "the vehicle does not lead — its verb must follow it closely, never a clause of what it carries between (B6)";   // the same ruler as every beat's
     else if (TRANSFORM.test(text)) why = `a change-verb: ${(text.match(TRANSFORM) || [""])[0]}`;
     else if (CAMERA.test(text)) why = `a camera word: ${(text.match(CAMERA) || [""])[0]}`;
     else if (STASIS.test(text)) why = `a statement of stasis: ${(text.match(STASIS) || [""])[0]}`;   // beat zero is a movement; nothing "remains" or "stays" (owner 2026-09-15)
     else if (words > wordCap + 20) why = `${words} words (the cap is ${wordCap} for ${i.replacements.length + i.additions.length} piece(s))`;
     else if (i.title && worldNameFindings(text, [i.title]).length) why = "the work is named";
-    if (!why) out = { text, replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "composed" };
-  } catch (e) { if (e?.name === "ProviderInfraError" || e?.ledgerCap) throw e; why = String(e?.message || e).slice(0, 120); }
+    if (!why) out = { text, replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "composed", reasked: attempt > 0 };
+    else if (attempt === 0) log(`  ↺ FRAME ZERO: the composition was refused (${why}) — one re-ask with the reason, then the facts`);
+  } } catch (e) { if (e?.name === "ProviderInfraError" || e?.ledgerCap) throw e; why = String(e?.message || e).slice(0, 120); }
   if (!out) {
-    log(`  ⚠ FRAME ZERO: the composition failed validation (${why}) — the mechanical facts stand as frame zero (read this: it is the stage failing, not the writer)`);
+    log(`  ⚠ FRAME ZERO: the composition failed validation after one re-ask (${why}) — the mechanical facts stand as frame zero (read this: it is the stage failing, not the writer)`);
     out = { text: frameZeroFacts(d), replaced: i.replacements.map((r) => ({ piece: r.piece, by: r.by })), source: "facts", why };
   }
   return out;
