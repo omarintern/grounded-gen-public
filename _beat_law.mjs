@@ -22,13 +22,16 @@ export const DIALOGUE_STAMPS = dialogueStamps(Number(process.env.BEAT_DURATION) 
 export const dialogueClause = () => {
   const d = (process.env.PLAN_DIALOGUE || "").trim();
   if (!d) return "";
-  return `⚠ RE-ATTRIBUTE THIS DIALOGUE AGAINST THE SCENE AS PHOTOGRAPHED, THEN EMIT IT AS THE FINAL BLOCK.\n`
+  // THE SPEAKER IS ASSIGNED AT THE PLAN, NEVER HERE (owner 2026-09-15: "a line doesn't need to move between figures if it gets it right at assignment" — B8: the clause
+  // opened with RE-ATTRIBUTE, the twins were in no still, and the writer gave their line to the son; the plan had assigned it right)
+  return `⚠ THIS DIALOGUE IS ASSIGNED: each line already belongs to the figure the work gave it to. EMIT IT AS THE FINAL BLOCK, each line under its own speaker.\n`
     + `${d}\n`
     + `Keep every line's WORDS exactly as written — the speech is a requirement, not a draft. You may BREAK a `
     + `line into several timed lines when it is carried across cuts (see the carried-voice rule below); that is `
     + `a decision about WHEN each word is heard, not a change to the words, and it is the only division allowed. `
+    + `THE SPEAKER STANDS AS ASSIGNED: a line is never given to another figure because its speaker is not in the photograph — a speaker who is not in the frame is stood in a scene first, as the ride's own figure, and then speaks. `
     + `What you decide is `
-    + `WHO EACH LINE IS AIMED AT, and you decide it from the frame you were given, not from the plan:\n`
+    + `WHO EACH LINE IS AIMED AT and WHEN it is heard, and you decide the addressee from the frame you were given, not from the plan:\n`
     + `· If the addressee is a figure the photograph actually contains, name them in the label and let a beat `
     + `put the two of them in a physical geometry — who faces whom, what passes between them.\n`
     + `· If the addressee is NOT in the frame, place them there in a beat first. Naming someone who is not `
