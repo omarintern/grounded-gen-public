@@ -15,7 +15,7 @@ import { dressesTheWay } from "./_ride_world.mjs";   // the way guard, shared an
 if (process.argv[2] === "--things") {
   const [, , , roomPlate, worldName = "a themed world", nStr = "2"] = process.argv;
   if (!roomPlate) { console.error('usage: node _plate_dressing.mjs --things <room.jpg> "<world name>" [n]'); process.exit(1); }
-  const n = Math.max(1, Math.min(3, Number(nStr) || 2));
+  const n = Math.max(1, Math.min(4, Number(nStr) || 2));   // up to four (B5, 2026-09-15: six plate pieces against four things from two frames)
   const KINDS = new Set(["pattern", "prop", "fixture", "signage", "architecture", "character"]), SURFACES = new Set(["floor", "wall", "ceiling", "portal", "object", "exterior", "space"]);
   const rb64 = readFileSync(roomPlate).toString("base64");
   const rr = await providerJson([
@@ -103,9 +103,13 @@ if (DARK && plateThings.length) {
     if (unplaced) { dressing.push({ name: unplaced, op: "replace", where: piece, why: "arithmetic: a piece is replaced before anything is added" }); _paired.push(`${piece} ← ${unplaced}`); continue; }
     const addIdx = dressing.findIndex((e) => e.op === "add");
     if (addIdx >= 0) { const e = dressing[addIdx]; dressing[addIdx] = { name: e.name, op: "replace", where: piece, why: `arithmetic: the addition at "${e.where}" becomes this piece's replacement` }; _paired.push(`${piece} ← ${e.name} (was added)`); continue; }
-    break;   // nothing left to give: the piece keeps itself, as the law allows
+    // NOTHING LEFT TO GIVE — THE PIECE IS STRUCK (owner 2026-09-15: nothing of the photograph's own set dressing survives; B5 left the jack-o'-lanterns, the wooden stand and
+    // the forest floor standing in the Shining ride when the world had only four things): a piece with no taker becomes the show building's own — a black wall where a
+    // prop, a figure or scenery stood, the bare floor beside the way where a floor piece lay — the ride's building, which stays by law, and nothing of the other ride's theme.
+    const floorish = /\b(?:floor|ground|carpet|rug|path|steps?|stairs?)\b/i.test(piece);
+    dressing.push({ name: floorish ? `the bare floor beside the ${wayWord}` : "the show building's own black wall", op: "replace", where: piece, why: "struck: nothing of the photograph's dressing survives; no thing of the world was left to give" }); _paired.push(`${piece} ← struck (${floorish ? "bare floor" : "black wall"})`);
   }
-  if (_paired.length) console.log(`  ◇ replaced before added (arithmetic — every set piece has a taker while a thing is left): ${_paired.join(" · ")}`);
+  if (_paired.length) console.log(`  ◇ replaced before added (arithmetic — every set piece has a taker while a thing is left; a piece with none is struck): ${_paired.join(" · ")}`);
 }
 if (DARK && plateThings.length) console.log(`  ◇ the photograph's own set pieces, most foreign first (each named at frame zero as what it becomes, or as itself only when the world has nothing left to give): ${plateThings.join(" · ")}`);
 try { writeFileSync(`${plate}.dressing.json`, JSON.stringify({ role, dressing, plate_things: plateThings }, null, 2)); } catch {}

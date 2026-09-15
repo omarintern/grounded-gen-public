@@ -114,7 +114,7 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
   const out = { placements: [], later: [], finale: "", places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [], figures: [], photographed: [] };
   const seatRole = "the seat photograph (frame zero, the ride's own vantage)";
   if (mode === "theme") {
-    const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 2, cwd, env, log });
+    const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 4, cwd, env, log });   // supply meets demand (B5, 2026-09-15): four things a room, so a six-piece plate finds takers
     // A SCENE INSIDE IS BUILT ONLY FROM A PHOTOGRAPH THAT RIDES (owner 2026-09-13: "if we're writing in rooms that aren't carried by plates then we're obviously
     // gonna get lesser results"). Draw 19 rode the maze and the elevator hallway (cream walls, wainscoting, tan linoleum), and the writer built the twins' room
     // from the plan's wallpaper and geometric carpet and the finale from the plan's splintered door — no photograph carried either, so the model had to invent
