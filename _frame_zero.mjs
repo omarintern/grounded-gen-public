@@ -86,7 +86,7 @@ export function frameZeroSetLine(d) {
   const art = (s) => (/^(?:the|a|an|its|their)\s/i.test(String(s || "")) ? String(s) : `the ${s}`);
   const parts = [...i.replacements.map((r) => `${art(r.piece)} is ${r.by}`), ...i.additions.map((a) => `${a.thing} stands at ${a.where}`)];
   if (!parts.length) return "";
-  return `Set: for the whole take, ${parts.join("; ")}; the ride's own building — its ceiling, floor, ${i.way} and light — stays as photographed.`;
+  return `Set: for the whole take, ${parts.join("; ")}; nothing of the photograph's own set dressing remains, in any scene the ride passes.`;   // A's own clause (owner 2026-09-15: A' is the standard)
 }
 /** does a beat-zero line carry the ground — both sides of every replacement, the addition, the kept pieces (half the words of each) */
 export function frameZeroHolds(line0, d) {
@@ -116,7 +116,7 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
     // the vehicle gliding along the way past the world's things where the set pieces stood; B1's was an inventory — "remain still", a sentence about the walls and
     // light staying (my own instruction, transcribed), figures appended. The stage composes the movement; nothing about the construction is written at all.
     `Write BEAT ZERO in the golden grammar — ONE or TWO sentences of MOTION, present tense, at most ${wordCap} words, with the ${i.vehicle} as their subject: the ${i.vehicle} glides forward along ${i.way}${i.direction ? " " + i.direction : ""}, past <the world's thing> where <the set piece> stood, and turns or rolls on toward <the next thing> where <its set piece> stood — every fact above INSIDE that motion, in exactly its grammar (the world's thing where the set piece stood)${i.foreground ? `, the foreground (${i.foreground}) named once` : ""}${i.kept.length ? ", what is kept named as itself in its place" : ""}. ` +
-    `Nothing else: no figure of the world (they are met later along the way), not a word about the building's own ceiling, floor or light (they are the photograph and need no sentence), nothing that remains, stays or stands still, never a place's name, a work's title, a person's name or a camera word, never a word of change (nothing becomes, turns into or is replaced on screen). ` +
+    `Nothing else: no figure of the world (they are met later along the way), not a word about the light, nothing that remains, stays or stands still, never a place's name, a work's title, a person's name or a camera word, never a word of change (nothing becomes, turns into or is replaced on screen). ` +
     `Return ONLY JSON {"frame_zero":"the sentences"}`;
   let out = null, why = "";
   // ⚠ THE BUDGET BOUNDS THE ANSWER, IT NEVER SPENDS IT — and 2400 did not bound this one. the fast model counts its reasoning against max_tokens (the
