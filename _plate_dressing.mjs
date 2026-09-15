@@ -86,18 +86,26 @@ if (DARK) console.log(`  ◇ the read listed as the photograph's own set pieces 
 const plateThings = (Array.isArray(read?.plate_things) ? read.plate_things : []).map((x) => String(x || "").replace(/\s+/g, " ").trim()).filter((x) => x && x.length <= 60 && !NEUTRAL_SURFACE.test(x) && !isConstruction(x)).slice(0, 8);
 const _kindOf = (nm) => String((elements.find((x) => String(x?.name || "").toLowerCase() === String(nm || "").toLowerCase()) || {}).kind || "").toLowerCase();
 for (const e of dressing.slice()) if (e.op === "replace" && isConstruction(e.where)) { console.log(`  ◇ ${e.name}: dropped — "${e.where}" is the light, the track bed or a bare platform, never replaced (the light follows the world)`); dressing.splice(dressing.indexOf(e), 1); }
-// NO SET PIECE IS LEFT WITHOUT A TAKER WHILE A THING IS LEFT TO GIVE (owner 2026-09-15: "we edit A to ensure all elements of the plate are replaced" — the read at temperature 0
-// placed the doors, the hedge walls and the dials and left the character on the high stand standing, with the wainscoting unplaced). The law above says it; this is its
-// fallback, in the read's own order — the next unplaced set piece takes the next unplaced thing — logged loudly, never silent.
+// A PIECE IS REPLACED BEFORE ANYTHING IS ADDED — simple arithmetic (owner 2026-09-15: "it should be simple math that a piece is replaced before anything is added";
+// B4: the pumpkin figures and the themed floor survived while the dials, the hedge walls and the maze marker had been spent as additions and later stops). While a set
+// piece has no taker, the next thing goes to it — first a thing the read left unplaced, then a thing it had ADDED (the addition becomes the replacement) — in the read's
+// own order; "add" is only ever what is left after every piece has a taker. Logged loudly, never silent.
 if (DARK && plateThings.length) {
   const _norm = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/\s+/g, " ").trim();
-  const _taken = new Set(dressing.filter((e) => e.op === "replace").map((e) => _norm(e.where)));
-  const _placedNames = new Set(dressing.map((e) => _norm(e.name)));
-  const _freePieces = plateThings.filter((p) => !_taken.has(_norm(p)) && ![..._taken].some((w) => w.includes(_norm(p)) || _norm(p).includes(w)));
-  const _freeThings = elements.map((e) => e?.name).filter((n) => n && !_placedNames.has(_norm(n)));
+  const _taken = () => new Set(dressing.filter((e) => e.op === "replace").map((e) => _norm(e.where)));
+  const _isTaken = (p) => { const t = _taken(), n = _norm(p); return t.has(n) || [...t].some((w) => w.includes(n) || n.includes(w)); };
+  const _freePieces = () => plateThings.filter((p) => !_isTaken(p));
+  const _placedNames = () => new Set(dressing.map((e) => _norm(e.name)));
   const _paired = [];
-  while (_freePieces.length && _freeThings.length && dressing.length < 8) { const piece = _freePieces.shift(), thing = _freeThings.shift(); dressing.push({ name: thing, op: "replace", where: piece, why: "paired by the read's fallback: a set piece is never left standing while a thing of the world is left to give" }); _paired.push(`${piece} ← ${thing}`); }
-  if (_paired.length) console.log(`  ◇ paired by the read's fallback (the law: a set piece keeps itself only when nothing is left to give): ${_paired.join(" · ")}`);
+  for (const piece of plateThings) {
+    if (!_freePieces().includes(piece) || dressing.length >= 8) continue;
+    const unplaced = elements.map((e) => e?.name).find((n) => n && !_placedNames().has(_norm(n)));
+    if (unplaced) { dressing.push({ name: unplaced, op: "replace", where: piece, why: "arithmetic: a piece is replaced before anything is added" }); _paired.push(`${piece} ← ${unplaced}`); continue; }
+    const addIdx = dressing.findIndex((e) => e.op === "add");
+    if (addIdx >= 0) { const e = dressing[addIdx]; dressing[addIdx] = { name: e.name, op: "replace", where: piece, why: `arithmetic: the addition at "${e.where}" becomes this piece's replacement` }; _paired.push(`${piece} ← ${e.name} (was added)`); continue; }
+    break;   // nothing left to give: the piece keeps itself, as the law allows
+  }
+  if (_paired.length) console.log(`  ◇ replaced before added (arithmetic — every set piece has a taker while a thing is left): ${_paired.join(" · ")}`);
 }
 if (DARK && plateThings.length) console.log(`  ◇ the photograph's own set pieces, most foreign first (each named at frame zero as what it becomes, or as itself only when the world has nothing left to give): ${plateThings.join(" · ")}`);
 try { writeFileSync(`${plate}.dressing.json`, JSON.stringify({ role, dressing, plate_things: plateThings }, null, 2)); } catch {}
