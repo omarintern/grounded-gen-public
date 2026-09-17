@@ -228,7 +228,8 @@ export async function probe(term) {
 // entry, so one web call per never-seen figure, then never; a null derivation is NOT cached (the
 // never-persist-a-failure law above), so the next run simply asks again.
 export const CANON_KINDS = new Set(["meme", "real_animal", "ip_character"]);
-export const canonNeeded = (r) => !!(r && r.specific_entity_found === true && !r.canon && CANON_KINDS.has(r.kind));
+const MEME_TELL = /\b(?:meme|viral)\b/i;   // the probe's own description names a meme-tier figure even when its kind field does not (owner 2026-09-17: the nihilist penguin came back "a viral internet meme of a lone penguin" with canon null)
+export const canonNeeded = (r) => !!(r && r.specific_entity_found === true && !r.canon && (CANON_KINDS.has(r.kind) || MEME_TELL.test(String(r.what_it_is || ""))));
 export async function deriveCanon(name, whatItIs) {
   try {
     const j = await providerJson(
