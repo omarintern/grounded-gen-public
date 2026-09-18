@@ -12,7 +12,7 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { ipFiguresLaw, frameZeroRegisterClause, apparatusSoundClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
@@ -319,7 +319,6 @@ if (BEAT_STYLE !== "template") {
     charSigBlock(charSig) +
     charContextBlock(CHAR_CANON) +
     soundLaw() +
-    apparatusSoundClause() +
     asWhileCheck() +
     cutLaw() +
     causalOrder() +
