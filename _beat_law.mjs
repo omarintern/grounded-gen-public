@@ -941,7 +941,7 @@ export const charContextBlock = (canon) => (canon && (canon.temperament || canon
     `never takes a sentence from the action, and ordinary props stay bare nouns (the figure's OWN signature object is the exception — it keeps its referenced identity, never recoloured): ` +
     `temperament: ${canon.temperament || "—"} · attachment: ${canon.attachment || "—"} · always: ${canon.always || "—"}\n` +
     (canon.always
-      ? `⚠⚠ AND THAT "ALWAYS" IS THE FIGURE'S OWN MOTION, IN EVERY BEAT IT IS IN: ${canon.who || "the figure"} ${canon.always} — that is HOW it crosses, approaches, waits, reacts and leaves, in the first beat and in the last, unless the request gives it a different action at that beat. It is never stated as a fact about the figure and never takes a sentence of its own; it is the manner of whatever the beat already has it do.\n\n`
+      ? `⚠⚠ AND THAT "ALWAYS" IS THE FIGURE'S OWN MOTION, IN EVERY BEAT IT IS IN: ${canon.who || "the figure"} ${canon.always} — that is HOW it crosses, approaches, waits, reacts and leaves, in the first beat and in the last, unless the MAKER’S OWN WORDS give it a different action at that beat (an app rewrite that adds a posture the maker never wrote does not). It is never stated as a fact about the figure and never takes a sentence of its own; it is the manner of whatever the beat already has it do.\n\n`
       : "\n")
   : "");
 
