@@ -83,6 +83,26 @@ export function appropriationOf(pairs = [], sure = SOURCEABLE_SURE) {
 export function sourceabilityReductions(verdicts = []) {
   return (Array.isArray(verdicts) ? verdicts : []).filter((v) => v && v.sourceable === false && Array.isArray(v.reduction) && v.reduction.length).map((v) => ({ subject: v.subject, role: v.role, kinds: v.reduction.slice(0, 3), written: Array.isArray(v.written) ? v.written : [], inferred: v.inferred === true, kind: v.kind }));
 }
+/** A THING IS WRITTEN, NEVER HUNTED AS A PLACE (2026-09-18, job 4a60a30b). The judge already answers a KIND per subject and said
+ *  plainly that "tsunami wave face" is a THING; the verdict was computed, logged, and consumed by nothing, because the reductions
+ *  act only on sourceable === false and a sourceable thing falls straight through. So a thing that HAPPENS in a plate was carried
+ *  as the story's second LOCATION: it armed the cuts, bought a vantage slot and put a second hunt on the bill. Returns the plan's
+ *  places, public places, qualified places and vantage slots with every such thing removed, and the things it removed. Pure. */
+export function writtenThings(verdicts = [], plan = {}) {
+  const bare = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/\s+/g, " ").trim();
+  const places = Array.isArray(plan?.form?.places) ? plan.form.places.slice() : [];
+  const things = (Array.isArray(verdicts) ? verdicts : []).filter((v) => v && v.sourceable === true && /^thing$/i.test(String(v.kind || "").trim()));
+  const written = [];
+  for (const v of things) { const hit = places.find((p) => bare(p) === bare(v.subject)); if (hit && !written.includes(hit)) written.push(hit); }
+  const gone = new Set(written.map(bare));
+  const keptPlaces = places.filter((p) => !gone.has(bare(p)));
+  const publicPlaces = Array.isArray(plan?.form?.publicPlaces) ? plan.form.publicPlaces.filter((p) => !gone.has(bare(p))) : plan?.form?.publicPlaces;
+  const qualifiedPlaces = plan?.form?.qualifiedPlaces && typeof plan.form.qualifiedPlaces === "object"
+    ? Object.fromEntries(Object.entries(plan.form.qualifiedPlaces).filter(([k]) => !gone.has(bare(k)))) : plan?.form?.qualifiedPlaces;
+  const vantage = Array.isArray(plan?.slots?.vantage)
+    ? plan.slots.vantage.filter((sl) => ![...(sl?.queries || []), sl?.scope].some((q) => q && [...gone].some((g) => bare(q).includes(g)))) : plan?.slots?.vantage;
+  return { places: keptPlaces, publicPlaces, qualifiedPlaces, vantage, written };
+}
 /** NO DENIAL (owner 2026-09-11: "even if nothing photographable, it must infer to produce. sometimes a prompt dont produce so we must fill in"). Kept as a
  *  function so the battery can pin that it returns nothing: a subject the judge could not reduce is INFERRED by the judge, and if it still came back
  *  empty the run proceeds with the planner's own queries — never a refusal for lack of a photograph. Pure. */
