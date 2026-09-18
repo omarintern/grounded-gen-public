@@ -150,6 +150,8 @@ console.log(`[multiref] ${slug}: ACCEPTED queue_id=${qid} — polling…`);
 // ⚠ RECORDED BEFORE THE FIRST POLL, DELIBERATELY. The job is already accepted, so from this
 // line onward the asset is ours whether or not this process survives to collect it. Writing the
 // record after polling began would leave the exact window unprotected that the record exists to cover.
+// ⚠ the provider authorises /video/retrieve by the SIGNER, so the lane that
+// submitted is the only one that can ever collect this clip — a sweep on another lane gets a 403, not a file.
 markInflight({ queue_id: qid, model: MODEL, slug, aspect, duration, target: `out/_aspect/gen_${slug}_${aspect.replace(":", "x")}.mp4` });
 
 // ⚠⚠ THE POLL INTERVAL IS A THROUGHPUT DECISION, NOT A LATENCY ONE (measured 2026-08-18). the provider publishes
