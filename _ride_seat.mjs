@@ -21,6 +21,7 @@ import { writeContactSheet, sheetLegend } from "./_contact_sheet.mjs";
 import { judgeSeat, seatVerdict, rankSeats, seatLabel, diffuseSeat, SEAT_BAND } from "./_judge_seat.mjs";
 const SEAT_BAND_LOG = SEAT_BAND;
 import { rideFromEnv } from "./_ride.mjs";
+import { spent } from "./_spend.mjs";   // the hunt negotiates its own budget, exactly as the adaptive sourcer does
 
 const onFatal = (e) => {
   if (e?.ledgerCap) { console.error(`\n✗ BUDGET CAP — ${e.message}`); process.exit(4); }
@@ -81,6 +82,13 @@ async function dl(url, path, sourceUrl = "") {
 let nextId = 0;
 async function collect(query, ri) {
   console.log(`\n─── seat query ${ri} "${query}" ───`);
+  // ⚠ THE SEAT HUNT NEGOTIATES ITS BUDGET LIKE EVERY OTHER HUNT (2026-09-18, job 4a60a30b). scrape.mjs shrinks the scoped search's
+  // tries, and stands the paid tier down entirely, from SCRAPE_USD_LEFT; that variable was set only by the adaptive
+  // sourcer, so this hunt read Infinity and rode three FULL paid tries on one query, $… of a $… cap, for 0
+  // conforming rows apiece. Set per query, not once, because the figure moves as the hunt spends. Guarded inline and
+  // failing to "Infinity" exactly as the sourcer does: no cap set or spend unreadable means no signal, NEVER "0.00",
+  // which would silence the paid tier altogether.
+  process.env.SCRAPE_USD_LEFT = (() => { try { const cap = Number(process.env.SPEND_CAP_USD || 0); if (!(cap > 0)) return "Infinity"; return Math.max(0, cap - (Number(spent().total) || 0)).toFixed(2); } catch { return "Infinity"; } })();
   let raw = [];
   try { raw = await scrapeImages(query, Math.ceil(SCRAPE_N * OVERASK)); }
   catch (e) { if (e?.ledgerCap) throw e; if (e instanceof IndexInfraError || e?.name === "IndexInfraError") { console.log(`  ✗ the route is unavailable (${String(e.message).slice(0, 80)})`); throw e; } console.log(`  ✗ scrape failed (${String(e?.message || e).slice(0, 80)})`); return []; }
