@@ -77,6 +77,7 @@ export function placeOnPlate({ plate, things = [], role = "a photograph the ride
   const _side = (v) => (Array.isArray(v) ? v.map((x) => String(x ?? "").trim()).filter(Boolean).join(", ") : typeof v === "string" ? v : "").trim();
   const lines = (Array.isArray(d?.dressing) ? d.dressing : []).map((x) => { const w = _side(x?.where), n = _side(x?.name); return !w || !n ? "" : x?.op === "replace" ? `${w} becomes ${n}` : `${n} at ${w}`; }).filter(Boolean);
   lines.plateThings = (Array.isArray(d?.plate_things) ? d.plate_things : []).map(_side).filter(Boolean);
+  lines.platePeople = (Array.isArray(d?.plate_people) ? d.plate_people : []).map(_side).filter(Boolean);   // capture mode only: a person is never a piece, and their place is offered to a figure (owner 2026-09-18)
   return lines;
 }
 /** THE WORLD BY MODE — pure in shape (reads happen through the two helpers above). Returns the dressing the writer hears:
