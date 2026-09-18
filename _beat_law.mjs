@@ -857,6 +857,49 @@ export const stampsLegal = (stamps, secs, counts = legalBeatCounts(secs)) =>
   counts.includes(stamps.length) && stamps[0] === 0
   && stamps.every((v, i) => Number.isInteger(v) && v < secs && (i === 0 || v > stamps[i - 1]));
 
+// ⚠ WHY A STAMP LIST IS ILLEGAL, CLAUSE BY CLAUSE (2026-09-18, the trailcam cost audit). stampsLegal answers yes or no,
+// and the message the writer was handed always named the COUNT: "stamps [0,3,6,9] illegal for 9s counts {2,4}". On that job
+// the count was the one clause every draft SATISFIED (observational telling, legalBeatCounts(9) = [2,4], four stamps), and
+// the clause it broke was the last one, a stamp AT the take’s own duration. Three corrective calls were bought against a
+// message that reported a constraint already met, and each returned a FRESH draft, which is how the penguin’s canon was
+// lost between draft 1 and draft 3. This names the clause that actually broke, in the order the predicate tests them. Pure.
+export function stampsWhy(stamps, secs, counts = legalBeatCounts(secs)) {
+  const s = Array.isArray(stamps) ? stamps : [];
+  const why = [];
+  if (!counts.includes(s.length)) why.push(`the beat count is ${s.length}, and a ${secs}s take takes ${counts.join(" or ")}`);
+  if (s[0] !== 0) why.push(`the first beat is [${s[0]}s], and a take opens at [0s]`);
+  const dec = s.find((v) => !Number.isInteger(v));
+  if (dec !== undefined) why.push(`a stamp is not a whole second ([${dec}s])`);
+  const late = s.find((v) => Number.isInteger(v) && v >= secs);
+  if (late !== undefined) why.push(`a stamp is at or past the ${secs}s duration ([${late}s]), and every beat opens strictly inside the take`);
+  const back = s.findIndex((v, i) => i > 0 && !(v > s[i - 1]));
+  if (back > 0) why.push(`the stamps do not ascend ([${s[back - 1]}s] then [${s[back]}s])`);
+  return why.length ? why : ["the stamps are not legal for this take"];
+}
+// ⚠ A TERMINAL STAMP IS ARITHMETIC, NOT A REASONING CALL. Pulls every stamp at or past the duration back inside it,
+// keeping the count, the [0s] opening and the strict ascent; walks backwards so a cascade settles in one pass. Returns
+// null when the list cannot be made legal by moving late stamps alone (a bad count, a decimal, a non-zero opening, a
+// collision), and the caller then spends the corrective call it was always going to spend. Pure.
+export function clampStamps(stamps, secs) {
+  const out = (Array.isArray(stamps) ? stamps : []).slice();
+  if (!out.length) return null;
+  for (let i = out.length - 1; i >= 0; i--) {
+    const ceil = (i === out.length - 1 ? secs : out[i + 1]) - 1;
+    if (out[i] > ceil) out[i] = ceil;
+  }
+  const ok = out[0] === 0 && out.every((v, i) => Number.isInteger(v) && v >= 0 && v < secs && (i === 0 || v > out[i - 1]));
+  return ok ? out : null;
+}
+// The beats’ stamps rewritten BY VALUE, never by position: a Dialogue line may carry a stamp of its own, and the layout
+// normaliser moves lines, so an index is not a stable address. Only the values the clamp changed are touched, and only
+// above the Dialogue header. The writer’s words are untouched. Pure.
+export function restampBeats(text, map) {
+  const src = String(text || "");
+  const di = src.search(/^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/im);
+  const head = di >= 0 ? src.slice(0, di) : src, tail = di >= 0 ? src.slice(di) : "";
+  return head.replace(/^([ \t]*)\[(\d+)s\]/gm, (m, sp, v) => (map.has(Number(v)) ? `${sp}[${map.get(Number(v))}s]` : m)) + tail;
+}
+
 // ── CANON COMPILES TO MANNER (owner 2026-08-20): «whatever the characterization should imbue within the
 // bounds of action, almost blending but not giving out on the central piece of actions». The character never
 // takes a sentence from the action — it shows only in HOW the actions are performed, on bare nouns (owner:

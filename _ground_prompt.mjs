@@ -12,7 +12,7 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout } from "./_gate_rules.mjs";
 import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { ipFiguresLaw, frameZeroRegisterClause, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
@@ -378,7 +378,7 @@ if (BEAT_STYLE !== "template") {
   // output pattern owns; a fifth restatement in the ask is not the fix).
   const _lawFails = (t) => {
     const fails = [];
-    if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(t), BEAT_SECS, COUNTS)) fails.push(`stamps [${stampList(t).join(",")}] illegal for ${BEAT_SECS}s counts {${COUNTS.join(",")}}`);
+    if (process.env.BEAT_BLOCKS !== "0" && !stampsLegal(stampList(t), BEAT_SECS, COUNTS)) fails.push(`stamps [${stampList(t).join(",")}] are illegal: ${stampsWhy(stampList(t), BEAT_SECS, COUNTS).join("; ")}`);   // the clause that BROKE, never the constraint the draft already met (2026-09-18)
     // THE HELD CLIMAX LEFT THE FORMAT RETRY (owner 2026-09-15: the climax owns at least four seconds and is not the last stamp — it may run over more than one beat, so a
     // last stamp says nothing about where it opens); the 09-12 clause (a last stamp later than [secs−3], corrected in this cheap retry) is gone — where the climax opens is
     // a judge question in _run (_judge_climax), its finding a re-ask. stampsLegal still refuses a stamp at or past the duration.
@@ -428,6 +428,23 @@ if (BEAT_STYLE !== "template") {
     text = text.replace(new RegExp(`,?\\s*(?:and|as|while)\\s+the camera\\s+${_camV}\\b(?:\\s+(?:to|toward|towards|the|a|an|its|his|her|left|right|up|down|back|ahead|slowly|sharply)\\b)*`, "gi"), "")
                .replace(new RegExp(`\\bthe camera\\s+${_camV}\\b[^.;,]{0,60}(?:,\\s*(?:and\\s+)?|\\s+and\\s+)`, "gi"), "");
     if (text !== before) console.error(` (repair: a camera clause deleted — the camera is never a character; no retry spent)`); }
+  // A TERMINAL STAMP IS CLAMPED, NOT BOUGHT (2026-09-18, the trailcam cost audit). All three of that job’s drafts broke one
+  // clause: a beat stamped AT the clip’s own duration. The count was legal, the order was legal, the opening was [0s]. Each
+  // repair was a paid reasoning call (5571, 7129 and 6091 output tokens for $…, $… and $…: $…, 47% of the
+  // writer’s whole spend) to move one integer by one, and each returned a FRESH draft rather than an edit, which is how the
+  // penguin’s canon reached draft 1 and was gone by draft 3. When moving the late stamps inside the take makes the list legal,
+  // and only then, the stamps are clamped here in the writer’s own words and nothing is spent. Anything else still re-asks.
+  if (process.env.BEAT_BLOCKS !== "0") {
+    const _st = stampList(text);
+    if (_st.length && !stampsLegal(_st, BEAT_SECS, COUNTS)) {
+      const _cl = clampStamps(_st, BEAT_SECS);
+      if (_cl && stampsLegal(_cl, BEAT_SECS, COUNTS)) {
+        const _map = new Map(_st.map((v, i) => [v, _cl[i]]).filter(([a, b]) => a !== b));
+        text = restampBeats(text, _map);
+        console.error(` (repair: stamps [${_st.join(",")}] clamped to [${_cl.join(",")}]; a stamp at or past the ${BEAT_SECS}s duration was the only fault, no retry spent)`);
+      }
+    }
+  }
   const _fails1 = _lawFails(text);
   if (_fails1.length) {
     console.error(` (writer output broke the law: ${_fails1.join("; ")} - one corrective retry)`);
