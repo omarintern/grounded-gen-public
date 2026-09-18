@@ -115,7 +115,14 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
   const out = { placements: [], later: [], finale: "", places: laterPlates.map((x) => x.name).filter(Boolean), things: [], plateThings: [], figures: [], photographed: [] };
   const seatRole = "the seat photograph (frame zero, the ride's own vantage)";
   if (mode === "theme") {
-    const read = readRoomThings({ roomPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 4, cwd, env, log });   // supply meets demand (B5, 2026-09-15): four things a room, so a six-piece plate finds takers
+    // ⭐⭐ A THEME WITH NO ROOMS READS THE PHOTOGRAPHS THAT DO RIDE (2026-09-18, job 29b8bf26). Theme mode reads its things off
+    // roomPlates and off nothing else. The Simpsons ride had no shotSet, so there were no room plates at all, and the two places
+    // the brief owed were hunted, judged, anchored and handed in as laterPlates, which this mode does not read. The writer was told
+    // "each is written as its things" and given no things, so it wrote the seat plate, and the seat plate was a stock ice cave. When
+    // no room rode, the photographs that DID ride are read instead; a theme that has its rooms is untouched.
+    const _readPlates = roomPlates.length ? roomPlates : laterPlates.map((x) => x?.plate).filter(Boolean);
+    if (!roomPlates.length && _readPlates.length) log(`  ◇ the world offered no room photograph — the ${_readPlates.length} photograph(s) that DO ride are read for their things instead`);
+    const read = readRoomThings({ roomPlates: _readPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 4, cwd, env, log });   // supply meets demand (B5, 2026-09-15): four things a room, so a six-piece plate finds takers
     // A SCENE INSIDE IS BUILT ONLY FROM A PHOTOGRAPH THAT RIDES (owner 2026-09-13: "if we're writing in rooms that aren't carried by plates then we're obviously
     // gonna get lesser results"). Draw 19 rode the maze and the elevator hallway (cream walls, wainscoting, tan linoleum), and the writer built the twins' room
     // from the plan's wallpaper and geometric carpet and the finale from the plan's splintered door — no photograph carried either, so the model had to invent
