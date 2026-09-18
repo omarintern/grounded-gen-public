@@ -209,6 +209,18 @@ export const workTitlesClause = () =>
 
 // FRAME ZERO'S REGISTER (owner 2026-09-08; _gate_rules.captureFormNoun): a capture form is stated at frame zero as what the
 // photograph IS — the plate's own register, not a camera word. The run repairs mechanically when the writer leaves it out.
+/** THE SOUND IS WHAT THE APPARATUS'S OWN MICROPHONE RECORDS (owner 2026-09-18, the trail-cam penguin: "trail cam should have muffled sound or
+ *  such as is usual which it doesnt"). A capture form is a register in the ear as much as in the eye: its audio is the device's — muffled,
+ *  compressed, wind-buffeted, distant, with the device's own mechanism in it — never studio foley. One clause, device named; the writer
+ *  decides the specifics. Empty when the take has no capture form. */
+export const apparatusSoundClause = () => {
+  const n = captureFormNoun(process.env); if (!n) return "";
+  const shown = /^cctv$/i.test(n) ? "security camera" : n.toLowerCase();
+  return `⚠ THE SOUND IS WHAT THIS ${shown.toUpperCase()}'S OWN MICROPHONE RECORDS, never a soundtrack laid over it: small, compressed, muffled and wind-buffeted, ` +
+    `distant things faint and near things clipping, the device's own mechanism audible where it has one (a shutter's click, a motor's whir, a lens housing knocked by wind, a cabin's hum, ` +
+    `a mount's rattle) — and a device that records no sound records SILENCE with the hiss of its own circuitry. No crisp footsteps, no clean foley, no music. ` +
+    `Write the Sound: line in that register, as this ${shown} would have heard it.\n\n`;
+};
 export const frameZeroRegisterClause = () => {
   const n = captureFormNoun(process.env); if (!n) return "";
   const shown = /^cctv$/i.test(n) ? "CCTV" : n.toLowerCase();
