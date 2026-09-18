@@ -7,6 +7,7 @@
 // the FINE_DETAIL regex) rides along. speechReach already lives in _gate_rules (shared there, not here).
 import { dialogueStamps, musicRequested, captureFormNoun, SPEAKER_LABEL_MAX } from "./_gate_rules.mjs";
 import { rideFromEnv } from "./_ride.mjs";   // the ride's handheld exception is carved where the camera law is stated (2026-09-09)
+import { replacementFact } from "./_ride_writer.mjs";   // the golden grammar is written once and imported, never pasted (2026-09-18)
 
 export const DIALOGUE_STAMPS = dialogueStamps(Number(process.env.BEAT_DURATION) || 4, Number(process.env.CUT_BUDGET) || 0);
 
@@ -216,6 +217,29 @@ export const frameZeroRegisterClause = () => {
   // the one loss was the T-rex REMIX, whose denser, larger action was re-authored against the parent's kept plate). A fresh gen may state
   // it, as the bear's writer did by choice; a kept-plate remix must, and the run repairs it in when the writer leaves it out.
   return `⚠ FRAME ZERO IS THIS PHOTOGRAPH, WHICH A ${shown === "CCTV" ? "security camera" : shown} MADE: beat zero describes what it shows — the place as photographed, its objects and occupants — and never announces the device as a caption ("${n} footage: …" is not written; the look is the picture's own and every later beat stays inside it). The recording device is a THING of the scene and may be ADDRESSED as one — a subject notices the ${shown === "CCTV" ? "security camera" : shown} and looks straight into its lens — that is the subject's action, not a camera word, and it holds the footage's look through the payoff (the bear that "recognized the lens of the overhead security camera" kept its CCTV; the T-rex that "looked directly up" lost it, job 6280175e).\n`;
+};
+// ⭐⭐ AN APPROPRIATED TAKE IS TWO PHOTOGRAPHS, AND THE FIRST ONE IS THE CAMERA (owner 2026-09-18). When a capture form is
+// unlikely at the place the maker named, the form is hunted as itself in that KIND of place and the place is hunted as itself;
+// the form's photograph is frame zero and gives the take its vantage, its overlay and its colour, and the place's photograph is
+// read for the things that take the form frame's own pieces. The writer never sees either picture's map by accident: it is told,
+// first, in the grammar a ride has used for its own replacements since 2026-09-10, because a replacement written as a CHANGE
+// ("becomes", "turns into") makes the model animate the morph instead of opening on the scene. Empty when nothing appropriated.
+export const appropriationBlock = () => {
+  let m = null; try { m = JSON.parse(process.env.APPROPRIATION_MAP || ""); } catch { m = null; }
+  if (!m || typeof m !== "object" || !m.form) return "";
+  const facts = (Array.isArray(m.placements) ? m.placements : []).map((l) => replacementFact(String(l), "")).filter(Boolean);
+  const pieces = (Array.isArray(m.plateThings) ? m.plateThings : []).filter(Boolean);
+  const people = (Array.isArray(m.platePeople) ? m.platePeople : []).filter(Boolean);
+  const dev = String(m.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || String(m.form);   // the device, not the medium word: "what a security camera recorded", never "a security camera footage"
+  return `⚠⚠ THIS TAKE IS TWO PHOTOGRAPHS, AND THE ONE YOU ARE LOOKING AT IS THE CAMERA. It is what a ${dev} recorded, somewhere else; ` +
+    `the take is ${m.place ? `${m.place}, ` : ""}seen through it. Its VANTAGE, its OVERLAY (a timestamp, a camera number, a corner mark) and its washed colour are ` +
+    `CONSTANTS of the whole take: name them in the first beat, hold them through every beat, and name them again in the last. The camera is fixed; it is never written as a character and never moves.\n` +
+    `⚠⚠ FRAME ZERO IS THIS FRAME WITH THAT PLACE IN IT. Every piece this photograph holds is named at frame zero as WHAT IT BECOMES, in this grammar and no other: ` +
+    `"<the place's thing> where <the piece> stood". A replacement is a STANDING FACT, already in place before the first frame, never a change on screen: nothing becomes, turns into, morphs or is replaced while the video runs. ` +
+    `A piece with no replacement is named as itself, in its place.${facts.length ? ` The replacements, already in place at [0s]: ${facts.join(" | ")}.` : ""}` +
+    `${pieces.length ? ` The pieces this photograph holds: ${pieces.join(", ")}.` : ""}\n` +
+    `${people.length ? `⚠ A PERSON THIS PHOTOGRAPH HOLDS IS NEVER WRITTEN AS THEMSELVES: one of the story's own figures stands where they stood (${people.join("; ")}), from the first beat, doing what the story has them do.\n` : ""}` +
+    `⚠⚠ THE SECOND PHOTOGRAPH IS A REFERENCE FOR THE THINGS, NEVER A PLACE THE TAKE GOES. The take never leaves this frame: no cut, no arrival, no second location. Everything that happens, happens inside it.\n`;
 };
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";
