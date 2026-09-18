@@ -241,6 +241,24 @@ export const appropriationBlock = () => {
     `${people.length ? `⚠ A PERSON THIS PHOTOGRAPH HOLDS IS NEVER WRITTEN AS THEMSELVES: one of the story's own figures stands where they stood (${people.join("; ")}), from the first beat, doing what the story has them do.\n` : ""}` +
     `⚠⚠ THE SECOND PHOTOGRAPH IS A REFERENCE FOR THE THINGS, NEVER A PLACE THE TAKE GOES. The take never leaves this frame: no cut, no arrival, no second location. Everything that happens, happens inside it.\n`;
 };
+/** THE THING PLATE (owner 2026-09-18: "it must be sourced for sure … the tsunami would replace the prompted tsunami … water replaces water").
+ *  A photograph OF the thing rides behind the host; the thing appears in the take as it appears there, at that mass and texture, standing
+ *  where the host's own piece stood at frame zero. It is never a place the take goes. Empty when no thing plate rode. */
+export const thingBlock = () => {
+  let m = null; try { m = JSON.parse(process.env.THING_MAP || ""); } catch { m = null; }
+  const things = Array.isArray(m?.things) ? m.things.filter((t) => t && t.subject) : [];
+  if (!things.length) return "";
+  const host = m.host === "seat" ? "the seat photograph, the ride's own vantage" : "the photograph the take is shot from";
+  return things.map((t) => {
+    const facts = (Array.isArray(t.placements) ? t.placements : []).map((l) => replacementFact(String(l), "")).filter(Boolean);
+    const seen = (Array.isArray(t.things) ? t.things : []).filter(Boolean);
+    return `⚠⚠ ONE OF THE REFERENCE PHOTOGRAPHS IS THE ${String(t.subject).toUpperCase()} ITSELF, NOT A PLACE. Frame zero is ${host}; the ${t.subject} is IN it from the first frame, ` +
+      `as that photograph shows it — its mass, its texture, its light — never smaller, never tidier, never a drawing of it. ` +
+      `${facts.length ? `It stands where the host's own piece stood, a standing fact at [0s], never a change on screen: ${facts.join(" | ")}. ` : `Where it stands is the host's own space: name the host's piece it takes, in the grammar "<the ${t.subject}> where <the piece> was". `}` +
+      `${seen.length ? `What that photograph holds: ${seen.join(", ")}. ` : ""}` +
+      `The take never cuts to that photograph and never arrives there: it is a reference for the thing, and the thing is here.`;
+  }).join("\n") + "\n";
+};
 export const addresseeClause = () => {
   const form = process.env.MEDIA_FORM || "";
   if (!ELICITED_FORM.test(form)) return "";
