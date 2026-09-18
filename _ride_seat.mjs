@@ -122,17 +122,31 @@ async function judgeAll(cands) {
 }
 
 console.log(`◉ THE SEAT: a ${D.noun} (${D.kind}, ${D.family}) — queries ${JSON.stringify(QUERIES)}${process.env.SEAT_LADDER ? ` · ladder ${process.env.SEAT_LADDER.replace(/,/g, " → ")}` : " · the form route"}`);
-await judgeAll(await collect(QUERIES[0], 0));
 const aboardN = () => recs.filter((r) => r.aboard).length;
-if (QUERIES[1] && aboardN() < SECOND_AT && judgeCalls < JUDGE_BUDGET) {
-  console.log(`  ${aboardN()} aboard after the first query — the second query joins the pool`);
-  await judgeAll(await collect(QUERIES[1], 1));
-}
-// THE FALLBACK QUERIES (owner 2026-09-15, the water route: "with fallback queries as well in place"): a decision may carry more than two phrasings; each one past the
-// second is walked only while NOTHING is aboard and the judge budget holds — a boat dark ride's hunt does not die on its first two phrasings.
-for (let qi = 2; qi < QUERIES.length && aboardN() === 0 && judgeCalls < JUDGE_BUDGET; qi++) {
-  console.log(`  nothing aboard after ${qi} queries — fallback query ${qi} joins the pool ("${QUERIES[qi]}")`);
-  await judgeAll(await collect(QUERIES[qi], qi));
+// ⚠⚠ A HUNT WITH SOMETHING ON ITS SHELF SETTLES WHEN THE CAP TRIPS; IT NEVER THROWS THE SHELF AWAY (2026-09-18, job
+// 4a60a30b). The ledgerCap throw comes out of collect(), and onFatal above is this process's handler for it, so the rank,
+// the pick and the serve below were never reached: two judged, aboard, on-disk plates the job had already paid for were
+// deleted with the process, _run exited 4 and the user was refunded. The world hunt has settled on its own pool since the
+// day it was written (BEST-OF-BUNCH); the seat hunt had no settle path at all. The platform reduces, never refuses.
+// ⚠ SCOPED TO A SHELF THAT HOLDS SOMETHING. A cap with nothing aboard is still exit 4: no plate beats a wrong plate, and
+// a recovery that always succeeds is a bug report. Every other fault, and every other throw, still belongs to onFatal.
+let capSettled = false;
+try {
+  await judgeAll(await collect(QUERIES[0], 0));
+  if (QUERIES[1] && aboardN() < SECOND_AT && judgeCalls < JUDGE_BUDGET) {
+    console.log(`  ${aboardN()} aboard after the first query — the second query joins the pool`);
+    await judgeAll(await collect(QUERIES[1], 1));
+  }
+  // THE FALLBACK QUERIES (owner 2026-09-15, the water route: "with fallback queries as well in place"): a decision may carry more than two phrasings; each one past the
+  // second is walked only while NOTHING is aboard and the judge budget holds — a boat dark ride's hunt does not die on its first two phrasings.
+  for (let qi = 2; qi < QUERIES.length && aboardN() === 0 && judgeCalls < JUDGE_BUDGET; qi++) {
+    console.log(`  nothing aboard after ${qi} queries — fallback query ${qi} joins the pool ("${QUERIES[qi]}")`);
+    await judgeAll(await collect(QUERIES[qi], qi));
+  }
+} catch (e) {
+  if (!e?.ledgerCap || aboardN() === 0) throw e;   // an empty shelf, or any other fault, is the fatal handler's
+  capSettled = true;
+  console.log(`  [seat] BUDGET CAP reached with ${aboardN()} judged aboard frame(s) already on the shelf: the hunt stops here and serves the best of them, bought and paid for (the platform reduces, never refuses)`);
 }
 try { writeFileSync(join(OUTDIR, `world_${slug}.calls.json`), JSON.stringify({ judgeCalls })); } catch {}
 const seen = recs.map((r) => ({ p: r.p, host: r.host, url: r.url, engine: r.engine, q: r.q, W: r.W, H: r.H, verdict: r.aboard ? "pass" : "reject", why: r.aboard ? seatLabel(r).replace(/^✓ /, "") : r.why, reading: r.j }));
@@ -175,7 +189,7 @@ writeFileSync(join(OUTDIR, `world_${slug}.pick.json`), JSON.stringify({
   engine: pick.engine, host: pick.host, url: pick.url, query: pick.q, conceded: false, width: pick.W, height: pick.H, cropped,
   reading: { camera_position: j.camera_position ?? null, footing: j.footing ?? null, way_direction: j.way_direction ?? null, fits_setting: j.fits_setting ?? null, riders: j.riders ?? null, vehicle_in_foreground: j.own_part === true, own_part: j.own_part === true, signs: ["walkway_or_footprint_markings", "hazard_stripes", "queue_railing", "people_beside_track", "empty_seats_looked_at", "vehicle_seen_from_outside"].filter((k) => j[k] === true), lighting: j.lighting ?? null, way_recedes: j.way_recedes === true, environment: j.environment ?? null, way: j.way ?? null, vehicle: j.vehicle ?? null, text: j.text ?? null, ai_generated: Number.isFinite(Number(j.ai_generated)) ? Number(j.ai_generated) : null, why: j.why ?? null },
   aboard_look: { camera_position: j.camera_position ?? null, environment: j.environment ?? null, way: j.way ?? null, vehicle: j.vehicle ?? null },
-  ranked: ranked.length, judged: recs.length, calls: judgeCalls,
+  ranked: ranked.length, judged: recs.length, calls: judgeCalls, settle_cause: capSettled ? "cap" : null,   // the world hunt's own word for the same fact
 }, null, 2));
 console.log(`✓ seat served → ${out} (${pick.W}x${pick.H}, native aspect)`);
 // the candidates that did not serve are swept — the pick and the sidecars stay for the run and for the eye
