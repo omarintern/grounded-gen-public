@@ -639,7 +639,12 @@ export const ipFiguresLaw = () => {
   const seat = modes.filter((m) => m && m.seat === true), dename = modes.filter((m) => m && m.mode === "dename" && m.seat !== true), omit = modes.filter((m) => m && m.mode === "omit");
   return `⚠⚠ FIGURES THAT ARE NEVER NAMED (a public-domain figure and a work's lesser figures are named and described; a work's FACE and a real person are not): ` +
     (seat.length ? `${seat.map((m) => `"${m.name}" is the SEAT — the rows ahead the ride addresses by that name: never seen, never described, never seated (a rider given her hair, clothes, face or prop is a dressed row); the world speaks to her and acts on her, and the name MAY be spoken inside a line ("Wendy, darling!"); she is HEARD, never seen — the rows ahead scream and answer as Dialogue lines under the label "the rows ahead", never under her name`).join("; ")}. ` : "") +
-    (dename.length ? `${dename.map((m) => `"${m.name}" is written ONLY as a description of build, clothing and posture${m.guise ? ` — ${m.guise}` : ""} — never the name, not in a beat, not in a speaker label; the name MAY be spoken inside a line ("Wendy, darling!") — a spoken name is words, never a picture`).join("; ")}. ` : "") +
+    // ⭐⭐ THE CONTEXT KNOWS THE CHARACTER; THE PROSE NEVER NAMES IT (owner 2026-09-18, verbatim: "if the writer receives the de-named
+    // description then how does it know the context? the Cody Maverick allowed it to write Cody Maverick's character but the dename would
+    // reduce"). The ban was stated without the identity behind it, so a writer told only "never write Cody Maverick, write a rockhopper
+    // penguin" loses the character and writes a bird. The figure is named HERE, in the law, with what the resolver learned it is, and the
+    // one de-named phrase it must use in its sentences is quoted so the beats, the cast ledger and this law say the same words.
+    (dename.length ? `${dename.map((m) => `"${m.name}"${m.identity ? ` (${m.identity})` : ""} is a character you know: write it IN CHARACTER, with its own manner, and NEVER by that name. It is written ONLY as a description of build, clothing and posture${(m.prose || m.guise) ? ` — ${m.prose || m.guise}` : ""} — never the name, not in a beat, not in a speaker label; the name MAY be spoken inside a line ("Wendy, darling!") — a spoken name is words, never a picture`).join("; ")}. ` : "") +
     (omit.length ? `${omit.map((m) => `"${m.name}"`).join(", ")} ${omit.length > 1 ? "do" : "does"} not appear at all — the signature IS the name, and a description would still be it. ` : "") +
     `The request's own words may name them; your beats and dialogue may not.\n`;
 };
