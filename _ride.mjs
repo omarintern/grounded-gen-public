@@ -288,8 +288,17 @@ export function rideWords(d) {
   // bed" — as the dark-ride store's own ice-cave reading does — writes "the the track bed" into the writer's block and into frame zero
   // (shipped in draw 25). The article is stripped once, here, where the class's words are decided.
   const _w = (v) => (typeof v === "string" ? v.trim().replace(/^(?:the|a|an)\s+/i, "").trim() : "");
-  const way = String(_w(d?.words?.way) || (_w(r.way) !== "unseen" ? _w(r.way) : "")).trim();
-  const vehicle = String(_w(d?.words?.vehicle) || (!["unseen", "other"].includes(_w(r.vehicle)) ? _w(r.vehicle) : "")).trim();
+  let way = String(_w(d?.words?.way) || (_w(r.way) !== "unseen" ? _w(r.way) : "")).trim();
+  let vehicle = String(_w(d?.words?.vehicle) || (!["unseen", "other"].includes(_w(r.vehicle)) ? _w(r.vehicle) : "")).trim();
+  // ⭐⭐ THE MAKER'S CRAFT OUTRANKS A READING OF ANOTHER KIND (job f8fa74dc: the seat judge read a speedboat's bow as a KART on a ROAD, the frame-zero
+  // reader saw a boat bow on calm water, and the beats opened "The kart glides forward along the road" on a boat at sea). The judge's `vehicle` is a
+  // closed list for RANKING — car | boat | omnimover | kart — never prose: when the maker named the hull, the hull is the word, and a way no such hull
+  // travels on gives way to the water.
+  const craft = _w(d?.craft);
+  if (craft) {
+    vehicle = craft;
+    if ((craftVehicle(craft) === "boat" || BOAT.test(craft)) && !/water|channel|river|sea|ocean|canal|lake|rapids|flume|wave|surf|bay|harbou?r/i.test(way)) way = "water";   // a jet ski is a hull too (BOAT), whatever the judge's list calls it
+  }
   const watery = d?.water === true || /boat|flume|rapids|water/i.test(String(d?.noun || ""));   // the decision's own water flag first (2026-09-15)
   return {
     way: way || (d?.kind === "driven" ? "road" : d?.kind === "worn" ? "way ahead" : watery ? "water channel" : d?.family === "coaster" ? "rails" : "way ahead"),

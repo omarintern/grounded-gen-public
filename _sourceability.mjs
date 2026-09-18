@@ -24,7 +24,8 @@ export const SOURCEABILITY_LAW =
   `THE PAIR IS JUDGED TOO (owner 2026-09-17: "would a trail cam be very likely in everest? answer is probably no"): when the subjects include a capture FORM and a PLACE, also say whether that form is plausibly found at that place in real footage — a trail camera on Mount Everest, a doorbell camera in the Sahara: unlikely; CCTV in a shopping mall: likely. ALWAYS give the place's bare KIND as an image query ("snowy mountain ridge"), whether the form is likely there or not: when it is unlikely the form is hunted as itself in that kind of place and the specific place is written, and when it is likely the kind is the ladder the hunt falls back to if the pairing yields no photograph of the form. ` +
   `A CAPTURE FORM IS SOURCED IN ITS OWN HABITAT, NEVER AT THE REQUEST'S PLACE (owner 2026-09-18: "either it doesnt understand what determines 'trail cam' style or something else" — it understood the look and rejected every ordinary photograph; what did not exist was the SUPPLY). For a subject that is a FORM, "query" is where that form's footage is ABUNDANT: the places and subjects it is actually made of — a trail camera is forests, deer and bears at night; a security camera is shops, forecourts and hallways; a dashcam is roads. It is NEVER the place this request names, and never that place's kind: there is almost no trail-camera footage of any mountain, so a form-at-place query returns ordinary photographs of the place and a form-at-kind query returns the same. The place is sourced as ITSELF, separately, and the two photographs are composed. ` +
   `A THING THE MAKER NAMED IS PHOTOGRAPHED AS ITSELF (owner 2026-09-18: the tsunami "must be sourced for sure"; a photographed thing is installed on the host photograph by replacement, water replaces water): a subject with role "thing" is an object or a phenomenon the request shows — a tsunami, a wildfire, a flood, a sandstorm, a crowd, a wreck, an animal as a thing. It is SOURCEABLE when real photographs of it exist, kind "thing", with its bare image query ("tsunami wave", "wildfire front"); a thing that cannot be photographed (a feeling, a style, an invented object) is NOT sourceable and is written. A person, a vehicle the maker rides, a named work's character and the capture form are never things. ` +
-  `Judge each subject on its own. Return ONLY JSON {"pairs":[{"form":string,"place":string,"likely":boolean,"confidence":0..1,"place_kind":string}],"subjects":[{"subject":string,"sourceable":boolean,"reduction":[string],"written":[string],"inferred":boolean,"confidence":0..1,"kind":"named place|work|kind of place|form|thing|private specific|invented|specific moment|abstraction|other","query":string|null,"why":string}]} ` +
+  `A PLACE ANOTHER SUBJECT'S PHOTOGRAPH ALREADY HOLDS IS NOT PHOTOGRAPHED TWICE (owner 2026-09-18: "the open ocean as the place, is that its own image? no — we either source the water of the tsunami or grab it from the pov"): when a listed thing is a state or an event OF a listed place (a tsunami of the ocean, a wildfire of the forest, an avalanche of the mountainside, a flood of the street), the thing's photograph holds that place; and when the maker's own craft travels ON the place (a boat on the sea, a car on the road, skis on the snow), the seat photograph shot from aboard it holds the place. Say so in "held_by": the subject whose photograph holds this place (the thing's own subject, or the word "seat"), else null. A place with a look of its own that neither holds (a harbour, a reef, a coastal town, a mountain pass) stays its own photograph. ` +
+  `Judge each subject on its own. Return ONLY JSON {"pairs":[{"form":string,"place":string,"likely":boolean,"confidence":0..1,"place_kind":string}],"subjects":[{"subject":string,"sourceable":boolean,"reduction":[string],"written":[string],"inferred":boolean,"confidence":0..1,"kind":"named place|work|kind of place|form|thing|private specific|invented|specific moment|abstraction|other","query":string|null,"held_by":string|null,"why":string}]} ` +
   `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists the style words and specifics that go to the prose rather than the search; "query" is the best bare image query when sourceable; "confidence" is how sure you are.`;
 
 const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
@@ -136,7 +137,7 @@ export function shapeVerdicts(raw, subjects = []) {
     const v = arr.find((x) => _key(x?.subject) === _key(s.subject)) || arr.find((x) => _key(x?.subject) && (_key(s.subject).includes(_key(x.subject)) || _key(x.subject).includes(_key(s.subject))));
     if (!v || typeof v.sourceable !== "boolean") continue;
     const c = Number(v.confidence); const reduction = (Array.isArray(v.reduction) ? v.reduction : []).map(_norm).filter(Boolean).slice(0, 3); const written = (Array.isArray(v.written) ? v.written : []).map(_norm).filter(Boolean).slice(0, 6);
-    out.push({ subject: s.subject, role: s.role, required: s.required !== false, sourceable: v.sourceable, reduction, written, inferred: v.inferred === true, confidence: Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 0, kind: _norm(v.kind || "other"), query: v.query ? _norm(v.query) : null, why: _norm(v.why).slice(0, 160) });
+    out.push({ subject: s.subject, role: s.role, required: s.required !== false, sourceable: v.sourceable, reduction, written, inferred: v.inferred === true, confidence: Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 0, kind: _norm(v.kind || "other"), query: v.query ? _norm(v.query) : null, held_by: v.held_by ? _norm(v.held_by) : null, why: _norm(v.why).slice(0, 160) });
   }
   return out;
 }
@@ -181,7 +182,27 @@ export function thingQuery(subject = "", query = "") {
   const kept = words.some((w) => new RegExp(`(?:^|[^a-z0-9])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(q));
   return words.length && !kept ? `${s} ${q}`.replace(/\s+/g, " ").trim() : q;
 }
-export function thingVerdicts(verdicts = [], plan = {}) {
+/** A PLACE ANOTHER PHOTOGRAPH ALREADY HOLDS (owner 2026-09-18: "the open ocean as the place, is that its own image? id say no, we either source
+ *  water of tsunami or grab it from pov"; job f8fa74dc bought the ocean twice beside a tsunami plate and the take showed two oceans). The judge
+ *  names, per place, the subject whose photograph holds it: a sourceable THING the place is the ground of (the tsunami holds the ocean), or the
+ *  SEAT the maker's own craft travels on (a boat holds the water). Only a photograph the run will actually have can hold a place — a thing the
+ *  judge could not source holds nothing, and the place stays its own. → [{ place, by, kind: "thing"|"seat" }]. Pure. */
+export function heldPlaces(verdicts = []) {
+  const vs = Array.isArray(verdicts) ? verdicts : [];
+  const same = (a, b) => { const x = _key(a).replace(/^(?:the|a|an)\s+/, ""), y = _key(b).replace(/^(?:the|a|an)\s+/, ""); return !!x && !!y && (x === y || (x.length >= 4 && y.length >= 4 && (x.includes(y) || y.includes(x)))); };
+  const things = vs.filter((v) => v && /^thing$/i.test(String(v.kind || "").trim()) && v.sourceable === true);
+  const forms = vs.filter((v) => v && (v.role === "form" || /^form$/i.test(String(v.kind || "").trim())));
+  const out = [];
+  for (const v of vs) {
+    if (!v || !["place", "world", "room"].includes(String(v.role || "")) || !v.held_by) continue;
+    const by = String(v.held_by);
+    const th = things.find((t) => same(t.subject, by));
+    if (th) { out.push({ place: _norm(v.subject), by: _norm(th.subject), kind: "thing" }); continue; }
+    if (/^(?:the )?(?:seat|pov|craft|vehicle|host|seat photograph)$/i.test(_norm(by)) || forms.some((f) => same(f.subject, by))) out.push({ place: _norm(v.subject), by: "seat", kind: "seat" });
+  }
+  return out;
+}
+export function thingVerdicts(verdicts = [], plan = {}, { seat = false } = {}) {
   const bare = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/\s+/g, " ").trim();
   const places = Array.isArray(plan?.form?.places) ? plan.form.places.slice() : [];
   const things = (Array.isArray(verdicts) ? verdicts : []).filter((v) => v && (/^thing$/i.test(String(v.kind || "").trim()) || String(v.role || "") === "thing"));
@@ -196,13 +217,16 @@ export function thingVerdicts(verdicts = [], plan = {}) {
     if (v.sourceable === true) { if (!plates.some((x) => bare(x.subject) === bare(v.subject))) plates.push({ subject: _norm(v.subject), query: thingQuery(v.subject, v.query) }); }
     else if (!written.some((w) => bare(w) === bare(v.subject))) written.push(hit || _norm(v.subject));
   }
+  // a place another photograph holds leaves the places and its slot exactly as a thing does (only the seat of a RIDE can hold one: `seat`)
+  const held = heldPlaces(verdicts).filter((h) => h.kind === "thing" || seat);
+  for (const h of held) { const hit = places.find((p) => bare(p) === bare(h.place) || (bare(p).length >= 4 && (bare(h.place).includes(bare(p)) || bare(p).includes(bare(h.place))))); gone.add(bare(hit || h.place)); }
   const keptPlaces = places.filter((p) => !gone.has(bare(p)));
   const publicPlaces = Array.isArray(plan?.form?.publicPlaces) ? plan.form.publicPlaces.filter((p) => !gone.has(bare(p))) : plan?.form?.publicPlaces;
   const qualifiedPlaces = plan?.form?.qualifiedPlaces && typeof plan.form.qualifiedPlaces === "object"
     ? Object.fromEntries(Object.entries(plan.form.qualifiedPlaces).filter(([k]) => !gone.has(bare(k)))) : plan?.form?.qualifiedPlaces;
   const vantage = Array.isArray(plan?.slots?.vantage)
     ? plan.slots.vantage.filter((sl) => ![...(sl?.queries || []), sl?.scope].some((q) => q && [...gone].some((g) => bare(q).includes(g)))) : plan?.slots?.vantage;
-  return { places: keptPlaces, publicPlaces, qualifiedPlaces, vantage, written, plates, removed: [...gone] };
+  return { places: keptPlaces, publicPlaces, qualifiedPlaces, vantage, written, plates, held, removed: [...gone].filter((g) => !held.some((h) => bare(h.place) === g || (g.length >= 4 && (bare(h.place).includes(g) || g.includes(bare(h.place))))) ) };
 }
 /** @deprecated the 2026-09-18 morning rule; kept for one release so an older import fails at review, not at runtime. */
 export function writtenThings(verdicts = [], plan = {}) { const t = thingVerdicts(verdicts, plan); return { ...t, written: [...t.written, ...t.plates.map((p) => p.subject)] }; }
@@ -210,14 +234,14 @@ export function writtenThings(verdicts = [], plan = {}) { const t = thingVerdict
  *  function so the battery can pin that it returns nothing: a subject the judge could not reduce is INFERRED by the judge, and if it still came back
  *  empty the run proceeds with the planner's own queries — never a refusal for lack of a photograph. Pure. */
 export function sourceabilityDenies() { return []; }
-async function defaultJudge(subjects) {
-  return providerJson([textPart(`${SOURCEABILITY_LAW}\n\nSubjects: ${JSON.stringify(subjects.map((s) => s.subject))}`)], { tag: "sourceability", maxTokens: 2000, temperature: 0.1 });
+async function defaultJudge(subjects, context = "") {
+  return providerJson([textPart(`${SOURCEABILITY_LAW}\n\nSubjects: ${JSON.stringify(subjects.map((s) => s.subject))}${context ? `\nContext: ${context}` : ""}`)], { tag: "sourceability", maxTokens: 2000, temperature: 0.1 });
 }
 /** One judge call for the run's subjects → { ok, verdicts, denied, failedOpen }. Never throws; an error or an unparseable answer fails OPEN. */
-export async function judgeSourceability(subjects = [], { judge = defaultJudge, sure = SOURCEABLE_SURE, log = () => {} } = {}) {
+export async function judgeSourceability(subjects = [], { judge = defaultJudge, sure = SOURCEABLE_SURE, log = () => {}, context = "" } = {}) {
   if (!Array.isArray(subjects) || !subjects.length) return { ok: true, verdicts: [], reductions: [], pairs: [], denied: [], failedOpen: false };
   let raw = null;
-  try { raw = await judge(subjects); } catch (e) { log(`  ◇ sourceability probe errored (${String(e?.message || e).slice(0, 80)}) — fails open`); return { ok: true, verdicts: [], reductions: [], denied: [], failedOpen: true }; }
+  try { raw = await judge(subjects, String(context || "")); } catch (e) { log(`  ◇ sourceability probe errored (${String(e?.message || e).slice(0, 80)}) — fails open`); return { ok: true, verdicts: [], reductions: [], denied: [], failedOpen: true }; }
   const verdicts = shapeVerdicts(raw, subjects);
   if (!verdicts.length) return { ok: true, verdicts: [], reductions: [], denied: [], failedOpen: true };
   const denied = sourceabilityDenies(); const reductions = sourceabilityReductions(verdicts);   // never a denial — a subject with no kind is inferred, and an empty answer leaves the planner's queries in place
