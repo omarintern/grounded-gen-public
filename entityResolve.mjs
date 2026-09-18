@@ -23,7 +23,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, textPart } from "./provider-llm.mjs";
 import { seatCastTerms, isSeatCastTerm } from "./_gate_rules.mjs";   // the seat is decided from the comprehension, before any probe (2026-09-14)
-import { rideKindOf, WORN_DEVICE } from "./_ride.mjs";
+import { rideKindOf, rideWorkOf, WORN_DEVICE } from "./_ride.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // Paths are env-overridable so the seed/store merge can be exercised against real files in a test
@@ -312,7 +312,20 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   let dirty = storeHealed;
   const resolved = [];
   let attestedGenerics = 0;
-  for (const term of terms) {
+  // ⭐⭐ A RIDE OF A WORK IS THE WORK (owner 2026-09-18, job 104e2857: "a simpsons ride" was probed whole and came back as The Simpsons Ride,
+  // the Universal Studios attraction — a venue, no set, no rooms — so the dark ride ran through a bare tunnel with the Simpsons carried in
+  // words alone; "nothing changed"). On a ride request, a term that ENDS in a ride noun is a ride OF what stands before it: the ride word is
+  // the FORM (the ride decision already reads it) and the work is the WORLD, with its set and its rooms. The work is probed first, by the
+  // maker's own words for it; the whole phrase is probed only if the work resolves generic, so a real attraction named as such ("jungle
+  // cruise boat ride" → the Jungle Cruise) still resolves as itself, and a phrase that does not end in a ride noun ("the simpsons ride at
+  // universal") is untouched.
+  const queue = terms.map((t) => ({ term: t }));
+  if (rideKindOf(userPrompt)) for (const q of queue) {
+    const work = rideWorkOf(q.term);
+    if (work) { q.fallback = q.term; q.term = work; console.log(`[resolve] "${q.fallback}" is a ride OF "${work}" — the ride word is the form, the work is the world: "${work}" is probed first; the whole phrase only if the work resolves generic (owner 2026-09-18)`); }
+  }
+  for (let qi = 0; qi < queue.length; qi++) {
+    const { term, fallback } = queue[qi];
     // THE APPARATUS IS NEVER A SUBJECT (2026-09-14): a brand or device word that names the capture form ("gopro footage") is not probed —
     // the probe answered "a brand of rugged action cameras" and the cast carried it to a reference hunt and a frame-zero demand
     if (WORN_DEVICE.test(String(term || ""))) { console.log(`[resolve] "${term}" names the capture apparatus \u2014 the form's word, never a subject: not probed`); continue; }
@@ -349,8 +362,10 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
         const cv = await deriveCanon(r.canonical_name || term, r.what_it_is);
         if (cv) { r.canon = cv; store[key] = r; dirty = true; console.log(`[resolve] canon "${term}" → always: ${String(cv.always).slice(0, 70)}`); }
       }
-      resolved.push({ term, ...r });
+      resolved.push({ term, ...r, ...(fallback ? { ride_of: fallback } : {}) });
     }
+    // the work behind a ride noun resolved generic (or too faintly): the whole phrase is probed after all — it may name a real attraction
+    else if (fallback) { console.log(`[resolve] "${term}" resolved generic — the whole phrase "${fallback}" is probed as itself (a real attraction keeps its own name)`); queue.push({ term: fallback }); }
     // ── A CHECKED GENERIC IS VERIFIED-ABSENT, NOT UNKNOWN (owner 2026-08-12) ──────────────────────────
     // branchOf fails closed when resolved.length < candidateCount, and a term the probe AFFIRMATIVELY
     // established as an ordinary name/noun used to be indistinguishable from one it could not verify —

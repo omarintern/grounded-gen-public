@@ -84,6 +84,26 @@ const familyOf = (text) => {
 };
 /** The maker's ride kind ("rollercoaster", "dark ride", "log flume" …) or "" when the text names no kind. @fed the maker's prompt, a subject, a noun. */
 export function rideKindOf(text = "") { const f = familyOf(text); return f ? f.kinds[0] : ""; }
+/** THE RIDE NOUN AT THE TAIL OF A PHRASE (owner 2026-09-18, job 104e2857: "a simpsons ride" probed whole resolved to the Universal attraction,
+ *  a venue with no rooms, and the ride ran through a bare tunnel). The ride word at the end of a phrase is the FORM; what stands before it
+ *  is the WORK the ride is of. Returns the tail as written ("ride", "dark ride", "boat ride", "rollercoaster"), or "" when the phrase does
+ *  not end in one or a transport word owns it ("car ride"). Pure. */
+export function rideNounTail(text = "") {
+  const s = String(text || "").replace(/\s+/g, " ").trim();
+  if (!s || NON_PARK_RIDE.test(s)) return "";
+  const kinds = [...RIDE_KIND_FAMILIES.flatMap((f) => f.kinds), ...GENERIC_RIDE_WORDS].sort((a, b) => b.length - a.length);
+  for (const k of kinds) { const m = s.match(new RegExp(`(?:^|\\s)(${k.replace(/[- ]/g, "[- ]?")})$`, "i")); if (m && m[1].length < s.length) return m[1]; }
+  return "";
+}
+/** THE WORK A RIDE PHRASE IS OF: the phrase before its ride noun, with an indefinite article dropped and a definite one KEPT (a title
+ *  carries its own "The": "the shining ride" → "the shining", "a simpsons ride" → "simpsons"); "" when the phrase is not a ride of anything
+ *  ("a disney ride", "ride") or does not end in a ride noun. Pure. */
+export function rideWorkOf(text = "") {
+  const s = String(text || "").replace(/\s+/g, " ").trim(); const tail = rideNounTail(s);
+  if (!tail) return "";
+  const work = s.slice(0, s.length - tail.length).replace(/\s+$/, "").replace(/^(?:a|an)\s+/i, "").trim();
+  return work && !rideNounTail(work) && !/^(?:a|an|the)$/i.test(work) ? work : "";
+}
 /** The ridden family a noun belongs to: "dark ride" | "coaster" | "other ridden" | "" (no ride named). */
 export function rideFamilyOf(text = "") { const k = rideKindOf(text); return !k ? "" : k === "rollercoaster" ? "coaster" : k === "dark ride" ? "dark ride" : "other ridden"; }
 export const isDarkRideNoun = (noun = "") => rideKindOf(noun) === "dark ride";
