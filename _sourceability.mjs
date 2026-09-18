@@ -27,6 +27,41 @@ export const SOURCEABILITY_LAW =
 
 const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
 const _key = (s) => _norm(s).toLowerCase();
+// ⭐⭐ "X-LIKE Y" IS AN ORDERED PREFERENCE, NOT A KIND (owner 2026-09-18: "everest-like mountains would be incorrect as the place,
+// because the user is asking for everest or just snowy mountains with the same conditions as everest, perhaps hedging against the
+// possibility that the engine can't source everest"). The maker names the place they want FIRST and supplies their own fallback in the
+// same breath. Read as a kind, the hedge becomes the request: the pair judge is asked about mountains rather than about Everest and
+// says a trail camera is likely there, the appropriation never fires, and the hunt spends itself on a pairing that does not exist.
+// Read in order, X is hunted as itself (Everest is photographed constantly), and only if X cannot be sourced does Y stand in, in X's
+// own conditions, with those conditions written into the prose either way.
+// ⚠ SHAPE ONLY, AND THE CALLER RESOLVES. This says what the phrase LOOKS like; whether X is a real place is the resolver's answer,
+// so likePlaceOf() acts only when X matches a venue the run already resolved. "a kitchen like grandma's" therefore changes nothing.
+const LIKE_HYPHEN = /^(?:(.*?)\s)?([A-Za-z][\w'.]*(?:\s+[A-Za-z][\w'.]*)?)-like\s+(.+)$/;   // the prefix ends at a SPACE, so "snow-swept Everest-like" names Everest and not "swept Everest"
+const LIKE_WORD = /^(.+?)\s+(?:like|resembling)\s+(?:a |an |the )?(.+)$/i;
+/** { named, kind, conditions, phrase } for "X-like Y", "Y like X" and "Y resembling X"; null for an ordinary place noun. Pure. */
+export function likeShape(noun = "") {
+  const s = _norm(noun);
+  if (!s) return null;
+  let m = s.match(LIKE_HYPHEN);
+  if (m) return { named: _norm(m[2]), kind: _norm(m[3]), conditions: _norm(m[1]), phrase: s };
+  m = s.match(LIKE_WORD);
+  if (m) return { named: _norm(m[2]), kind: _norm(m[1]), conditions: "", phrase: s };
+  return null;
+}
+/** The ordered preference for a plan's place: the named place FIRST, its kind as the maker's own fallback, the conditions written.
+ *  Acts only when the named half matches a venue the run resolved, and answers with that venue's canonical spelling. Pure. */
+export function likePlaceOf(noun = "", plan = {}) {
+  const sh = likeShape(noun);
+  if (!sh || !sh.named) return null;
+  const venues = (Array.isArray(plan?.world_clearance?.entities) ? plan.world_clearance.entities : [])
+    .filter((e) => e && e.name && (!e.kind || /venue|place|landmark/i.test(String(e.kind)))).map((e) => String(e.name));
+  const world = String(plan?.form?.world || "").trim();
+  const pool = [...venues, ...(world ? [world] : [])];
+  const hit = pool.find((v) => _key(v) === _key(sh.named) || _key(v).includes(_key(sh.named)) || _key(sh.named).includes(_key(v)));
+  if (!hit) return null;
+  const conditions = [sh.conditions, sh.kind].map((x) => _norm(x)).filter(Boolean).join(" ");
+  return { named: _norm(hit), kind: _norm(sh.kind), conditions, phrase: sh.phrase, fallback: `${conditions} like ${_norm(hit)}`.replace(/\s{2,}/g, " ").trim() };
+}
 /** THE SUBJECTS THAT MUST BE PHOTOGRAPHED for this run — the world or its places, the rooms of a themed ride, the capture form by its bare
  *  words. Figures are never subjects: a figure is written or conjured, never a plate. Pure. */
 // ⭐⭐ THE PAIR IS JUDGED ON THE MAKER'S OWN PLACE, NOT THE NOUN A REWRITE NARROWED IT TO (2026-09-18, job e6da6fa8). The maker
@@ -39,6 +74,10 @@ const _key = (s) => _norm(s).toLowerCase();
 export function sourceabilitySubjects({ plan = {}, world = [], device = "", ride = null, rawPrompt = "" } = {}) {
   const out = []; const add = (subject, role, required = true) => { const k = _key(subject); if (!k || out.some((o) => _key(o.subject) === k)) return; out.push({ subject: _norm(subject), role, required }); };
   const _qual = (p) => {
+    // ⭐⭐ AN ORDERED PREFERENCE IS JUDGED ON ITS NAMED HALF (owner 2026-09-18): "everest-like mountains" asks for Everest first, so
+    // the pair judge is asked about Everest. Its kind is the maker's own fallback and reaches the hunt as the reduction, not here.
+    const pref = likePlaceOf(_norm(plan?.form?.qualifiedPlaces?.[p] || p), plan) || likePlaceOf(_norm(p), plan);
+    if (pref) return pref.named;
     const q = _norm(plan?.form?.qualifiedPlaces?.[p] || "");
     const w = _norm(plan?.form?.world || "");
     const cand = [q, _norm(p)].filter(Boolean);
