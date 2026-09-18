@@ -219,6 +219,7 @@ export const apparatusSoundClause = () => {
   return `⚠ THE SOUND IS WHAT THIS ${shown.toUpperCase()}'S OWN MICROPHONE RECORDS, never a soundtrack laid over it: small, compressed, muffled and wind-buffeted, ` +
     `distant things faint and near things clipping, the device's own mechanism audible where it has one (a shutter's click, a motor's whir, a lens housing knocked by wind, a cabin's hum, ` +
     `a mount's rattle) — and a device that records no sound records SILENCE with the hiss of its own circuitry. No crisp footsteps, no clean foley, no music. ` +
+    `Every SPOKEN line is heard the same way — through this ${shown}'s microphone, from where the speaker stands in the frame, muffled and inside the scene — never a narration, a voice-over or a clean voice track laid on top (owner 2026-09-18: the penguin's line "sounds like it's coming from narration"). ` +
     `Write the Sound: line in that register, as this ${shown} would have heard it.\n\n`;
 };
 export const frameZeroRegisterClause = () => {
