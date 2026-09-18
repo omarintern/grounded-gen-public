@@ -94,8 +94,15 @@ export function seatVerdict(j, { family = "other ridden" } = {}) {
  *  preference: "pov prefers the vehicle in foreground"); the way receding; inside for a dark ride (an indoor show scene or a tunnel);
  *  no riders over backs only; clean of text over text to crop; a lower synthesis score; a larger frame. Ties keep pool order — the
  *  first query before the second, the engine's own order within it. */
-export function seatScore(rec, { family = "other ridden" } = {}) {
+export function seatScore(rec, { family = "other ridden", vehicle = "" } = {}) {
   const j = rec?.j || {}; let s = 0;
+  // ⭐⭐ THE VEHICLE THE MAKER NAMED OUTRANKS A VEHICLE OF ANOTHER KIND (2026-09-18, job 6442a7c6). The maker wrote "speedboat"; the
+  // diffuser called a frame read as a KART and two read as BOATS "3 equally good seats" and served the kart's reading, which then told
+  // the run its way was a ROAD, sent it hunting a location the seat already held, and put a kart's words in front of the writer. The
+  // penalty is deeper than the diffusion band on purpose: a kart is not a worse seat for a speedboat, it is not a seat for it at all.
+  // An unread or "other" vehicle is not punished — the judge failing to name a hull is not evidence of the wrong hull.
+  { const want = String(vehicle || "").toLowerCase(), got = String(j.vehicle || "").toLowerCase();
+    if (want && got && !["unseen", "other"].includes(got)) s += (got === want ? 25 : -40); }
   // (the +40 for the rider's own part in the foreground left 2026-09-13 — owner: "the rider in foreground is not needed, as only the ice scene has a rider and most don't")
   if (String(j.way || "").toLowerCase() && String(j.way || "").toLowerCase() !== "unseen") s += 10;   // a way in the picture, ahead or veering
   const env = String(j.environment || "").toLowerCase(), light = String(j.lighting || "").toLowerCase();
@@ -122,11 +129,15 @@ export function rankSeats(recs, opts = {}) {
  *  score). The scene hunt already shuffles its equal tiers (diffuseTies); the seat does the same: every aboard frame within SEAT_BAND
  *  points of the best is an equally correct seat, and one of them is served at random. Pure given `rand`. */
 export const SEAT_BAND = 12;   // one "indoor" (12) or "no riders + clean text" (10) below the best still rides; a seat without its own vehicle (−40) or way (−20) never does
-export function diffuseSeat(ranked, { band = SEAT_BAND, rand = Math.random, family = "other ridden" } = {}) {
+export function diffuseSeat(ranked, { band = SEAT_BAND, rand = Math.random, family = "other ridden", vehicle = "" } = {}) {
   const list = Array.isArray(ranked) ? ranked.filter((r) => r?.aboard === true) : [];
   if (!list.length) return { pick: null, tier: [] };
-  const top = seatScore(list[0], { family });
-  const tier = list.filter((r) => top - seatScore(r, { family }) <= band);
+  // ⚠⚠ THE TIER IS SCORED BY THE SAME RULE AS THE RANK (2026-09-18, job 6442a7c6): this rebuilt its options and dropped
+  // everything the caller passed beyond `family`, so a term the rank had just applied was silently absent when the band was
+  // measured — the kart the vehicle rule pushes 65 points below a boat came back inside a 12-point tier and was served.
+  const opts = { family, vehicle };
+  const top = seatScore(list[0], opts);
+  const tier = list.filter((r) => top - seatScore(r, opts) <= band);
   const k = Math.min(tier.length - 1, Math.max(0, Math.floor(rand() * tier.length)));
   return { pick: tier[k], tier, index: k };
 }

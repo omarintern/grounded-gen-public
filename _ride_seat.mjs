@@ -20,7 +20,7 @@ import { isPlaceholderCard, isPaidStock } from "./_placeholder_card.mjs";
 import { writeContactSheet, sheetLegend } from "./_contact_sheet.mjs";
 import { judgeSeat, seatVerdict, rankSeats, seatLabel, diffuseSeat, SEAT_BAND } from "./_judge_seat.mjs";
 const SEAT_BAND_LOG = SEAT_BAND;
-import { rideFromEnv } from "./_ride.mjs";
+import { rideFromEnv, craftVehicle } from "./_ride.mjs";
 import { spent } from "./_spend.mjs";   // the hunt negotiates its own budget, exactly as the adaptive sourcer does
 
 const onFatal = (e) => {
@@ -92,8 +92,16 @@ async function collect(query, ri) {
   let raw = [];
   try { raw = await scrapeImages(query, Math.ceil(SCRAPE_N * OVERASK)); }
   catch (e) { if (e?.ledgerCap) throw e; if (e instanceof IndexInfraError || e?.name === "IndexInfraError") { console.log(`  ✗ the route is unavailable (${String(e.message).slice(0, 80)})`); throw e; } console.log(`  ✗ scrape failed (${String(e?.message || e).slice(0, 80)})`); return []; }
-  const clean = raw.filter((it) => it?.imageUrl && !isAI(it) && !isPaidStock(it.imageUrl));
-  console.log(`  scraped ${raw.length} → ${clean.length} clean (dropped ${raw.length - clean.length} stock/AI)`);
+  // ⭐⭐ ONE PICTURE, ONE READING (2026-09-18, job 6442a7c6). The two seat queries of that run returned the same techeblog frame, and
+  // nothing deduped across them: it was downloaded twice, judged twice, and came back "own boat under the camera · water channel receding"
+  // the first time and "own kart under the camera · road receding" the second. Both entered the pool, so the diffuser counted two copies
+  // of one photograph as two of its "3 equally good seats", served the copy carrying the wrong reading, and the run took a kart's words
+  // into the writer and into a location hunt it did not need. A judge call is money; a contradiction is worse.
+  const fresh = raw.filter((it) => it?.imageUrl && !seenUrls.has(it.imageUrl));
+  const dup = raw.filter((it) => it?.imageUrl && seenUrls.has(it.imageUrl)).length;
+  const clean = fresh.filter((it) => !isAI(it) && !isPaidStock(it.imageUrl));
+  for (const it of clean) seenUrls.add(it.imageUrl);
+  console.log(`  scraped ${raw.length} → ${clean.length} clean (dropped ${raw.length - clean.length - dup} stock/AI${dup ? `, ${dup} already judged this run` : ""})`);
   dlFails.clear();
   const cands = [];
   for (let base = 0; base < clean.length && cands.length < SCRAPE_N; base += DL_PAR) {
@@ -110,9 +118,14 @@ async function collect(query, ri) {
   return cands;
 }
 
+// ⭐⭐ THE MAKER'S OWN HULL, IN THE JUDGE'S WORD (2026-09-18, job 6442a7c6): the ranking prefers it and refuses another kind outright.
+const WANT_VEHICLE = craftVehicle(D.craft || D.noun || "");
+if (WANT_VEHICLE) console.log(`  ◈ the maker's own craft is a ${D.craft || D.noun} — a frame whose vehicle reads "${WANT_VEHICLE}" outranks one of another kind, which is no seat for this request at all`);
+const RANKOPTS = { family: D.family, vehicle: WANT_VEHICLE };
 const JOPTS = { noun: D.noun, kind: D.kind, family: D.family, viewPx: VIEW_PX, setting: D.kind !== "ridden" ? String(D.world?.words || "") : "" };   // a worn or driven frame is judged against the setting too (2026-09-14)
 let judgeCalls = 0;
 const recs = [];
+const seenUrls = new Set();   // every image this hunt has already bought, across all its queries (2026-09-18)
 const withVehicle = () => recs.filter((r) => r.aboard && r.j?.own_part === true).length;
 async function judgeAll(cands) {
   for (let base = 0; base < cands.length; base += JUDGE_PAR) {
@@ -158,10 +171,10 @@ try {
 }
 try { writeFileSync(join(OUTDIR, `world_${slug}.calls.json`), JSON.stringify({ judgeCalls })); } catch {}
 const seen = recs.map((r) => ({ p: r.p, host: r.host, url: r.url, engine: r.engine, q: r.q, W: r.W, H: r.H, verdict: r.aboard ? "pass" : "reject", why: r.aboard ? seatLabel(r).replace(/^✓ /, "") : r.why, reading: r.j }));
-const ranked = rankSeats(recs, { family: D.family });
+const ranked = rankSeats(recs, RANKOPTS);
 // DIFFUSED SCRAPING (owner 2026-09-10): the seat is served at random among the equally good aboard frames, never the argmax — the same ride
 // every run was the rewrite's regression (three Shining gens, one laviezine plate)
-const _diff = diffuseSeat(ranked, { family: D.family });
+const _diff = diffuseSeat(ranked, RANKOPTS);
 const pick = _diff.pick || null;
 if (pick && _diff.tier.length > 1) console.log(`  ⚄ diffused: ${_diff.tier.length} equally good seat(s) within ${SEAT_BAND_LOG} points of the best — served #${_diff.index + 1} (${pick.p.split("/").pop()} @${pick.host}), the others: ${_diff.tier.filter((r) => r !== pick).map((r) => `${r.p.split("/").pop()} @${r.host}`).join(", ")}`);
 if (pick) seen.forEach((s) => { if (s.p === pick.p) s.verdict = "pick"; });

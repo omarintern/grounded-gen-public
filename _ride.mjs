@@ -62,6 +62,15 @@ const NOT_A_VESSEL = /\b(?:gravy|sauce|butter|banana|dream|love|show)[- ]?boats?
 // the boat) until the plate's own reading speaks. A boat OUTSIDE a park is still the GoPro form (boatPov, below), never this.
 export const WATER_WORDS = /\b(?:boats?|flumes?|log (?:flume|ride)|rapids|water ride|canal|waterway|rafts?|jungle cruise|bayou|splash(?:down)?)\b/i;
 export const isWaterRide = (text = "") => { const s = String(text || "").replace(NOT_A_VESSEL, " "); return WATER_WORDS.test(s); };
+/** ⭐⭐ THE MAKER'S CRAFT IN THE SEAT JUDGE'S OWN VOCABULARY (2026-09-18, job 6442a7c6). That judge answers `vehicle` from a closed
+ *  list — car | boat | omnimover | kart | other | unseen — and the maker writes "speedboat", "jet ski", "log flume". The ranking could
+ *  not compare the two, so a frame read as a KART tied with two read as BOATS for a speedboat request and was served. Pure. */
+export function craftVehicle(craft = "") {
+  const c = String(craft || "").toLowerCase();
+  if (!c) return "";
+  for (const v of ["omnimover", "boat", "kart", "car"]) if (c.includes(v)) return v;
+  return WATER_WORDS.test(c) ? "boat" : "";   // a raft, a flume, a jet ski: the judge has one word for every hull
+}
 export function boatPov(text = "") { const s = String(text || "").replace(NOT_A_VESSEL, " "); if (!BOAT.test(s) || PARK_BOAT.test(s) || NOT_POV.test(s)) return ""; return (s.match(BOAT) || [""])[0].toLowerCase(); }
 const familyOf = (text) => {
   const s = String(text || "").toLowerCase();
@@ -242,6 +251,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const ending = String(p.read?.ending || "").trim().toLowerCase() === "quick" ? "quick" : "held";
   return {
     kind, family, noun, form, plateForm, medium: String(p.native_capture || p.form?.mediaForm || ""), interior, ending, water,
+    craft: boatWord || "",   // the maker's own word for the hull, kept so the seat ranking can prefer it (2026-09-18)
     // AN EVENT IS A NAMED WORLD (owner 2026-09-14: "even for a plate, 9/11 should be recognized as something sourced"): the probe's event entity
     // is a set whose zones are its most photographed scenes; on a dark ride it is a theme like a work, told to the planner as an EVENT
     world: { named, title, mode, setting, words: worldWords, places, rooms, things: plan ? worldElements(p) : [], kind: setEnt?.kind === "event" ? "event" : (named ? "work" : ""), zones: Array.isArray(setEnt?.set_zones) ? setEnt.set_zones.map((z) => String(z || "").trim()).filter(Boolean) : [] },
