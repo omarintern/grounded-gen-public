@@ -174,6 +174,13 @@ export function sourceabilityReductions(verdicts = []) {
  *  behind the place plate. A thing it cannot source stays written. Either way a thing leaves form.places and its vantage slot goes with
  *  it: a wave is never the story's second LOCATION and never a cut. Returns the plan's places, public places, qualified places and
  *  vantage slots with every thing removed, the things to write, and the plates to hunt. Pure. */
+/** The image query for a thing: the judge's phrasing, with the subject's own head word prefixed when it is missing. Pure. */
+export function thingQuery(subject = "", query = "") {
+  const s = _norm(subject).replace(/^(?:the|a|an)\s+/i, ""), q = _norm(query || subject);
+  const words = s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2);   // any of the subject's own words present = the maker's word survived
+  const kept = words.some((w) => new RegExp(`(?:^|[^a-z0-9])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(q));
+  return words.length && !kept ? `${s} ${q}`.replace(/\s+/g, " ").trim() : q;
+}
 export function thingVerdicts(verdicts = [], plan = {}) {
   const bare = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/\s+/g, " ").trim();
   const places = Array.isArray(plan?.form?.places) ? plan.form.places.slice() : [];
@@ -184,7 +191,9 @@ export function thingVerdicts(verdicts = [], plan = {}) {
     if (!isThing) continue;   // a role-"thing" subject the judge read as a place or a work is not a thing
     const hit = places.find((p) => bare(p) === bare(v.subject));
     if (hit) gone.add(bare(hit));
-    if (v.sourceable === true) { if (!plates.some((x) => bare(x.subject) === bare(v.subject))) plates.push({ subject: _norm(v.subject), query: _norm(v.query || v.subject) }); }
+    // THE THING QUERY KEEPS THE MAKER'S OWN WORD (owner 2026-09-19: "a big wave is different than tsunami, so it should have used tsunami in query"):
+    // the judge composes the image query and may drift to a kind ("storm wave"); the subject's head word is prefixed whenever the query lost it.
+    if (v.sourceable === true) { if (!plates.some((x) => bare(x.subject) === bare(v.subject))) plates.push({ subject: _norm(v.subject), query: thingQuery(v.subject, v.query) }); }
     else if (!written.some((w) => bare(w) === bare(v.subject))) written.push(hit || _norm(v.subject));
   }
   const keptPlaces = places.filter((p) => !gone.has(bare(p)));
