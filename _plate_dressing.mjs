@@ -33,7 +33,9 @@ if (process.argv[2] === "--things") {
   const rb64 = readFileSync(roomPlate).toString("base64");
   const THING_READ = THING
     ? `This REAL photograph shows ${worldName}. A video is being made from a DIFFERENT photograph, the frame the take is shot from; that frame keeps everything of its own, and ONLY THE ${String(worldName).toUpperCase()} ITSELF is taken from this one. ` +
-      `Name up to ${n} things that ARE the ${worldName} or its parts, as this photograph shows them and at their true scale — its mass, its face, its crest, its spray, its texture — most of it first. ` +
+      (n === 1
+        ? `Name ONE thing: the ${worldName} ITSELF as this photograph shows it, as one concrete phrase in the photograph's own words and at its true scale ("a towering dark wall of water with a white foaming crest", "a wall of orange flame across a hillside") — never a bare part-word like "crest", "face" or "mass". `
+        : `Name up to ${n} things that ARE the ${worldName} or its parts, as this photograph shows them and at their true scale — its mass, its face, its crest, its spray, its texture — most of it first. `) +
       `Never anything else this photograph holds: no shore, town, cliff, sky, road, boat, building, tree or person, however prominent — they are not wanted. ` +
       `Return ONLY JSON {"things":[{"name":string,"kind":"prop|pattern|architecture","surface":"space|object|exterior","why":string}]}. "name" is concrete and short, in the photograph's own words, and names the ${worldName} or a part of it, never the place around it.`
     : "";
