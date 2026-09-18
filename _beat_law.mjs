@@ -929,10 +929,20 @@ export function restampBeats(text, map) {
 // takes a sentence from the action — it shows only in HOW the actions are performed, on bare nouns (owner:
 // «stitched mouth is description we dont do»). The canon itself is the RESOLVER's derivation over a
 // CONFIRMED entity — this block is data-driven and collapses to nothing for a rhetorical John Doe.
+// ⭐⭐ AND THE "ALWAYS" IS THE FIGURE'S DEFAULT MOTION, NOT A THIRD LABEL (owner 2026-09-18, the trailcam job). The resolver
+// derived "waddles alone in a straight line away from the colony" for that penguin; draft 1 carried it, drafts 2 and 3 lost it,
+// and the final beats have the bird standing. Nothing was wrong with the plumbing: the canon rode all three passes. It was advice
+// among sixty clauses, and every re-ask is a FRESH draft rather than an edit, so anything not law-checked is re-rolled. A check
+// would be the wrong instrument twice over: it contradicts the manner-only rule above by inviting the writer to state the canon,
+// and a new finding buys a paid re-ask on a job that had already bought three. So the canon is told, first, as what the figure
+// DOES by default in every beat it appears in. temperament and attachment stay exactly what they were, manner-only advice.
 export const charContextBlock = (canon) => (canon && (canon.temperament || canon.attachment || canon.always)
   ? `⚠ CHARACTER CONTEXT — show it ONLY in HOW actions are performed, never as a statement; the character ` +
     `never takes a sentence from the action, and ordinary props stay bare nouns (the figure's OWN signature object is the exception — it keeps its referenced identity, never recoloured): ` +
-    `temperament: ${canon.temperament || "—"} · attachment: ${canon.attachment || "—"} · always: ${canon.always || "—"}\n\n`
+    `temperament: ${canon.temperament || "—"} · attachment: ${canon.attachment || "—"} · always: ${canon.always || "—"}\n` +
+    (canon.always
+      ? `⚠⚠ AND THAT "ALWAYS" IS THE FIGURE'S OWN MOTION, IN EVERY BEAT IT IS IN: ${canon.who || "the figure"} ${canon.always} — that is HOW it crosses, approaches, waits, reacts and leaves, in the first beat and in the last, unless the request gives it a different action at that beat. It is never stated as a fact about the figure and never takes a sentence of its own; it is the manner of whatever the beat already has it do.\n\n`
+      : "\n")
   : "");
 
 // ⚠ CELEB-ONLY (CELEB_STAMPS=1 in _ground_shotset) plus the short-duration fallback (<4.5s has no legal
