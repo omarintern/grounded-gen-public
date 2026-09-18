@@ -21,7 +21,7 @@ export const SOURCEABILITY_LAW =
   `EVERY PHOTOGRAPHABLE NOUN OF A DEMAND IS ITS OWN KIND, and a STYLE is never sourced, only written: "the moon in retrograde style with tall buildings" → the moon AND tall buildings, two photographs, "retrograde style" written into the prose — a style is not a specific appropriation. ` +
   `INFERRED: a pure abstraction or a subject that is nothing but a description ("the feeling of a Tuesday afternoon" → a quiet living room in flat afternoon light; "the concept of debt" → a kitchen table covered in opened envelopes) — infer the most photographable scene that would depict it, and say so. ` +
   `A pairing is NOT judged as one photograph: the place is sourced and the actor is written, so "a penguin in the Oval Office" is the Oval Office, sourceable. ` +
-  `THE PAIR IS JUDGED TOO (owner 2026-09-17: "would a trail cam be very likely in everest? answer is probably no"): when the subjects include a capture FORM and a PLACE, also say whether that form is plausibly found at that place in real footage — a trail camera on Mount Everest, a doorbell camera in the Sahara: unlikely; CCTV in a shopping mall: likely. When unlikely, give the place's bare KIND as an image query ("snowy mountain ridge"), so the form can be hunted as itself in that kind of place and the specific place written. ` +
+  `THE PAIR IS JUDGED TOO (owner 2026-09-17: "would a trail cam be very likely in everest? answer is probably no"): when the subjects include a capture FORM and a PLACE, also say whether that form is plausibly found at that place in real footage — a trail camera on Mount Everest, a doorbell camera in the Sahara: unlikely; CCTV in a shopping mall: likely. ALWAYS give the place's bare KIND as an image query ("snowy mountain ridge"), whether the form is likely there or not: when it is unlikely the form is hunted as itself in that kind of place and the specific place is written, and when it is likely the kind is the ladder the hunt falls back to if the pairing yields no photograph of the form. ` +
   `Judge each subject on its own. Return ONLY JSON {"pairs":[{"form":string,"place":string,"likely":boolean,"confidence":0..1,"place_kind":string}],"subjects":[{"subject":string,"sourceable":boolean,"reduction":[string],"written":[string],"inferred":boolean,"confidence":0..1,"kind":"named place|work|kind of place|form|thing|private specific|invented|specific moment|abstraction|other","query":string|null,"why":string}]} ` +
   `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists the style words and specifics that go to the prose rather than the search; "query" is the best bare image query when sourceable; "confidence" is how sure you are.`;
 
@@ -29,8 +29,23 @@ const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
 const _key = (s) => _norm(s).toLowerCase();
 /** THE SUBJECTS THAT MUST BE PHOTOGRAPHED for this run — the world or its places, the rooms of a themed ride, the capture form by its bare
  *  words. Figures are never subjects: a figure is written or conjured, never a plate. Pure. */
+// ⭐⭐ THE PAIR IS JUDGED ON THE MAKER'S OWN PLACE, NOT THE NOUN A REWRITE NARROWED IT TO (2026-09-18, job e6da6fa8). The maker
+// wrote "everest-like mountains"; the brief's places field said "mountainside" and applyPlanShape takes the brief as
+// authoritative, so the judge was asked whether a trail camera is likely at "a mountainside" and answered YES. It is. A trail
+// camera on EVEREST is not, and the same judge said so at 95% the day before on the same maker's words. The likelihood flipped
+// on which noun reached the judge. The qualified form is what the plan itself keeps for exactly this reason (qualifiedPlaces:
+// "mountainside" → "snow-swept Everest-like mountainside"), and the world's own name is more specific still. Longest wins,
+// because a narrower noun can only make a form MORE plausible and a false likely is the one that ships the wrong register.
 export function sourceabilitySubjects({ plan = {}, world = [], device = "", ride = null, rawPrompt = "" } = {}) {
   const out = []; const add = (subject, role, required = true) => { const k = _key(subject); if (!k || out.some((o) => _key(o.subject) === k)) return; out.push({ subject: _norm(subject), role, required }); };
+  const _qual = (p) => {
+    const q = _norm(plan?.form?.qualifiedPlaces?.[p] || "");
+    const w = _norm(plan?.form?.world || "");
+    const cand = [q, _norm(p)].filter(Boolean);
+    const best = cand.sort((a, b) => b.length - a.length)[0] || _norm(p);
+    // the world's own NAME rides along when neither form of the place carries it ("mountainside" says nothing of Everest)
+    return w && !_key(best).includes(_key(w)) ? `${best} (${w})` : best;
+  };
   const places = Array.isArray(plan?.form?.places) ? plan.form.places.filter(Boolean) : [];
   if (ride) {
     const title = ride?.world?.named ? _norm(ride.world.title) : "";
@@ -39,7 +54,7 @@ export function sourceabilitySubjects({ plan = {}, world = [], device = "", ride
     if (ride.noun) add(`${ride.noun} POV footage`, "form");
   } else {
     if (device) add(/footage$/i.test(device) ? device : `${device} footage`, "form");
-    for (const p of places) add(p, "place");
+    for (const p of places) add(_qual(p), "place");
     if (!places.length) { const w = _norm(plan?.form?.setting || plan?.form?.world || world[0] || ""); if (w) add(w, "world"); }
   }
   return out.slice(0, 6);
