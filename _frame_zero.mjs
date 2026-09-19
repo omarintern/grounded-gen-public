@@ -18,7 +18,7 @@
 // is never policed, because it is ambiguous by construction.
 import { providerJson, textPart } from "./provider-llm.mjs";
 import { replacementFact, vehicleLeads } from "./_ride_writer.mjs";   // the composer is measured by the beat law it feeds (B6, 2026-09-15)
-import { rideWords } from "./_ride.mjs";
+import { rideWords, craftVehicle } from "./_ride.mjs";
 import { worldNameFindings, CAMERA_WORD_RE, isRideNoun } from "./_gate_rules.mjs";
 
 const _re = (s) => String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -65,8 +65,13 @@ export function frameZeroInputs(d) {
   // vehicle, and once every set piece was replaced the model had no seat to keep): the form's constant is written whether or not the photograph shows it — the block has said so since 09-13
   const vehicle = w.vehicle || "vehicle";
   // A BOAT'S FOREGROUND IS ITS BOW (2026-09-15, the water route): no lap bar on a boat through show scenes; the omnimover keeps its nose and lap bar
-  const watery = d?.water === true || /^(?:boat|raft|log|canoe|barge|skiff)s?$/i.test(String(vehicle).trim());
-  const own = watery ? "its bow in the foreground, the rows ahead" : "its nose and lap bar in the foreground, the rows ahead";
+  // A HULL IS A HULL BY THE DECISION'S OWN WORD (review-3 F4): the maker's "speedboat" matched neither the water flag (false by construction for a
+  // boat POV) nor the short list, and the Set line promised a lap bar and rows ahead on a worn form that has neither
+  const ridden = d?.kind === "ridden";
+  const watery = d?.water === true || craftVehicle(d?.craft || "") === "boat" || craftVehicle(String(vehicle)) === "boat" || /^(?:boat|raft|log|canoe|barge|skiff)s?$/i.test(String(vehicle).trim());
+  const own = watery ? (ridden ? "its bow in the foreground, the rows ahead" : "its bow in the foreground")
+    : ridden ? "its nose and lap bar in the foreground, the rows ahead"
+    : d?.kind === "driven" ? "its hood and dashboard in the foreground" : "";   // a wearer's camera keeps no vehicle
   const foreground = (/^none\b/i.test(fore) || !fore) ? (d?.kind === "ridden" ? (watery ? `the ${vehicle}'s own bow at the bottom of the frame, the rows ahead` : `the ${vehicle}'s own nose and lap bar at the bottom of the frame, the rows ahead`) : "") : fore;
   return { way: w.way || "way ahead", vehicle, direction, foreground, own, environment: _read(r.environment), replacements, additions, kept, title: String(d?.world?.title || "").trim() };
 }
@@ -87,7 +92,7 @@ export function frameZeroSetLine(d) {
   const art = (s) => (/^(?:the|a|an|its|their)\s/i.test(String(s || "")) ? String(s) : `the ${s}`);
   const parts = [...i.replacements.map((r) => `${art(r.piece)} is ${r.by}`), ...i.additions.map((a) => `${a.thing} stands at ${a.where}`)];
   if (!parts.length) return "";
-  return `Set: for the whole take, ${parts.join("; ")}; the ride's own ${i.vehicle} — ${i.own} — and ${art(i.way)} stay as photographed; nothing of the photograph's own set dressing remains, in any scene the ride passes.`;   // A's own clause + the form's constant (owner 2026-09-15: A' is the standard, and A' lost the cart)
+  return `Set: for the whole take, ${parts.join("; ")}; ${i.own ? `the ride's own ${i.vehicle} — ${i.own} — and ${art(i.way)} stay` : `${art(i.way)} stays`} as photographed; nothing of the photograph's own set dressing remains, in any scene the ride passes.`;   // A's own clause + the form's constant (owner 2026-09-15: A' is the standard, and A' lost the cart)
 }
 /** does a beat-zero line carry the ground — both sides of every replacement, the addition, the kept pieces (half the words of each) */
 export function frameZeroHolds(line0, d) {

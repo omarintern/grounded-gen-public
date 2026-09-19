@@ -676,7 +676,12 @@ if (BEAT_STYLE !== "template") {
     // head … letting out a low"); a bare "Speaker" only when neither reads — the ride block's own finding then sends it back to the writer.
     const subjectOf = (txt) => { const m = String(txt || "").replace(/^\s*(?:and|as|while|then|but)\s+/i, "").match(/^\s*((?:the|a|an|its|his|her|their|our|one|two|three|[A-Z][a-z]+)\b(?:\s+[A-Za-z'-]+){0,4})/); if (!m) return "";
       const words = m[1].split(/\s+/); const keep = []; for (const w of words) { if (keep.length && /[a-z]s$/.test(w) && !/'s$/.test(w)) break; keep.push(w); if (keep.length >= 5) break; } return keep.length >= 2 ? keep.join(" ") : ""; };
-    const speakerFor = (q) => who ? who[1].trim() : (subjectOf(q.clause) || subjectOf(q.sentence) || "Speaker");
+    // A SPEAKER THE RUN ALREADY KNOWS IS LABELLED BY ITS OWN HEAD CLAUSE (review-3 F8: "a three-dimensional rockhopper penguin with" shipped as a label,
+    // cut mid-phrase by the five-word rule, for a prose figure whose head clause the run held exactly); the word count is the fallback, and never ends on a joiner
+    const _proseHeads = String(process.env.PROSE_FIGURES || "").split(" | ").map((x) => x.split(" [")[0].replace(/\s+/g, " ").trim()).filter(Boolean).sort((a, b) => b.length - a.length);
+    const _knownSpeaker = (txt) => { const low = ` ${String(txt || "").toLowerCase()} `; for (const h of _proseHeads) { const bare = h.replace(/^(?:the|a|an)\s+/i, "").toLowerCase(); if (bare.length >= 4 && low.includes(bare)) return h; } return ""; };
+    const _untail = (s) => String(s || "").replace(/\s+(?:with|of|in|on|at|and|or|the|a|an|to|for|from|by|its|his|her|their)$/i, "").trim();
+    const speakerFor = (q) => who ? who[1].trim() : (_knownSpeaker(q.clause) || _knownSpeaker(q.sentence) || _untail(subjectOf(q.clause)) || _untail(subjectOf(q.sentence)) || "Speaker");
     // (the block below is passed through denameSpeakers — a speaker under the name law is labelled by its guise)
     const block = denameSpeakers("Dialogue:\n" + spoken.map((q, i) =>
       `${speakerFor(q)}${i && speakerFor(q) === speakerFor(spoken[0]) ? " (continuing, over the cuts)" : ""}${q.at != null ? ` [${q.at}s]` : ""}: "${q.text}"`).join("\n"));
