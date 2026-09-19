@@ -47,6 +47,7 @@ export function subjectSpec(o = {}) {
     kindOf: _norm(o?.kindOf),      // the maker's own fallback for a named place ("everest-like mountains" → "snowy mountains")
     work: _norm(o?.work), room: _norm(o?.room),
     device: _norm(o?.device), placeKind: _norm(o?.placeKind), habitat: _norm(o?.habitat),
+    part: _norm(o?.part),          // a chain's PART when the maker named one ("walmart parking lot" → "parking lot"): the customers' photographs of that part, never the interior
     query: _norm(o?.query),        // a thing: the judge's phrasing with the maker's word kept (thingQuery composes it)
   };
 }
@@ -59,7 +60,7 @@ export function subjectSpec(o = {}) {
 export function baseQueries(spec = {}) {
   const s = subjectSpec(spec);
   switch (s.kind) {
-    case "chain": return s.name ? [`${s.name} ${APPENDAGE.chain}`] : [];   // "<venue> interior footage": news and incident video is where a chain's casual layer lives, never "iphone" (2026-08-04)
+    case "chain": return s.name ? [s.part && !/\binterior\b/i.test(s.part) ? `${s.name} ${s.part} ${APPENDAGE.form}` : `${s.name} ${APPENDAGE.chain}`] : [];   // "<venue> interior footage": news and incident video is where a chain's casual layer lives, never "iphone" (2026-08-04); a named PART ("parking lot", "drive-thru") is photographed as that part (the 2026-09-19 study: "walmart parking lot" compiled to the interior)
     case "broadcast": return s.name ? [`${s.name} scene`] : [];
     case "work room": return s.work && s.room ? [`${s.work} ${s.room} scene`] : s.work ? [`${s.work} scene`] : [];
     case "form": {

@@ -36,7 +36,9 @@ export function searchable(text = "") {
 }
 
 const KINDS = new Set(["named place", "chain", "kind of place", "work", "broadcast"]);
-const _entry = (o) => ({ term: _norm(o.term), reads_as: KINDS.has(o.reads_as) ? o.reads_as : "kind of place", name: _norm(o.name), fallback: _norm(o.fallback), written: _uniq(o.written || []), read_by: o.read_by || "writing" });
+const _entry = (o) => ({ term: _norm(o.term), reads_as: KINDS.has(o.reads_as) ? o.reads_as : "kind of place", name: _norm(o.name), fallback: _norm(o.fallback), part: _norm(o.part), written: _uniq(o.written || []), read_by: o.read_by || "writing" });
+/** A CHAIN'S PART (the 2026-09-19 study: "walmart parking lot" read as the chain and compiled to its interior): the words of the term that are not the chain's name — "parking lot", "drive-thru", "rooftop" — photographed as that part. */
+const _partOf = (term, name) => { const drop = new Set(_key(name).split(" ").filter(Boolean)); const words = _key(term).split(" ").filter((w) => w && !drop.has(w) && !/^(?:a|an|the|at|in|of|inside|into)$/.test(w)); return words.join(" ").trim(); };
 
 /** ONE PLACE, READ. The resolver's flags on the plan's entities come first (a chain, a broadcast set, a named work are the resolver's
  *  facts); then "X-like Y" as the maker's ordered preference when the named half is confirmed; then the resolver's own search reading
@@ -53,7 +55,7 @@ export function readPlace(term, { plan = {}, subjects = [] } = {}) {
   const spoke = !!(sub && (Array.isArray(sub.written) || sub.search_kind || sub.search_name));
   const written = spoke ? _uniq(Array.isArray(sub.written) ? sub.written : []) : _uniq(writtenOf(qualified || t));
   const chain = ents.find((e) => e?.chainVenue === true && e?.name && _same(e.name, t));
-  if (chain) return _entry({ term: t, reads_as: "chain", name: chain.name, written, read_by: "resolver" });
+  if (chain) return _entry({ term: t, reads_as: "chain", name: chain.name, part: _partOf(t, chain.name), written, read_by: "resolver" });
   const bcast = ents.find((e) => e?.broadcastOnly === true && e?.name && _same(e.name, t));
   if (bcast) return _entry({ term: t, reads_as: "broadcast", name: bcast.name, written, read_by: "resolver" });
   const setEnt = ents.find((e) => e?.isSet === true && e?.name && _same(e.name, t));
@@ -62,7 +64,7 @@ export function readPlace(term, { plan = {}, subjects = [] } = {}) {
   const shape = likeShape(qualified || t) || likeShape(t);
   if (pref) return _entry({ term: t, reads_as: "named place", name: pref.named, fallback: rf || searchable(pref.kind), written: [...written, shape?.conditions], read_by: "writing+resolver" });   // the shape's own conditions ("snow-swept"), never its kind — the kind is the fallback
   if (rk === "named place" && rn) return _entry({ term: t, reads_as: "named place", name: rn, fallback: rf || (shape ? searchable(shape.kind) : ""), written, read_by: "resolver" });
-  if (rk === "chain" && rn) return _entry({ term: t, reads_as: "chain", name: rn, written, read_by: "resolver" });
+  if (rk === "chain" && rn) return _entry({ term: t, reads_as: "chain", name: rn, part: _partOf(t, rn), written, read_by: "resolver" });
   if (rk === "work" && rn) return _entry({ term: t, reads_as: "work", name: rn, written, read_by: "resolver" });
   if (shape) return _entry({ term: t, reads_as: "kind of place", name: searchable(shape.kind), written: [...written, shape.conditions, `like ${shape.named}`], read_by: "writing" });
   const venue = ents.find((e) => e?.name && !e.chainVenue && !e.broadcastOnly && !e.isSet && /venue|landmark|place/i.test(String(e.kind || "")) && _same(e.name, t));
@@ -99,7 +101,7 @@ export function readSearchIntent({ plan = {}, device = "", raw = "" } = {}) {
 export function specOf(entry, { room = "" } = {}) {
   if (!entry) return null;
   switch (entry.reads_as) {
-    case "chain": return { kind: "chain", name: entry.name };
+    case "chain": return { kind: "chain", name: entry.name, part: entry.part || "" };
     case "broadcast": return { kind: "broadcast", name: entry.name };
     case "work": return room ? { kind: "work room", work: entry.name, room } : { kind: "broadcast", name: entry.name };
     case "named place": return { kind: "named place", name: entry.name, kindOf: entry.fallback };
