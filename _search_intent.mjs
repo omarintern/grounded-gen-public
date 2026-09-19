@@ -48,7 +48,10 @@ export function readPlace(term, { plan = {}, subjects = [] } = {}) {
   const ents = Array.isArray(plan?.world_clearance?.entities) ? plan.world_clearance.entities : [];
   const sub = (Array.isArray(subjects) ? subjects : []).find((s) => s && s.term && _same(s.term, t)) || null;
   const rk = String(sub?.search_kind || "").toLowerCase().trim(), rn = _norm(sub?.search_name), rf = _norm(sub?.fallback);
-  const written = _uniq([...writtenOf(qualified || t), ...(Array.isArray(sub?.written) ? sub.written : [])]);
+  // THE MODEL'S ANSWER STANDS ALONE WHEN IT SPOKE (owner 2026-09-19: "im skeptical of deterministic/functional code when its to do with context
+  // dependent material"): the resolver's own list of written words is the authority; the clock-and-mood list below fills only its silence.
+  const spoke = !!(sub && (Array.isArray(sub.written) || sub.search_kind || sub.search_name));
+  const written = spoke ? _uniq(Array.isArray(sub.written) ? sub.written : []) : _uniq(writtenOf(qualified || t));
   const chain = ents.find((e) => e?.chainVenue === true && e?.name && _same(e.name, t));
   if (chain) return _entry({ term: t, reads_as: "chain", name: chain.name, written, read_by: "resolver" });
   const bcast = ents.find((e) => e?.broadcastOnly === true && e?.name && _same(e.name, t));
