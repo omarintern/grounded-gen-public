@@ -194,7 +194,11 @@ export function heldPlaces(verdicts = []) {
   const forms = vs.filter((v) => v && (v.role === "form" || /^form$/i.test(String(v.kind || "").trim())));
   const out = [];
   for (const v of vs) {
-    if (!v || !["place", "world", "room"].includes(String(v.role || "")) || !v.held_by) continue;
+    if (!v || !v.held_by) continue;
+    // KINDS OF PLACE ONLY (job 1c70830a: the judge said "the world of The Simpsons is held by the seat"): the seat holds the ground a craft
+    // travels on and a thing holds the place it is a state of — a WORK's world and a work's ROOM are never held by either.
+    const role = String(v.role || ""), vk = String(v.kind || "").toLowerCase();
+    if (!(role === "place" || (role === "world" && /kind of place/.test(vk)))) continue;
     const by = String(v.held_by);
     const th = things.find((t) => same(t.subject, by));
     if (th) { out.push({ place: _norm(v.subject), by: _norm(th.subject), kind: "thing" }); continue; }
