@@ -296,17 +296,25 @@ export function sweptBelongings(state, diff, intentText) {
  *  figures keep their nouns, new elements must actually appear, replaced/removed figures must be gone —
  *  along with their swept belongings — and a user prompt is BARE — no stamps, no script sections, one
  *  line. Pure, gate-testable. */
-export function reframeViolations(compiled, diff, sweeps = []) {
+export function reframeViolations(compiled, diff, sweeps = [], base = "") {
   const c = String(compiled || "").trim();
   if (!c) return ["empty prompt"];
   const lc = c.toLowerCase(), v = [];
+  // ⭐⭐ A KEPT FIGURE THE ORIGINAL DESCRIBED STAYS DESCRIBED (job 3032613f, 2026-09-20). The diff names figures by the parent's RESOLVED plan
+  // names ("Cody Maverick" for "a surfs up character"); demanding that name's noun in the compiled prompt pushed the writer to NAME an owned
+  // character the original only described, and the pre-gate refused a name no user wrote. So the noun check reads the ORIGINAL: a figure the
+  // original names keeps its noun; a figure the original only described must NOT be named in the compiled prompt (its words carry it).
+  const baseLc = String(base || "").toLowerCase();
   if (/\[\d+(?:\.\d+)?s\]/.test(c)) v.push("carries beat stamps — a user prompt is bare");
   if (/(^|\n)\s*(?:Dialogue|Sound)\s*:/i.test(c)) v.push("carries script sections — a user prompt is bare");
   if (/\n/.test(c)) v.push("more than one line");
   if (c.length > 420) v.push("longer than a user prompt has any right to be");
   for (const f of diff.figures || []) {
     const a = anchorOf(f.target), an = anchorOf(f.to);
-    if (f.op === "keep" && a && !lc.includes(a)) v.push(`kept figure "${f.target}" lost its noun`);
+    if (f.op === "keep" && a) {
+      if (baseLc && !baseLc.includes(a)) { if (lc.includes(a)) v.push(`the original described "${f.target}" without naming it — keep the original's words, never introduce the name`); }
+      else if (!lc.includes(a)) v.push(`kept figure "${f.target}" lost its noun`);
+    }
     if ((f.op === "swap" || f.op === "add") && an && !lc.includes(an)) v.push(`the new figure "${f.to}" is missing`);
     if ((f.op === "swap" || f.op === "remove") && a && lc.includes(a)) v.push(`the ${f.op === "swap" ? "replaced" : "removed"} figure "${f.target}" is still named`);
   }
@@ -329,7 +337,9 @@ export function reframeContract(base, baseKind, diff, intentText, sweeps = []) {
     `The typed changes (LAW: everything not listed KEEPS exactly as it was):\n${describeDiff(diff).map((l) => `- ${l}`).join("\n")}${sweepLines}\n\n` +
     `Write the remixed video's generation prompt: ONE bare line in the same plain register as the original — ` +
     `unchanged elements kept in the original's own nouns, the changes applied, nothing else altered, no new ` +
-    `detail invented. No timestamps, no Dialogue or Sound sections, no camera or style language. Return ONLY the prompt line.`
+    `detail invented. An element the original DESCRIBED rather than named stays described in the original's words: never ` +
+    `introduce a name the original did not use, whatever the typed changes call it. No timestamps, no Dialogue or Sound ` +
+    `sections, no camera or style language. Return ONLY the prompt line.`
   );
 }
 
@@ -341,13 +351,14 @@ export async function compileEffectivePrompt(state, diff, intentText) {
   const contract = reframeContract(base || String(state?.prompt_text || ""), base ? "prompt" : "script", diff, intentText, sweeps);
   const attempt = async (extra, temp) =>
     String((await providerText(contract + extra, { maxTokens: 300, temperature: temp })).text || "").trim().replace(/^["'“”\s]+|["'“”\s]+$/g, "");
+  const baseText = base || String(state?.prompt_text || "");
   let effective = await attempt("", 0.2);
-  let v = reframeViolations(effective, diff, sweeps);
+  let v = reframeViolations(effective, diff, sweeps, baseText);
   let retried = false;
   if (v.length) {
     retried = true;
     effective = await attempt(`\n\n⚠ YOUR PREVIOUS ATTEMPT BROKE THE LAW: ${v.join("; ")}. Fix exactly these and return ONLY the prompt line.`, 0.1);
-    v = reframeViolations(effective, diff, sweeps);
+    v = reframeViolations(effective, diff, sweeps, baseText);
     if (v.length) throw new Error(`reframe compile broke the keep-law twice (${v[0]}) — refusing`);
   }
   return { effective, retried };
