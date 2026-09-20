@@ -29,7 +29,7 @@ export function refRole(file, order) {
 }
 
 /** The core record, written by the gen at submission time — everything the child alone knows. */
-export function assembleGenState({ id, slug, prompt_text, refs, aspect, duration, endpoint, queue_id, engine = "grounded-1.0" }) {
+export function assembleGenState({ id, slug, prompt_text, refs, aspect, duration, resolution, endpoint, queue_id, engine = "grounded-1.0" }) {
   return {
     id: String(id || slug || ""),
     engine,
@@ -50,6 +50,7 @@ export function assembleGenState({ id, slug, prompt_text, refs, aspect, duration
     })(),
     aspect: String(aspect || ""),
     duration: String(duration || ""),
+    resolution: String(resolution || ""),   // the quality rendered (2026-09-20: 480p, 720p, 1080p); shown on the video by the app
     endpoint: String(endpoint || ""),
     queue_id: queue_id || null,
     parent_id: null,
