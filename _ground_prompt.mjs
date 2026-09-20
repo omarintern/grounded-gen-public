@@ -302,7 +302,12 @@ if (BEAT_STYLE !== "template") {
     // rode as demoted context; the beats lost them). The parent's request stands wherever the change is silent.
     (String(process.env.REMIX_CHANGE || "").trim()
       ? `WHAT THE USER ASKED FOR (their request, applied to the parent's video): "${userPrompt}"\n` +
-        `THE CHANGE THIS REMIX MAKES (the user's remix words): "${String(process.env.REMIX_CHANGE).trim()}" — everything the parent's request established and this change does not touch stays exactly as it was: what the footage is, the place as photographed, the cast it keeps, where the subject looks.\n`
+        `THE CHANGE THIS REMIX MAKES (the user's remix words): "${String(process.env.REMIX_CHANGE).trim()}" — everything the parent's request established and this change does not touch stays exactly as it was: what the footage is, the place as photographed, the cast it keeps, where the subject looks.\n` +
+        // THE PARENT'S SCRIPT RIDES A REFRAME (owner 2026-09-21, job daeee1b4: the surf character spoke English in the parent and squawked in the
+        // remix — a full rewrite had never heard the parent's voices). Everything the change does not touch keeps them.
+        (String(process.env.REMIX_PARENT_SCRIPT || "").trim()
+          ? `THE PARENT'S SCRIPT (its beats, its Dialogue, its Sound):\n${String(process.env.REMIX_PARENT_SCRIPT).trim()}\n— everything the change does not touch keeps this script's voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n`
+          : "")
       : `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n`) +
     (!String(process.env.REMIX_CHANGE || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() !== userPrompt
       ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${RIDE?.world?.mode === "theme" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`

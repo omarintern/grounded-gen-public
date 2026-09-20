@@ -97,6 +97,7 @@ export function planDigest(plan) {
   if (!plan || typeof plan !== "object") return null;
   return {
     subject: plan.subject || null,
+    form_device: plan.form?.mediaForm || plan.appropriation?.form || null,   // the capture form the request named (2026-09-21): a reframing remix keeps it
     figures: (Array.isArray(plan.figures) ? plan.figures : []).map((f) => ({
       name: f?.name || null, kind: f?.kind || null, canonical_name: f?.canonical_name || null,
       promptRef: f?.promptRef || null, canon: (f?.canon && typeof f.canon === "object") ? f.canon : null,
