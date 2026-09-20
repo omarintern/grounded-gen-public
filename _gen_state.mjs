@@ -102,6 +102,12 @@ export function planDigest(plan) {
       name: f?.name || null, kind: f?.kind || null, canonical_name: f?.canonical_name || null,
       promptRef: f?.promptRef || null, canon: (f?.canon && typeof f.canon === "object") ? f.canon : null,
       public_domain: f?.public_domain === true ? true : undefined, drawn: f?.drawn === true ? true : undefined,
+      // THE REST OF THE REALIZATION (owner 2026-09-21, "time in a bottle"): a reframing remix adopts a kept figure as the parent realized it —
+      // the same de-naming, the same signatures, the same standing — instead of resolving it again. Set-if-present, falsy-safe.
+      term: (typeof f?.term === "string" && f.term.trim()) || undefined, what_it_is: (typeof f?.what_it_is === "string" && f.what_it_is.trim()) || undefined,
+      defining_signatures: (typeof f?.defining_signatures === "string" && f.defining_signatures.trim()) || undefined,
+      basic_guise: typeof f?.basic_guise === "boolean" ? f.basic_guise : undefined, canonical: typeof f?.canonical === "boolean" ? f.canonical : undefined,
+      meme_in_context: typeof f?.meme_in_context === "boolean" ? f.meme_in_context : undefined,
     })),
     places: Array.isArray(plan.form?.places) ? plan.form.places : [],
     vantage: (Array.isArray(plan.slots?.vantage) ? plan.slots.vantage : []).map((v) => ({ beat: v?.beat ?? null, scope: v?.scope || null, queries: Array.isArray(v?.queries) ? v.queries : [], kernel: v?.kernel || null })),
