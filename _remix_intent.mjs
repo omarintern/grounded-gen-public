@@ -40,7 +40,7 @@ export async function parseRemixIntent(state, intentText) {
     `A user wants to REMIX it. Their words: """${String(intentText || "").slice(0, 500)}"""\n\n` +
     `LAW: a remix changes ONLY what the user names — everything else KEEPS. Never invent a change the words do not ask for.\n` +
     `Return ONLY JSON {\n` +
-    ` "figures":[{"target":"<existing figure name>","op":"keep|swap|remove","to":"<replacement as the user named it, or null>"}] (one entry per EXISTING figure; append {"target":null,"op":"add","to":"..."} only for a genuinely new figure),\n` +
+    ` "figures":[{"target":"<existing figure name>","op":"keep|swap|remove","to":"<replacement as the user named it, or null>","look":"<on a keep ONLY: when the user changes how THIS figure looks or what it wears or holds, that change in the user's own words; else null>"}] (one entry per EXISTING figure; append {"target":null,"op":"add","to":"..."} only for a genuinely new figure),\n` +
     ` "world":{"op":"keep|change","to":"<new opening place or null>","keep_explicit":true|false} (keep_explicit = the user's OWN WORDS keep the place — "same kitchen", "keep the room", "still in this hallway", "in the same place"; false when the words merely say nothing about the place),\n` +
     ` "cuts":[{"target":"<later place>","op":"keep|change|remove","to":null|"..."}] (one per later place),\n` +
     ` "action":{"op":"keep|rewrite","instruction":"<precisely what now happens, in the user's own words completed minimally — null when keep>"},\n` +
@@ -67,9 +67,11 @@ export function normalizeDiff(raw, state) {
     const op = ["keep", "swap", "remove", "add"].includes(f?.op) ? f.op : "keep";
     if (op === "add") { if (f?.to) d.figures.push({ target: null, op, to: String(f.to) }); continue; }
     if (!knownFigures.has(String(f?.target || "").toLowerCase())) { if (op !== "keep") d.dropped.push(`figure "${f?.target}" not in the parent`); continue; }
-    d.figures.push({ target: String(f.target), op, to: f?.to ? String(f.to) : null });
+    // ⭐⭐ THE REMIXER'S WORDS OUTRANK A KEPT LOOK (owner 2026-09-21: "a user should be free to instruct against their omission"): a keep may carry
+    // the user's change to that figure's look; it rides to the planner with the kept record and routes as a figure change (the deep path realizes it)
+    d.figures.push({ target: String(f.target), op, to: f?.to ? String(f.to) : null, look: op === "keep" && typeof f?.look === "string" && f.look.trim() ? f.look.trim() : null });
   }
-  for (const name of knownFigures) if (!d.figures.some((f) => String(f.target || "").toLowerCase() === name)) d.figures.push({ target: name, op: "keep", to: null });
+  for (const name of knownFigures) if (!d.figures.some((f) => String(f.target || "").toLowerCase() === name)) d.figures.push({ target: name, op: "keep", to: null, look: null });
   if (raw.world?.op === "change" && raw.world?.to) d.world = { op: "change", to: String(raw.world.to) };
   else if (raw.world?.keep_explicit === true) d.world.keepExplicit = true;   // the words keep the place → the parent's plate rides (WORLD_PIN); otherwise the environment is RE-SOURCED
   for (const c of Array.isArray(raw.cuts) ? raw.cuts : []) {
@@ -240,7 +242,9 @@ export function keepPins(state, diff, intentText = "") {
   // pins a plate that might belong to a replaced place).
   const cutsAllKeep = (diff.cuts || []).length > 0 && (diff.cuts || []).every((c) => c.op === "keep");
   const cuts = cutsAllKeep ? refs.filter((r) => r.role === "cut") : [];
-  return { world, figures: (diff.figures || []).filter((f) => f.op === "keep").map((f) => f.target), belongings, cuts };
+  // the user's changes to kept figures' looks, by figure (owner 2026-09-21) — the runner hands each to its kept record as look_change
+  const looks = Object.fromEntries((diff.figures || []).filter((f) => f.op === "keep" && f.look).map((f) => [f.target, f.look]));
+  return { world, figures: (diff.figures || []).filter((f) => f.op === "keep").map((f) => f.target), looks, belongings, cuts };
 }
 
 /** The load-bearing noun of a phrase — first-longest word ≥4 letters, for mechanical contains-checks.
@@ -257,6 +261,7 @@ export function describeDiff(diff) {
     if (f.op === "swap") lines.push(`FIGURE: ${f.target} is REPLACED by ${f.to}`);
     else if (f.op === "remove") lines.push(`FIGURE: ${f.target} is REMOVED`);
     else if (f.op === "add") lines.push(`FIGURE: ${f.to} is ADDED`);
+    else if (f.op === "keep" && f.look) lines.push(`FIGURE: ${f.target} stays the same figure, its look changed: ${f.look}`);
   }
   if (diff.world?.op === "change") lines.push(`OPENING PLACE: becomes ${diff.world.to}`);
   for (const c of diff.cuts || []) {
@@ -451,7 +456,7 @@ export function pinsFromPlan(plan, state) {
 
 /** The router's pure brain: which stages re-run, which artifacts are reused. The executor spends this. */
 export function routeStages(diff) {
-  const figureChange = (diff.figures || []).some((f) => f.op !== "keep");
+  const figureChange = (diff.figures || []).some((f) => f.op !== "keep" || !!f.look);   // a kept figure whose look the user changed is a figure change (owner 2026-09-21)
   const worldChange = diff.world?.op === "change";
   // A REMIX RE-SOURCES ITS ENVIRONMENT UNLESS THE WORDS KEEP IT (owner 2026-09-09: "reusing environments, which we can do if prompted (else not),
   // produces something repetitive"). A kept-by-silence world is hunted afresh (deep path; the parent's plate excluded from the pool and held as the

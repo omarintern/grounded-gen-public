@@ -220,7 +220,8 @@ export const frameZeroRegisterClause = () => {
 };
 // ⭐⭐ AN APPROPRIATED TAKE IS TWO PHOTOGRAPHS, AND THE FIRST ONE IS THE CAMERA (owner 2026-09-18). When a capture form is
 // unlikely at the place the maker named, the form is hunted as itself in that KIND of place and the place is hunted as itself;
-// the form's photograph is frame zero and gives the take its vantage, its overlay and its colour, and the place's photograph is
+// the form's photograph is frame zero and gives the take its vantage and its colour (its chrome rides in the photograph, never in words —
+// owner 2026-09-21, job d6921814: written chrome drew a camcorder viewfinder), and the place's photograph is
 // read for the things that take the form frame's own pieces. The writer never sees either picture's map by accident: it is told,
 // first, in the grammar a ride has used for its own replacements since 2026-09-10, because a replacement written as a CHANGE
 // ("becomes", "turns into") makes the model animate the morph instead of opening on the scene. Empty when nothing appropriated.
@@ -232,8 +233,8 @@ export const appropriationBlock = () => {
   const people = (Array.isArray(m.platePeople) ? m.platePeople : []).filter(Boolean);
   const dev = String(m.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || String(m.form);   // the device, not the medium word: "what a security camera recorded", never "a security camera footage"
   return `⚠⚠ THIS TAKE IS TWO PHOTOGRAPHS, AND THE ONE YOU ARE LOOKING AT IS THE CAMERA. It is what a ${dev} recorded, somewhere else; ` +
-    `the take is ${m.place ? `${m.place}, ` : ""}seen through it. Its VANTAGE, its OVERLAY (a timestamp, a camera number, a corner mark) and its washed colour are ` +
-    `CONSTANTS of the whole take: name them in the first beat, hold them through every beat, and name them again in the last. The camera is fixed; it is never written as a character and never moves.\n` +
+    `the take is ${m.place ? `${m.place}, ` : ""}seen through it. Its VANTAGE and its washed colour are CONSTANTS of the whole take, carried by the photograph itself: ` +
+    `every beat is seen through it, first to last. THE CAMERA'S OWN CHROME IS NEVER WRITTEN — no overlay, timestamp, camera number, corner mark, viewfinder, REC mark or battery in any beat: the photograph carries the device's real look, and written chrome is invented chrome. The camera is fixed; it is never written as a character and never moves.\n` +
     `⚠⚠ FRAME ZERO IS THIS FRAME WITH THAT PLACE IN IT. Every piece this photograph holds is named at frame zero as WHAT IT BECOMES, in this grammar and no other: ` +
     `"<the place's thing> where <the piece> stood". A replacement is a STANDING FACT, already in place before the first frame, never a change on screen: nothing becomes, turns into, morphs or is replaced while the video runs. ` +
     `A piece with no replacement is named as itself, in its place.${facts.length ? ` The replacements, already in place at [0s]: ${facts.join(" | ")}.` : ""}` +

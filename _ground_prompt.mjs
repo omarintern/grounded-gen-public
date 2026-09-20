@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout } from "./_gate_rules.mjs";
-import { splitSingleBeat } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
+import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
@@ -407,6 +407,11 @@ if (BEAT_STYLE !== "template") {
     // beat shipped "and the camera tracks with it"; this check lived only inside the cinematic guard below).
     if (/\bthe camera\b/i.test(t))
       fails.push(`a beat names the camera ("the camera tracks with it") — the camera is never a character: delete the camera clause and write only what the subject does${genMood() === "cinematic" ? ' (for a cut, write "Hard cut to …")' : ""}`);
+    // ⚠ THE CAMERA'S CHROME IS NEVER WRITTEN — ANY REGISTER (owner 2026-09-21, job d6921814: "under the trail camera's washed overlay and corner
+    // marks" drew a camcorder viewfinder — brackets and battery icons — over a take whose frame zero was a real fixed camera's own frame; the
+    // photograph carries the device's look, and written chrome is invented chrome). Beats only: the Dialogue block may say what it likes.
+    { const _chrome = String(t).split(/^\s*Dialogue\s*:/im)[0].match(CHROME_WORDS);
+      if (_chrome) fails.push(`a beat writes the camera's own chrome ("${_chrome[0]}") — the photograph carries the device's look: delete the chrome words and write only what happens in the scene`); }
     // CINEMATIC (owner 2026-08-25: «ensure dream mode produces cuts in prompt without refs»): the register's
     // signature move is MANDATED in the contract; this is the backstop — a cinematic script with no hard cut
     // gets the one corrective re-ask like any other law break.
@@ -426,6 +431,11 @@ if (BEAT_STYLE !== "template") {
     }
     return fails;
   };
+  // THE CHROME CLAUSE IS A REPAIR, NOT A RETRY (owner 2026-09-21, job d6921814): "Under the trail camera's washed overlay and corner marks, …" and
+  // "… under the trail camera's flickering overlay and corner marks" lose the clause mechanically (_gate_rules.stripChromeClauses); the beat's own
+  // event stands; anything that survives still fails the chrome law, and the one corrective re-ask fixes it.
+  { const before = text; text = stripChromeClauses(text);
+    if (text !== before) console.error(` (repair: a chrome clause deleted — the photograph carries the device's look; no retry spent)`); }
   // THE CAMERA CLAUSE IS A REPAIR, NOT A RETRY (owner 2026-09-12: "23 is much too long"): every writer pass wrote "the camera tracks with it" and paid a full
   // corrective call to delete it. A clause that only names the camera is deleted mechanically; anything that survives still fails the law below.
   { const before = text;
