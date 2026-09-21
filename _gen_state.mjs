@@ -108,6 +108,8 @@ export function planDigest(plan) {
       defining_signatures: (typeof f?.defining_signatures === "string" && f.defining_signatures.trim()) || undefined,
       basic_guise: typeof f?.basic_guise === "boolean" ? f.basic_guise : undefined, canonical: typeof f?.canonical === "boolean" ? f.canonical : undefined,
       meme_in_context: typeof f?.meme_in_context === "boolean" ? f.meme_in_context : undefined,
+      public_figure: typeof f?.public_figure === "boolean" ? f.public_figure : undefined,
+      household_name: typeof f?.household_name === "boolean" ? f.household_name : undefined,
     })),
     places: Array.isArray(plan.form?.places) ? plan.form.places : [],
     vantage: (Array.isArray(plan.slots?.vantage) ? plan.slots.vantage : []).map((v) => ({ beat: v?.beat ?? null, scope: v?.scope || null, queries: Array.isArray(v?.queries) ? v.queries : [], kernel: v?.kernel || null })),
