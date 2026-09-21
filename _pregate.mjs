@@ -27,7 +27,8 @@
 import { mkdirSync, appendFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { rideFamilyOf } from "./_ride.mjs";   // pure: does the maker's request name a park ride?
+import { rideFamilyOf } from "./_ride.mjs";
+import { HOUSEHOLD_LAW, DENAMEABLE_LAW } from "./_fame_law.mjs";   // one fame line and one de-name test for both judges (owner 2026-09-22)   // pure: does the maker's request name a park ride?
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const LOGDIR = join(HERE, "out", "_pregate");   // the volume: survives a deployment, like every other record we keep
@@ -86,7 +87,7 @@ export async function pregate(prompt, userPrompt = "") {
     // any model can produce JSON, only some can be forced to.
     const { providerText } = await import("./provider-llm.mjs");
     const ask =
-      `Does this video request depict a HOUSEHOLD-NAME REAL PERSON (a celebrity whose name and face the general public knows on sight, well beyond their own field: leading film, TV and music stars, heads of state and national leaders, the most famous athletes), or a FICTIONAL CHARACTER OWNED by a company or studio (a film, game, cartoon or brand ` +
+      `Does this video request depict a HOUSEHOLD-NAME REAL PERSON (${HOUSEHOLD_LAW}), or a FICTIONAL CHARACTER OWNED by a company or studio (a film, game, cartoon or brand ` +
       `character)?\n\nRequest: "${String(prompt).slice(0, 400)}"\n\n` +
       `⚠ Answer owned=true ONLY when you RECOGNISE the specific name and are CERTAIN it is one of those two ` +
       `things. Public-domain and folklore figures — fairy tale, myth, legend, and characters whose copyright has ` +
@@ -101,11 +102,8 @@ export async function pregate(prompt, userPrompt = "") {
       `character or lead whose name and look a general audience knows on sight (Jack Torrance, Mickey Mouse); canonical=false ` +
       `for a peripheral or lesser-known figure of a work — a one-scene pair, a background or minor supporting character a ` +
       `general audience could not name (the Grady twins). Judge the character's own prominence, never the work's fame. ` +
-      `⚠ FOR AN OWNED CHARACTER ALSO ANSWER denameable: true when the character's identity SURVIVES a short generic description — ` +
-      `a common species or archetype plus simple costume (a clown in a yellow suit and red wig; a brown bear in a green hat) — so a ` +
-      `rendering WITHOUT the name or its exact design reads as a generic figure, not the character; false when the identity IS a ` +
-      `specific owned design that generic words cannot reach (Sonic, Pikachu, Mickey Mouse). A real person is never denameable here. ` +
-      `A real person known within a field, a region or a niche — a working actor, a squad player, a local or backbench politician, a presenter, an author, an executive — is NOT a household name; answer false for them. A household-name real PERSON is always canonical.\n` +
+      `⚠ FOR AN OWNED CHARACTER ALSO ANSWER denameable: ${DENAMEABLE_LAW}. ` +
+      `A household-name real PERSON is always canonical.\n` +
       `Return ONLY JSON {"owned":true|false,"who":"<the name, or empty>","why":"celebrity|owned-character|none","canonical":true|false,"denameable":true|false,"sure":0..1}.`;
     const { text } = await providerText(ask, { model: MODEL, maxTokens: 400, temperature: 0 });
     let j = null; try { j = JSON.parse((String(text).match(/\{[\s\S]*\}/) || ["{}"])[0]); } catch {}
