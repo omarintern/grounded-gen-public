@@ -1,8 +1,8 @@
 // MULTI-REF gen — seedance r2v with N world refs + a figure ref and a VERBATIM cuts prompt. The
 // refs go into reference_image_urls as a FLAT array — NO @Image binding (that convention was
 // rejected); seedance conditions on all refs together. Array ORDER is not verified to carry weight,
-// so don't treat "world-refs first, figure last" as load-bearing. The prompt carries ALL the framing
-// (blanket "every shot is wide", subject small) so the recognizable subject never renders tight.
+// so don't treat "world-refs first, figure last" as load-bearing. The prompt carries no framing words at all
+// (the camera is inherited from the plates; the wide/small doctrine is gone, owner 2026-09-21).
 //   node _multiref_gen.mjs <slug> <promptFile.txt> <duration=4s> <aspect=9:16> <ref1> <ref2> ...
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { markInflight, clearInflight } from "./_inflight.mjs";   // an accepted gen is recorded at ACCEPTANCE so a dead container cannot orphan it
