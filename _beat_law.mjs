@@ -469,7 +469,6 @@ export const beatZeroLaw = () => (
     // and returned to an aftermath — coherent bookkeeping, abandoned protagonist.
     `⚠ A CUT-AWAY PAUSES THE WORLD IT LEAVES — no time passes there while we are away. The return beat RESUMES the suspended action at the exact point it paused: a body launched mid-air is STILL mid-air and drops NEXT; a pour mid-stream keeps pouring. Never return to an aftermath the viewer was not shown. `+
     (process.env.CAST_LEDGER_LINE ? `\u26a0\u26a0 ${process.env.CAST_LEDGER_LINE}\n` : "") +
-    (process.env.PLATE_OCCUPANTS_LINE ? `\u26a0 ${process.env.PLATE_OCCUPANTS_LINE}\n` : "") +
     (process.env.VALIDATOR_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT VIOLATED THE CAST LEDGER: ${process.env.VALIDATOR_FEEDBACK}. Rewrite the beats obeying the ledger exactly \u2014 do not drop any figure; move each violation to its declared beat.\n` : "") +
     // NAME VIOLATIONS ARE NOT TIMING VIOLATIONS (owner 2026-09-08, job bd19152d: framed as ledger feedback, the writer MOVED the room's
     // name to another beat instead of removing it). A named place or figure is REMOVED — the scene stays, described by its things.
