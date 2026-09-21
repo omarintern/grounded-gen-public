@@ -51,8 +51,8 @@ const PROMPT = readFileSync(new URL("./detect_prompt.txt", import.meta.url), "ut
 // earlier hand blurs covering the WHOLE figures both passed. Owner: "it has to be whole figure then."
 // So the same detector serves both surfaces with opposite box sizes, and the reason is what the reference is
 // FOR — the same distinction that governs blur everywhere else in this pipeline.
-// ⚠ Still not the body of a REAL PERSON: their likeness is hedged by the tight face core and by SIZE, and
-// blurring a real person's whole body would destroy the stand-in pose the plate exists to provide.
+// ⚠ Still not the body of a REAL PERSON: their likeness is hedged by the tight face core alone (no size
+// doctrine since 2026-09-21), and blurring a whole body would destroy the pose the reference exists to provide.
 const WORLD_MODE = process.env.REDACT_MODE === "world";
 const worldBlock = WORLD_MODE
   ? `\n\n⚠⚠ WORLD-REF MODE — THIS IMAGE IS SCENERY, AND ANY OWNED CHARACTER IN IT IS BEING REPLACED, NOT COPIED FROM.\n`
