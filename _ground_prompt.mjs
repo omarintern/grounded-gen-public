@@ -11,10 +11,10 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, voiceClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
@@ -344,7 +344,7 @@ if (BEAT_STYLE !== "template") {
       ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${RIDE?.world?.mode === "theme" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${belongingClause()}\n${rideBlock(RIDE)}${workTitlesClause()}${ipFiguresLaw()}${frameZeroRegisterClause()}${appropriationBlock()}${thingBlock()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${voiceClause()}\n${belongingClause()}\n${rideBlock(RIDE)}${workTitlesClause()}${ipFiguresLaw()}${frameZeroRegisterClause()}${appropriationBlock()}${thingBlock()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +
@@ -677,88 +677,16 @@ if (BEAT_STYLE !== "template") {
 // fine-detail guard above. Deterministic repair rather than a re-ask: the words are MOVED, never rewritten,
 // so the keep-the-words rule is preserved exactly and it costs nothing.
 {
-  const _titles = String(process.env.WORK_TITLES || "").split(" \u00b7 ").map((s) => s.trim().toLowerCase()).filter(Boolean);
-  const _isWorkTitle = (q) => { const s = String(q || "").trim().toLowerCase(); return _titles.some((w) => w === s || w === s.replace(/^the\s+/, "") || `the ${w}` === s); };
-  // ⚠ THE CURLY PAIR IS A QUOTE TOO (2026-09-14): this matched only the straight `"`, while buildDialogueBlock,
-  // linesOutrun, redactSpeech, withoutSpeech and dialogueShape all already accept “ ” — so a line the prose model narrated
-  // inline in curly quotes was invisible here, no block existed, and _run re-attached the plan's block: the same
-  // speech shipped twice, which is the failure this guard was written from.
-  // ⚠ A LEAD-IN GOES WITH ITS QUOTE (layer 2 cell l2b-06, 2026-09-14): the writer narrated `letting out a low "mrrrow"`, the quote came
-  // out and the beat shipped "letting out a low." — a clause whose object WAS the quote. A comma-led participial phrase before the quote
-  // (", letting out a low", ", muttering under his breath", ", calling out") is that lead-in; it is removed with the words it introduced.
-  const QUOTED = /(?:,\s*(?:and\s+)?[A-Za-z]+ing\b(?:\s+[A-Za-z'-]+){0,4})?[:,]?\s*(?:\b(?:say(?:s|ing)?|tell(?:s|ing)?|call(?:s|ing)? out|continu\w*[^:"\u201c\u201d]*)\b[^:"\u201c\u201d]*)?[:,]?\s*["\u201c]([^"\u201c\u201d]{2,})["\u201d]/g;
-  const bl = beatLine.split("\n");
-  // ⚠ A BLOCK IS A DIALOGUE BLOCK, NEVER THE SOUND LINE (2026-09-14). The writer's Sound line now survives into beatLine (it used to be
-  // deleted before this guard ran), and this test counted it as "a block exists" — so an inline quote was STRIPPED as a duplicate of a
-  // block that was never there, the spoken words were lost, and their sentence shipped dangling. Only a Dialogue header is a block.
-  const hasBlock = new RegExp(String.raw`(^|\n)\s*${DIALOGUE_HEAD}`, "i").test(beatLine);
-  const spoken = [];
-  // ⚠⚠ THE STRIP STOPS AT THE FIRST BLOCK HEADER (owner 2026-08-20). This walk protected only lines that
-  // START with Dialogue:/Sound: and ran the quote-strip inside the terminal blocks themselves. Measured on
-  // punch monkey 61429ca6: the writer's block was healthy — `BARTENDER (to PUNCH) [4s]: "Rough day,"` /
-  // `BARTENDER (continuing) [7s]: "pal?"` — and shipped as `BARTENDER (to PUNCH) [4s]` / `BARTENDER (`:
-  // the block's OWN authored words stripped as if they were inline narration (the `continu\w*` verb-branch
-  // ate `continuing) [7s]: "pal?"` whole), and seedance, handed a bare label, invented its own line
-  // ("first time here, kid?" — unauthored speech on a blank check). Everything from the first block header
-  // on is CANONICAL — the very destination this guard exists to move words INTO — so the strip may only
-  // run on the beat region above it.
-  const _blockAt = bl.findIndex((l) => /^\s*(?:Dialogue|Sound)\s*:/i.test(l));
-  const cleaned = bl.map((line, i) => {
-    if (_blockAt >= 0 && i >= _blockAt) return line;   // canonical region — headers and block content pass through untouched
-    const at = (line.match(/^\s*\[(\d+)s\]/) || [])[1];
-    let out = line;
-    // A QUOTED WORK TITLE IS NOT SPEECH (owner 2026-09-07: job 91366c45 shipped `Speaker [0s]: "The Shining"` from a "The Shining"-themed ride)
-    for (const m of [...line.matchAll(QUOTED)]) {
-      if (_isWorkTitle(m[1])) { out = out.replace(m[0], m[0].replace(/["\u201c]([^"\u201c\u201d]{2,})["\u201d]/, "$1")); continue; }
-      { const before = line.slice(0, line.indexOf(m[0])); const clause = before.split(/[.;!?]\s+|,\s+(?=(?:and|as|while|then|but)\s)/).pop() || ""; const sentence = before.split(/[.;!?]\s+/).pop() || ""; spoken.push({ at, text: m[1], clause, sentence }); }
-      out = out.replace(m[0], "");
-    }
-    // what is left is a SENTENCE: a conjunction the quote hung from goes ("…and says, "No exit!"" never ships as "…and"), and a line
-    // whose full stop lived inside the quote gets one back
-    out = out.replace(/\s{2,}/g, " ").replace(/\s+([.,;])/g, "$1").replace(/[,:;]\s*$/, "").replace(/[,;]?\s+(?:and|or|but|then|as|while|before|after)\s*$/i, "").trimEnd();
-    // ⭐⭐ A BEAT THAT WAS ONLY A LINE BECOMES THE ACT OF SPEAKING (owner 2026-09-22, job a3ed9f16: "the characters dont speak, its like voiceover").
-    // The writer had used two beat slots as dialogue lines — "[5s] Man in black hoodie (to Little Caesar) (melancholic, sincere): "Back then…"" —
-    // and this strip moved the words into the block and left the husk standing: a label with a full stop, no verb, nothing the frame can show.
-    // At the very second someone speaks, the video model was handed a beat in which nothing happens, so it rendered a still scene and played the
-    // words over it. The delivered run of the same prompt (a4d543aa) had written the act itself: "looks up at the glass window, speaking earnestly
-    // to the cartoon Roman man". What is left here is turned into that: the speaker speaks to the addressee, in the manner. The count is kept.
-    if (out !== line) { const husk = speechHusk(out); if (husk) out = husk; }
-    if (out !== line && /[A-Za-z0-9\u201d"')]$/.test(out) && !/^\s*\[\d+(?:\.\d+)?s\]\s*$/.test(out)) out += ".";
-    return out;
-  });
-  if (spoken.length && !hasBlock) {
-    const who = (process.env.PLAN_DIALOGUE || "").match(/\n\s*([^:\n]{1,80}?)\s*:/);
-    // WHO SPEAKS IS WHO THE SENTENCE SAYS SPEAKS (layer 2, the Jurassic flume, 2026-09-14): the request's subject as the fallback labelled a
-    // t-rex with the ride narrator's line ("Please remain seated as we pass through the feeding grounds"). The clause the quote hung from
-    // names its speaker ("as the ride narrator's voice crackles over the speakers"), else the sentence's own subject ("The cat turns its
-    // head … letting out a low"); a bare "Speaker" only when neither reads — the ride block's own finding then sends it back to the writer.
-    const subjectOf = (txt) => { const m = String(txt || "").replace(/^\s*(?:and|as|while|then|but)\s+/i, "").match(/^\s*((?:the|a|an|its|his|her|their|our|one|two|three|[A-Z][a-z]+)\b(?:\s+[A-Za-z'-]+){0,4})/); if (!m) return "";
-      const words = m[1].split(/\s+/); const keep = []; for (const w of words) { if (keep.length && /[a-z]s$/.test(w) && !/'s$/.test(w)) break; keep.push(w); if (keep.length >= 5) break; } return keep.length >= 2 ? keep.join(" ") : ""; };
-    // A SPEAKER THE RUN ALREADY KNOWS IS LABELLED BY ITS OWN HEAD CLAUSE (review-3 F8: "a three-dimensional rockhopper penguin with" shipped as a label,
-    // cut mid-phrase by the five-word rule, for a prose figure whose head clause the run held exactly); the word count is the fallback, and never ends on a joiner
-    const _proseHeads = String(process.env.PROSE_FIGURES || "").split(" | ").map((x) => x.split(" [")[0].replace(/\s+/g, " ").trim()).filter(Boolean).sort((a, b) => b.length - a.length);
-    const _knownSpeaker = (txt) => { const low = ` ${String(txt || "").toLowerCase()} `; for (const h of _proseHeads) { const bare = h.replace(/^(?:the|a|an)\s+/i, "").toLowerCase(); if (bare.length >= 4 && low.includes(bare)) return h; } return ""; };
-    const _untail = (s) => String(s || "").replace(/\s+(?:with|of|in|on|at|and|or|the|a|an|to|for|from|by|its|his|her|their)$/i, "").trim();
-    const speakerFor = (q) => who ? who[1].trim() : (_knownSpeaker(q.clause) || _knownSpeaker(q.sentence) || _untail(subjectOf(q.clause)) || _untail(subjectOf(q.sentence)) || "Speaker");
-    // (the block below is passed through denameSpeakers — a speaker under the name law is labelled by its guise)
-    const block = denameSpeakers("Dialogue:\n" + spoken.map((q, i) =>
-      `${speakerFor(q)}${i && speakerFor(q) === speakerFor(spoken[0]) ? " (continuing, over the cuts)" : ""}${q.at != null ? ` [${q.at}s]` : ""}: "${q.text}"`).join("\n"));
-    // the block sits BEFORE a Sound line, the terminal order every reader expects (beats · Dialogue · Sound)
-    const _soundAt = cleaned.findIndex((l) => /^\s*Sound\s*[:\u2014\u2013-]/i.test(l));
-    const _beats = (_soundAt >= 0 ? cleaned.slice(0, _soundAt) : cleaned).join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
-    const _tail = _soundAt >= 0 ? "\n" + cleaned.slice(_soundAt).join("\n").trimEnd() : "";
-    beatLine = `${_beats}\n\n${block}${_tail}`;
-    console.warn(`[GUARD] dialogue: ${spoken.length} spoken line(s) were narrated INSIDE the beats and no Dialogue block existed — MOVED into one terminal block, timings preserved (doctrine drifting; fix the root).`);
+  // The guard itself lives in _gate_rules.mjs (moveInlineSpeech, owner 2026-09-22) so the gate RUNS it on the strings that broke,
+  // instead of reading this file's source. The terminal block is the canonical location — it carries the timings, and it is what
+  // applyAudioFill and the slop meter read — so a line found in the beats moves INTO it, and a copy the block already holds comes out.
+  const _moved = moveInlineSpeech(beatLine, { planDialogue: process.env.PLAN_DIALOGUE || "", proseFigures: process.env.PROSE_FIGURES || "", workTitles: process.env.WORK_TITLES || "", dename: denameSpeakers });
+  beatLine = _moved.beatLine;
+  if (_moved.mode === "moved") {
+    console.warn(`[GUARD] dialogue: ${_moved.moved} spoken line(s) were narrated INSIDE the beats and no Dialogue block existed — MOVED into one terminal block, timings preserved (doctrine drifting; fix the root).`);
     console.warn(`[GUARD] dialogue: left in place they would have shipped TWICE — _run re-attaches the plan's block whenever the beats carry none.`);
-  } else if (spoken.length) {
-    // ⚠ SPEECH IN BOTH PLACES SHIPS IT TWICE — REPAIR, DO NOT MERELY WARN. Measured across three consecutive
-    // writer runs on one prompt: one emitted a block, one narrated inline, and one did BOTH. That third case
-    // used to warn and pass through, which hands the generator the same line in two forms and asks it to say
-    // them both. The terminal block is the canonical location — it carries the timings, and it is what
-    // applyAudioFill and the slop meter read — so the block STAYS and the inline copies come out of the beats.
-    // The words are removed, never rewritten: nothing is lost that the block does not already hold.
-    beatLine = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
-    console.warn(`[GUARD] dialogue: ${spoken.length} quoted line(s) appeared in the beats ALONGSIDE a Dialogue block — STRIPPED from the beats, block kept (it holds the timings). Left in place the generator would have been told the same speech twice.`);
+  } else if (_moved.mode === "stripped") {
+    console.warn(`[GUARD] dialogue: ${_moved.moved} quoted line(s) appeared in the beats ALONGSIDE a Dialogue block — STRIPPED from the beats, block kept (it holds the timings). Left in place the generator would have been told the same speech twice.`);
   }
 }
 

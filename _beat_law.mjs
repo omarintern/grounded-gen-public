@@ -192,6 +192,19 @@ export const vocalizationClause = () =>
   `written as the sound it makes, in quotes, never human words — timed, labeled and AIMED like any spoken ` +
   `line, and an exchange of such lines progresses like an argument: each answer responding to the last.`;
 
+// ── A FIGURE'S VOICE IS WRITTEN IN THE BLOCK, ON EVERY RUN (owner 2026-09-22: "arent action blocks and dialogue blocks seperate in
+// the engine? … theyre suppose to correspond on time block relationships"). The beats carry what is SEEN and the Dialogue block carries what
+// is HEARD, joined by the second they share. dialogueClause states this only when the plan ASSIGNED lines — when it assigned none it is
+// silent, so a sound the writer gave a figure itself (a bark, a roar, a "HRAAAH") had no rule at all and was narrated inside a beat.
+// Of the eight logged runs where the guard had to pull speech out of a beat, seven had no planned dialogue (bear, seal, capybara,
+// t-rex, cake, coaster, cat). This is the law the guard in _gate_rules.mjs backstops; it is stated every time, planned lines or not.
+export const voiceClause = () =>
+  `⚠ A FIGURE'S VOICE IS WRITTEN IN THE DIALOGUE BLOCK, AND ONLY THERE. Every line or sound a figure makes with its voice — words, ` +
+  `a bark, a roar, a cry, a laugh, a shout — whether the work assigned it or you are giving it one, is written once, in the final ` +
+  `"Dialogue:" block, under that figure's own label and at the second it is heard. The beat at that second shows the figure MAKING it ` +
+  `— the jaw dropping open, the chest heaving, the head thrown back — in words of its own. The beats carry what is seen, the block ` +
+  `carries what is heard, and the second they share is what joins them.`;
+
 // ── A KEPT BELONGING RIDES A REFERENCE IMAGE (owner 2026-08-21: «keeping plush would mean maintaining the
 // punch character-ref and referencing the plush from the image») — the deep-remix executor sets the note;
 // the beats bind the belonging to its pixels and the replacement grammar keeps the old holder out of frame.
