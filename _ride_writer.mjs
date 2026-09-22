@@ -263,7 +263,12 @@ export function linesOutrun(text, secs = 9) {
     const at = spokenAt[i_]; if (!Number.isFinite(at)) continue;
     const said = (dl.line.split(STAMP_COLON).slice(2).join("") || "").replace(/^\s*:?\s*/, "").replace(/^["“'\s]+|["”'\s]+$/g, "");
     const words = said.split(/\s+/).filter(Boolean).length; if (!words) continue;
-    const next = Math.min(...[stamps.find((s) => s > at), spokenAt[i_ + 1]].filter((n) => Number.isFinite(n)), secs);
+    // ⭐⭐ TWO VOICES ON ONE STAMP ARE SIMULTANEOUS, NOT QUEUED (owner 2026-09-22: the planner may let the addressee "respond at the
+    // same time juncture (as if speaking over) to produce realism"). The window used to close at the NEXT VOICE whatever its stamp, so a
+    // second line sharing a stamp gave the first a window of zero and every overlap was a law fail. Voices that begin together run
+    // together: each is measured to the next voice at a LATER stamp, or the next beat, whichever comes first.
+    const nextVoice = spokenAt.slice(i_ + 1).find((n) => Number.isFinite(n) && n > at);
+    const next = Math.min(...[stamps.find((s) => s > at), nextVoice].filter((n) => Number.isFinite(n)), secs);
     const window = Math.max(0, next - at);
     const need = words / WORDS_PER_SEC;
     if (at >= secs - 1) out.push({ at, label: dl.label, words, need: Number(need.toFixed(1)), window, kind: "last second" });

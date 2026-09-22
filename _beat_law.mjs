@@ -131,6 +131,9 @@ export const dialogueClause = () => {
         // and hand them over, exactly as the beats get theirs.
         + `⚠ USE THESE EXACT TIMINGS FOR THE DIALOGUE LINES: ${DIALOGUE_STAMPS.map((t) => `[${t}s]`).join(" ")} `
         + `— one fragment per stamp, in order, breaking the sentence at its own natural clause boundaries. `
+        + `⚠ THAT IS ONE SPEAKER'S SENTENCE CARRIED ACROSS STAMPS, AND IT IS NOT THE ONLY SHAPE. Two DIFFERENT figures may share one `
+        + `stamp when they speak at once — an interruption, an answer cutting in, two voices together. Keep them both, each with its own `
+        + `label and manner, at that same second: they overlap, they do not queue. `
         + `A SPOKEN LINE NEVER OUTRUNS THE BEAT THAT CARRIES IT (owner 2026-09-13): about three words a second, from its stamp to the next beat's stamp; no line begins in the take's last second. `
         + `EVERY LINE SAYS HOW IT IS SAID: each speaker label ends in a short parenthetical of manner — (sing-song, mocking) — two or three words of delivery, never a body direction. `
         + `Two fragments at the top is the reflex and it is wrong: it lands the last words a third of the way `
@@ -720,6 +723,13 @@ export const seesawLaw = (BEAT_STYLE) => (telling() === "observational"
     `⚠ THE BUDGET IS TIME, NOT A COUNT. Do not ration yourself to one line or one turn - fill the beats you ` +
     `have at a speakable pace (roughly two words per second of clip, so a 7s shot carries a short exchange, not ` +
     `a monologue). Speech is DIEGETIC and in-scene; never a voiceover, never narration, never music. `+
+    `⚠⚠ WHOEVER IS SPOKEN TO CAN SPEAK BACK. When a line is aimed at a figure who is there in the scene, that figure may ANSWER — ` +
+    `give it its own line, with its own manner, and let the two of them have the exchange the moment calls for. A figure addressed by ` +
+    `name and silent for the whole take reads as a prop, not a character. It is a CHOICE, not a duty: someone may be too stunned, too ` +
+    `far, too busy or too rude to reply, and silence that the scene earns is an answer of its own. ` +
+    `⚠⚠ AND THEY MAY TALK OVER EACH OTHER. Two figures may be given the SAME timestamp when they speak at once — an interruption, a ` +
+    `protest cutting in, two people answering together. Real exchanges overlap, and the take is allowed to. Give each its own line and ` +
+    `its own manner at that one moment; the words share the time rather than queueing behind one another. `+
     `⚠ DIALOGUE AND PLOT ARE ELEMENTS, WHICH ARE FREE. Shot description, lens, lighting and camera moves are ` +
     `DETAILS, which cost - the seesaw NEVER adds those. Write WHAT IS SAID and WHAT HAPPENS; never how it is ` +
     `shot, lit or delivered. `+
