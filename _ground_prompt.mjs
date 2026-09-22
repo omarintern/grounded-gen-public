@@ -13,7 +13,7 @@ import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_rea
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
-import { speechHusk } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
+import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
@@ -214,6 +214,13 @@ let beatLine, mode;
 // defined — shipping the original"), silently flattening every climax that needed the escalation re-ask;
 // the swap repair carried the identical crash, unexercised only because its verdicts kept coming back
 // anchored. Declared here, assigned where the accepted draft's count is known.
+// ⭐⭐ A STAND-IN IS A BODY (owner 2026-09-22, job 32e26ad3). The reader named a flat cardboard cutout as the body to swap into, and the
+// delivered figure wore its flat face. Where the action spot holds only an IMAGE of a body — a cutout, a poster, a mannequin, a statue —
+// there is nothing to take the place of, so the answer is emptied here and the run takes the conjure path it already has for an empty spot.
+if (!standinIsABody(seen.standin)) {
+  if (has(seen.standin)) console.log(`  \u25c7 the action spot holds an IMAGE of a body, not a body ("${String(seen.standin).slice(0, 90)}") \u2014 nothing to swap into; the figure is conjured`);
+  seen.standin = ""; seen.standin_is_target = false;
+}
 let ACCEPTED_N = Math.max(...COUNTS);
 let writerInstruction = "";   // the writer contract, captured at _dump so the payoff repair can re-ask with it
 if (seen.standin_is_target) {
