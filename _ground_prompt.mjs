@@ -463,7 +463,7 @@ if (BEAT_STYLE !== "template") {
   // THE CHROME CLAUSE IS A REPAIR, NOT A RETRY (owner 2026-09-21, job d6921814): "Under the trail camera's washed overlay and corner marks, …" and
   // "… under the trail camera's flickering overlay and corner marks" lose the clause mechanically (_gate_rules.stripChromeClauses); the beat's own
   // event stands; anything that survives still fails the chrome law, and the one corrective re-ask fixes it.
-  { const before = text; text = stripChromeClauses(text);
+  { const before = text; text = stripChromeClauses(text, { apparatus: process.env.APPARATUS_NOUN || "" });
     if (text !== before) console.error(` (repair: a chrome clause deleted — the photograph carries the device's look; no retry spent)`); }
   // THE CAMERA CLAUSE IS A REPAIR, NOT A RETRY (owner 2026-09-12: "23 is much too long"): every writer pass wrote "the camera tracks with it" and paid a full
   // corrective call to delete it. A clause that only names the camera is deleted mechanically; anything that survives still fails the law below.
