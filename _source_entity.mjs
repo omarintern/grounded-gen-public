@@ -6,6 +6,7 @@
 // photo that shows the entity + its signature. No iphone bias, no usable_stage gate, no crop, no blur.
 //   node _source_entity.mjs "<entity search query>" <slug> "<what the photo must show>"
 import "./_meter_boot.mjs";   // ledger rides EVERY orchestration (owner, x26e) — self-boots if _run's bootstrap was bypassed
+import { isGeneratorSourced } from "./_gate_rules.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -33,7 +34,7 @@ const ENSEMBLE = process.env.ENTITY_ENSEMBLE === "1";   // gap-4 exemption: the 
 const AI = ["clipart", "vector", "illustration", "cartoon", "drawing", "vecteezy", "ai-generated", "ai generated", "aiart", "3d render", "cgi", "artstation", "deviantart"];
 const host = (u) => (u || "").replace(/^https?:\/\//, "").split("/")[0];
 const isPaid = (u) => isPaidStock(u);   // shared base list; entity refs need no extras (see _celeb_ref for the character-ref extras)
-const isAI = (it) => { const s = JSON.stringify(it).toLowerCase(); return AI.some((d) => s.includes(d)); };
+const isAI = (it) => { const s = JSON.stringify(it).toLowerCase(); return AI.some((d) => s.includes(d)) || isGeneratorSourced(it); };   // + generator-only sites (owner 2026-09-22)
 
 // Scrape via the dispatcher's IDENTITY route. ⚠ THIS PATH TAKES NONE OF THE SCENE DEFAULTS, because they are
 // tuned for the opposite job: they optimise CANDOUR, and this sourcer optimises LEGIBILITY — the clearest

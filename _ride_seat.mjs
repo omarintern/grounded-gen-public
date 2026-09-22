@@ -9,6 +9,7 @@
 //   node _ride_seat.mjs <slug> [aspect]     → out/_aspect/world_<slug>.jpg + world_<slug>.pick.json (+ seen sidecar, contact sheet)
 //   exit 0 served · 2 no seat in the pool · 4 budget cap · 5 infrastructure (never a verdict on the pool)
 import "./_meter_boot.mjs";   // the ledger rides EVERY orchestration
+import { isGeneratorSourced } from "./_gate_rules.mjs";
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -56,7 +57,7 @@ for (const f of readdirSync(OUTDIR)) {
   if ((f.startsWith(`${slug}_c`) && /\.jpg$/.test(f)) || f === `world_${slug}.seen.json` || f === `world_${slug}.pick.json` || f === `sheet_${slug}.jpg` || f === `world_${slug}.diag.json`) { try { rmSync(join(OUTDIR, f), { force: true }); } catch {} }
 }
 const AI_WORDS = ["clipart", "vector", "illustration", "cartoon", "drawing", "vecteezy", "magnific", "ai-generated", "ai generated", "aiart", "ai art", "digital art", "3d render", "cgi", "artstation", "deviantart"];
-const isAI = (it) => { const s = JSON.stringify(it).toLowerCase(); return AI_WORDS.some((d) => s.includes(d)); };
+const isAI = (it) => { const s = JSON.stringify(it).toLowerCase(); return AI_WORDS.some((d) => s.includes(d)) || isGeneratorSourced(it); };   // + generator-only sites (owner 2026-09-22)
 const hostOf = (u) => { try { return new URL(u).hostname; } catch { return String(u || "").replace(/^https?:\/\//, "").split("/")[0]; } };
 const UA = "grounded-gen/1.0";
 const dlFails = new Map();
