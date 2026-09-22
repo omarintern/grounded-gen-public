@@ -214,39 +214,36 @@ let beatLine, mode;
 // defined — shipping the original"), silently flattening every climax that needed the escalation re-ask;
 // the swap repair carried the identical crash, unexercised only because its verdicts kept coming back
 // anchored. Declared here, assigned where the accepted draft's count is known.
-// ⭐⭐ A STAND-IN IS A BODY (owner 2026-09-22, job 32e26ad3). The reader named a flat cardboard cutout as the body to swap into, and the
-// delivered figure wore its flat face. Where the action spot holds only an IMAGE of a body — a cutout, a poster, a mannequin, a statue —
-// there is nothing to take the place of, so the answer is emptied here and the run takes the conjure path it already has for an empty spot.
-if (!standinIsABody(seen.standin)) {
-  if (has(seen.standin)) console.log(`  \u25c7 the action spot holds an IMAGE of a body, not a body ("${String(seen.standin).slice(0, 90)}") \u2014 nothing to swap into; the figure is conjured`);
-  seen.standin = ""; seen.standin_is_target = false;
+// ⭐⭐ AN IMAGE OF THE SUBJECT IS NOT THE SUBJECT (owner 2026-09-22). With the stand-in law gone nothing is replaced, so a cutout or a
+// poster in the frame is simply part of the world and stays as photographed — no guard is needed for that. ONE branch still cares: the
+// photograph may ALREADY hold the subject, and then it is animated rather than conjured. A flat cardboard cutout of the character, a
+// poster of it or a statue of it is a picture of the subject, not the subject, and animating it is how job 32e26ad3 delivered a figure
+// wearing the cutout's flat white face. The reader's own words decide; nothing new is asked.
+if (seen.standin_is_target && !standinIsABody(seen.standin)) {
+  console.log(`  \u25c7 the photograph holds an IMAGE of the subject, not the subject ("${String(seen.standin).slice(0, 80)}") \u2014 it stays as photographed and the subject is conjured`);
+  seen.standin_is_target = false;
 }
 let ACCEPTED_N = Math.max(...COUNTS);
 let writerInstruction = "";   // the writer contract, captured at _dump so the payoff repair can re-ask with it
+// ⭐⭐ THE STAND-IN LAW IS REMOVED (owner 2026-09-22: "the standin law is stale, so it and anything bouncing off of it should be
+// corrected. it should be removed"). It was built when a take was one instruction over one photograph and a creature took a human's
+// place in it. The engine grounds differently now: the plate is frame zero, figures are CONJURED into it, and what the photograph
+// holds stays as photographed. The law survived as five modes, and the cost was visible on job 32e26ad3 — the plate's only body-like
+// thing was a flat cardboard cutout of a character, the swap put the mascot into it, and the delivered figure wore the cutout's flat
+// white face. The owner's question is the whole argument: if the other figure is simply inserted, why does this one replace anything.
+//
+// TWO CASES REMAIN, and neither replaces a body. The photograph may ALREADY hold the subject, in which case it is animated rather than
+// conjured a second time; otherwise the subject is introduced into the scene and everything the photograph holds stays as it is. The
+// VACATE mode for a ridden form went with the rest: a rider is no longer written out of the frame to seat the camera, because the seat
+// plate IS the camera's vantage and its occupants are the world's, which is the plain law every other apparatus form already followed.
 if (seen.standin_is_target) {
-  mode = "animate (stand-in IS the target)";
-  // stand-in IS the subject — use the clean TARGET noun + action (NOT the verbose VLM stand-in string, which
-  // already embeds an article + the action → doubled words like "The the red fox trotting … trotting …").
+  mode = "animate (the subject is already the creature in the photograph)";
+  // the clean TARGET noun + action (NOT the verbose VLM string, which already embeds an article + the action → doubled words)
   const T = String(intent.target).charAt(0).toUpperCase() + String(intent.target).slice(1);
   beatLine = `[0s] ${T} ${intent.action}${has(intent.secondary) ? `, with ${intent.secondary} in the scene` : ""}.`;
-} else if (has(seen.standin) && process.env.APPARATUS_FORM === "1" && RIDE?.kind !== "ridden") {
-  // A DRIVEN OR WORN FORM KEEPS THE PHOTOGRAPH'S OWN OCCUPANTS (layer 2 cell l2b-08, 2026-09-14): the ridden vacate below reached a GoPro
-  // take — the plate's jet-ski rider was "vacated to the camera's own seat", the seal took his place astride the jet ski, and beat zero
-  // opened on "the rails ahead, the bar and the hands" of a speedboat. On a car or a wearer the occupants are the world's (the plain law:
-  // the photograph is frame zero); the subject is conjured where the words put it, and nothing is said about a seat.
-  mode = `CONJURE beside the world's own (${RIDE?.kind || "apparatus"} form): ${seen.standin} stays as photographed`;
-  beatLine = `[0s] ${intent.target} appears in the scene ${intent.action}; ${seen.standin} and everything else stay exactly as photographed.`;
-} else if (has(seen.standin) && process.env.APPARATUS_FORM === "1") {
-  // ⚠ A RIDDEN FORM NEVER SWAPS (owner 2026-09-06). "The rollercoaster replaces a young boy on a blue tricycle" was obeyed
-  // to the letter: the boy stayed a beat, then faded. The ride is not a figure; the camera occupies the seat he had.
-  mode = `VACATE: ${seen.standin} → the camera's own seat (apparatus form)`;
-  beatLine = `[0s] From the camera's own seat, the rails run ahead down the scene, the bar and hands in the lower frame; ${seen.standin} is not in the video. Everything else stays exactly as photographed.`;
-} else if (has(seen.standin)) {
-  mode = `SWAP: ${seen.standin} → ${intent.target}`;
-  beatLine = `[0s] Replace ${seen.standin} with ${intent.target}. Everything else in the scene stays exactly as photographed.`;
 } else {
-  mode = "conjure (empty action-spot — really wants an image-model insert, rule 11b)";
-  beatLine = `[0s] ${intent.target} appears in the scene ${intent.action}; everything else stays exactly as photographed.`;
+  mode = has(seen.standin) ? `conjure (the photograph's own occupants stay: ${seen.standin})` : "conjure (an empty action spot)";
+  beatLine = `[0s] ${intent.target} appears in the scene ${intent.action}; ${has(seen.standin) ? `${seen.standin} and ` : ""}everything else stays exactly as photographed.`;
 }
 // ── NARRATIVE BEATS (BEAT_STYLE=narrative) — the "narrative way": the user's prompt rewritten into a short
 // TEMPORAL script rather than one flat instruction. Owner 2026-07-29: "we need to test with the narrative-dense
@@ -298,14 +295,11 @@ const _density = specDensity(userPrompt);
 const BEAT_STYLE = process.env.BEAT_STYLE || (_density >= SPEC_DENSE ? "minimal" : "spectacle");
 console.log(`seesaw : spec-density ${_density} (dense at ${SPEC_DENSE}) → ${BEAT_STYLE}${process.env.BEAT_STYLE ? " (env override)" : ""}`);
 if (BEAT_STYLE !== "template") {
+  // THE SAME LAW IN THE WRITER'S OWN WORDS: nothing is ever replaced, and what the photograph holds is the world's.
   const swapClause = seen.standin_is_target
-    ? `The ${intent.target} is ALREADY the creature in the photo — do not swap anything, just animate it.`
-    : (has(seen.standin) && process.env.APPARATUS_FORM === "1" && RIDE?.kind !== "ridden")
-      ? `⚠ ${seen.standin} in the photograph stays exactly as photographed — the world's own, never replaced and never vacated; ${intent.target} is introduced where the words put it (${intent.action}), never in that place.`
-    : (has(seen.standin) && process.env.APPARATUS_FORM === "1")
-      ? `⚠ ${seen.standin} in the photograph is NOT in the video and is NEVER described, named or replaced by anything: under a ridden form the camera occupies that seat. Beat 1 opens on the rails ahead, the bar and the hands, everything else exactly as photographed.`
+    ? `The ${intent.target} is ALREADY the creature in the photograph — do not introduce another, just animate it.`
     : has(seen.standin)
-      ? `Beat 1 MUST begin by replacing ${seen.standin} with ${intent.target}, which takes over that exact position.`
+      ? `⚠ ${seen.standin} in the photograph stays exactly as photographed — the world's own, never replaced, never vacated and never written out; ${intent.target} is introduced into the scene where the words put it (${intent.action}).`
       : `Beat 1 MUST introduce ${intent.target} into the scene at the natural action spot.`;
   // ANTHROPOMORPHIC COMEDY — the point of the whole non-© branch, and the thing the minimal swap beat structurally
   // cannot deliver. Owner 2026-07-30, on a pigeon that replaced a laundromat clerk: "the pigeon didnt work the
@@ -835,31 +829,33 @@ const outFile = join(HERE, "out/_aspect", `${slug}_beats.txt`);
 try {
   // ON A RIDE THERE IS NO SUBJECT TO SWAP IN (draw 21, 2026-09-13: the seat plate's own passenger was vacated and the swap check re-asked the writer to seat a
   // subject that does not exist — a writer pass bought for nothing). The seat is the vantage; hostability already steps aside; so does this.
-  if (!RIDE && has(seen.standin) && !seen.standin_is_target) {
+  // ⭐⭐ THE ANCHOR SURVIVES THE STAND-IN LAW (owner 2026-09-22). This check never asked about the body: it asks whether beat zero
+  // states WHERE in the frame the subject is and WHICH WAY it faces, because a beat that says neither lets the first frame drift. That
+  // is as true of a conjured figure as it was of a swapped one. What went is the repair's old argument — that the generator has to know
+  // which body it is replacing — and with it the instruction to write that body out. The subject is now placed at the action spot.
+  if (!RIDE && !seen.standin_is_target) {
     const { swapVerdict, swapActs } = await import("./_swap_check.mjs");
-    const sv = await swapVerdict(seen.standin, seen.standin_placement, intent.target, beatLine);
+    const sv = await swapVerdict(seen.standin || String(seen.scene || "the scene"), seen.standin_placement, intent.target, beatLine);
     if (sv.verdict) console.error(`  [swap:${swapActs() ? "live" : "shadow"}] beat zero ${sv.verdict.toUpperCase()} — position ${JSON.stringify(sv.position)} · facing ${JSON.stringify(sv.facing)}${swapActs() ? "" : "  (recorded only)"}`);
     if (swapActs() && sv.verdict === "unanchored" && writerInstruction) {
       const _bl = beatLine.split("\n");
       const _i0 = _bl.findIndex((l) => /^\[\d+(?:\.\d+)?s\]/.test(l.trim()));
-      console.warn(`  [swap] beat zero states neither position nor facing — re-asking once so the subject takes the stand-in's place.`);
+      console.warn(`  [anchor] beat zero states neither position nor facing — re-asking once so the subject is placed in the frame.`);
       try {
         const { text: t4 } = await providerText(
           writerInstruction +
           `\n\n⚠ YOUR PREVIOUS ATTEMPT IS FINE EXCEPT FOR ITS OPENING BEAT, WHICH DOES NOT PLACE THE SUBJECT. ` +
-          `The photograph already contains ${seen.standin}${seen.standin_placement ? `, in the ${seen.standin_placement} of the frame` : ""}, ` +
-          `and ${intent.target} must take over THAT position — the generator has to know which body it is replacing, ` +
-          `or it invents a second one and the first frame drifts. Your opening beat named the place in general but ` +
-          `said nothing about WHERE in the picture the subject is or WHICH WAY it faces. Rewrite the SAME beats at ` +
-          `the SAME timestamps, changing ONLY the opening beat so it states the subject's position in the frame and ` +
-          `its facing, at the spot that body occupies. Do NOT mention the body being replaced — it is gone, the ` +
-          `subject is simply there instead. Return the full beat list and nothing else.`,
+          `Your opening beat named the place in general but said nothing about WHERE in the picture the subject is ` +
+          `or WHICH WAY it faces, and a first frame with neither drifts. Rewrite the SAME beats at the SAME ` +
+          `timestamps, changing ONLY the opening beat so it states the subject's position in the frame and its ` +
+          `facing.${has(seen.standin) ? ` Everything the photograph already holds — ${seen.standin} among it — stays exactly as photographed and is never replaced or written out.` : ""} ` +
+          `Return the full beat list and nothing else.`,
           { maxTokens: 4000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });
         const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
         if (rl.length !== ACCEPTED_N) console.warn(`  [swap] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
         else {
           const rebuilt = rl.join("\n");
-          const sv2 = await swapVerdict(seen.standin, seen.standin_placement, intent.target, rebuilt);
+          const sv2 = await swapVerdict(seen.standin || String(seen.scene || "the scene"), seen.standin_placement, intent.target, rebuilt);
           if (sv2.verdict === "anchored") {
             beatLine = rebuilt + (_i0 >= 0 && _bl.slice(_i0 + rl.length).length ? "\n" + _bl.slice(_i0 + rl.length).join("\n") : "");
             console.log(`  [swap] repaired — beat zero now states position ${JSON.stringify(sv2.position)} · facing ${JSON.stringify(sv2.facing)}`);
