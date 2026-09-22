@@ -9,6 +9,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
+import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
@@ -54,9 +55,26 @@ if (framingConceded) console.log("framing: CONCEDED → beats pitched to the pla
 // arrived as 'vintage mechanical cymbal monkeys' and the beats rendered clockwork machines. Same law,
 // same mechanism as resolveEntities and inferNativeCapture: WHO IS IN THE VIDEO is the user's call, and
 // the raw words rule whenever the door supplied them. The rewrite stays visible as narrative context.
-const intent = await providerJson([textPart(
+// ⭐⭐ ONE JOB, ONE READING (owner 2026-09-22). Every pass below used to derive its own facts: the request read again, the
+// plate looked at again, the character looked at again — and on job a4d543aa the third look at the SAME photograph said
+// there was nobody in the window, which flipped the writer from SWAP to CONJURE and lost the figure the first draft had put
+// there. The first pass of a job writes what it read; every later pass reads it back. The keys are in _read_pin: a reading
+// outlives nothing that produced it, and a re-hunt that changes the photograph is looked at afresh. PLATE_READ_PIN=0 forces
+// a fresh look on every pass.
+const PIN_FILE = join(HERE, "out/_aspect", `${slug}_read.json`);
+const PIN_ON = process.env.PLATE_READ_PIN !== "0";
+let _pin = PIN_ON ? readPin(PIN_FILE) : null;
+const _promptSha = sha(String(userPrompt || ""));
+const _plateSha = fileSha(worldRef);
+const _keepRead = (kind, keys, value) => { if (!PIN_ON) return; _pin = pinPut(_pin, kind, keys, value); writePin(PIN_FILE, _pin); };
+
+const _intentKeys = pinKeys("intent", { promptSha: _promptSha });
+const _intentPinned = PIN_ON ? pinHit(_pin, "intent", _intentKeys) : null;
+if (_intentPinned) console.log("  \u25c7 the request reading is this job's own — the words have not changed, so it is not read again");
+let intent = _intentPinned || await providerJson([textPart(
   `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff (validated failure 2026-07-31)","secondary":"any OTHER creatures/props to CONJURE INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}".${["worn", "driven"].includes(String(process.env.APPARATUS_KIND || "")) ? " \u26a0 THE CAMERA IS WORN OR DRIVEN (a helmet cam, a bodycam, a dashcam): the wearer or driver is not in the video and is nobody's subject, and the camera's own motion — riding, driving, walking — is NEVER the target's action. The target's action is what IT does where the camera finds it: a bear on the switchback stands, turns or moves on the switchback as the camera approaches; it does not ride." : ""}`
 )], { maxTokens: 2400, temperature: 0.2, tag: "intent" });   // budget bounds, never spends: the fast model reasons inside max_tokens (see WRITER BUDGETS below)
+if (!_intentPinned) _keepRead("intent", _intentKeys, intent);   // pinned RAW, before the seat-cast cut below re-applies itself on every pass
 // ⭐⭐ ENTITY NAMING IS NEVER RE-DERIVED FROM PROMPT TEXT — RAW OR REWRITE (owner 2026-08-29). The raw
 // words rule the subject ONLY when no resolved entity covers it (the cymbal-monkeys law). When the
 // plan's cast covers the extracted subject, the plan's OWN string replaces it: that string is already
@@ -108,10 +126,14 @@ const b64 = readFileSync(worldRef).toString("base64");
 // generic role-noun is a weaker positional anchor than a description that identifies WHICH body in the frame.
 // Small sample: only 2 of the 6 plates held an occupant, so the wording effect rests on two observations —
 // but detection is unchanged, so removing them costs nothing.
-const seen = await providerJson([
+const _seenKeys = pinKeys("seen", { promptSha: _promptSha, plateSha: _plateSha });
+const _seenPinned = PIN_ON ? pinHit(_pin, "seen", _seenKeys) : null;
+if (_seenPinned) console.log("  \u25c7 the plate reading is this job's own — the same photograph and the same request, so it is not looked at again");
+const seen = _seenPinned || await providerJson([
   textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant/subject currently AT THE ACTION SPOT that the target should REPLACE — the body the model swaps. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so NO swap is needed),"standin_placement":"foreground | side | background | none","other_occupants":[{"body":"…","position":"…","doing":"…"}] (0-2 OTHER prominent REAL occupants — a person or animal — elsewhere in the frame, each described closely enough to pick it out; [] when there are none),${ELEMENTS_FIELD}}.`),
   imagePart("image/jpeg", b64),
 ], { maxTokens: 2400, temperature: 0.2 });
+if (!_seenPinned) _keepRead("seen", _seenKeys, seen);
 
 // 2b. READ THE CHARACTER REFS (VLM) — what does the sourced character actually LOOK like, and what does it
 // CARRY or WEAR that the beats can put to work? A signature the beats never touch is a signature the action
@@ -158,8 +180,15 @@ if (charPaths.length) {
   for (const r of charPaths) {
     try { parts.push(imagePart("image/jpeg", readFileSync(r).toString("base64"))); } catch {}
   }
+  // THE CHARACTER IS READ ONCE TOO (owner 2026-09-22, job ee5535ea): draft 1 gave him "thin-rimmed glasses; light blue dress
+  // shirt" and draft 3 gave him "wire-rimmed glasses; gold wrist watch" — the same reference file, the same question, the
+  // figure's own signatures drifting between drafts of one video. Keyed on the reference FILES' bytes.
+  const _refsKeys = pinKeys("charsig", { refsSha: sha(charPaths.map((r) => `${r}:${fileSha(r)}`).join("|")) });
+  const _csPinned = PIN_ON ? pinHit(_pin, "charsig", _refsKeys) : null;
+  if (_csPinned) console.log("  \u25c7 the character reading is this job's own — the same reference, so it is not looked at again");
   try {
-    const cs = await providerJson(parts, { maxTokens: 2000, temperature: 0.2 });
+    const cs = _csPinned || await providerJson(parts, { maxTokens: 2000, temperature: 0.2 });
+    if (!_csPinned) _keepRead("charsig", _refsKeys, cs);
     const sig = (cs?.signatures || []).filter(Boolean);
     if (sig.length) charSig = sig.join("; ");
     if (cs?.carried && !/^none$/i.test(cs.carried)) {
