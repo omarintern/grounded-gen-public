@@ -12,7 +12,8 @@ import { providerJson, providerText, textPart, imagePart } from "./provider-llm.
 import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout } from "./_gate_rules.mjs";
-import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
+import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
+import { speechHusk } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
@@ -422,8 +423,13 @@ if (BEAT_STYLE !== "template") {
     // EVERY LINE SAYS HOW IT IS SAID (owner 2026-09-11/12, every form): a spoken line whose label carries no manner is a law fail — one corrective retry
     { const over = linesOutrun(t, BEAT_SECS); if (over.length) fails.push(`a spoken line outruns its beat or begins in the last second ("${over[0].label}" at [${over[0].at}s]: ${over[0].words} words, ${over[0].window}s until the next beat of a ${BEAT_SECS}s take) — a line never outruns the beat that carries it: shorten it, move its stamp earlier, or give its beat the seconds it needs`); }
     { const bare = dialogueLines(t).filter((l) => !saysHow(l.line)); if (bare.length) fails.push(`a Dialogue line does not say how it is said ("${bare[0].label}") — end the speaker label with a short parenthetical of manner, two or three words: (sing-song, mocking)`); }
-    // THE RIDER IS NEVER WRITTEN (owner 2026-09-07/08: frozen plaid hands, frozen boots) — on any ride one-take the rider's clothing or body is a law fail
-    if (singleBlock()) {
+    // THE RIDER IS NEVER WRITTEN (owner 2026-09-07/08: frozen plaid hands, frozen boots) — on a RIDDEN one-take the rider's clothing or body is a law fail.
+    // ⭐⭐ A RIDDEN LAW, NEVER A DRIVEN OR WORN ONE (owner 2026-09-22, job fd59c76a). This fired on a dashcam take because the appropriation makes any
+    // two-photograph apparatus take a single block, and the gate read only singleBlock(). The clown's "sleeves" were the STORY'S figure, not a
+    // rider; the corrective retry was then told "the vehicle is the bar, the nose, the bow, the rails" and the fast model obeyed — the car became the nose,
+    // the window the bow, the man sat "in the bar", the road ran "on the rails" — and it re-emitted the banned name while it was at it. On a
+    // driven or worn form the story's own figures wear clothes and are described; the rows ahead exist only on a ridden one.
+    if (singleBlock() && RIDE?.kind === "ridden") {
       const body = (t.split("\n").find((l) => /^\s*\[\d+s\]/.test(l)) || "").replace(/^\s*\[\d+s\]\s*/, "");
       const _rider = body.match(/\b(?:shirt|sleeves?|plaid|gloves?|jacket|hoodie|wrist|watch|knuckles?|fingers?|boots?|sneakers?|trousers|jeans|legs?|knees?)\b/i);
       if (_rider) fails.push(`the rider is written ("${_rider[0]}") — the rider is never described: no hands, clothing, legs or body; the vehicle is the bar, the nose, the bow, the rails`);
@@ -709,6 +715,13 @@ if (BEAT_STYLE !== "template") {
     // what is left is a SENTENCE: a conjunction the quote hung from goes ("…and says, "No exit!"" never ships as "…and"), and a line
     // whose full stop lived inside the quote gets one back
     out = out.replace(/\s{2,}/g, " ").replace(/\s+([.,;])/g, "$1").replace(/[,:;]\s*$/, "").replace(/[,;]?\s+(?:and|or|but|then|as|while|before|after)\s*$/i, "").trimEnd();
+    // ⭐⭐ A BEAT THAT WAS ONLY A LINE BECOMES THE ACT OF SPEAKING (owner 2026-09-22, job a3ed9f16: "the characters dont speak, its like voiceover").
+    // The writer had used two beat slots as dialogue lines — "[5s] Man in black hoodie (to Little Caesar) (melancholic, sincere): "Back then…"" —
+    // and this strip moved the words into the block and left the husk standing: a label with a full stop, no verb, nothing the frame can show.
+    // At the very second someone speaks, the video model was handed a beat in which nothing happens, so it rendered a still scene and played the
+    // words over it. The delivered run of the same prompt (a4d543aa) had written the act itself: "looks up at the glass window, speaking earnestly
+    // to the cartoon Roman man". What is left here is turned into that: the speaker speaks to the addressee, in the manner. The count is kept.
+    if (out !== line) { const husk = speechHusk(out); if (husk) out = husk; }
     if (out !== line && /[A-Za-z0-9\u201d"')]$/.test(out) && !/^\s*\[\d+(?:\.\d+)?s\]\s*$/.test(out)) out += ".";
     return out;
   });
