@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { shapeForSource } from "./_query.mjs";   // the ONE owner of every appendage (owner 2026-09-19); pure and import-free, so no cycle
 
 const API = "https://api.library.example/v1";
 const UA = "grounded-gen/1.0 (candid image sourcing)";
@@ -116,7 +117,13 @@ export async function libraryImages(query, n = 40) {
   // OWNER 2026-08-13: the free library never receives the paid engines' APPENDAGES — "iphone footage" and the
   // "footage" bias are web/scoped levers; on the free library they narrow a metadata search that thrives on bare
   // nouns. Strip trailing bias tokens at this choke point so every caller is covered.
-  const _clean = _q.replace(/\s+(?:iphone\s+)?(?:footage|video)\s*$/i, "").trim() || _q;
+  // ⭐⭐ IT APPLIES TO EVERYTHING ON LIBRARY (owner 2026-09-22: "it applies to everything on the free library"). This choke point stripped only a trailing
+  // "footage" / "video", so job bebe5716's "Little Caesars interior footage" reached the free library as "Little Caesars interior" — the chain
+  // appendage kept — and three callers reach this client with no other shaping at all (the ride-seat ladder, a peopled broadcast's lead, a
+  // direct "library" request). The compiler's own free-source rule is applied here instead: every paid appendage and a trailing "interior"
+  // go, whoever called, and the query actually sent is logged whenever it differs from the one handed in.
+  const _clean = shapeForSource(_q, "library") || _q;
+  if (_clean !== _q) console.log(`  [library] asked the bare place: "${_q}" → "${_clean}"`);
   const ask = Math.min(Math.max(n, Number(process.env.OV_FREE_N || 40)), 100);
   const url = `${API}/images/?q=${encodeURIComponent(_clean)}&page_size=${ask}&mature=false`;
   const probing = _state.ok === false;   // the window has passed but the last word was "down" → half-open probe on the short leash
