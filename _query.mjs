@@ -33,6 +33,13 @@ export const FORM_WORD = /\b(?:footage|video|recording|scene|cctv|surveillance|d
 /** appendages a stage might have glued on; the free library never sees them */
 const TRAILING_APPENDAGE = /\s+(?:iphone footage|interior footage|footage|video|scenery photo|scenery|photograph|photo)$/i;   // "scene" is not an appendage: it is the measured stamp of a work's own frames and stays on every index
 
+/** CAMERA, VANTAGE AND MEDIUM WORDS ARE NEVER THE PLACE, WHEREVER THEY SIT (owner 2026-09-22: "it applies to everything on the free library"). The trailing
+ *  strip above could not reach the ride-seat queries that went to the free library verbatim — "dark ride onboard pov footage", "dark ride interior dark ride
+ *  pov", "onride dark ride pov". Only words that are never part of a place's own name are listed: "photo", "video", "scene" stay trailing-only
+ *  because "photo booth", "video store" and "crime scene" are places. */
+export const OV_VANTAGE = /\b(?:iphone|footage|pov|p\.o\.v\.?|onboard|on-board|onride|on-ride|ride-?through|first[- ]person|point[- ]of[- ]view|interior)\b/gi;
+/** "dark ride dark ride" → "dark ride": a phrase said twice in a row is said once. */
+export const collapseRepeats = (s) => String(s || "").replace(/\b(\w+(?:[\s-]+\w+){0,2})(?:\s+\1\b)+/gi, "$1");
 const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
 const _bare = (s) => _norm(s).replace(/^(?:the|a|an)\s+/i, "").trim();
 const _uniq = (arr) => { const out = []; for (const x of arr) { const v = _norm(x); if (v && !out.some((o) => o.toLowerCase() === v.toLowerCase())) out.push(v); } return out; };
@@ -84,7 +91,7 @@ export function shapeForSource(base, source, { lane = "candid" } = {}) {
   const b = _norm(base);
   if (!b) return "";
   const src = String(source || "").toLowerCase();
-  if (FREE_SOURCES.has(src)) return b.replace(TRAILING_APPENDAGE, "").replace(/\s+interior$/i, "").trim() || b;
+  if (FREE_SOURCES.has(src)) return _norm(collapseRepeats(b.replace(TRAILING_APPENDAGE, "").replace(/\s+interior$/i, "").replace(OV_VANTAGE, " ").replace(/\s+/g, " ").trim())) || b;
   const app = APPENDAGE[String(lane || "candid").toLowerCase()] ?? "";
   if (!app || FORM_WORD.test(b)) return b;
   return `${b} ${app}`;
