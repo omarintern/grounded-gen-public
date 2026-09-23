@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { markInflight, clearInflight } from "./_inflight.mjs";   // an accepted gen is recorded at ACCEPTANCE so a dead container cannot orphan it
 import { fileURLToPath } from "node:url";
-import { join, dirname } from "node:path";
+import { join, dirname, isAbsolute } from "node:path";
 import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import { padToAspect, ASPECT_DIMS } from "./_padref.mjs";
@@ -40,15 +40,18 @@ if (!slug || !promptFile) { console.error('usage: node _multiref_gen.mjs <slug> 
 // _adaptive_source's re-encode) — so a hit here means an upstream write path is still copying raw.
 const JPEG_MAGIC = (b) => b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
 /** Re-encode any ref whose BYTES are not JPEG, and return the path to use. Async, so it runs before the payload. */
+// ⚠ A REF MAY ARRIVE AS A FULL PATH (2026-09-23): the remix hands the kept cast's frame and a kept belonging's ref as absolute paths, and join(HERE, p)
+// doubled them ("/app" + "/app/out/…") — neither could ever be read. A full path is used as it is; a relative one is the engine directory's.
+const at = (p) => (isAbsolute(p) ? p : join(HERE, p));
 async function normaliseRef(p) {
-  const abs = join(HERE, p);
+  const abs = at(p);
   if (JPEG_MAGIC(readFileSync(abs))) return p;
   const fixed = p.replace(/\.[a-z0-9]+$/i, "") + "_norm.jpg";
-  await sharp(abs).jpeg({ quality: 92 }).toFile(join(HERE, fixed));
+  await sharp(abs).jpeg({ quality: 92 }).toFile(at(fixed));
   console.log(`[multiref] \u26a0 ${p} is NOT jpeg despite its name \u2014 re-encoded \u2192 ${fixed} (an upstream write path copied raw)`);
   return fixed;
 }
-const dataUri = (p) => `data:image/jpeg;base64,${readFileSync(join(HERE, p)).toString("base64")}`;
+const dataUri = (p) => `data:image/jpeg;base64,${readFileSync(at(p)).toString("base64")}`;
 
 function signIn() { return ""; }   // the provider's signed sign-in header: left out of this public copy
 
@@ -59,11 +62,11 @@ function signIn() { return ""; }   // the provider's signed sign-in header: left
 if (process.env.PAD_WORLD && ASPECT_DIMS[aspect]) {
   const [W, H] = ASPECT_DIMS[aspect];
   const target = W / H;
-  const m = await sharp(join(HERE, refs[0])).metadata();
+  const m = await sharp(at(refs[0])).metadata();
   const r0 = (m.width || 1) / (m.height || 1);
   if (Math.abs(r0 - target) > 0.02) {
     const padded = refs[0].replace(/\.(jpe?g|png|webp)$/i, "") + `_pad${aspect.replace(":", "x")}.jpg`;
-    await padToAspect(join(HERE, refs[0]), join(HERE, padded), W, H);
+    await padToAspect(at(refs[0]), at(padded), W, H);
     console.log(`[multiref] PAD_WORLD: world-ref ${refs[0]} (AR ${r0.toFixed(2)}) ≠ ${aspect} → black-padded → ${padded}`);
     refs[0] = padded;
   } else {
