@@ -454,6 +454,27 @@ export function pinsFromPlan(plan, state) {
   return { world, figures: [], belongings, cuts };
 }
 
+/** ⭐⭐ WHEN THE PARENT'S FRAME CARRIES THE CAST (owner 2026-09-23: "we need to test when it would do this (frame reference remix) so were confident in
+ *  its role in the system"; the side-by-side on the Lil Caesars remix: "frame is better, this is perfect"). A remix carries its kept characters on the
+ *  parent's own frame when it KEEPS at least one character the parent showed, UNCHANGED:
+ *   · a character whose look the remixer changed is re-described (a frame of the old look would fight the change),
+ *   · a swapped or removed character is gone, an added one never was in the parent,
+ *   · a character that rides a reference image of its own (a sourced meme) is carried by it — the frame is for the characters only words carried.
+ *  Nothing kept, nothing to carry. The frame is used whatever else the remix changes (the place, the action, the words): wherever the parent's
+ *  characters go, words alone re-diffuse them. → { wanted, keep:[names], why }. Pure. */
+export function castFrameWanted(diff, state) {
+  const figs = Array.isArray(state?.plan?.figures) ? state.plan.figures : [];
+  if (!figs.length) return { wanted: false, keep: [], why: "the parent carried no characters" };
+  const key = (x) => String(x || "").toLowerCase().trim();
+  const inParent = new Set(figs.map((f) => key(f?.name)).filter(Boolean));
+  const kept = (Array.isArray(diff?.figures) ? diff.figures : []).filter((f) => f?.op === "keep" && inParent.has(key(f?.target)));
+  const unchanged = kept.filter((f) => !f.look), changed = kept.filter((f) => !!f.look);
+  const figureRefs = (Array.isArray(state?.refs) ? state.refs : []).filter((r) => r?.role === "figure").length;
+  if (!unchanged.length) return { wanted: false, keep: [], why: kept.length ? `every kept character's look is changed (${changed.map((f) => f.target).join(", ")}) — re-described, never pinned to the old look` : "no character of the parent is kept" };
+  if (unchanged.length <= figureRefs) return { wanted: false, keep: [], why: "the kept characters ride reference images of their own" };
+  return { wanted: true, keep: unchanged.map((f) => f.target), why: `${unchanged.length} kept character(s) the parent showed: ${unchanged.map((f) => f.target).join(", ")}${changed.length ? ` (re-described, not framed: ${changed.map((f) => f.target).join(", ")})` : ""}` };
+}
+
 /** The router's pure brain: which stages re-run, which artifacts are reused. The executor spends this. */
 export function routeStages(diff) {
   const figureChange = (diff.figures || []).some((f) => f.op !== "keep" || !!f.look);   // a kept figure whose look the user changed is a figure change (owner 2026-09-21)

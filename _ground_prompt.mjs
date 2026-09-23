@@ -14,6 +14,7 @@ import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_in
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
+import { castFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23)
 import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, voiceClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
@@ -344,7 +345,7 @@ if (BEAT_STYLE !== "template") {
       ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${RIDE?.world?.mode === "theme" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${voiceClause()}\n${belongingClause()}\n${rideBlock(RIDE)}${workTitlesClause()}${ipFiguresLaw()}${frameZeroRegisterClause()}${appropriationBlock()}${thingBlock()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${voiceClause()}\n${belongingClause()}\n${castFrameClause()}\n${rideBlock(RIDE)}${workTitlesClause()}${ipFiguresLaw()}${frameZeroRegisterClause()}${appropriationBlock()}${thingBlock()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +
