@@ -180,7 +180,8 @@ export function seatQueries(form, { context = "", noun: nounOverride = "", indoo
   // THE WATER ROUTE: two sampled, the other two behind them as fallbacks (the hunt walks them while nothing is aboard)
   // …and a named venue still leads (2026-09-14: "Jungle Cruise boat ride pov footage" first), the pool's phrasings behind it
   if (kind === "ridden" && (water || WATER_WORDS.test(noun))) { const wctx = String(context || "").replace(/\s+/g, " ").trim(); const pool = isDarkRideNoun(noun) ? SEAT_PHRASINGS["water dark ride"] : SEAT_PHRASINGS.water(noun); const picks = sampleQueries(pool, wctx ? 1 : 2, rand); return [...(wctx ? [`${wctx} ${noun} pov footage`] : []), ...picks, ...pool.filter((q) => !picks.includes(q))]; }
-  if (kind === "ridden" && isDarkRideNoun(noun)) { const ctx = String(context || "").replace(/\s+/g, " ").trim(); const picks = sampleQueries(SEAT_PHRASINGS["dark ride"], 2, rand); return ctx ? [picks[0], `${ctx} dark ride pov`] : picks; }
+  // …and a context that already ends in the family's own words is not given them twice (the per-form probe, 2026-09-23: "haunted mansion dark ride dark ride pov")
+  if (kind === "ridden" && isDarkRideNoun(noun)) { const ctx = String(context || "").replace(/\s+/g, " ").trim().replace(/\s*\bdark ride\s*$/i, "").trim(); const picks = sampleQueries(SEAT_PHRASINGS["dark ride"], 2, rand); return ctx ? [picks[0], `${ctx} dark ride pov`] : picks; }
   // A WORN DEVICE GOES WHERE ITS WEARER GOES, AND A CAR WHERE ITS ROAD IS (layer 2 cell l2b-19, 2026-09-14): "helmet cam of a mountain
   // bike trail" hunted "helmet cam pov footage" bare and seated the take in a Formula 1 cockpit — the halo, the wheel's display, a race
   // car ahead — and the writer had to thread a dirt trail off a paved track. The boat branch already leads with the boat's own word and
