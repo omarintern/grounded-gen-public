@@ -38,6 +38,17 @@ const TRAILING_APPENDAGE = /\s+(?:iphone footage|interior footage|footage|video|
  *  pov", "onride dark ride pov". Only words that are never part of a place's own name are listed: "photo", "video", "scene" stay trailing-only
  *  because "photo booth", "video store" and "crime scene" are places. */
 export const OV_VANTAGE = /\b(?:iphone|footage|pov|p\.o\.v\.?|onboard|on-board|onride|on-ride|ride-?through|first[- ]person|point[- ]of[- ]view|interior)\b/gi;
+// ⭐⭐ …EXCEPT THE INSIDE OF A THING YOU RIDE IN (2026-09-23, remix f99f79a5's place plate): "car interior" reached library as "car", the index answered
+// with cars seen whole, the frame was judged against what was asked for it ("a car"), and a silver sedan at a car wash became the take's "car interior".
+// A building's inside and its name share their photographs ("laundromat interior" → "laundromat" still stands); a vehicle's do not: photographs of a car
+// are its outside, and its inside is a place of its own. So that phrase IS the bare place the free library is asked for, on both roads (the shape here,
+// the core in scrape.mjs), and the lint lets it carry its word.
+const RIDDEN_THING = "car|cars|truck|van|minivan|bus|coach|train|subway|metro|tram|trolley|streetcar|plane|airplane|aeroplane|aircraft|jet|airliner|helicopter|boat|ship|yacht|ferry|limo|limousine|taxi|cab|rv|camper|motorhome|ambulance|spaceship|spacecraft|rocket|submarine|suv|pickup|jeep|tractor";
+const RIDDEN_INTERIOR = new RegExp(`\\b(?:${RIDDEN_THING})\\s+interior\\b`, "i");
+/** "car interior", "bus interior": the inside of a thing you ride in, a place of its own. Pure. */
+export const isRiddenInterior = (q) => RIDDEN_INTERIOR.test(String(q || ""));
+/** The inside-of-a-ridden-thing phrase a query names ("car interior"), lower-cased, or "". Pure. */
+export const riddenInteriorOf = (q) => ((String(q || "").match(RIDDEN_INTERIOR) || [""])[0]).toLowerCase();
 /** "dark ride dark ride" → "dark ride": a phrase said twice in a row is said once. */
 export const collapseRepeats = (s) => String(s || "").replace(/\b(\w+(?:[\s-]+\w+){0,2})(?:\s+\1\b)+/gi, "$1");
 const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
@@ -91,7 +102,7 @@ export function shapeForSource(base, source, { lane = "candid" } = {}) {
   const b = _norm(base);
   if (!b) return "";
   const src = String(source || "").toLowerCase();
-  if (FREE_SOURCES.has(src)) return _norm(collapseRepeats(b.replace(TRAILING_APPENDAGE, "").replace(/\s+interior$/i, "").replace(OV_VANTAGE, " ").replace(/\s+/g, " ").trim())) || b;
+  if (FREE_SOURCES.has(src)) return riddenInteriorOf(b) || _norm(collapseRepeats(b.replace(TRAILING_APPENDAGE, "").replace(/\s+interior$/i, "").replace(OV_VANTAGE, " ").replace(/\s+/g, " ").trim())) || b;
   const app = APPENDAGE[String(lane || "candid").toLowerCase()] ?? "";
   if (!app || FORM_WORD.test(b)) return b;
   return `${b} ${app}`;
@@ -108,7 +119,7 @@ export function queryLint(query, spec = {}, { source = "" } = {}) {
   const q = _norm(query), s = subjectSpec(spec), out = [];
   if (!q) return ["an empty query"];
   const src = String(source || "").toLowerCase();
-  if (/\binterior\b/i.test(q) && s.kind !== "chain") out.push(`"interior" on a ${s.kind} — that word is for a chain venue only`);
+  if (/\binterior\b/i.test(q) && s.kind !== "chain" && !isRiddenInterior(q)) out.push(`"interior" on a ${s.kind} — that word is for a chain venue only`);
   if (/\b(?:scenery photo|scenery|photograph|stock photo|wallpaper|hd|4k)\b/i.test(q)) out.push(`a stage word an index does not caption by ("${(q.match(/\b(?:scenery photo|scenery|photograph|stock photo|wallpaper|hd|4k)\b/i) || [""])[0]}")`);
   if (/\b(\w+)\s+\1\b/i.test(q)) out.push(`a doubled word ("${(q.match(/\b(\w+)\s+\1\b/i) || ["", ""])[0]}")`);
   if (FREE_SOURCES.has(src) && (TRAILING_APPENDAGE.test(q) || /\biphone\b/i.test(q))) out.push("an appendage on the free library, which is candid by construction");

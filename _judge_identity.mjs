@@ -20,7 +20,7 @@
 //   · Measured 2026-08-06: a bodycam scene returned plain garage photographs that cleared every gate.
 //
 import { registerFailure, deviceNoun, OF_THE_DEVICE } from "./_register_law.mjs";
-import { AI_TELLS, GENERATOR_MARK_Q, SINGLE_FRAME_Q } from "./_gate_rules.mjs";
+import { AI_TELLS, GENERATOR_MARK_Q, SINGLE_FRAME_Q, CAMERA_INSIDE_Q } from "./_gate_rules.mjs";
 // ⚠ standin_quality / standin_role ARE HISTORICAL KEYS (2026-09-23, plates are places). They no longer ask how good a SWAP STAND-IN a frame is — the swap
 // was removed from the writer on 09-22 and nothing is replaced any more. They ask whether the scene's OWN subject (a real raccoon at the bin) is
 // already in the frame, which is the one thing the sourcer still reads them for; the keys stay so cached verdicts and cassettes keep their shape.   // one wording for every judge (owner 2026-09-22, job bebe5716)   // one text for both judges (owner 2026-09-22)
@@ -85,6 +85,21 @@ export async function judgeIdentity(filePath, subjectStr, opts = {}) {
     // right. But a provider 402/429/5xx means we never judged at all - flattening that to null made the
     // sourcer report an UNJUDGED pool as "all posed/stock/off-subject" (validated 2026-08-01).
     if (e?.name === "ProviderInfraError") throw e;
+    return null;
+  }
+}
+
+// ── WHERE THE CAMERA STOOD, ASKED ALONE (2026-09-23) ──────────────────────────────────────────────────────
+// Only where an inside was asked for (see _source_scene): a car's inside photographed through its windshield from outside answers a crowded rubric
+// as an inside, and this question alone as what it is. → true | false | null (no answer, which never vetoes). A spend cap still stops the run.
+export async function judgeCameraInside(filePath, opts = {}, { judge = providerJson } = {}) {
+  const px = Number(opts.viewPx ?? process.env.VIEW_PX ?? 512);
+  try {
+    const j = await judge([textPart(CAMERA_INSIDE_Q), imagePart("image/jpeg", await smallViewAt(filePath, px))],
+      { maxTokens: 200, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
+    return typeof j?.camera_inside === "boolean" ? j.camera_inside : null;
+  } catch (e) {
+    if (e?.ledgerCap) throw e;
     return null;
   }
 }
