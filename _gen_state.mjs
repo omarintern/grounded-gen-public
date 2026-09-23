@@ -93,8 +93,25 @@ export async function insertGenState(st, env = process.env) {
 
 /** The plan digest the server joins in at completion — identity, canon and clearance facts only; the full
  *  plan stays on disk for forensics, this is what a remix NEEDS. Falsy-safe: no plan → null digest. */
+/** ⭐⭐ THE CAST AS THE TAKE SAW IT (remix f99f79a5, 2026-09-23): the run writes each figure's look as it rode the take into plan.cast_realized
+ *  (edited, dressed, de-named — and the owned figures carried only in prose, which the planner's figures never held). A digested figure takes its
+ *  realized look; a realized figure the planner never cast joins the digest, so a remix can keep it. A plan without the record digests as before. Pure. */
+export function realizedFigures(figs = [], realized = []) {
+  const key = (x) => String(x || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const real = (Array.isArray(realized) ? realized : []).filter((r) => r && key(r.name) && String(r.promptRef || "").trim());
+  if (!real.length) return figs;
+  const out = figs.map((f) => { const r = real.find((x) => key(x.name) === key(f.name) || (f.canonical_name && key(x.name) === key(f.canonical_name))); return r ? { ...f, promptRef: String(r.promptRef).trim(), realized: true } : f; });
+  for (const r of real) if (!out.some((f) => key(f.name) === key(r.name) || (f.canonical_name && key(f.canonical_name) === key(r.name))))
+    out.push({ name: r.name, kind: r.kind || "ip", canonical_name: r.canonical_name || null, promptRef: String(r.promptRef).trim(), canon: null, what_it_is: (typeof r.what_it_is === "string" && r.what_it_is.trim()) || undefined, realized: true });
+  return out;
+}
 export function planDigest(plan) {
   if (!plan || typeof plan !== "object") return null;
+  const d = _digest(plan);
+  d.figures = realizedFigures(d.figures, plan.cast_realized);
+  return d;
+}
+function _digest(plan) {
   return {
     subject: plan.subject || null,
     form_device: plan.form?.mediaForm || plan.appropriation?.form || null,   // the capture form the request named (2026-09-21): a reframing remix keeps it
@@ -112,6 +129,7 @@ export function planDigest(plan) {
       household_name: typeof f?.household_name === "boolean" ? f.household_name : undefined,
     })),
     places: Array.isArray(plan.form?.places) ? plan.form.places : [],
+    // (the figures above are then overlaid with the cast AS THE TAKE SAW IT — realizedFigures, below)
     vantage: (Array.isArray(plan.slots?.vantage) ? plan.slots.vantage : []).map((v) => ({ beat: v?.beat ?? null, scope: v?.scope || null, queries: Array.isArray(v?.queries) ? v.queries : [], kernel: v?.kernel || null })),
     scene_requirements: Array.isArray(plan.scene_requirements) ? plan.scene_requirements : [],
     cuts: plan.execution?.cuts === true,
