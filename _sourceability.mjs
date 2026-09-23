@@ -256,7 +256,7 @@ export function writtenThings(verdicts = [], plan = {}) { const t = thingVerdict
  *  empty the run proceeds with the planner's own queries — never a refusal for lack of a photograph. Pure. */
 export function sourceabilityDenies() { return []; }
 async function defaultJudge(subjects, context = "") {
-  return providerJson([textPart(`${SOURCEABILITY_LAW}\n\nSubjects: ${JSON.stringify(subjects.map((s) => s.subject))}${context ? `\nContext: ${context}` : ""}`)], { tag: "sourceability", maxTokens: 2000, temperature: 0.1 });
+  return providerJson([textPart(`${SOURCEABILITY_LAW}\n\nSubjects: ${JSON.stringify(subjects.map((s) => s.subject))}${context ? `\nContext: ${context}` : ""}`)], { tag: "sourceability", maxTokens: 6000, temperature: 0.1 });
 }
 /** One judge call for the run's subjects → { ok, verdicts, denied, failedOpen }. Never throws; an error or an unparseable answer fails OPEN. */
 export async function judgeSourceability(subjects = [], { judge = defaultJudge, sure = SOURCEABLE_SURE, log = () => {}, context = "" } = {}) {

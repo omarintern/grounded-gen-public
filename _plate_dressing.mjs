@@ -114,7 +114,7 @@ const read = await providerJson([
     `Never place anything ON the rails or the vehicle except a colouring. Things: ${JSON.stringify(elements.map((e) => ({ name: e.name, kind: e.kind, surface: e.surface })))}` +
     "")),
   imagePart("image/jpeg", b64),
-], { maxTokens: 4000, temperature: 0, tag: "dressing" });   // the plate's list must be the same list every run (2026-09-15: two rolls missed the figure on the stand, a third found it)   // placement is a judgement on an image — low, not minimal
+], { maxTokens: 8000, temperature: 0, tag: "dressing" });   // ROOM (2026-09-23, see provider-llm): cut off at 4000 on a live job, answered at 4147;   // the plate's list must be the same list every run (2026-09-15: two rolls missed the figure on the stand, a third found it)   // placement is a judgement on an image — low, not minimal
 const dressing = (Array.isArray(read?.dressing) ? read.dressing : []).filter((e) => e && (e.op === "replace" || e.op === "add") && String(e.name || "").trim() && String(e.where || "").trim())
   .filter((e) => { if (DARK && dressesTheWay(String(e.where))) { console.log(`  ◇ ${e.name}: skipped — "${e.where}" is the way or the vehicle, never dressed on a dark ride`); return false; } return true; }).slice(0, TRANSFER ? 8 : 5);   // a themed plate may owe a replacement per surface as well as per prop
 for (const e of (Array.isArray(read?.dressing) ? read.dressing : [])) console.log(`  ◇ ${String(e?.name || "?")}: ${String(e?.op || "?").toUpperCase()}${e?.where ? ` @ ${e.where}` : ""}${e?.why ? ` — ${String(e.why).slice(0, 80)}` : ""}`);

@@ -54,7 +54,7 @@ export async function proseCapable(name, opts = {}) {
         `name a signature with confidence, leave it out. An empty or vague list is the correct answer for ` +
         `something you do not actually know, and is far more useful to us than a confident guess.`
       ),
-    ], { maxTokens: 700, temperature: 0.1 });
+    ], { maxTokens: 3000, temperature: 0.1 });   // ROOM (2026-09-23, see provider-llm): cut off at 700 on live jobs, answers at 1170-1400
 
     const sigs = (j?.signatures || []).filter((s) => typeof s === "string" && s.trim().length > 2);
     // PROSE requires BOTH: a real prior (known) AND that it is not a one-off individual, AND enough concrete

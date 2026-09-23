@@ -32,7 +32,7 @@ export function shapePlaces(answer, text = "") {
 export async function namedPlaces(text, { title = "", judge = null, log = console.log } = {}) {
   const t = String(text || ""); if (!t.trim()) return [];
   try {
-    const ask = judge || (async (q, body) => providerJson([textPart(`${q}\n\n${body}`)], { maxTokens: 500, temperature: 0, tag: "places" }));
+    const ask = judge || (async (q, body) => providerJson([textPart(`${q}\n\n${body}`)], { maxTokens: 4000, temperature: 0, tag: "places" }));
     const answer = await ask(PLACE_QUESTION(title), t);
     return shapePlaces(answer, t);
   } catch (e) {

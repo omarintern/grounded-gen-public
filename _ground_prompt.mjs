@@ -654,7 +654,7 @@ if (BEAT_STYLE !== "template") {
         `vantage with nothing to ground it. Rewrite the SAME beats, keeping every event and the payoff exactly ` +
         `as they are, but describe the post-cut action by what the WHOLE BODY does at the distance the ` +
         `photograph was taken from. Do not name the limb or the object in the grip. Change nothing else.`,
-        { maxTokens: 4000, temperature: 0.2, model: REPAIR_MODEL, tag: "writer-retry" });
+        { maxTokens: 12000, temperature: 0.2, model: REPAIR_MODEL, tag: "writer-retry" });   // ROOM (2026-09-23, see provider-llm): cut off at 4000 on live jobs, answers at 3600-8000
       const relines = t2.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, ACCEPTED_N);
       const stillBad = relines.filter((l) => FINE_DETAIL.test(l)).length;
       if (relines.length && !stillBad) { beatLine = relines.join("\n"); console.log(`[GUARD] beats: repaired on retry`); }
@@ -779,7 +779,7 @@ try {
           `timestamps, changing ONLY the opening beat so it states the subject's position in the frame and its ` +
           `facing.${has(seen.standin) ? ` Everything the photograph already holds — ${seen.standin} among it — stays exactly as photographed and is never replaced or written out.` : ""} ` +
           `Return the full beat list and nothing else.`,
-          { maxTokens: 4000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });
+          { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });   // ROOM (2026-09-23, see provider-llm): cut off at 4000 on live jobs, answers at 3600-8000
         const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
         if (rl.length !== ACCEPTED_N) console.warn(`  [swap] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
         else {
@@ -832,7 +832,7 @@ try {
         `supplies that the request never named. Do not introduce a new place, a new character, or a prop the ` +
         `frame cannot afford. If an earlier beat set up a turn that nothing answered, ANSWERING IT is the ` +
         `escalation. Return the full beat list and nothing else.`,
-        { maxTokens: 4000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });
+        { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });   // ROOM (2026-09-23, see provider-llm): cut off at 4000 on live jobs, answers at 3600-8000
       const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
       if (rl.length !== ACCEPTED_N) {
         console.warn(`  [payoff] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);

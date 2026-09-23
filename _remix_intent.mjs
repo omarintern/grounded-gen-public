@@ -48,7 +48,7 @@ export async function parseRemixIntent(state, intentText) {
     ` "props":[{"target":"<existing prop>","op":"swap|remove","to":null|"..."} or {"target":null,"op":"add","to":"..."}],\n` +
     ` "clearance_delta":["<every NEW proper name, character, or brand the intent introduces — empty when none>"],\n` +
     ` "vague": true|false (true when the words name NOTHING concrete to change)\n}`;
-  const j = await providerJson([textPart(ask)], { maxTokens: 700, temperature: 0.1 });
+  const j = await providerJson([textPart(ask)], { maxTokens: 3000, temperature: 0.1 });   // ROOM (2026-09-23, see provider-llm): cut off at 700 on live remixes, answers at 1300-1400+
   return normalizeDiff(j, state);
 }
 
@@ -355,7 +355,7 @@ export async function compileEffectivePrompt(state, diff, intentText) {
   const sweeps = sweptBelongings(state, diff, intentText);
   const contract = reframeContract(base || String(state?.prompt_text || ""), base ? "prompt" : "script", diff, intentText, sweeps);
   const attempt = async (extra, temp) =>
-    String((await providerText(contract + extra, { maxTokens: 300, temperature: temp })).text || "").trim().replace(/^["'“”\s]+|["'“”\s]+$/g, "");
+    String((await providerText(contract + extra, { maxTokens: 4000, temperature: temp })).text || "").trim().replace(/^["'“”\s]+|["'“”\s]+$/g, "");
   const baseText = base || String(state?.prompt_text || "");
   let effective = await attempt("", 0.2);
   let v = reframeViolations(effective, diff, sweeps, baseText);

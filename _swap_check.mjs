@@ -69,7 +69,7 @@ export async function swapVerdict(standin, placement, target, beatsText) {
       `position — write "not stated".\n` +
       `· "facing" = which way it is turned (toward/away from camera, back turned, in profile). Not stated → "not stated".\n` +
       `Return ONLY JSON {"position":"<what the beat states, or 'not stated'>","facing":"<... or 'not stated'>"}.`;
-    const { text } = await providerText(ask, { model: MODEL, maxTokens: 90, temperature: 0 });
+    const { text } = await providerText(ask, { model: MODEL, maxTokens: 1000, temperature: 0 });
     let j = null; try { j = JSON.parse((String(text).match(/\{[\s\S]*\}/) || ["{}"])[0]); } catch {}
     const said = (v) => { const t = String(v || "").trim().toLowerCase(); return t && t !== "not stated" && t !== "none" && t !== "n/a"; };
     const position = String(j?.position || "").slice(0, 80), facing = String(j?.facing || "").slice(0, 80);

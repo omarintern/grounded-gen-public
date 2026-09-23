@@ -32,7 +32,7 @@ export function shapeMeta(answer, text = "") {
 export async function aboutSentences(text, { judge = null, log = console.log } = {}) {
   const t = String(text || ""); if (!t.trim()) return [];
   try {
-    const ask = judge || (async (q, body) => providerJson([textPart(`${q}\n\n${body}`)], { maxTokens: 400, temperature: 0, tag: "meta" }));
+    const ask = judge || (async (q, body) => providerJson([textPart(`${q}\n\n${body}`)], { maxTokens: 3000, temperature: 0, tag: "meta" }));
     const answer = await ask(META_QUESTION, t);
     return shapeMeta(answer, t);
   } catch (e) {

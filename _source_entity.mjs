@@ -146,7 +146,7 @@ async function judge(fp) {
     const prompt = MODE === "ip"
       ? ipRubric(shows)
       : `Return ONLY JSON {"real_photo":bool,"shows_subject":bool,"has_text_or_watermark_or_logo":bool,"legible":0..1}. real_photo = an actual photograph (NOT a cartoon/illustration/collage/graphic/meme-with-caption). shows_subject = the image clearly shows: ${shows}. has_text_or_watermark_or_logo = ANY overlaid caption, channel name, timestamp, watermark, or logo. legible = how CLEARLY and RECOGNIZABLY the subject reads — sharp, well-lit, the identity + its signature plainly visible (1.0) vs blurry/tiny/occluded/ambiguous (0.0).`;
-    return await providerJson([textPart(prompt), imagePart("image/jpeg", b64)], { maxTokens: 200, temperature: 0.1 });
+    return await providerJson([textPart(prompt), imagePart("image/jpeg", b64)], { maxTokens: 3000, temperature: 0.1 });   // ROOM (2026-09-23, see provider-llm): cut off at 200 on live jobs, answers at 380-1600
   } catch { return null; }
 }
 

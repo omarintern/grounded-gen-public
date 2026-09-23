@@ -75,7 +75,7 @@ export async function judgeIdentity(filePath, subjectStr, opts = {}) {
         const r2 = await providerJson([
           imagePart("image/jpeg", await smallViewAt(filePath, 1024)),
           textPart(`Any text or marks laid OVER this image after capture: were they ARRANGED BY A PERSON, or emitted by the capture device? Decorative corner brackets or crop marks around the frame, evenly-spaced clean typography, balanced or centred placement, semi-transparent panels = arranged. A real camera stamps functional text wherever its firmware puts it and never draws a bracket around its own picture. Judge the CRAFT of the marks, not whether the scene looks plausible. Return ONLY JSON {"overlay_designed":true|false}.`),
-        ], { maxTokens: 40, temperature: 0 });
+        ], { maxTokens: 1000, temperature: 0 });   // ROOM (2026-09-23, see provider-llm): at 40 it was re-asked 4-5 times (1.54¢, 11 s); at 1000 one call (0.51¢, 4 s)
         if (r2 && typeof r2.overlay_designed === "boolean") j.overlay_designed = r2.overlay_designed;
       } catch { /* the first verdict stands */ }
     }
