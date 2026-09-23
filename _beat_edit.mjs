@@ -42,7 +42,9 @@ export function denameMap(modes = [], phraseOf = (m) => m?.guise || m?.prose || 
 }
 
 /** The edit instruction — pure, so the vacuum can read it. The findings' own words ride it, the way the writer's feedback does. */
-export function editInstruction(violations = [], modes = [], { userPrompt = "" } = {}) {
+// ⭐⭐ NO RAW REQUEST RIDES AN EDIT (owner 2026-09-23): an edit that exists to take a name out was handed the maker's words with the name in them
+// ("lil caesars mascot …"). Every action already stays in its beat by the rules above; the request adds nothing but the names.
+export function editInstruction(violations = [], modes = []) {
   const faults = (Array.isArray(violations) ? violations : []).map((v) => `- ${String(v?.figure || "").replace(/\s+/g, " ").trim()}${Number.isFinite(Number(v?.at)) ? ` [${Number(v.at)}s]` : ""}`);
   const dn = denameMap(modes);
   const swaps = dn.filter((d) => d.mode === "dename" && d.phrase).map((d) => `- ${d.names.map((n) => `"${n}"`).join(" / ")} → write the figure as: ${d.phrase}`);
@@ -59,7 +61,6 @@ export function editInstruction(violations = [], modes = [], { userPrompt = "" }
     ...(gone.length ? [``, ...gone] : []),
     ``,
     `A name is free INSIDE a spoken line in the Dialogue block — a speaker may say it; a beat and a speaker label may not.`,
-    userPrompt ? `The request was "${String(userPrompt).replace(/\s+/g, " ").trim()}" — what it asks for must still happen, in the same beat it happens in now.` : ``,
     `Return ONLY the edited lines — the whole list, every beat and every block, nothing else, no commentary.`,
   ].filter((x) => x !== undefined).join("\n");
 }
@@ -87,10 +88,10 @@ export function editAccepted(before, after, { keep = 0.6 } = {}) {
  * One cheap corrective EDIT of the beats in hand. Returns the edited text, or null when there is nothing safe to take
  * (an outage and the ledger cap still throw — an edit never swallows either).
  */
-export async function editBeats(text, { violations = [], modes = [], userPrompt = "", model = null, log = console.log, call = null } = {}) {
+export async function editBeats(text, { violations = [], modes = [], model = null, log = console.log, call = null } = {}) {
   const before = String(text || "");
   if (!before.trim() || !editable(violations)) return null;
-  const instruction = editInstruction(violations, modes, { userPrompt });
+  const instruction = editInstruction(violations, modes);
   const ask = call || ((prompt) => providerText(prompt, { maxTokens: 12000, temperature: 0.1, model: model || undefined, tag: "writer-retry" }));
   const out = await ask(`${instruction}\n\n${before}`);
   const after = String(out?.text || "").trim();

@@ -504,8 +504,12 @@ if (BEAT_STYLE !== "template") {
       `Rewrite these beats fixing EXACTLY these violations: ${_fails1.join("; ")}. ` +
       `Beat COUNT one of {${COUNTS.join(", ")}}, every stamp a WHOLE second, first beat [0s], stamps ascending, all under ${BEAT_SECS}s. ` +
       `Every beat a COMPLETE sentence. Dialogue labels name their speaker. ` +
-      `Keep the same story and wording as far as possible. ` +
-      `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines (and the Dialogue/Sound blocks if present).\n\n${text}`,
+      // ⭐⭐ THE REPAIR KEEPS THE DRAFT'S OWN WORDS, NEVER THE MAKER'S (owner 2026-09-23: "yes go ahead with the instruction fix"). This line quoted the
+      // RAW request ("The request was … EVERY verb in it must still appear"), and the repair pasted its words back into the beats, the names the draft had
+      // de-named with them: "Mitch McConnell", "Surf's Up", "Lil Caesars mascot", "trailcam footage". Measured on 10 real fixes, at every thinking level
+      // and in production's own recorded fixes (4 of 10). The draft already carries the request, written under the naming laws; the repair keeps THAT.
+      `Keep the same story and the beats' own wording as far as the fix allows: every figure, action and spoken line stays in the take, and each figure is written as it already is. ` +
+      `Return ONLY the beat lines (and the Dialogue/Sound blocks if present).\n\n${text}`,
       { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" }
     ).catch((e) => {   // an OUTAGE is exit 5 (never a verdict on the words); our own CEILING firing is said out loud and the original ships — the ceiling degrades, it never hides (2026-09-14)
       if (e?.name === "ProviderInfraError") throw e;
