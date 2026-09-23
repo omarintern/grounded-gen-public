@@ -20,7 +20,7 @@
 //   · Measured 2026-08-06: a bodycam scene returned plain garage photographs that cleared every gate.
 //
 import { registerFailure, deviceNoun, OF_THE_DEVICE } from "./_register_law.mjs";
-import { AI_TELLS, GENERATOR_MARK_Q, SINGLE_FRAME_Q, CAMERA_INSIDE_Q } from "./_gate_rules.mjs";
+import { AI_TELLS, GENERATOR_MARK_Q, SINGLE_FRAME_Q, CAMERA_INSIDE_Q, FACES_SEATS_Q } from "./_gate_rules.mjs";
 // ⚠ standin_quality / standin_role ARE HISTORICAL KEYS (2026-09-23, plates are places). They no longer ask how good a SWAP STAND-IN a frame is — the swap
 // was removed from the writer on 09-22 and nothing is replaced any more. They ask whether the scene's OWN subject (a real raccoon at the bin) is
 // already in the frame, which is the one thing the sourcer still reads them for; the keys stay so cached verdicts and cassettes keep their shape.   // one wording for every judge (owner 2026-09-22, job bebe5716)   // one text for both judges (owner 2026-09-22)
@@ -98,6 +98,21 @@ export async function judgeCameraInside(filePath, opts = {}, { judge = providerJ
     const j = await judge([textPart(CAMERA_INSIDE_Q), imagePart("image/jpeg", await smallViewAt(filePath, px))],
       { maxTokens: 200, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
     return typeof j?.camera_inside === "boolean" ? j.camera_inside : null;
+  } catch (e) {
+    if (e?.ledgerCap) throw e;
+    return null;
+  }
+}
+
+// ── WHICH WAY AN INWARD CAMERA LOOKS, ASKED ALONE (2026-09-23) ──────────────────────────────────────────────
+// Only under an inward camera form (see _source_scene): the driver's own view out of the windshield is a car interior and a dashcam frame, and
+// only this question tells it from a cabin camera looking back at the seats. → true | false | null (no answer, which never vetoes).
+export async function judgeFacesSeats(filePath, opts = {}, { judge = providerJson } = {}) {
+  const px = Number(opts.viewPx ?? process.env.VIEW_PX ?? 512);
+  try {
+    const j = await judge([textPart(FACES_SEATS_Q), imagePart("image/jpeg", await smallViewAt(filePath, px))],
+      { maxTokens: 200, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
+    return typeof j?.faces_seats === "boolean" ? j.faces_seats : null;
   } catch (e) {
     if (e?.ledgerCap) throw e;
     return null;
