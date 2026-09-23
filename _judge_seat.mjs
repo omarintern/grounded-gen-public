@@ -11,7 +11,7 @@
 import sharp from "sharp";
 import { providerJson, textPart, imagePart, PROVIDER_VLM_MODEL } from "./provider-llm.mjs";
 import { gateClauses } from "./_judge_identity.mjs";
-import { apparatusRe, AI_TELLS, GENERATOR_MARK_Q } from "./_gate_rules.mjs";
+import { apparatusRe, AI_TELLS, GENERATOR_MARK_Q, SINGLE_FRAME_Q } from "./_gate_rules.mjs";
 import { registerLaw } from "./_register_law.mjs";   // one text for both judges (owner 2026-09-22)   // the form IS a named camera when its own noun names one (2026-09-22)
 
 async function viewAt(fp, px) {
@@ -52,8 +52,8 @@ export function seatRubric({ noun = "ride", kind = "ridden", family = "other rid
   const stationSigns = !deviceWorld;   // a loading platform and a queue are a RIDE's world; a road has neither
   const deviceForm = !!apparatusRe(noun);   // the form IS a named camera — the one class that has product photographs of itself
   const own = kind === "driven" ? "a dashboard, a hood, a windshield edge" : kind === "worn" ? "handlebars, a helmet brim or visor, the wearer's own arms" : "a lap bar, a restraint, a car's nose, a boat's bow";
-  return `Return ONLY JSON {${setting ? '"fits_setting":"yes|no|unclear",' : ""}${deviceForm ? '"shot_through_the_device":bool,' : ""}"real_photo":bool,"ai_generated":0..1,"generator_mark":bool,"shows_minor":bool,"content_flag":"none|nudity|distress|personal_data|third_party_media|symbol","shows_subject":bool,"own_part":bool,"vehicle_seen_whole":bool,"way_direction":"ahead|veers left|veers right|across|unseen",${stationSigns ? '"walkway_or_footprint_markings":bool,"hazard_stripes":bool,"queue_railing":bool,"people_beside_track":bool,"empty_seats_looked_at":bool,' : ""}"vehicle_seen_from_outside":bool,"camera_position":"${M.position}","riders":"none|backs only|faces or profiles","way_recedes":bool,"lighting":"${M.lighting}","environment":"${M.environment}","way":"${M.way}","vehicle":"${M.vehicle}","text":"none|caption|title|watermark|logo|viewer_chrome|device_overlay","text_edge":"top|bottom|left|right|middle|none","text_blocks":0..3,"text_large":bool,"set_pieces":0..5,"why":string}. ` +
-    AI_TELLS + GENERATOR_MARK_Q +
+  return `Return ONLY JSON {${setting ? '"fits_setting":"yes|no|unclear",' : ""}${deviceForm ? '"shot_through_the_device":bool,' : ""}"real_photo":bool,"ai_generated":0..1,"generator_mark":bool,"single_frame":bool,"shows_minor":bool,"content_flag":"none|nudity|distress|personal_data|third_party_media|symbol","shows_subject":bool,"own_part":bool,"vehicle_seen_whole":bool,"way_direction":"ahead|veers left|veers right|across|unseen",${stationSigns ? '"walkway_or_footprint_markings":bool,"hazard_stripes":bool,"queue_railing":bool,"people_beside_track":bool,"empty_seats_looked_at":bool,' : ""}"vehicle_seen_from_outside":bool,"camera_position":"${M.position}","riders":"none|backs only|faces or profiles","way_recedes":bool,"lighting":"${M.lighting}","environment":"${M.environment}","way":"${M.way}","vehicle":"${M.vehicle}","text":"none|caption|title|watermark|logo|viewer_chrome|device_overlay","text_edge":"top|bottom|left|right|middle|none","text_blocks":0..3,"text_large":bool,"set_pieces":0..5,"why":string}. ` +
+    AI_TELLS + GENERATOR_MARK_Q + SINGLE_FRAME_Q +
     `set_pieces: ${M.pieces}lls, floor and ceiling alone; count up to 5). ` +
     // THE FRAME MUST BE THE PLACE, NOT ONLY THE SEAT (owner 2026-09-14, on a Formula 1 cockpit served for a mountain bike trail): with a setting in hand the judge says whether this
     // frame's LOCATION fits it; a fitting frame outranks one that does not, and the run appropriates the location onto a frame that does not fit only when none fits
@@ -104,6 +104,7 @@ export function seatVerdict(j, { family = "other ridden" } = {}) {
   if (j.real_photo !== true) return { aboard: false, why: "not a real photograph" };
   // a generator's mark is a hard veto whatever the score says (owner 2026-09-22, job bebe5716 — the mark was seen and still scored 0)
   if (j.generator_mark === true) return { aboard: false, why: "an image generator's mark" };
+  if (j.single_frame === false) return { aboard: false, why: "several pictures in one, or drawn over" };   // a plate is one frame (2026-09-23, the dashcam-ad collage)
   const ai = Number(j.ai_generated);
   if (Number.isFinite(ai) && ai > SEAT_AI_CEILING) return { aboard: false, why: `synthetic (${ai.toFixed(2)})` };
   if (j.shows_minor === true) return { aboard: false, why: "a minor in frame" };

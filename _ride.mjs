@@ -17,7 +17,7 @@
 //     tunnel-mouth plate at most, the rails never end on screen.
 //   · The maker's ride noun is the form: a ride the maker named is RIDDEN whatever device phrase the planner or the deconstructor
 //     wrote; a bare "ride" or "attraction" is a park ride, resolved by the maker's other words (coaster physics → coaster).
-import { isInteriorWorld, workTitlesOf, stripWorldMedium, isRideNoun, worldElements } from "./_gate_rules.mjs";
+import { isInteriorWorld, workTitlesOf, stripWorldMedium, isRideNoun, worldElements, isInwardCam } from "./_gate_rules.mjs";
 
 // ── THE TRAVELLING CLASS HAS THREE KINDS (owner 2026-09-07: "class-wide"). RIDDEN — a ride vehicle carries the camera (coaster, dark
 // ride, flume, boat, tram, zipline, water slide); DRIVEN — the participant drives (dashcam, kart); WORN — the camera is on the
@@ -233,6 +233,9 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const form = boatWord ? `${boatCam} pov footage` : (_stated || (makerKind ? `${makerKind} POV footage` : ""));
   const plateForm = boatWord ? `${boatCam} pov footage` : String(p.native_capture || p.form?.mediaForm || requiredForm || form).trim();
   if (!boatWord && !(isApparatusForm(form) || makerKind)) return null;
+  // AN INWARD DASHCAM IS NO RIDE (owner 2026-09-23, isInwardCam): a camera facing the people in the car records the cabin like a security camera records
+  // a room, so no seat is hunted and no journey is written; the device form's own route sources the cabin (a maker's own ride noun still rides)
+  if (!boatWord && !makerKind && isInwardCam(`${device} | ${requiredForm} | ${p.form?.mediaForm || ""} | ${p.native_capture || ""}`)) return null;
   // A FORM THAT IS ONLY A DEVICE HAS THE DEVICE FOR ITS NOUN (formNoun answers "" by contract for "helmet cam footage"): the whole form
   // string as a noun reads back to the writer as "ONE continuous take from the helmet cam footage's own camera".
   const noun = boatWord ? boatCam : (makerKind || formNoun(plateForm) || wornDevice(plateForm || form));
