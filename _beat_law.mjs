@@ -210,9 +210,9 @@ export const voiceClause = () =>
 // frame's place stays out of the take (the plate owns the place).
 export const castFrameClause = () =>
   !process.env.CAST_FRAME_NOTE ? "" :
-  `⚠ THE KEPT CHARACTERS RIDE A REFERENCE IMAGE: a frame of an earlier video shows them exactly as they must look here — ${process.env.CAST_FRAME_NOTE}. ` +
-  `Name each at its first mention by that description and never describe them another way; their faces, build, skin, clothing and what they hold ` +
-  `come from that image. The place in that image is NOT this video's place and nothing of it appears here: only the characters come from it.`;
+  `⚠ THE KEPT CHARACTERS RIDE REFERENCE IMAGES: frames of an earlier video show them exactly as they must look here — ${process.env.CAST_FRAME_NOTE}. ` +
+  `Name each at its first mention by that description and never describe them another way; their faces, build, skin and clothing come from those ` +
+  `images. The places in those images are NOT this video's place and nothing of them appears here: only the characters come from them.`;
 // ── A KEPT BELONGING RIDES A REFERENCE IMAGE (owner 2026-08-21: «keeping plush would mean maintaining the
 // punch character-ref and referencing the plush from the image») — the deep-remix executor sets the note;
 // the beats bind the belonging to its pixels and the replacement grammar keeps the old holder out of frame.
