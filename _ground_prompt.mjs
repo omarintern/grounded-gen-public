@@ -510,7 +510,10 @@ if (BEAT_STYLE !== "template") {
       // and in production's own recorded fixes (4 of 10). The draft already carries the request, written under the naming laws; the repair keeps THAT.
       `Keep the same story and the beats' own wording as far as the fix allows: every figure, action and spoken line stays in the take, and each figure is written as it already is. ` +
       `Return ONLY the beat lines (and the Dialogue/Sound blocks if present).\n\n${text}`,
-      { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" }
+      // ⭐⭐ THIS REPAIR THINKS LOW (owner 2026-09-23: "yes set the corrective pass to low", the fixed-input A/B his 09-13 ruling asked for). On 10 real
+      // fixes with the instruction above, low matched the default (high) exactly: the broken rule fixed 9 of 10, no name or camera word back, 99% of the
+      // draft's wording kept; 10.9 s and 2.0¢ a fix against 25.5 s and 5.0¢. Only this repair: every other call keeps the provider's default.
+      { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, reasoning: "low", tag: "writer-retry" }
     ).catch((e) => {   // an OUTAGE is exit 5 (never a verdict on the words); our own CEILING firing is said out loud and the original ships — the ceiling degrades, it never hides (2026-09-14)
       if (e?.name === "ProviderInfraError") throw e;
       if (e?.ledgerCap) console.error(`\n⊘ BUDGET CAP in the corrective repair (${String(e.message || e).split("\n")[0].slice(0, 120)}) — the original draft ships; the wall stopped the repair, not the words`);
