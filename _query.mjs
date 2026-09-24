@@ -47,6 +47,9 @@ const RIDDEN_THING = "car|cars|truck|van|minivan|bus|coach|train|subway|metro|tr
 const RIDDEN_INTERIOR = new RegExp(`\\b(?:${RIDDEN_THING})\\s+interior\\b`, "i");
 /** "car interior", "bus interior": the inside of a thing you ride in, a place of its own. Pure. */
 export const isRiddenInterior = (q) => RIDDEN_INTERIOR.test(String(q || ""));
+const VEHICLE = new RegExp(`\\b(?:${RIDDEN_THING})s?\\b`, "i");
+/** Does a place name a thing you ride in ("limousine interior", "a school bus", "race car")? "interstate" and "car wash lot" name none. Pure. */
+export const namesVehicle = (s) => VEHICLE.test(String(s || "").replace(/\bcar\s+(?:wash|park|lot|dealership|show)\b/gi, " "));
 /** The inside-of-a-ridden-thing phrase a query names ("car interior"), lower-cased, or "". Pure. */
 export const riddenInteriorOf = (q) => ((String(q || "").match(RIDDEN_INTERIOR) || [""])[0]).toLowerCase();
 /** "dark ride dark ride" → "dark ride": a phrase said twice in a row is said once. */
