@@ -59,6 +59,10 @@ const _tok = (s) => String(s || "").toLowerCase().replace(/['\u2019]s\b/g, "").r
 // role). So an owned CHARACTER the maker names in a request for a park ride is the ride's own figure, not a depiction: the door lets the name
 // through and everything downstream stays as it is. A real person is never an animatronic here; a transport "ride" (a car ride) is no park ride.
 export function animatronicOnRide(userPrompt, why) { return !!rideFamilyOf(userPrompt) && String(why || "") === "owned-character"; }
+/** THE WORDS A RIDE IS NAMED IN (2026-09-24, engine review C; job 3a316a37): a remix's change ("the same except jack chases the man") names no ride, and the
+ *  ride lives in the original's words, so every EXEMPTION that asks "is this on a ride?" reads the maker's words with the original's (REMIX_PARENT_WORDS,
+ *  from _remix_run). A refusal is still charged only to the words the user wrote (namedInRequest). A fresh gen has no original: the words stand alone. */
+export function onRideWords(words = "", parent = process.env.REMIX_PARENT_WORDS || "") { return [words, parent].map((s) => String(s || "").trim()).filter(Boolean).join("\n"); }
 export function namedInRequest(who, prompt) {
   const w = _tok(who), ptoks = _tok(prompt), p = new Set(ptoks);
   if (!w.length) return false;
@@ -119,8 +123,12 @@ export async function pregate(prompt, userPrompt = "") {
     // ⭐⭐ AND THE WORK'S FACE REFUSES ONLY WHEN IT CANNOT BE DE-NAMED (owner 2026-09-21: "instead of refusing any owned character, it
     // needs to engage that nuance" — greenlight Ronald McDonald, a clown in yellow and red once de-named; reject Sonic, whose identity IS
     // the design). The door's denameable answer opens the door; the full gate's verdict is the resolver's web-searched basic_guise.
-    const canonicalBlock = j?.why === "celebrity" || (j?.canonical === true && j?.denameable !== true);
-    const animatronic = canonicalBlock && animatronicOnRide(userPrompt || prompt, j?.why);   // the work's face on a park ride: the ride's animatronic, never refused at the door
+    // ⭐⭐ THE DOOR REFUSES ONLY A HOUSEHOLD NAME (2026-09-24, the owner's ruling R2: the quick check folds into the one context-aware verdict and refuses
+    // only what it refuses). Its canonical / denameable answers are a guess from memory with no search and no context, and 6 of its 7 census refusals
+    // were owned characters it guessed wrong (the Grady twins, Cody, the Lil Caesars mascot, Ronald McDonald, Jack on a ride); an owned character now
+    // goes to the resolver's web-searched verdict (castVerdict) with the ride and the original in view. A household name still refuses here, for nothing.
+    const canonicalBlock = j?.why === "celebrity";
+    const animatronic = canonicalBlock && animatronicOnRide(onRideWords(userPrompt || prompt), j?.why);   // the work's face on a park ride: the ride's animatronic, never refused at the door
     const confident = owned && Number.isFinite(sure) && sure >= SURE && who.length > 0 && named && canonicalBlock && !animatronic;
     log({ action: SHADOW ? "shadow" : confident ? "refused" : (animatronic && owned && Number.isFinite(sure) && sure >= SURE && who && named) ? "ride-animatronic" : (owned && Number.isFinite(sure) && sure >= SURE && who && !named) ? (compiledOnly ? "ours-not-theirs" : "association") : (owned && Number.isFinite(sure) && sure >= SURE && who && named && j?.canonical === true && j?.denameable === true) ? "denameable" : (owned && Number.isFinite(sure) && sure >= SURE && who && named && !canonicalBlock) ? "non-canonical" : "passed", owned, who, why: j?.why, canonical: j?.canonical, denameable: j?.denameable, sure, named, compiled_only: compiledOnly, model: MODEL, prompt: String(prompt).slice(0, 200), user_prompt: String(userPrompt || "").slice(0, 120) });
     if (!confident) return { refuse: false };
