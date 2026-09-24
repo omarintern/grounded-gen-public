@@ -23,15 +23,9 @@ import { judgeSeat, seatVerdict, rankSeats, seatLabel, diffuseSeat, SEAT_BAND } 
 const SEAT_BAND_LOG = SEAT_BAND;
 import { rideFromEnv, craftVehicle } from "./_ride.mjs";
 import { spent } from "./_spend.mjs";   // the hunt negotiates its own budget, exactly as the adaptive sourcer does
+import { installExitHandlers } from "./_exit.mjs";   // one exit contract for every process (2026-09-24)
 
-const onFatal = (e) => {
-  if (e?.ledgerCap) { console.error(`\n✗ BUDGET CAP — ${e.message}`); process.exit(4); }
-  if (e?.name === "IndexInfraError" || e instanceof IndexInfraError) { console.error(`\n✗ INDEX INFRA FAILURE — ${e.message}\n  (not a content miss: the query is NOT at fault)`); process.exit(5); }
-  if (e?.name === "ProviderInfraError") { console.error(`\n✗ PROVIDER INFRA FAILURE — ${e.message}\n  (the frames were never judged: make NO claim about the pool)`); process.exit(5); }
-  console.error(e); process.exit(1);
-};
-process.on("uncaughtException", onFatal);
-process.on("unhandledRejection", onFatal);
+installExitHandlers("the seat hunt");   // the one contract (_exit.mjs, 2026-09-24): 4 budget, 5 outage, 1 bug
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUTDIR = join(process.cwd(), "out", "_aspect");
@@ -146,12 +140,12 @@ async function judgeAll(cands) {
 console.log(`◉ THE SEAT: a ${D.noun} (${D.kind}, ${D.family}) — queries ${JSON.stringify(QUERIES)}${process.env.SEAT_LADDER ? ` · ladder ${process.env.SEAT_LADDER.replace(/,/g, " → ")}` : " · the form route"}`);
 const aboardN = () => recs.filter((r) => r.aboard).length;
 // ⚠⚠ A HUNT WITH SOMETHING ON ITS SHELF SETTLES WHEN THE CAP TRIPS; IT NEVER THROWS THE SHELF AWAY (2026-09-18, job
-// 4a60a30b). The ledgerCap throw comes out of collect(), and onFatal above is this process's handler for it, so the rank,
+// 4a60a30b). The ledgerCap throw comes out of collect(), and the exit handler above (_exit.mjs) is this process's handler for it, so the rank,
 // the pick and the serve below were never reached: two judged, aboard, on-disk plates the job had already paid for were
 // deleted with the process, _run exited 4 and the user was refunded. The world hunt has settled on its own pool since the
 // day it was written (BEST-OF-BUNCH); the seat hunt had no settle path at all. The platform reduces, never refuses.
 // ⚠ SCOPED TO A SHELF THAT HOLDS SOMETHING. A cap with nothing aboard is still exit 4: no plate beats a wrong plate, and
-// a recovery that always succeeds is a bug report. Every other fault, and every other throw, still belongs to onFatal.
+// a recovery that always succeeds is a bug report. Every other fault, and every other throw, still belongs to the exit handler (_exit.mjs).
 let capSettled = false;
 try {
   await judgeAll(await collect(QUERIES[0], 0));

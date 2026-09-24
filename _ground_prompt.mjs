@@ -15,6 +15,7 @@ import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIA
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { castFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23)
+import { installExitHandlers } from "./_exit.mjs";   // one exit contract for every process (2026-09-24)
 import { referenceVoicesLaw } from "./_beat_law.mjs";   // a name the maker used only for a manner: the writer alone knows whose (owner 2026-09-24)
 import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, voiceClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
@@ -158,12 +159,8 @@ const COUNTS = LEGAL.length ? LEGAL : [Math.max(2, Math.ceil(BEAT_SECS / 2))];
 // forbidden by the name law in the same instruction. The maker's own words are the request the laws are checked against.
 // INFRASTRUCTURE IS EXIT 5 (owner 2026-09-12, velocal9: the provider unreachable — DNS — crashed the writer with a bare exit 1 and the run "fell back to draft"):
 // a transport failure is never a verdict on the words; it is named as infra so the run can fail clean instead of shipping the pre-scrape draft.
-const _infraExit = (e) => { if (e && (e.name === "ProviderInfraError" || /transport failure|ENOTFOUND|ETIMEDOUT|ECONNRESET|EAI_AGAIN|the provider could not be reached/i.test(String(e.message || "")))) { console.error(`\n✗ INFRASTRUCTURE UNAVAILABLE in the writer (${String(e.message || e).split("\n")[0].slice(0, 160)}) — exit 5, not a verdict on the words`); process.exit(5); } };
-process.on("unhandledRejection", (e) => { _infraExit(e); throw e; });
-// A BUDGET STOP IS OURS, NOT A BUG (2026-09-14): a LedgerCapExceeded reached this handler and exited 1, which the server reads as
-// "generation failed" and the worker bills as a real failure. Every sourcing child already exits 4; the writer does too.
-const _capExit = (e) => { if (e?.ledgerCap) { console.error(`\n✗ BUDGET CAP in the writer (${String(e.message || e).split("\n")[0].slice(0, 160)}) — exit 4, not a verdict on the words`); process.exit(4); } };
-process.on("uncaughtException", (e) => { _infraExit(e); _capExit(e); console.error(e); process.exit(1); });
+installExitHandlers("the writer");   // the one contract (_exit.mjs, 2026-09-24): a budget stop is 4, a transport failure 5 — never a
+                                    // verdict on the words (the run then fails clean instead of shipping the pre-scrape draft)
 const RIDE = rideFromEnv();   // the run's ride decision, or null (2026-09-09)
 const _roomNames = () => [...(RIDE?.world?.rooms || []), RIDE?.world?.title || "", ...String(process.env.WORK_TITLES || "").split(/\s*(?:,|·|\|)\s*/)].map((s) => String(s || "").trim()).filter(Boolean);
 const narrativeForWriter = (p) => RIDE?.world?.mode === "theme" ? redactWorldNames(p, _roomNames()) : p;

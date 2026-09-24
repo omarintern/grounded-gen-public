@@ -7,6 +7,7 @@
 //   node _source_entity.mjs "<entity search query>" <slug> "<what the photo must show>"
 import "./_meter_boot.mjs";   // ledger rides EVERY orchestration (owner, x26e) — self-boots if _run's bootstrap was bypassed
 import { isGeneratorSourced } from "./_gate_rules.mjs";
+import { installExitHandlers } from "./_exit.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -24,6 +25,7 @@ mkdirSync(OUTDIR, { recursive: true });
 
 const [query, slug = "entity", shows = query] = process.argv.slice(2);
 import { spawnSync } from "node:child_process";   // judge-exhaustion backfill: one self-re-exec on the scoped tier
+installExitHandlers("the character photo hunt");   // the one contract (_exit.mjs, 2026-09-24): this process had NO handler
 if (!query) { console.error('usage: node _source_entity.mjs "<query>" <slug> "<what it must show>"'); process.exit(1); }
 // MODE: "real" (default) = a real_entity (viral animal/object) → source a REAL PHOTO (drop illustrations as AI).
 // "ip" = a fictional CHARACTER (e.g. a meme rabbit) → the ref SHOULD be an illustration / cartoon / official
@@ -147,7 +149,7 @@ async function judge(fp) {
       ? ipRubric(shows)
       : `Return ONLY JSON {"real_photo":bool,"shows_subject":bool,"has_text_or_watermark_or_logo":bool,"legible":0..1}. real_photo = an actual photograph (NOT a cartoon/illustration/collage/graphic/meme-with-caption). shows_subject = the image clearly shows: ${shows}. has_text_or_watermark_or_logo = ANY overlaid caption, channel name, timestamp, watermark, or logo. legible = how CLEARLY and RECOGNIZABLY the subject reads — sharp, well-lit, the identity + its signature plainly visible (1.0) vs blurry/tiny/occluded/ambiguous (0.0).`;
     return await providerJson([textPart(prompt), imagePart("image/jpeg", b64)], { maxTokens: 3000, temperature: 0.1 });   // ROOM (2026-09-23, see provider-llm): cut off at 200 on live jobs, answers at 380-1600
-  } catch { return null; }
+  } catch (e) { if (e?.ledgerCap) throw e; return null; }   // a budget stop is ours, never "no usable photo" (2026-09-24); an outage still degrades to words
 }
 
 const LEGIBLE_FLOOR = 0.6; // a figure ref must READ as the entity — clearer floor than a scene ref
@@ -160,7 +162,7 @@ async function judgeOne(c) {
   // figure, never ships an unscreened frame). "ip" mode may legitimately be a CARTOON, so gate only on the safety
   // subset there (killshotFails' real_photo/ai would wrongly reject a drawing); "real" mode uses the full
   // killshotFails, matching the four sibling paths. requireSubject:false — a char-ref SHOWS its subject by design.
-  let ks; try { ks = await judgeKillshot(c.p, shows); } catch { ks = null; }
+  let ks; try { ks = await judgeKillshot(c.p, shows); } catch (e) { if (e?.ledgerCap) throw e; ks = null; }   // the budget stop goes up (2026-09-24)
   const unsafe = MODE === "ip"
     ? safetyOnlyFails(ks)   // fail-closed on minors AND content — the shared version; a MISSING content_flag key rejects (the old `k.content_flag && …` truthiness let it pass)
     : killshotFails(ks, Number(process.env.AI_CEILING ?? 0.3), { requireSubject: false });

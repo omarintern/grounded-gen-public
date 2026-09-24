@@ -146,7 +146,10 @@ if (!res.ok) {
   // sourcing done and nothing repaired). Exit 2 stays the signal; the marker carries the status and body so _run can repair a
   // POLICY refusal (re-ask the writer, resubmit — a refused submit is free) and leave every other refusal alone.
   try { mkdirSync(join(HERE, "out", "_aspect"), { recursive: true }); writeFileSync(join(HERE, "out", "_aspect", `${slug}.reject.json`), JSON.stringify({ status: res.status, body, at: new Date().toISOString() })); } catch {}
-  process.exit(2);
+  // AN EMPTY LANE OR A PROVIDER FAULT IS AN OUTAGE, NOT A REFUSAL (2026-09-24, the engine review: c1785c0d and 07be737b, an empty lane, were
+  // filed as "no usable photograph" and "generation failed"). 402, 429 and 5xx exit 5; a real refusal (422 and the other 4xx) keeps 2, which the
+  // run's policy repair reads with reject.json.
+  process.exit(res.status === 402 || res.status === 429 || res.status >= 500 ? 5 : 2);
 }
 const { queue_id, id } = await res.json(); const qid = queue_id ?? id;
 console.log(`[multiref] ${slug}: ACCEPTED queue_id=${qid} — polling…`);
@@ -178,7 +181,7 @@ for (let i = 0; i < POLL_N; i++) {
   await new Promise((r) => setTimeout(r, POLL_MS));
   let poll; try { poll = await fetch(`${PROVIDER}/video/retrieve`, { method: "POST", headers: { "Content-Type": "application/json", "SIGN-IN-WITH-X": signIn() }, body: JSON.stringify({ model: ENDPOINT, queue_id: qid }), signal: AbortSignal.timeout(30000) }); }
   catch (e) { if (i % 3 === 0) console.log(`[multiref] ${slug}: poll net err (job still rendering) ${String(e).slice(0, 60)}`); continue; }
-  if (poll.status === 402) { console.log(`[multiref] ${slug}: lane exhausted`); process.exit(1); }
+  if (poll.status === 402) { console.log(`[multiref] ${slug}: lane exhausted`); process.exit(5); }   // an outage, not a bug (2026-09-24)
   const ctype = (poll.headers.get("content-type") || "").toLowerCase();
   // ⚠⚠ THE BODY IS READ EXACTLY ONCE, AND THAT IS THE WHOLE POINT (measured 2026-08-18, cell G). This branched
   // on content-type and then read json() on one path and arrayBuffer() on the other. A response that reached
