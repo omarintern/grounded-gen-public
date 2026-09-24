@@ -105,7 +105,10 @@ export async function editBeats(text, { violations = [], modes = [], model = nul
   const before = String(text || "");
   if (!before.trim() || !editable(violations)) return null;
   const instruction = editInstruction(violations, modes);
-  const ask = call || ((prompt) => providerText(prompt, { maxTokens: 12000, temperature: 0.1, model: model || undefined, tag: "writer-retry" }));
+  // ⭐⭐ THE EDIT THINKS LOW (owner 2026-09-25, "go for low", after the fixed-input test: 8 real drafts, the same findings and instruction at each level).
+  // Default and low alike: 7 of 8 edits accepted, 20 of 23 findings fixed, 97% of the draft's words kept. Default: $… and 103 s an edit, and half the
+  // edits ran out of room and were paid 2 to 5 times; low: $… and 17 s, one call each. Read side by side, the fixes were the same.
+  const ask = call || ((prompt) => providerText(prompt, { maxTokens: 12000, temperature: 0.1, model: model || undefined, reasoning: "low", tag: "writer-retry" }));
   const out = await ask(`${instruction}\n\n${before}`);
   const after = String(out?.text || "").trim();
   const verdict = editAccepted(before, after);
