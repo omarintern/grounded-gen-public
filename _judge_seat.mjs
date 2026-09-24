@@ -99,6 +99,8 @@ export async function judgeSeat(filePath, opts = {}) {
  *  place is aboard when the way recedes and nothing places it outside. A dark ride's seat is inside its show building: a daylight
  *  exterior is not it (owner 2026-09-08: "its also not dark, its outdoor slightly, and third person"). */
 const PLATFORM_SIGNS = ["walkway_or_footprint_markings", "hazard_stripes", "queue_railing", "people_beside_track", "empty_seats_looked_at"];
+/** The families whose vehicles run on a track or a chain: a whole vehicle ahead of the camera there is a car in front, photographed from outside (B5). */
+export const TRACK_FAMILIES = new Set(["dark ride", "coaster"]);
 export function seatVerdict(j, { family = "other ridden" } = {}) {
   if (!j || typeof j !== "object") return { aboard: false, why: "unjudged" };
   if (j.real_photo !== true) return { aboard: false, why: "not a real photograph" };
@@ -128,7 +130,10 @@ export function seatVerdict(j, { family = "other ridden" } = {}) {
   if (stationSigns.length) return { aboard: false, why: `a station or a queue, not the ride's scene: ${stationSigns.map((k) => k.replace(/_/g, " ")).join(", ")}` };   // a walkway marking alone is not: the path passes where the camera stands (owner 2026-09-13)
   // THE VEHICLE AHEAD IS NOT THE RIDER'S OWN (owner 2026-09-13, draw 24: "the problem with draw 24 seat plate is it's third person view of an omnimover" — the judge had
   // called the car ahead in a drive-through tunnel "own omnimover under the camera" three runs running). A vehicle seen whole is photographed from outside it.
-  if (j.vehicle_seen_whole === true) return { aboard: false, why: "a vehicle seen whole ahead — the vehicle in front, not the rider's own (third person)" };
+  // ⭐⭐ ON RAILS AND OMNIMOVERS ONLY (2026-09-24, engine review B5): the rule was written for a car in a train or a chain, where the rider never sees a whole car of
+  // their own. On a road every forward frame has a vehicle ahead (746dae62: all 13 dashcam frames refused on it, no seat, $…), and a wearer or a boat meets other
+  // vehicles the same way; those kinds keep every other outside test above.
+  if (j.vehicle_seen_whole === true && TRACK_FAMILIES.has(family)) return { aboard: false, why: "a vehicle seen whole ahead — the vehicle in front, not the rider's own (third person)" };
   const pos = String(j.camera_position || "").toLowerCase();
   const env = String(j.environment || "").toLowerCase(), light = String(j.lighting || "").toLowerCase();
   if (String(j.way || "").toLowerCase() === "unseen" && !/show scene|tunnel|dark/.test(env)) return { aboard: false, why: "no ride in it: no way and no show scene" };   // a scene the ride passes through is a seat; a picture with neither is not
