@@ -14,7 +14,7 @@
 // would bill the user for a copy of their parent; treated as a fresh prompt it would destroy what they
 // meant to keep. Neither is a remix. The caller surfaces the failure and no money moves.
 import { providerJson, providerText, textPart } from "./provider-llm.mjs";
-import { danglingSpeakerLabels, referenceNameFindings } from "./_gate_rules.mjs";
+import { danglingSpeakerLabels, referenceNameFindings, sameCharacter } from "./_gate_rules.mjs";
 import { incompleteBeatLines, genericSpeakerLabels, referenceVoices, referenceVoicesLaw } from "./_beat_law.mjs";
 
 /** Compact state summary the parser sees — names and places, never internals. */
@@ -449,6 +449,14 @@ export function validateRemixPlan(plan, state) {
 /** Every new content word the plan introduces, mechanically — union this with the planner's own delta
  *  before probing (the model's list is advisory, never load-bearing). Bounded, stopword-pruned. */
 const _ESC_STOP = new Set(["that", "with", "into", "from", "then", "this", "their", "there", "where", "while", "over", "under", "same", "more", "less", "very", "slow", "fast", "night", "morning", "instead", "still", "just", "only", "them", "they", "when", "what", "make", "makes", "walks", "walk", "goes", "gets", "have", "keeps", "keep"]);
+/** THE ORIGINAL'S CAST IS CLEARED (2026-09-24, engine review C1; the owner's plan: "the parent's cast counts as cleared"). The original's figure a
+ *  new term names — sameCharacter over its name, its canonical name and the resolver's term, either way round — or null. Every figure in a finished
+ *  original's plan passed that run's gates. Matched on the CAST only, never on the original's free words: "a jack russell terrier" must not make
+ *  Jack Torrance "not new". Pure. */
+export function originalFigureFor(term, state) {
+  const figs = Array.isArray(state?.plan?.figures) ? state.plan.figures : [];
+  return figs.find((f) => { const names = [f?.name, f?.canonical_name, f?.term].filter(Boolean); return sameCharacter(term, names) || names.some((n) => sameCharacter(n, [term])); }) || null;
+}
 export function escalationTerms(plan, state, intentText) {
   const known = ` ${String(state?.prompt_text || "").toLowerCase()} ${String(state?.plan?.user_prompt || "").toLowerCase()} ${(state?.plan?.figures || []).map((f) => String(f?.name || "").toLowerCase()).join(" ")} `;
   const text = `${plan?.effective_prompt || ""} ${plan?.script_instruction || ""}`.toLowerCase();
