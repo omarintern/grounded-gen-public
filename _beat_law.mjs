@@ -933,9 +933,7 @@ export const feedbackLaw = () => {
     // NAME VIOLATIONS ARE NOT TIMING VIOLATIONS (owner 2026-09-08, job bd19152d: framed as ledger feedback, the writer MOVED the room's
     // name to another beat instead of removing it). A named place or figure is REMOVED — the scene stays, described by its things.
     process.env.NAME_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT NAMED WHAT MUST NOT BE NAMED: ${process.env.NAME_FEEDBACK}. Rewrite the SAME beats at the SAME stamps and REMOVE each such name: a place of the world is never named \u2014 the ride's own scene stays, described only by the things it carries ("the next scene, its walls hung with tiered black chandeliers"); a named figure is written by build, clothing and posture only. Never replace a name with another name of the same world.` : "",
-    // POLICY REPAIR (owner 2026-09-08): the video provider refused the previous draft on its content policy. The run says what to
-    // change; the writer keeps the story, the stops and the stamps and rewrites only what the note names.
-    process.env.POLICY_FEEDBACK ? `\u26a0\u26a0 THE VIDEO PROVIDER REFUSED YOUR PREVIOUS DRAFT ON ITS CONTENT POLICY. Keep the same story, the same places in the same order and the same timestamps, and rewrite so that: ${process.env.POLICY_FEEDBACK} Return the full beat list and the dialogue block.` : "",
+    // (a provider's refusal is EDITED since 2026-09-24, R10 — the policy note reaches the editor, never the writer: _run's _providerEdit)
   ].filter(Boolean);
   if (!notes.length) return "";
   const prev = String(process.env.PREVIOUS_DRAFT || "").trim();

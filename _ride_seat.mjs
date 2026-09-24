@@ -9,7 +9,7 @@
 //   node _ride_seat.mjs <slug> [aspect]     → out/_aspect/world_<slug>.jpg + world_<slug>.pick.json (+ seen sidecar, contact sheet)
 //   exit 0 served · 2 no seat in the pool · 4 budget cap · 5 infrastructure (never a verdict on the pool)
 import "./_meter_boot.mjs";   // the ledger rides EVERY orchestration
-import { isGeneratorSourced } from "./_gate_rules.mjs";
+import { isGeneratorSourced, refShapeOk } from "./_gate_rules.mjs";
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -67,6 +67,7 @@ async function dl(url, path, sourceUrl = "") {
     let meta; try { meta = await sharp(b).metadata(); } catch { return miss("unreadable"); }
     const W = Number(meta.width) || 0, H = Number(meta.height) || 0;
     if (Math.min(W, H) < MIN_SIDE) return miss(`small<${MIN_SIDE}`);
+    if (!refShapeOk(W, H)) return miss("engine-shape");   // a shape the video engine refuses never rides (engine review 2026-09-24, F1: one shape rule at every intake — seedance refuses a reference outside 0.4–2.5, job 2e6f3907)
     try { const st = await sharp(b).stats(); if (st.channels.length && st.channels.every((c) => c.mean < 16 && c.stdev < 10)) return miss("near-black"); } catch {}
     if (await lineagePlate(b)) return miss("lineage-plate");   // the parent's seat plate, never served twice (WORLD_SKIP)
     writeFileSync(path, b); return { W, H };
@@ -194,7 +195,7 @@ if (!["none", "viewer_chrome", "device_overlay"].includes(text) && ["top", "bott
     : edge === "bottom" ? { left: 0, top: 0, width: W, height: H - Math.round(H * band) }
     : edge === "left" ? { left: Math.round(W * band), top: 0, width: W - Math.round(W * band), height: H }
     : { left: 0, top: 0, width: W - Math.round(W * band), height: H };
-  if (Math.min(region.width, region.height) >= MIN_SIDE) { img = img.extract(region); cropped = { edge, band }; console.log(`  ✂ ${text} at the ${edge} edge cropped (${Math.round(band * 100)}% band)`); }
+  if (Math.min(region.width, region.height) >= MIN_SIDE && refShapeOk(region.width, region.height)) { img = img.extract(region); cropped = { edge, band }; console.log(`  ✂ ${text} at the ${edge} edge cropped (${Math.round(band * 100)}% band)`); }
 }
 const out = join(OUTDIR, `world_${slug}.jpg`);
 await img.jpeg({ quality: 92 }).toFile(out);

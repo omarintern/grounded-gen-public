@@ -52,25 +52,28 @@ export function denameMap(modes = [], phraseOf = (m) => m?.guise || m?.prose || 
 export function editInstruction(violations = [], modes = []) {
   const list = Array.isArray(violations) ? violations : [];
   const line = (v) => `- ${String(v?.figure || "").replace(/\s+/g, " ").trim()}${Number.isFinite(Number(v?.at)) ? ` [${Number(v.at)}s]` : ""}`;
-  const faults = list.filter((v) => EDIT_RULES.has(v?.rule)).map(line), soft = list.filter((v) => !EDIT_RULES.has(v?.rule)).map(line);
+  const faults = list.filter((v) => EDIT_RULES.has(v?.rule)).map(line), soft = list.filter((v) => !EDIT_RULES.has(v?.rule) && v?.rule !== "provider").map(line);
+  const provider = list.filter((v) => v?.rule === "provider").map((v) => `- ${String(v?.figure || "").replace(/\s+/g, " ").trim()}`);
   const manner = list.some((v) => v?.rule === "reference-name");
   const dn = denameMap(modes);
   const swaps = dn.filter((d) => d.mode === "dename" && d.phrase).map((d) => `- ${d.names.map((n) => `"${n}"`).join(" / ")} → write the figure as: ${d.phrase}`);
   const gone = dn.filter((d) => d.mode === "omit").map((d) => `- ${d.names.map((n) => `"${n}"`).join(" / ")} → this figure does not appear: take it out of the line it is in and leave the rest of that line standing`);
   return [
     `EDIT these beats. This is an EDIT, not a rewrite: the story, the staging and the timing are RIGHT and stay exactly as they are.`,
-    `Change ONLY ${soft.length ? "what is" : "the words"} listed below. Keep every beat, keep every [Ns] stamp exactly as written, keep the same number of beats in the same order,`,
-    `keep every action, every placement and every figure doing what it does, and keep the Dialogue, Sound, Set and Telling lines as they are except where ${soft.length ? "the list below reaches" : "a word below sits in"} one.`,
-    `Do NOT add or remove a beat. Do NOT change a stamp. Do NOT re-stage, re-order, re-time or improve anything. Do NOT rewrite a sentence ${soft.length ? "the list below does not reach" : "that has no listed word in it"} — copy it through unchanged.`,
+    `Change ONLY ${soft.length || provider.length ? "what is" : "the words"} listed below. Keep every beat, keep every [Ns] stamp exactly as written, keep the same number of beats in the same order,`,
+    `keep every action, every placement and every figure doing what it does, and keep the Dialogue, Sound, Set and Telling lines as they are except where ${soft.length || provider.length ? "the list below reaches" : "a word below sits in"} one.`,
+    `Do NOT add or remove a beat. Do NOT change a stamp. Do NOT re-stage, re-order, re-time or improve anything. Do NOT rewrite a sentence ${soft.length || provider.length ? "the list below does not reach" : "that has no listed word in it"} — copy it through unchanged.`,
     ``,
     ...(faults.length ? [`THE WORDS THAT MUST GO:`, ...faults] : []),
     ...(swaps.length ? [``, `WRITE THESE INSTEAD (the figure stays in the frame doing exactly what it does — only its name goes, replaced by how it looks):`, ...swaps] : []),
     ...(gone.length ? [``, ...gone] : []),
     // A SOFT FINDING IS EDITED, NEVER REWRITTEN (owner 2026-09-22; engine review 2026-09-24, D2): the fix is the fewest words in the beat the finding names
     ...(soft.length ? [...(faults.length ? [``] : []), `FIX THESE, each with the fewest words that fix it, in the beat it names — a clause taken out, a word changed, a few words or one Dialogue line added — never by adding, moving or re-timing a beat:`, ...soft] : []),
+    // THE PROVIDER'S REFUSAL IS EDITED (owner 2026-09-24, R10): its note reaches every line, and only the words that break it change
+    ...(provider.length ? [...(faults.length || soft.length ? [``] : []), `THE VIDEO PROVIDER REFUSED THESE BEATS. Change only the words that break this note, wherever they stand — in a beat, a speaker label, a spoken line or the Sound line — and copy every other word through:`, ...provider] : []),
     ``,
     ...(manner ? [`A name the maker used only for a manner is never written, not even inside a spoken line: write that manner in plain words of your own where the name stood.`] : []),
-    `${manner ? "Any other name" : "A name"} is free INSIDE a spoken line in the Dialogue block — a speaker may say it; a beat and a speaker label may not.`,
+    ...(provider.length ? [] : [`${manner ? "Any other name" : "A name"} is free INSIDE a spoken line in the Dialogue block — a speaker may say it; a beat and a speaker label may not.`]),   // the provider's note overrides the name licence
     `Return ONLY the edited lines — the whole list, every beat and every block, nothing else, no commentary.`,
   ].filter((x) => x !== undefined).join("\n");
 }

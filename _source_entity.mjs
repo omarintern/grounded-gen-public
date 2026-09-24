@@ -6,7 +6,7 @@
 // photo that shows the entity + its signature. No iphone bias, no usable_stage gate, no crop, no blur.
 //   node _source_entity.mjs "<entity search query>" <slug> "<what the photo must show>"
 import "./_meter_boot.mjs";   // ledger rides EVERY orchestration (owner, x26e) — self-boots if _run's bootstrap was bypassed
-import { isGeneratorSourced } from "./_gate_rules.mjs";
+import { isGeneratorSourced, refShapeOk } from "./_gate_rules.mjs";
 import { installExitHandlers } from "./_exit.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -100,6 +100,7 @@ for (const [i, it] of clean.entries()) {
   let meta; try { meta = await sharp(p).metadata(); } catch { continue; }
   const W = meta.width ?? 0, H = meta.height ?? 0;
   if (Math.min(W, H) < 300) continue;
+  if (!refShapeOk(W, H)) continue;   // a shape the video engine refuses never rides (engine review 2026-09-24, F1: one shape rule at every intake — seedance refuses a reference outside 0.4–2.5, job 2e6f3907)
   // ── NO CUTOUTS (owner 2026-08-14: "we keep the background on them even though just character is used") —
   // a flattened promo/transparent asset conditions the gen like a STICKER (x2's "immovable character") and
   // sits closest to the canonical owned design (©-pull). Mechanical gate, both modes; a natural dark studio
