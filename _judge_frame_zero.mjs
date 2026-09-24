@@ -21,7 +21,7 @@
 // (reference_vlm_prompt_crowding), and DEGRADE_FLOOR=0.6 is calibrated against that rubric's exact current
 // wording, so appending a field there would risk silently re-scoring degrade. Own call, own question.
 import sharp from "sharp";
-import { providerJson, textPart, imagePart, PROVIDER_VLM_MODEL } from "./provider-llm.mjs";
+import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
 
 async function view(fp, px) {
   return (await sharp(fp).resize(px, px, { fit: "inside", withoutEnlargement: true })
@@ -40,7 +40,7 @@ export async function judgeFrameZero(filePath, action, opts = {}) {
     const b64 = await view(filePath, viewPx);
     return await providerJson([
       textPart(
-        `Return ONLY JSON {"room_for_body":bool,"route_in":bool,"hosts":0..1,"why":"short"}. ` +
+        `Return ONLY JSON {"room_for_body":bool,"route_in":bool,"hosts":0..1,"why":"the reason, in a few words"}. ` +
         `THE ACTION THAT MUST HAPPEN AT THE FIRST FRAME: "${action}". ` +
         `You are judging ONE thing: could that action physically occur in THIS photograph, filmed from THIS ` +
         `camera position, WITHOUT the camera moving or cutting. ` +
@@ -81,18 +81,22 @@ export async function judgeFrameZero(filePath, action, opts = {}) {
           : ``)
       ),
       imagePart("image/jpeg", b64),
-    ], { maxTokens: 1200, temperature: 0.1, model: opts.model || PROVIDER_VLM_MODEL });
+    ], { maxTokens: 3000, temperature: 0.1, reasoning: "low", tag: "frame-zero", ...(opts.model ? { model: opts.model } : {}) });
+    // ⭐⭐ ON THE REASONING MODEL (2026-09-24, engine review B2). On the vision model this question answered with its own template
+    // ({room true, route_in FALSE, hosts 1, why "short"}) on 12 of 12 frames whole or cropped, and route_in alone demoted real passers;
+    // on the fast model at low thinking it answered 9/9 on clean crops that morning and route_in was true 20 of 20 in B0. Room to think (3000):
+    // a reasoning model's thinking counts against max_tokens, and a call sized for its answer is cut off and asked again whole.
   } catch (e) {
-    if (e?.name === "ProviderInfraError") throw e;   // infra is not a verdict (see provider-llm.mjs)
+    if (e?.ledgerCap || e?.name === "ProviderInfraError") throw e;   // our budget stop and an outage are not verdicts (see provider-llm.mjs)
     return null;
   }
 }
 
-/** Does this verdict disqualify the frame? Fails CLOSED on a failed judgement, like every other gate. */
-export function frameZeroFails(v, floor = Number(process.env.FRAME_ZERO_FLOOR ?? 0.5)) {
-  if (!v) return true;                                   // unjudged → reject
-  if (v.room_for_body === false) return true;            // no body fits → the camera must move
-  if (v.route_in === false) return true;                 // must arrive, but nowhere to arrive from
+/** Can this frame host its first beat? A RANK, never a bar (owner 2026-09-24, R1: "rank because of BOB"): the hunt keeps every frame and puts
+ *  the ones that can host first. room_for_body false or hosts under the floor cannot; route_in no longer decides on its own (the vision model's
+ *  template "false" demoted real passers), because an arrival the frame cannot give is already scored into hosts. An unjudged frame cannot. Pure. */
+export function frameZeroHosts(v, floor = Number(process.env.FRAME_ZERO_FLOOR ?? 0.5)) {
+  if (!v || v.room_for_body === false) return false;
   const h = Number(v.hosts);
-  return !Number.isFinite(h) || h < floor;
+  return Number.isFinite(h) && h >= floor;
 }
