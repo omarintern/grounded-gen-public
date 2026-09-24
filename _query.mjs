@@ -56,6 +56,22 @@ const _bare = (s) => _norm(s).replace(/^(?:the|a|an)\s+/i, "").trim();
 const _uniq = (arr) => { const out = []; for (const x of arr) { const v = _norm(x); if (v && !out.some((o) => o.toLowerCase() === v.toLowerCase())) out.push(v); } return out; };
 const KINDS = new Set(["named place", "chain", "kind of place", "broadcast", "work room", "form", "thing"]);
 
+// ⭐⭐ A FORM'S PLATE IS HUNTED BY THE WORDS ITS FOOTAGE IS POSTED UNDER (owner 2026-09-24: "tesla and rideshare show good ones. so those can
+// be the form plate queries for car interior cam or whatever we call it. and of course it can bind to appropriation of any vehicles interior
+// if a user so wishes"). Measured that day on search scoped to Reddit, twenty rows a query, counted by eye for a real colour frame from the
+// dashboard looking back at the seats: "interior dashcam footage" 0 (dashcam installs and night infrared), "tesla cabin camera" about 7 (the
+// owners' own name for the camera, mostly app screenshots the chrome crop trims), "rideshare passenger caught on camera" 3 (how incident
+// footage is titled). A camera's generic name finds the shop listing and the install; these find the frame. `shows` is the place these
+// plates hold and `fits` the place names that are it: any other place the maker asks for (a limousine, a bus, a race car) is hunted as
+// itself and bound to the form plate by appropriation. Keyed by the form's class; the class is read by the caller (isInwardCam).
+export const FORM_PLATES = Object.freeze({
+  "inward car camera": Object.freeze({
+    queries: Object.freeze(["tesla cabin camera", "rideshare passenger caught on camera"]),
+    shows: "an ordinary car's cabin",
+    fits: /^(?:(?:inside|in|within)\s+(?:of\s+)?)?(?:(?:a|an|the|my|our|their|his|her|someone's)\s+)?(?:(?:moving|parked|driving|ordinary|regular|normal|everyday|family|small|compact|modern|rental|friend'?s)\s+)*(?:car|automobile|sedan|suv|hatchback|vehicle|rideshare(?:\s+car)?|uber|lyft|tesla)(?:'s)?(?:\s+(?:interior|cabin|inside|front\s+seats?|back\s+seats?))?(?:\s+(?:on|at|along|down|through|driving|parked|in|during)\b.*)?$/i,   // the place the plate already is: a plain car, where the story takes it included
+  }),
+});
+
 /** THE SUBJECT OF A HUNT, as the compiler reads it. Pure; unknown kinds read as a kind of place (the plainest rewrite). */
 export function subjectSpec(o = {}) {
   const kind = KINDS.has(String(o?.kind || "").toLowerCase()) ? String(o.kind).toLowerCase() : "kind of place";
@@ -67,6 +83,7 @@ export function subjectSpec(o = {}) {
     device: _norm(o?.device), placeKind: _norm(o?.placeKind), habitat: _norm(o?.habitat),
     part: _norm(o?.part),          // a chain's PART when the maker named one ("walmart parking lot" → "parking lot"): the customers' photographs of that part, never the interior
     query: _norm(o?.query),        // a thing: the judge's phrasing with the maker's word kept (thingQuery composes it)
+    plate: Array.isArray(o?.plate) ? o.plate.map(_norm).filter(Boolean) : [],   // a form's own plate queries (FORM_PLATES), which replace its device rungs
   };
 }
 
@@ -82,6 +99,7 @@ export function baseQueries(spec = {}) {
     case "broadcast": return s.name ? [`${s.name} scene`] : [];
     case "work room": return s.work && s.room ? [`${s.work} ${s.room} scene`] : s.work ? [`${s.work} scene`] : [];
     case "form": {
+      if (s.plate.length) return _uniq(s.plate);   // the words its footage is posted under (FORM_PLATES), in their own order, and nothing else
       if (!s.device) return [];
       const dev = /footage$/i.test(s.device) ? s.device : `${s.device} footage`;
       const devWord = dev.replace(/\s*footage$/i, "").toLowerCase();
