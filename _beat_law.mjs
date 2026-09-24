@@ -690,6 +690,31 @@ export const ipFiguresLaw = () => {
     (omit.length ? `${omit.map((m) => `"${m.name}"`).join(", ")} ${omit.length > 1 ? "do" : "does"} not appear at all — the signature IS the name, and a description would still be it. ` : "") +
     `The request's own words may name them; your beats and dialogue may not.\n`;
 };
+// ⭐⭐ A MANNER BY REFERENCE (owner 2026-09-24: "ideally it would be aware and write lines denzel would say in that situation" → "yes build it, manner
+// only"). The named-role reader takes a name the maker used only as a reference out of the words before any gate or the planner reads them
+// (_named_role.mjs), so the writer was left with "a charismatic, smooth actor" and wrote a stock pickup line (job 8ca2a2f2). The WRITER alone is told
+// whose manner it is, in the maker's own words; the name itself never reaches the video (referenceNameFindings reads the whole script, the lines too).
+// Set by the run that read the words (REFERENCE_VOICES: [{ said, names }]); a remix hands it to the full pipeline it spawns.
+export const referenceVoices = () => {
+  try { const r = JSON.parse(process.env.REFERENCE_VOICES || "[]"); return (Array.isArray(r) ? r : []).filter((x) => x && typeof x.said === "string" && x.said.trim() && Array.isArray(x.names) && x.names.some((n) => String(n || "").trim())); }
+  catch { return []; }
+};
+/** The env value with one more reading added (the same words are never recorded twice). Pure over its inputs. */
+export const withReferenceVoice = (current = "", said = "", names = []) => {
+  let list = []; try { list = JSON.parse(current || "[]"); } catch { list = []; }
+  if (!Array.isArray(list)) list = [];
+  const s = String(said || "").replace(/\s+/g, " ").trim(), ns = [...new Set((Array.isArray(names) ? names : []).map((n) => String(n || "").replace(/\s+/g, " ").trim()).filter(Boolean))];
+  if (s && ns.length && !list.some((x) => x && x.said === s)) list.push({ said: s, names: ns });
+  return JSON.stringify(list);
+};
+const _titleName = (n) => String(n || "").replace(/\s+/g, " ").trim().replace(/(^|[\s-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+export const referenceVoicesLaw = () => referenceVoices().map((r) => {
+  const names = r.names.map(_titleName).filter(Boolean);
+  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+  return `⚠ A MANNER BY REFERENCE: the maker wrote "${r.said.replace(/\s+/g, " ").trim().slice(0, 400)}". ${list} ${names.length > 1 ? "are" : "is"} named there only for a manner ` +
+    `(a way of talking, moving or dressing); no one on screen is ${names.length > 1 ? "any of them" : "that person"}. Write that manner the way ${names.length > 1 ? "each" : "that person"} would carry it ` +
+    `in this situation, in new words and actions of your own, never a line or a move already known as theirs. The name never appears in a beat, a speaker label or a line.\n`;
+}).join("");
 export const viewLaw = () => (
 `\u26a0\u26a0 THIS IS A VIEW HELD, NOT A STORY (the maker's words ask for nothing to happen and nothing to turn \u2014 no plot, no drama). ` +
     `So: NO payoff, NO climax, NO twist, NO punchline, NO reveal, NO overstep \u2014 never manufacture an event to end on. ` +

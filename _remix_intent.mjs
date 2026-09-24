@@ -14,8 +14,8 @@
 // would bill the user for a copy of their parent; treated as a fresh prompt it would destroy what they
 // meant to keep. Neither is a remix. The caller surfaces the failure and no money moves.
 import { providerJson, providerText, textPart } from "./provider-llm.mjs";
-import { danglingSpeakerLabels } from "./_gate_rules.mjs";
-import { incompleteBeatLines, genericSpeakerLabels } from "./_beat_law.mjs";
+import { danglingSpeakerLabels, referenceNameFindings } from "./_gate_rules.mjs";
+import { incompleteBeatLines, genericSpeakerLabels, referenceVoices, referenceVoicesLaw } from "./_beat_law.mjs";
 
 /** Compact state summary the parser sees — names and places, never internals. */
 export function stateSummary(state) {
@@ -150,6 +150,8 @@ export function surgeryContract(parentBeats, diff) {
     `photograph that is being KEPT: never alter it.\n\nBEATS:\n${parentBeats}\n\nCHANGES:\n${changes.map((c) => `- ${c}`).join("\n")}\n\n` +
     `Apply the changes with the smallest possible edit. The final beat still lands the story at a CLIMAX ` +
     `of the feeling in motion — deadpan counts, flat does not. ` +
+    // a name the remixer used only for a manner: the surgery knows whose, the words never say it (owner 2026-09-24, "manner only")
+    (referenceVoicesLaw() ? `\n\n${referenceVoicesLaw()}\n` : "") +
     (dlgRewrite
       ? `Return the beat lines, then a Dialogue: section applying the dialogue change (speaker labels with quoted words), and nothing else.`
       : `Return ONLY the beat lines and nothing else.`)
@@ -186,13 +188,25 @@ export async function performBeatSurgery(parentPrompt, diff) {
   // PARENT'S, character-for-character; a rewrite takes the model's Dialogue section (validated); removal
   // takes none; the Sound line is ALWAYS the parent's — shallow remixes never touch audio (owner's
   // standing sound ruling).
-  let dialogue = "";
-  if (dlgOp === "keep") dialogue = parent.dialogue;
-  else if (dlgOp === "rewrite") {
-    if (!a.modelDialogue || !/["“”]/.test(a.modelDialogue)) throw new Error("dialogue rewrite returned no quoted words — refusing");
-    dialogue = a.modelDialogue;
+  const compose = (x) => {
+    let dialogue = "";
+    if (dlgOp === "keep") dialogue = parent.dialogue;
+    else if (dlgOp === "rewrite") {
+      if (!x.modelDialogue || !/["“”]/.test(x.modelDialogue)) throw new Error("dialogue rewrite returned no quoted words — refusing");
+      dialogue = x.modelDialogue;
+    }
+    return [x.beats, dialogue, parent.sound].filter(Boolean).join("\n\n");
+  };
+  let surgered = compose(a);
+  // A NAME THE REMIXER USED ONLY FOR A MANNER never ships (owner 2026-09-24, "manner only"): one corrective retry, then refusal, like the rhythm
+  const _refNames = referenceVoices().flatMap((r) => r.names), _refHits = (t) => referenceNameFindings(t, _refNames, { words: process.env.RAW_USER_PROMPT || "" });
+  if (_refNames.length && _refHits(surgered).length) {
+    retried = true;
+    a = await attempt(`\n\n⚠ YOUR PREVIOUS ATTEMPT WROTE A NAME THE MAKER USED ONLY FOR A MANNER (${_refHits(surgered)[0].figure.split(" is written")[0]}). Same beats, SAME [Ns] stamps; carry the manner in new words of your own and never write the name.`, 0.2);
+    if (!sameStamps(parent.beats, a.beats)) throw new Error("surgery could not keep the parent's rhythm — refusing to ship a broken remix");
+    surgered = compose(a);
+    if (_refHits(surgered).length) throw new Error("surgery kept writing a name the maker used only for a manner — refusing");
   }
-  const surgered = [a.beats, dialogue, parent.sound].filter(Boolean).join("\n\n");
   const dangling = danglingSpeakerLabels(surgered);
   if (dangling.length) throw new Error(`surgery produced a speaker label with no words (${dangling[0].figure?.slice(0, 40)}) — refusing`);
   // the completeness + label laws hold in surgery too (owner: the laws persist across the non-IP lane)
