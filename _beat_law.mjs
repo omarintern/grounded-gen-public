@@ -134,7 +134,7 @@ export const dialogueClause = () => {
         + `⚠ THAT IS ONE SPEAKER'S SENTENCE CARRIED ACROSS STAMPS, AND IT IS NOT THE ONLY SHAPE. Two DIFFERENT figures may share one `
         + `stamp when they speak at once — an interruption, an answer cutting in, two voices together. Keep them both, each with its own `
         + `label and manner, at that same second: they overlap, they do not queue. `
-        + `A SPOKEN LINE NEVER OUTRUNS THE BEAT THAT CARRIES IT (owner 2026-09-13): about three words a second, from its stamp to the next beat's stamp; no line begins in the take's last second. `
+        + `A SPOKEN LINE NEVER OUTRUNS THE BEAT THAT CARRIES IT: about three words a second, from its stamp to the next beat's stamp; no line begins in the take's last second. `
         + `EVERY LINE SAYS HOW IT IS SAID: each speaker label ends in a short parenthetical of manner — (sing-song, mocking) — two or three words of delivery, never a body direction. `
         + `Two fragments at the top is the reflex and it is wrong: it lands the last words a third of the way `
         + `in and leaves the rest of the clip silent. The final stamp is deliberately late so the voice is `
@@ -240,7 +240,7 @@ export const frameZeroRegisterClause = () => {
   // cymbal monkeys and Redmond Barry kept their monochrome security-camera look with NO register word at beat zero — the plate carried it;
   // the one loss was the T-rex REMIX, whose denser, larger action was re-authored against the parent's kept plate). A fresh gen may state
   // it, as the bear's writer did by choice; a kept-plate remix must, and the run repairs it in when the writer leaves it out.
-  return `⚠ FRAME ZERO IS THIS PHOTOGRAPH, WHICH A ${shown === "CCTV" ? "security camera" : shown} MADE: beat zero describes what it shows — the place as photographed, its objects and occupants — and never announces the device as a caption ("${n} footage: …" is not written; the look is the picture's own and every later beat stays inside it). The recording device is a THING of the scene and may be ADDRESSED as one — a subject notices the ${shown === "CCTV" ? "security camera" : shown} and looks straight into its lens — that is the subject's action, not a camera word, and it holds the footage's look through the payoff (the bear that "recognized the lens of the overhead security camera" kept its CCTV; the T-rex that "looked directly up" lost it, job 6280175e).\n`;
+  return `⚠ FRAME ZERO IS THIS PHOTOGRAPH, WHICH A ${shown === "CCTV" ? "security camera" : shown} MADE: beat zero describes what it shows — the place as photographed, its objects and occupants — and never announces the device as a caption ("${n} footage: …" is not written; the look is the picture's own and every later beat stays inside it). The recording device is a THING of the scene and may be ADDRESSED as one — a subject notices the ${shown === "CCTV" ? "security camera" : shown} and looks straight into its lens — that is the subject's action, not a camera word, and it holds the footage's look through the payoff.\n`;
 };
 // ⭐⭐ AN APPROPRIATED TAKE IS TWO PHOTOGRAPHS, AND THE FIRST ONE IS THE CAMERA (owner 2026-09-18). When a capture form is
 // unlikely at the place the maker named, the form is hunted as itself in that KIND of place and the place is hunted as itself;
@@ -473,8 +473,8 @@ export const beatZeroLaw = () => (
 `\u26a0\u26a0 BEAT ZERO ESTABLISHES THE WHOLE SCENE - INCLUDING WHAT THE PHOTOGRAPH LACKS. The picture is ` +
     `the STARTING FRAME, not a limit on what may exist. If the story needs something the photo does not show, ` +
     `NAME IT IN THE FIRST BEAT as part of the opening state: "a woman is asleep in the bed", "a cat sits at the ` +
-    `foot of the steps". The generator will put it there. VALIDATED: a porch plate containing no animal produced ` +
-    `a near-perfect clip because beat one simply stated the cat was sitting in the snow.\n` +
+    `foot of the steps". The generator will put it there.` +
+    `\n` +
     `\u26a0 BUT BEAT ZERO CANNOT HOLD WHAT THE PLATE CONTRADICTS. It may add what the photograph merely OMITS (an occupant off to one side, a prop that could already be there); it may NOT add something the photograph ACTIVELY SHOWS OTHERWISE - a display already lit with one picture, a wall already bare. Such an element ENTERS at the moment its change is plausible, by TRANSFORMING what the frame already contains (a screen resolves to a new picture, a panel lifts to reveal): that transformation IS its visible route. Forced into beat zero it fights the plate; introduced with no route the generator cuts.\n` +
     `\u26a0 A PROP THE PLATE LACKS IS PLACED ON WHAT THE PLATE HAS. Naming a prop LICENSES it; it does not POSITION it. If the frame already holds an object of the same kind or use - a chair where the story wants a seat, a table where it wants a desk, a ledge where it wants a shelf - beat zero names the requested prop AT THAT OBJECT and lets it be that object. Keep the user's word for the thing; give it the host. A prop named loose ("nearby", "off to one side", "in the corner") binds to nothing, and the later beat whose action NEEDS it - sitting on it, opening it, climbing it - resolves somewhere else entirely.\n` +
     `\u26a0 ENTERING IS ALLOWED, AND IS PART OF BEAT ZERO. "Established at beat zero" does NOT mean "standing still at beat zero" - if the request says the subject ENTERS, then beat zero SHOWS IT ENTERING (walking in from the frame edge, coming through a doorway) and settling into place. Do not silently convert an entrance into a static arrangement; the entrance is an action the user asked for. What is forbidden is a subject FIRST APPEARING in a LATER beat.\n` +
@@ -482,7 +482,7 @@ export const beatZeroLaw = () => (
     `visible route, is the violation. A subject popping into [2s] or [4s] out of nowhere is one the camera has ` +
     `been treating as absent, so the generator CUTS to go and find it, and a cut is the one thing we never want. ` +
     `\u26a0 AND BEAT ZERO IS THE CENSUS OF FRAME ZERO: whoever and whatever the PHOTOGRAPH already contains is ` +
-    `present from the first frame, and beat zero holds them. THE PLACE AS PHOTOGRAPHED belongs to that census too (owner 2026-09-09: beat zero describes frame zero, the plate): beat zero names the place the picture shows and the objects and occupants the action touches, so nothing of the frame is left for the generator to guess. A device that made the photograph is NEVER announced as a caption — no "footage of …" at the head of a beat — its look is the picture's own and rides along untouched; the device is a thing of the scene a subject may look into. \u26a0 AND A BEAT IS NEVER A SENTENCE ABOUT THE VIDEO: its premise, its theme, its purpose, its makers, its audience or its form are not written as prose \u2014 a sentence about the video is not in the video. Where the words ask for narration or a reflexive voice, it is HEARD (a line in the Dialogue block \u2014 the narrator's, a figure's) or READ on a thing in the frame (a sign, a plaque, a banner), never prose and never ahead of frame zero. Had beat zero said "a woman is asleep in the bed" while the cats filed in, she ` +
+    `present from the first frame, and beat zero holds them. THE PLACE AS PHOTOGRAPHED belongs to that census too: beat zero names the place the picture shows and the objects and occupants the action touches, so nothing of the frame is left for the generator to guess. A device that made the photograph is NEVER announced as a caption — no "footage of …" at the head of a beat — its look is the picture's own and rides along untouched; the device is a thing of the scene a subject may look into. \u26a0 AND A BEAT IS NEVER A SENTENCE ABOUT THE VIDEO: its premise, its theme, its purpose, its makers, its audience or its form are not written as prose \u2014 a sentence about the video is not in the video. Where the words ask for narration or a reflexive voice, it is HEARD (a line in the Dialogue block \u2014 the narrator's, a figure's) or READ on a thing in the frame (a sign, a plaque, a banner), never prose and never ahead of frame zero. Had beat zero said "a woman is asleep in the bed" while the cats filed in, she ` +
     `would have been present throughout and the waking could happen in place \u2014 she was IN the photograph; leaving her unwritten denies the frame.\n` +
     `\u26a0\u26a0 BEAT ZERO LEADS WITH THE SCENE'S ACTUAL SUBJECT. Whoever or whatever the user's request is ABOUT is the grammatical subject of beat zero; anyone else present is CONTEXT and belongs in a subordinate clause or a following sentence, never in front. This is a writing rule first - a cat-choir joke that opens on a sleeping woman has its emphasis backwards - and it has a second, harder consequence. Promoting a vulnerable or unaware person to the opening subject of a covert-capture frame reads as surveillance of that person, and providers refuse it on content policy; the identical scene passes when the real subject leads. Do not soften or remove what happens - reorder so the real subject is in front and the person is present as context. `+
     `\u26a0\u26a0 BUT THE BAN IS ON MATERIALISING, NOT ON ARRIVING. A subject may appear at ANY beat PROVIDED the beat shows it ARRIVE by a route the frame already contains - through a door that opens, in from the edge of shot, up from behind furniture, down the stairs. What the generator cannot do is find a subject that simply BEGINS TO EXIST somewhere it was not: that is when it cuts. Ask which one you are writing. `+
@@ -493,13 +493,6 @@ export const beatZeroLaw = () => (
     // and returned to an aftermath — coherent bookkeeping, abandoned protagonist.
     `⚠ A CUT-AWAY PAUSES THE WORLD IT LEAVES — no time passes there while we are away. The return beat RESUMES the suspended action at the exact point it paused: a body launched mid-air is STILL mid-air and drops NEXT; a pour mid-stream keeps pouring. Never return to an aftermath the viewer was not shown. `+
     (process.env.CAST_LEDGER_LINE ? `\u26a0\u26a0 ${process.env.CAST_LEDGER_LINE}\n` : "") +
-    (process.env.VALIDATOR_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT VIOLATED THE CAST LEDGER: ${process.env.VALIDATOR_FEEDBACK}. Rewrite the beats obeying the ledger exactly \u2014 do not drop any figure; move each violation to its declared beat.\n` : "") +
-    // NAME VIOLATIONS ARE NOT TIMING VIOLATIONS (owner 2026-09-08, job bd19152d: framed as ledger feedback, the writer MOVED the room's
-    // name to another beat instead of removing it). A named place or figure is REMOVED — the scene stays, described by its things.
-    (process.env.NAME_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT NAMED WHAT MUST NOT BE NAMED: ${process.env.NAME_FEEDBACK}. Rewrite the SAME beats at the SAME stamps and REMOVE each such name: a place of the world is never named \u2014 the ride's own scene stays, described only by the things it carries ("the next scene, its walls hung with tiered black chandeliers"); a named figure is written by build, clothing and posture only. Never replace a name with another name of the same world.\n` : "") +
-    // POLICY REPAIR (owner 2026-09-08): the video provider refused the previous draft on its content policy. The run says what to
-    // change; the writer keeps the story, the stops and the stamps and rewrites only what the note names.
-    (process.env.POLICY_FEEDBACK ? `\u26a0\u26a0 THE VIDEO PROVIDER REFUSED YOUR PREVIOUS DRAFT ON ITS CONTENT POLICY. Keep the same story, the same places in the same order and the same timestamps, and rewrite so that: ${process.env.POLICY_FEEDBACK} Return the full beat list and the dialogue block.\n` : "") +
     `\u26a0 BEAT ZERO IS AN ACTION, NOT A DESCRIPTION \u2014 its subject is MID-DOING from the first frame; a line that only says what the subject IS or WEARS lets the frame drift. `+
     // Owner 2026-08-13, restored from the golden gens (capybara ski counter, raccoon kiosk, fox hob, badger
     // tarp, capybara beer tap): every one staged beat zero ON the plate's named objects/occupants with THE.
@@ -539,7 +532,7 @@ export const charSigBlock = (charSig) => (
 // MUSIC THE MAKER ASKED FOR (owner 2026-09-07): allowed, in the Sound block, DIEGETIC — its source is in the scene.
 const musicClause = () => (
   rideFromEnv()?.family === "dark ride"
-    ? `⚠ THE RIDE'S OWN SHOW MUSIC IS THE FORM'S, AND IT IS A RECORDING (owner 2026-09-15: music written to swell as the vehicle neared each figure rendered as a score): a dark ride plays a recording through its own speakers — write the Sound: line as that recording, by era and genre, NEVER a named song, album or artist, heard the way a public-address system sounds in a dark show building: from speakers in the walls, tinny and echoing, with the hiss and crackle of the system, at ONE LEVEL through the whole take — it never swells, rises, falls or thins with what happens (music that follows the action is a score, and no score is laid over the scene); with it the mechanical hum of the track and the sounds of each tableau, from the tableau itself, as the vehicle passes it. It is the only music, and never "no music". `
+    ? `⚠ THE RIDE'S OWN SHOW MUSIC IS THE FORM'S, AND IT IS A RECORDING: a dark ride plays a recording through its own speakers — write the Sound: line as that recording, by era and genre, NEVER a named song, album or artist, heard the way a public-address system sounds in a dark show building: from speakers in the walls, tinny and echoing, with the hiss and crackle of the system, at ONE LEVEL through the whole take — it never swells, rises, falls or thins with what happens (music that follows the action is a score, and no score is laid over the scene); with it the mechanical hum of the track and the sounds of each tableau, from the tableau itself, as the vehicle passes it. It is the only music, and never "no music". `
     : musicRequested(process.env.RAW_USER_PROMPT || process.env.USER_PROMPT || "")
     ? `⚠ THE REQUEST NAMES MUSIC, SO MUSIC IS ALLOWED — write it in the Sound: line as DIEGETIC music with its SOURCE in the ` +
       `scene ("warped 1930s swing from the ride's own speakers", "a brass band on the stand", "a radio on the counter"), described ` +
@@ -680,13 +673,13 @@ export const ipFiguresLaw = () => {
   if (!Array.isArray(modes) || !modes.length) return "";
   const seat = modes.filter((m) => m && m.seat === true), dename = modes.filter((m) => m && m.mode === "dename" && m.seat !== true), omit = modes.filter((m) => m && m.mode === "omit");
   return `⚠⚠ FIGURES THAT ARE NEVER NAMED (a public-domain figure and a work's lesser figures are named and described; a work's FACE and a real person are not): ` +
-    (seat.length ? `${seat.map((m) => `"${m.name}" is the SEAT — the rows ahead the ride addresses by that name: never seen, never described, never seated (a rider given her hair, clothes, face or prop is a dressed row); the world speaks to her and acts on her, and the name MAY be spoken inside a line ("Wendy, darling!"); she is HEARD, never seen — the rows ahead scream and answer as Dialogue lines under the label "the rows ahead", never under her name`).join("; ")}. ` : "") +
+    (seat.length ? `${seat.map((m) => `"${m.name}" is the SEAT — the rows ahead the ride addresses by that name: never seen, never described, never seated (a rider given her hair, clothes, face or prop is a dressed row); the world speaks to her and acts on her, and the name MAY be spoken inside a line; she is HEARD, never seen — the rows ahead scream and answer as Dialogue lines under the label "the rows ahead", never under her name`).join("; ")}. ` : "") +
     // ⭐⭐ THE CONTEXT KNOWS THE CHARACTER; THE PROSE NEVER NAMES IT (owner 2026-09-18, verbatim: "if the writer receives the de-named
     // description then how does it know the context? the Cody Maverick allowed it to write Cody Maverick's character but the dename would
     // reduce"). The ban was stated without the identity behind it, so a writer told only "never write Cody Maverick, write a rockhopper
     // penguin" loses the character and writes a bird. The figure is named HERE, in the law, with what the resolver learned it is, and the
     // one de-named phrase it must use in its sentences is quoted so the beats, the cast ledger and this law say the same words.
-    (dename.length ? `${dename.map((m) => `"${m.name}"${m.identity ? ` (${m.identity})` : ""} is a character you know: write it IN CHARACTER, with its own manner, and NEVER by that name. It is written ONLY as a description of build, clothing and posture${(m.prose || m.guise) ? ` — ${m.prose || m.guise}` : ""} — never the name, not in a beat, not in a speaker label; the name MAY be spoken inside a line ("Wendy, darling!") — a spoken name is words, never a picture`).join("; ")}. ` : "") +
+    (dename.length ? `${dename.map((m) => `"${m.name}"${m.identity ? ` (${m.identity})` : ""} is a character you know: write it IN CHARACTER, with its own manner, and NEVER by that name. It is written ONLY as a description of build, clothing and posture${(m.prose || m.guise) ? ` — ${m.prose || m.guise}` : ""} — never the name, not in a beat, not in a speaker label; the name MAY be spoken inside a line — a spoken name is words, never a picture`).join("; ")}. ` : "") +
     (omit.length ? `${omit.map((m) => `"${m.name}"`).join(", ")} ${omit.length > 1 ? "do" : "does"} not appear at all — the signature IS the name, and a description would still be it. ` : "") +
     `The request's own words may name them; your beats and dialogue may not.\n`;
 };
@@ -839,7 +832,7 @@ singleBlock()
       ? `Return ONE BLOCK: a single "[0s] " stamp followed by the whole take as continuous present-tense prose — one paragraph, ` +
         `the photographed places entered in story order and joined by the ride's own motion ("then crests", "drops into", "emerges ` +
         `into"). NO further timestamps: on a travelling take a stamp per place reads as a CUT MARKER and restarts the place without ` +
-        `its rails (measured 2026-09-07: the one-block take carried through; every stamped take restarted). Name the way ahead as each ` +
+        `its rails. Name the way ahead as each ` +
         `place is entered — the rails or path running on through the doorway, the archway, the tunnel mouth — so the track is drawn ` +
         `INTO it; enter the first photographed place early and give each place its share of the take, in order; the opening is a moment, not a scene. ` +
         `The rider is never written \u2014 no hands, clothing, legs or body; the vehicle is the bar, the nose, the bow, the rails. ` +
@@ -849,8 +842,8 @@ singleBlock()
       : (process.env.BEAT_BLOCKS !== "0"
       ? `Return your beats one per line, each stamped "[Ns] …" in WHOLE seconds: ` +
         `${counts.length > 1 ? `choose a beat count from {${counts.join(", ")}} — whichever this material wants; different materials deserve different counts` : `exactly ${counts[0]} beats`}, ` +
-        `first beat at [0s], stamps ascending, all under ${secs}s. A BEAT LASTS AS LONG AS ITS WEIGHT (owner 2026-09-11: "we seem to always produce ` +
-        `equidistance which is too mechanical"): the gap to the next stamp is the beat's screen time, so the stamps fall where the events fall, never on ` +
+        `first beat at [0s], stamps ascending, all under ${secs}s. A BEAT LASTS AS LONG AS ITS WEIGHT` +
+        `: the gap to the next stamp is the beat's screen time, so the stamps fall where the events fall, never on ` +
         `a grid — a transition takes a second, a thing looked at two, a held moment two, and the climax as long as its register wants: ridden out when it ` +
         `is spectacle, quick when it is a wink or an ironic turn; two beats may land a second apart and the next wait three. ` +
         // ⚠ A BEAT IS A FEELING, NOT AN ACTION COUNTED (owner 2026-08-21, on the first remix pair): «beats
@@ -869,7 +862,7 @@ singleBlock()
         // prose changes whether the photograph carries the setting, so the rule belongs in both.
         `\u26a0 DO NOT DESCRIBE THE SCENE OR SETTING. Describing the world makes the model DIFFUSE ITS OWN ` +
         `environment instead of working with the photograph — it "recreates" the place rather than inheriting it. ` +
-        `Write NOTHING about the location, weather, lighting, time of day, surfaces or background; the reference ` +
+        `Beat zero names the place the photograph shows; after it, write NOTHING about the location, weather, lighting, time of day, surfaces or background; the reference ` +
         `already carries all of it. \u26a0 THIS INCLUDES A TIME OR LIGHTING CUE CARRIED OVER FROM THE USER'S ` +
         `REQUEST: if the request says a time of day and the photograph does not show it, the photograph WINS — ` +
         `a time cue in a beat fights the plate and the model resolves it by regenerating the whole place. Name ` +
@@ -910,7 +903,7 @@ export const hardConstraints = () => (
     `• NEVER mention how BIG, SMALL, NEAR or FAR the subject is, and never say it grows, shrinks or approaches.\n` +
     (rideFromEnv()?.family === "dark ride" ? `• CAMERA ON THIS DARK RIDE — the rider's own handheld camera: it may peer around, turning to look at what the ride passes and coming back to the way ahead (see THE RIDE); the ladder below otherwise stands — never a zoom, push-in, crane, dolly or reframe.\n` : "") +
     (rideFromEnv()?.kind === "ridden" ? `• DIALOGUE ON THIS RIDE — "Ride narrator" (the ride's own speakers) and a speaking animatronic named as its figure are established speakers of the form; they need no listener in frame.\n` : "") +
-    `• CAMERA — FLY ON THE WALL. Owner doctrine 2026-07-29/30: the camera is a BYSTANDER that happened to be\n` +
+    `• CAMERA — FLY ON THE WALL. the camera is a BYSTANDER that happened to be\n` +
     ` there. It does not reveal, follow drama, chase a subject, or reframe for effect. If something enters the\n` +
     ` frame, that is ENOUGH — you do NOT tilt or pan to find it. A sled falling out of the sky is simply VISIBLE\n` +
     ` falling; do not write 'the camera tilts up to reveal' it. THE ONLY thing that may break a fixed camera is a\n` +
@@ -919,8 +912,8 @@ export const hardConstraints = () => (
     ` photograph was shot; the subject moves WITHIN the frame and the frame itself never moves. Say nothing\n` +
     ` about the camera at all and it stays fixed, which is what almost every scene should do.\n` +
     ` FIRST FALLBACK, only when the action inherently TRAVELS out of frame (a vehicle driving off, an animal\n` +
-    ` running past): the camera may TRACK the subject to keep it in frame — and NOTHING else. Write exactly\n` +
-    ` "the camera tracks with it". NEVER zoom, push in, pull out, crane, tilt or change the framing size.\n` +
+    ` running past): write the travel itself and never the camera — no word about the camera following it.\n` +
+    ` NEVER zoom, push in, pull out, crane, tilt or change the framing size.\n` +
     ` LAST RESORT, only if the situation genuinely cannot be told otherwise: slight additional steer/movement.\n` +
     ` Prefer keeping the action INSIDE the existing frame over moving the camera — rewrite the action so it\n` +
     ` happens in place (a cart rolls a short way and stops) rather than travelling out of shot.\n` +
@@ -931,14 +924,32 @@ export const hardConstraints = () => (
     `Return ONLY the beat lines, nothing else.\n\n`
 );
 
-export const finalChecklist = (userPrompt) => (
-`BEFORE YOU ANSWER, CHECK ALL FOUR:\n` +
-    `1. EVERY VERB from the request appears. Request: "${userPrompt}". If it names entering, performing AND waking, ` +
+// ⭐⭐ THE FEEDBACK GOES LAST, WITH THE DRAFT IT IS ABOUT (engine review 2026-09-24, D2). It sat mid-contract (48% of the way through a plain contract, 66% of
+// a ride's), framed every finding as the cast ledger's ("move each violation to its declared beat"), and never showed the writer its own draft: those
+// re-asks landed 0 of 7, while the retry that carried its draft fixed 7 of 10. The draft now rides with the notes, each rule in its own words, after all else.
+export const feedbackLaw = () => {
+  const notes = [
+    process.env.VALIDATOR_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT BROKE THESE RULES: ${process.env.VALIDATOR_FEEDBACK}. Write the beats again so that every one of them holds.` : "",
+    // NAME VIOLATIONS ARE NOT TIMING VIOLATIONS (owner 2026-09-08, job bd19152d: framed as ledger feedback, the writer MOVED the room's
+    // name to another beat instead of removing it). A named place or figure is REMOVED — the scene stays, described by its things.
+    process.env.NAME_FEEDBACK ? `\u26a0\u26a0 YOUR PREVIOUS DRAFT NAMED WHAT MUST NOT BE NAMED: ${process.env.NAME_FEEDBACK}. Rewrite the SAME beats at the SAME stamps and REMOVE each such name: a place of the world is never named \u2014 the ride's own scene stays, described only by the things it carries ("the next scene, its walls hung with tiered black chandeliers"); a named figure is written by build, clothing and posture only. Never replace a name with another name of the same world.` : "",
+    // POLICY REPAIR (owner 2026-09-08): the video provider refused the previous draft on its content policy. The run says what to
+    // change; the writer keeps the story, the stops and the stamps and rewrites only what the note names.
+    process.env.POLICY_FEEDBACK ? `\u26a0\u26a0 THE VIDEO PROVIDER REFUSED YOUR PREVIOUS DRAFT ON ITS CONTENT POLICY. Keep the same story, the same places in the same order and the same timestamps, and rewrite so that: ${process.env.POLICY_FEEDBACK} Return the full beat list and the dialogue block.` : "",
+  ].filter(Boolean);
+  if (!notes.length) return "";
+  const prev = String(process.env.PREVIOUS_DRAFT || "").trim();
+  return `\n${prev ? `YOUR PREVIOUS DRAFT:\n${prev}\n\n` : ""}${notes.join("\n")}\n${prev ? "Keep everything that draft got right; change only what these notes name.\n" : ""}`;
+};
+// THE CHECKLIST QUOTES NO REQUEST AND CONTRADICTS NO LAW (engine review 2026-09-24, D3): item 1 re-quoted the raw request — the leak the owner took out of
+// the corrective pass on 09-23 (names came back 4/10, then 0/10), and ee5535ea's [0s] line was that request; "evenly spaced" stood against the no-grid law;
+// "every subject exists in beat [0s], including anything the photograph does not show" stood against the arrival and reveal rules. The header keeps the request.
+export const finalChecklist = (_userPrompt) => (
+`BEFORE YOU ANSWER, CHECK ALL THREE:\n` +
+    `1. EVERY VERB from the request above appears. If it names entering, performing AND waking, ` +
     `all three are in the beats. Dropping one is a failure, not a simplification.\n` +
-    (singleBlock() ? `2. The single [0s] block covers the FULL ${process.env.BEAT_DURATION || "4"} SECONDS in order: every photographed place is entered, and the last sentence is where the take ends.\n` : `2. The beats SPAN THE FULL ${process.env.BEAT_DURATION || "4"} SECONDS, evenly spaced, last beat near the end.\n`) +
-    `3. EVERY subject exists in beat [0s], including anything the photograph does not show. Nothing appears for the ` +
-    `first time later.\n` +
-    `4. NO camera words anywhere.\n`
+    (singleBlock() ? `2. The single [0s] block covers the FULL ${process.env.BEAT_DURATION || "4"} SECONDS in order: every photographed place is entered, and the last sentence is where the take ends.\n` : `2. The beats SPAN THE FULL ${process.env.BEAT_DURATION || "4"} SECONDS, the last beat near the end.\n`) +
+    `3. NO camera words anywhere.\n`
 );
 
 // ── STAMPED-OUTPUT MACHINERY (joined the export set 2026-08-14: the owner's hybrid fold — stamps + Cut-N +

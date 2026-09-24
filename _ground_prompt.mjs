@@ -21,7 +21,7 @@ import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, 
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
-import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
+import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist, feedbackLaw } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 // THE WRITER IS THE PROSE MODEL (owner 2026-09-14: "the prose model has always been a better writer than the fast model, which is why we had it"). The world-build writer
 // has written on it since 08-11; this single-take writer never did, and on 09-07 the ride was routed here for the seat plate, so the ride's
 // writer changed model with the route and nobody decided it. Now the draft and every rewrite below write on the prose model; the intent extraction,
@@ -76,7 +76,7 @@ const _intentKeys = pinKeys("intent", { promptSha: _promptSha });
 const _intentPinned = PIN_ON ? pinHit(_pin, "intent", _intentKeys) : null;
 if (_intentPinned) console.log("  \u25c7 the request reading is this job's own — the words have not changed, so it is not read again");
 let intent = _intentPinned || await providerJson([textPart(
-  `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff (validated failure 2026-07-31)","secondary":"any OTHER creatures/props to CONJURE INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}".${["worn", "driven"].includes(String(process.env.APPARATUS_KIND || "")) ? " \u26a0 THE CAMERA IS WORN OR DRIVEN (a helmet cam, a bodycam, a dashcam): the wearer or driver is not in the video and is nobody's subject, and the camera's own motion — riding, driving, walking — is NEVER the target's action. The target's action is what IT does where the camera finds it: a bear on the switchback stands, turns or moves on the switchback as the camera approaches; it does not ride." : ""}`
+  `Return ONLY JSON {"target":"the single main creature/subject the video should feature, as a plain visual noun phrase e.g. 'a large brown bear'","action":"EVERY action the request names, in order, as one phrase - NOT a summary. The request is a SEQUENCE and each verb is a beat: 'enter a room and perform a choir, waking her up' has THREE (entering, performing, waking) and all three must survive. Compressing it to 'singing in a choir' DELETED the entry and the payoff","secondary":"any OTHER creatures/props to CONJURE INTO the scene, else ''. ⚠ THE PLACE ITSELF IS NEVER LISTED HERE. This field names only what must be ADDED to a photograph that already exists; the location and its fixed furnishings are supplied BY THAT PHOTOGRAPH, so they are not things to conjure. If the request names a place, that place belongs in the action, never in this field."}. Prompt: "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}".${["worn", "driven"].includes(String(process.env.APPARATUS_KIND || "")) ? " \u26a0 THE CAMERA IS WORN OR DRIVEN (a helmet cam, a bodycam, a dashcam): the wearer or driver is not in the video and is nobody's subject, and the camera's own motion — riding, driving, walking — is NEVER the target's action. The target's action is what IT does where the camera finds it: a bear on the switchback stands, turns or moves on the switchback as the camera approaches; it does not ride." : ""}`
 )], { maxTokens: 2400, temperature: 0.2, tag: "intent" });   // budget bounds, never spends: the fast model reasons inside max_tokens (see WRITER BUDGETS below)
 if (!_intentPinned) _keepRead("intent", _intentKeys, intent);   // pinned RAW, before the seat-cast cut below re-applies itself on every pass
 // ⭐⭐ ENTITY NAMING IS NEVER RE-DERIVED FROM PROMPT TEXT — RAW OR REWRITE (owner 2026-08-29). The raw
@@ -224,6 +224,10 @@ if (seen.standin_is_target && !standinIsABody(seen.standin)) {
 }
 let ACCEPTED_N = Math.max(...COUNTS);
 let writerInstruction = "";   // the writer contract, captured at _dump so the payoff repair can re-ask with it
+// ⭐⭐ A RE-ASK CARRIES THE DRAFT IT IS ABOUT (engine review 2026-09-24, D2). The fine-detail, anchor and payoff re-asks said "rewrite the SAME beats …
+// keeping every earlier beat exactly" and never sent the beats: providerText sends one message, so the model wrote a new take from the contract, and
+// those re-asks landed 0 of 7 in the records while the retry that carried its draft fixed 7 of 10. The beats in hand now ride above the note.
+const draftFor = (text) => { const b = String(text || "").split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)); return b.length ? `\n\nYOUR PREVIOUS ATTEMPT (the beats to fix):\n${b.join("\n")}` : ""; };
 // ⭐⭐ THE STAND-IN LAW IS REMOVED (owner 2026-09-22: "the standin law is stale, so it and anything bouncing off of it should be
 // corrected. it should be removed"). It was built when a take was one instruction over one photograph and a creature took a human's
 // place in it. The engine grounds differently now: the plate is frame zero, figures are CONJURED into it, and what the photograph
@@ -386,7 +390,9 @@ if (BEAT_STYLE !== "template") {
     // FINAL CHECKLIST, LAST ON PURPOSE. This instruction passed 10,000 characters of accumulated doctrine and new
     // rules buried mid-text stopped landing: a 7-second clip kept returning beats that stopped at [4s], and the
     // payoff verb kept vanishing, though both were stated above. Same law as the judges - ISOLATE WHAT YOU GATE ON.
-    finalChecklist(requestForLaws(userPrompt)) );
+    finalChecklist(requestForLaws(userPrompt)) +
+    // THE NOTES ON A RE-ASK COME LAST, WITH THE DRAFT THEY ARE ABOUT (engine review 2026-09-24, D2) — empty on a first pass
+    feedbackLaw() );
   // ⚠ WRITER BUDGETS (measured 2026-09-07, job 32fc6c35): the fast model counts its REASONING against max_tokens, so a
   // 700-token budget was consumed before the first beat line; provider-llm then retried at 1400 → 2800 → 5600. The ledger
   // shows 26 physical calls for six logical steps and $… — the same writer at the budgets below is one call per step.
@@ -652,7 +658,7 @@ if (BEAT_STYLE !== "template") {
     console.warn(`[GUARD] beats: post-cut beat named fine detail (${hit.join(" · ")}) — re-asking once (doctrine drifting; fix the root).`);
     try {
       const { text: t2 } = await providerText(
-        instruction +
+        instruction + draftFor(beatLine) +
         `\n\n⚠ YOUR PREVIOUS ATTEMPT BROKE ONE RULE AND IS OTHERWISE FINE. In a beat AFTER the cut you wrote ` +
         `${hit.map((h) => `"${h}"`).join(" and ")}. After a cut there is no photograph behind the camera, so a beat ` +
         `pitched at something that small can only be shown by moving CLOSER, and the model then invents that ` +
@@ -777,7 +783,7 @@ try {
       console.warn(`  [anchor] beat zero states neither position nor facing — re-asking once so the subject is placed in the frame.`);
       try {
         const { text: t4 } = await providerText(
-          writerInstruction +
+          writerInstruction + draftFor(beatLine) +
           `\n\n⚠ YOUR PREVIOUS ATTEMPT IS FINE EXCEPT FOR ITS OPENING BEAT, WHICH DOES NOT PLACE THE SUBJECT. ` +
           `Your opening beat named the place in general but said nothing about WHERE in the picture the subject is ` +
           `or WHICH WAY it faces, and a first frame with neither drifts. Rewrite the SAME beats at the SAME ` +
@@ -828,7 +834,7 @@ try {
     console.warn(`  [payoff] last beat only COMPLETES the request — re-asking once for a beat that ESCALATES.`);
     try {
       const { text: t3 } = await providerText(
-        writerInstruction +
+        writerInstruction + draftFor(beatLine) +
         `\n\n⚠ YOUR PREVIOUS ATTEMPT IS FINE EXCEPT FOR ITS LAST BEAT, WHICH ONLY COMPLETES THE REQUEST. ` +
         `It delivers what the request already described, or the obvious next step of the action, so the clip ` +
         `stops rather than lands. Rewrite the SAME beats at the SAME timestamps, keeping every earlier beat ` +

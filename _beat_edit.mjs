@@ -18,11 +18,16 @@
 // take is REFUSED here and the run falls back to the re-ask it would have made anyway.
 import { providerText } from "./provider-llm.mjs";
 
-/** The findings an edit can fix: the wrong WORDS are on the page, the staging is sound. Everything else is the writer's to think again. */
-export const EDIT_RULES = new Set(["ip-name", "source-citation", "world-room", "plate-thing", "meta"]);
+/** The findings that are wrong WORDS on the page — the staging is sound. A name the maker used only for a manner is one (owner 2026-09-24, R6). */
+export const EDIT_RULES = new Set(["ip-name", "source-citation", "world-room", "plate-thing", "meta", "reference-name"]);
+/** THE TAKE ITSELF (owner 2026-09-22: "a rewrite should only be done … for what is required, such as timestamps needing alterations and hence actions
+ *  accordingly"). A fault of the staging or the timing is the writer's to think again; every other finding is a few words, edited in place. */
+export const STORY_RULES = new Set(["apparatus", "frame-zero", "unphotographed-cut", "early", "world-leak", "cut-resume", "prop-from-nowhere", "subject-missing-in-cut", "unparseable"]);
+const TIMING_FLAW = /the climax opens at|the beats sit on a grid|a line begins in the take's last second|a line outruns its beat|a riding photograph is never arrived at/;
+export const needsRewrite = (x) => STORY_RULES.has(x?.rule) || (x?.rule === "ride" && TIMING_FLAW.test(String(x?.figure || "")));
 
-/** True when EVERY finding in hand is a words fault (a mixed list is the writer's: the staging has to change anyway). */
-export const editable = (list) => Array.isArray(list) && list.length > 0 && list.every((x) => EDIT_RULES.has(x?.rule));
+/** True when EVERY finding in hand can be edited (a list with a staging or timing fault is the writer's: the take has to change anyway). */
+export const editable = (list) => Array.isArray(list) && list.length > 0 && list.every((x) => x && x.rule && !needsRewrite(x));
 
 const _esc = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const _stamps = (t) => (String(t || "").match(/^[ \t>*]*\[\d+(?:\.\d+)?s\]/gm) || []).map((s) => s.trim());
@@ -45,22 +50,27 @@ export function denameMap(modes = [], phraseOf = (m) => m?.guise || m?.prose || 
 // ⭐⭐ NO RAW REQUEST RIDES AN EDIT (owner 2026-09-23): an edit that exists to take a name out was handed the maker's words with the name in them
 // ("lil caesars mascot …"). Every action already stays in its beat by the rules above; the request adds nothing but the names.
 export function editInstruction(violations = [], modes = []) {
-  const faults = (Array.isArray(violations) ? violations : []).map((v) => `- ${String(v?.figure || "").replace(/\s+/g, " ").trim()}${Number.isFinite(Number(v?.at)) ? ` [${Number(v.at)}s]` : ""}`);
+  const list = Array.isArray(violations) ? violations : [];
+  const line = (v) => `- ${String(v?.figure || "").replace(/\s+/g, " ").trim()}${Number.isFinite(Number(v?.at)) ? ` [${Number(v.at)}s]` : ""}`;
+  const faults = list.filter((v) => EDIT_RULES.has(v?.rule)).map(line), soft = list.filter((v) => !EDIT_RULES.has(v?.rule)).map(line);
+  const manner = list.some((v) => v?.rule === "reference-name");
   const dn = denameMap(modes);
   const swaps = dn.filter((d) => d.mode === "dename" && d.phrase).map((d) => `- ${d.names.map((n) => `"${n}"`).join(" / ")} → write the figure as: ${d.phrase}`);
   const gone = dn.filter((d) => d.mode === "omit").map((d) => `- ${d.names.map((n) => `"${n}"`).join(" / ")} → this figure does not appear: take it out of the line it is in and leave the rest of that line standing`);
   return [
     `EDIT these beats. This is an EDIT, not a rewrite: the story, the staging and the timing are RIGHT and stay exactly as they are.`,
-    `Change ONLY the words listed below. Keep every beat, keep every [Ns] stamp exactly as written, keep the same number of beats in the same order,`,
-    `keep every action, every placement and every figure doing what it does, and keep the Dialogue, Sound, Set and Telling lines as they are except where a word below sits in one.`,
-    `Do NOT add or remove a beat. Do NOT change a stamp. Do NOT re-stage, re-order, re-time or improve anything. Do NOT rewrite a sentence that has no listed word in it — copy it through unchanged.`,
+    `Change ONLY ${soft.length ? "what is" : "the words"} listed below. Keep every beat, keep every [Ns] stamp exactly as written, keep the same number of beats in the same order,`,
+    `keep every action, every placement and every figure doing what it does, and keep the Dialogue, Sound, Set and Telling lines as they are except where ${soft.length ? "the list below reaches" : "a word below sits in"} one.`,
+    `Do NOT add or remove a beat. Do NOT change a stamp. Do NOT re-stage, re-order, re-time or improve anything. Do NOT rewrite a sentence ${soft.length ? "the list below does not reach" : "that has no listed word in it"} — copy it through unchanged.`,
     ``,
-    `THE WORDS THAT MUST GO:`,
-    ...faults,
+    ...(faults.length ? [`THE WORDS THAT MUST GO:`, ...faults] : []),
     ...(swaps.length ? [``, `WRITE THESE INSTEAD (the figure stays in the frame doing exactly what it does — only its name goes, replaced by how it looks):`, ...swaps] : []),
     ...(gone.length ? [``, ...gone] : []),
+    // A SOFT FINDING IS EDITED, NEVER REWRITTEN (owner 2026-09-22; engine review 2026-09-24, D2): the fix is the fewest words in the beat the finding names
+    ...(soft.length ? [...(faults.length ? [``] : []), `FIX THESE, each with the fewest words that fix it, in the beat it names — a clause taken out, a word changed, a few words or one Dialogue line added — never by adding, moving or re-timing a beat:`, ...soft] : []),
     ``,
-    `A name is free INSIDE a spoken line in the Dialogue block — a speaker may say it; a beat and a speaker label may not.`,
+    ...(manner ? [`A name the maker used only for a manner is never written, not even inside a spoken line: write that manner in plain words of your own where the name stood.`] : []),
+    `${manner ? "Any other name" : "A name"} is free INSIDE a spoken line in the Dialogue block — a speaker may say it; a beat and a speaker label may not.`,
     `Return ONLY the edited lines — the whole list, every beat and every block, nothing else, no commentary.`,
   ].filter((x) => x !== undefined).join("\n");
 }
