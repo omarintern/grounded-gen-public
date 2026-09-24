@@ -113,6 +113,44 @@ export async function judgeChrome(filePath, opts = {}, { judge = providerJson } 
   }
 }
 
+// ── THE PLACE, ASKED FIRST (2026-09-24, engine review B3) ───────────────────────────────────────────────────────────────────────────────────
+// Scene-fit asked "is this the scene's PLACE, and does it offer the position the scene puts its subject in?" LAST, in the adaptive loop, of at most
+// six finalists that had already cleared about ten judges: four census runs (8a05cdad, 7f65ce11, c746d65b, d722968a) spent their hunts on photos
+// it then refused (a desert motel for "the hood", a European village street, Rocky Mountain tundra for "Everest-like", a daytime steel coaster for an
+// indoor 1930s dark ride), and when the improviser's words drifted the early judges drifted with them while only this one held the scene. The hunt
+// now asks it of every kill-shot survivor right after the chrome crop (the fast model at low thinking: 17 of 17 on fixed frames, B0); a wrong place or a
+// wrong slot ends the frame there, and the loop reads the saved verdict instead of asking again. The question is the adaptive loop's, moved here whole.
+// ⚠⚠ THE SUBJECT IS NAMED SO IT CAN BE DISREGARDED (owner 2026-08-20, penguin run da0c677e). The swap
+// licence above already said "judge the PLACE, NOT who is in it" — and the judge still scored genuine
+// supermarket fish counters fit 0.00 with "wrong place and context for a penguin wearing a paper hat…
+// an inappropriate and morbid context… unhygienic", because FIT_TARGET carries the frame-zero ACTION
+// and the conjured subject rides inside it: content beat the instruction, as it always measures. Two
+// laws, both the owner's: a photo is NEVER the wrong place because the CONJURED subject is absent or
+// implausible in it — "it can just get world-ref without character" (rung-0's bonus is untouched: a
+// real actor already present still scores); and PROPRIETY IS NOT AN AXIS — "gating on inappropriateness
+// is wrong for this": hygiene, morbidity, taste, suitability-for-the-subject are the killshot's
+// business where they are anyone's, never scene-fit's.
+/** The place question for one photograph: `target` is what the scene's place is judged against; `opening` when the story moves on by a cut
+ *  (only the opening's place is asked); `conjured` names a subject that will never be in any photograph. Pure. */
+export const sceneFitQuestion = (target, { opening = false, conjured = "" } = {}) =>
+  `Return ONLY JSON {"fits":0..1,"why":"short","placement":"short","placement_matches":true|false}. fits = does this REAL photo depict the PLACE / CONTEXT of this scene closely enough to be the base where a subject is later dropped in? The scene's figures are ADDED to this place and anyone already in it is scenery, so judge the PLACE + context, NOT who/what is currently in it.${conjured ? ` ⚠ The scene's subject (${JSON.stringify(conjured)}) is CONJURED — it will never appear in any photograph, so a photo is NEVER the wrong place because that subject is absent from it, implausible in it, or seems unsuited to it; a real one already present is simply a bonus.` : ""} ⚠ APPROPRIATENESS IS NOT AN AXIS of this question: hygiene, morbidity, taste and suitability-for-the-subject are irrelevant here — score PLACE identity only. Scene: "${target}". 1.0 = the right place/context; 0.0 = wrong place (e.g. a custom party van when the scene needs a delivery/driving van cab).` +
+  ` ⚠ SEPARATELY, ANSWER WHERE THE SUBJECT GOES. The subject is placed at the spot in this photo where the scene happens. placement = name the surface or space that position sits on or in, as THIS photo shows it ("standing on the counter", "printed on the open page", "in the water", "on the stage", "behind the desk"). placement_matches = does the scene put its subject in THAT position? Judge the POSITION ONLY, never the action: the scene's verb happens later in the video and is NOT required to be visible here, so do not lower this for a subject that is not yet doing what the scene describes. WHY THIS IS ASKED APART FROM fits: a photo can depict exactly the right place and still offer only a position the scene never uses - the right room, but the body standing on the floor when the scene puts it on the page, on the screen, or in the water. Those are DIFFERENT SLOTS, and the subject is placed into one position; it cannot be moved from one slot to another, so the wrong slot renders the subject in the wrong place and often in the wrong PLANE (a creature standing in the room where flat artwork on a surface was called for). If the scene names no particular slot beyond the place itself, placement_matches = true.` +
+  (opening
+    ? ` ⚠ JUDGE THE OPENING ONLY. This story MOVES to another place later, and it gets there by a CUT, not by this camera. Score ONLY whether this photo is the right place for the opening described above. A location the story visits AFTERWARDS being absent from this frame is NOT a mismatch — it is the premise. Do not lower the score for anything the story only reaches later.`
+    : ``);
+/** The place verdict for one photograph ({fits, why, placement, placement_matches}, as the model answered), or null when it could not be read.
+ *  A budget stop and an outage go up: neither is a verdict. */
+export async function judgeSceneFit(filePath, target, opts = {}, { judge = providerJson } = {}) {
+  const px = Number(opts.viewPx ?? process.env.VIEW_PX ?? 512);
+  try {
+    return await judge([textPart(sceneFitQuestion(target, opts)), imagePart("image/jpeg", await smallViewAt(filePath, px))],
+      { maxTokens: 3000, temperature: 0.1, reasoning: "low", tag: "place" }) ?? null;
+  } catch (e) {
+    if (e?.ledgerCap || e?.name === "ProviderInfraError") throw e;
+    return null;
+  }
+}
+
 // ── WHERE THE CAMERA STOOD, ASKED ALONE (2026-09-23) ──────────────────────────────────────────────────────
 // Only where an inside was asked for (see _source_scene): a car's inside photographed through its windshield from outside answers a crowded rubric
 // as an inside, and this question alone as what it is. → true | false | null (no answer, which never vetoes). A spend cap still stops the run.
