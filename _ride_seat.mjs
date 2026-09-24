@@ -22,7 +22,6 @@ import { writeContactSheet, sheetLegend } from "./_contact_sheet.mjs";
 import { judgeSeat, seatVerdict, rankSeats, seatLabel, diffuseSeat, SEAT_BAND } from "./_judge_seat.mjs";
 const SEAT_BAND_LOG = SEAT_BAND;
 import { rideFromEnv, craftVehicle } from "./_ride.mjs";
-import { spent } from "./_spend.mjs";   // the hunt negotiates its own budget, exactly as the adaptive sourcer does
 import { installExitHandlers } from "./_exit.mjs";   // one exit contract for every process (2026-09-24)
 
 installExitHandlers("the seat hunt");   // the one contract (_exit.mjs, 2026-09-24): 4 budget, 5 outage, 1 bug
@@ -83,7 +82,7 @@ async function collect(query, ri) {
   // conforming rows apiece. Set per query, not once, because the figure moves as the hunt spends. Guarded inline and
   // failing to "Infinity" exactly as the sourcer does: no cap set or spend unreadable means no signal, NEVER "0.00",
   // which would silence the paid tier altogether.
-  process.env.SCRAPE_USD_LEFT = (() => { try { const cap = Number(process.env.SPEND_CAP_USD || 0); if (!(cap > 0)) return "Infinity"; return Math.max(0, cap - (Number(spent().total) || 0)).toFixed(2); } catch { return "Infinity"; } })();
+  // (2026-09-24, E3: scrape.mjs reads the hunt's share less the job's spend at every call now; the per-query snapshot that stood here is gone)
   let raw = [];
   try { raw = await scrapeImages(query, Math.ceil(SCRAPE_N * OVERASK)); }
   catch (e) { if (e?.ledgerCap) throw e; if (e instanceof IndexInfraError || e?.name === "IndexInfraError") { console.log(`  ✗ the route is unavailable (${String(e.message).slice(0, 80)})`); throw e; } console.log(`  ✗ scrape failed (${String(e?.message || e).slice(0, 80)})`); return []; }
