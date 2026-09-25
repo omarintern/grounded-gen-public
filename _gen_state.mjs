@@ -29,7 +29,7 @@ export function refRole(file, order) {
 }
 
 /** The core record, written by the gen at submission time — everything the child alone knows. */
-export function assembleGenState({ id, slug, prompt_text, refs, aspect, duration, resolution, endpoint, queue_id, engine = "grounded-1.0" }) {
+export function assembleGenState({ id, slug, prompt_text, refs, refNames = {}, aspect, duration, resolution, endpoint, queue_id, engine = "grounded-1.0" }) {
   return {
     id: String(id || slug || ""),
     engine,
@@ -45,7 +45,8 @@ export function assembleGenState({ id, slug, prompt_text, refs, aspect, duration
         let filename = String(file).split("/").pop() || `ref${order}.jpg`;
         if (seen.has(filename)) filename = `${order}_${filename}`;
         seen.add(filename);
-        return { order, file: String(file), filename, role: refRole(file, order) };
+        const name = refNames && typeof refNames[String(file)] === "string" ? refNames[String(file)] : "";   // the character a photo is of (2026-09-25)
+        return { order, file: String(file), filename, role: refRole(file, order), ...(name ? { name } : {}) };
       });
     })(),
     aspect: String(aspect || ""),

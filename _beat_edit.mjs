@@ -17,7 +17,7 @@
 // the video. The guard below is what makes it an EDIT and not a rewrite in disguise — an answer that re-times, re-counts or re-stages the
 // take is REFUSED here and the run falls back to the re-ask it would have made anyway.
 import { providerText } from "./provider-llm.mjs";
-import { normalizeDraftLayout, scriptParts } from "./_gate_rules.mjs";   // the one reader of a script's parts (2026-09-25)
+import { normalizeDraftLayout, scriptParts, isSpokenLine } from "./_gate_rules.mjs";   // the one reader of a script's parts (2026-09-25)
 
 /** The findings that are wrong WORDS on the page — the staging is sound. A name the maker used only for a manner is one (owner 2026-09-24, R6). */
 export const EDIT_RULES = new Set(["ip-name", "source-citation", "world-room", "plate-thing", "meta", "reference-name"]);
@@ -117,7 +117,7 @@ export function acceptWhole(before, answer, opts) {
   const hi = lines.findIndex((l) => /^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l)), stamped = scriptParts(before).beats.length > 0;
   const text = lines.filter((l, i) => {
     if (!l.trim() || /^\s*\**\s*(?:Dialogue|Sound|Set|Telling|Music)\s*\**\s*[:\u2014\u2013-]/i.test(l)) return true;
-    if (hi >= 0 && i > hi) return l.includes(":");
+    if (hi >= 0 && i > hi) return isSpokenLine(l);   // a remark ("Note: …") is no spoken line
     return !stamped || /^\s*\[\d+(?:\.\d+)?s\]/.test(l);
   }).join("\n").trim();
   const v = editAccepted(before, text, opts);
@@ -138,7 +138,9 @@ export async function editBeats(text, { violations = [], modes = [], model = nul
   const ask = call || ((prompt) => providerText(prompt, { maxTokens: 12000, temperature: 0.1, model: model || undefined, reasoning: "low", tag: "writer-retry" }));
   const out = await ask(`${instruction}\n\n${before}`);
   const after = String(out?.text || "").trim();
-  const verdict = editAccepted(before, after);
+  // ⭐ ONE ACCEPTANCE FOR EVERY EDIT (2026-09-25, the reviewer's review of the follow-up): this checked the raw answer, so a preface and a code fence around it
+  // were accepted and shipped as the script. acceptWhole lays the answer out and drops what was wrapped around it, then applies the same guard.
+  const verdict = acceptWhole(before, after);
   if (!verdict.ok) { log(`  ⊘ the edit was refused: ${verdict.why} — the writer is re-asked instead`); return null; }
-  return after.endsWith("\n") ? after : `${after}\n`;
+  return `${verdict.text}\n`;
 }

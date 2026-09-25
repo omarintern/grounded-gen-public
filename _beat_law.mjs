@@ -200,8 +200,8 @@ export const vocalizationClause = () =>
 export const voiceClause = () =>
   `⚠ A FIGURE'S VOICE IS WRITTEN IN THE DIALOGUE BLOCK, AND ONLY THERE. Every line or sound a figure makes with its voice — words, ` +
   `a bark, a roar, a cry, a laugh, a shout — whether the work assigned it or you are giving it one, is written once, in the final ` +
-  `"Dialogue:" block, under that figure's own label and at the second it is heard. The beat at that second shows the figure MAKING it ` +
-  `— the jaw dropping open, the chest heaving, the head thrown back — in words of its own. The beats carry what is seen, the block ` +
+  `"Dialogue:" block, under that figure's own label and at the second it is heard. The beat at that second shows the figure MAKING it, ` +
+  `in words of its own. The beats carry what is seen, the block ` +   // (its three body examples went 2026-09-25: case law, and a cut cannot ground a limb — both reviews of the follow-up)
   `carries what is heard, and the second they share is what joins them. ` +
   // ⭐ THE LINE'S SHAPE, TOLD TO EVERY WRITER (2026-09-25, the reviewer's review of job 7c2de649): only the cuts paragraph said what a line looks like, a one-shot
   // writer wrote "[8s] The man …: "ME LIKEY!"" (stamp first, no manner), and the laws below it read only the label-first shape. Moved here from there.

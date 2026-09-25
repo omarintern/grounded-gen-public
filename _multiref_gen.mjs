@@ -219,7 +219,8 @@ for (let i = 0; i < POLL_N; i++) {
     // runs. The server enriches with the plan digest at close; the delivery hook archives to the app store.
     try {
       const { assembleGenState } = await import("./_gen_state.mjs");
-      const st = assembleGenState({ id: process.env.LEDGER_JOB || slug, slug, prompt_text: promptText, refs, aspect, duration, resolution: RESOLUTION, endpoint: ENDPOINT, queue_id: qid });
+      const refNames = (() => { try { const m = JSON.parse(process.env.REF_NAMES || "{}"); return m && typeof m === "object" ? m : {}; } catch { return {}; } })();   // which photo is whose (2026-09-25)
+      const st = assembleGenState({ id: process.env.LEDGER_JOB || slug, slug, prompt_text: promptText, refs, refNames, aspect, duration, resolution: RESOLUTION, endpoint: ENDPOINT, queue_id: qid });
       const dir = join(HERE, "out", "_state");
       mkdirSync(dir, { recursive: true });
       // ⚠ REF BYTES ARE COPIED, NEVER POINTED AT (the cinderella clobber, 2026-08-23): out/_aspect files are
