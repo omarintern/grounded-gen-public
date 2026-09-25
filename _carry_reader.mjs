@@ -13,10 +13,10 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { providerJson, textPart, imagePart } from "./provider-llm.mjs";
-import { castFrameReadPrompt, handleCarriesName } from "./_cast_frame.mjs";
+import { castFrameReadPrompt, handleCarriesName, CARRY_MAX_REFS } from "./_cast_frame.mjs";   // the frame limit is ONE number, kept with the frames (2026-09-25)
 
 export const CARRY_FRAMES = 6;      // the strip's frames: one per shot first, the rest spread across the take
-export const CARRY_MAX_REFS = 2;    // at most two of the parent's frames ride the gen (the bag also carries the plate and the figures)
+export { CARRY_MAX_REFS };   // at most two of the parent's frames ride the gen, outside the cap (_cast_frame.mjs holds the number)
 
 /** The cut points ffmpeg's scene score finds in a video, in seconds; [] when it finds none or cannot run (the caller spreads frames evenly). */
 export function sceneCuts(videoPath, { threshold = 0.35 } = {}) {

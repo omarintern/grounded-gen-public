@@ -45,10 +45,11 @@ export function assembleGenState({ id, slug, prompt_text, refs, refNames = [], a
         let filename = String(file).split("/").pop() || `ref${order}.jpg`;
         if (seen.has(filename)) filename = `${order}_${filename}`;
         seen.add(filename);
-        // the characters this picture shows, by its place in the bag (2026-09-25: a photo shows one, a parent's frame may show two; a path is no key, the gen
-        // re-encodes some files)
-        const names = Array.isArray(refNames) && Array.isArray(refNames[order]) ? refNames[order].filter((n) => typeof n === "string" && n.trim()) : [];
-        return { order, file: String(file), filename, role: refRole(file, order), ...(names.length ? { names } : {}) };
+        // whom this picture shows, by its place in the bag (2026-09-25: a photo shows one, a parent's frame may show two, and is marked a frame so a later
+        // remix never takes it for a character's own photo; a path is no key, the gen re-encodes some files)
+        const who = Array.isArray(refNames) ? refNames[order] : null;
+        const names = (Array.isArray(who) ? who : Array.isArray(who?.names) ? who.names : []).filter((n) => typeof n === "string" && n.trim());
+        return { order, file: String(file), filename, role: refRole(file, order), ...(names.length ? { names } : {}), ...(who?.frame === true ? { frame: true } : {}) };
       });
     })(),
     aspect: String(aspect || ""),

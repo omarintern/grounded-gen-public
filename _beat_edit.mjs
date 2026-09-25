@@ -114,14 +114,16 @@ export function acceptWhole(before, answer, opts) {
   // preface above the beats where the draft's beats are stamped, a remark in the block that is no spoken line (it carries no colon). The script's own
   // lines are never touched.
   // ⭐ THE BEATS ARE THE ONE READER'S (2026-09-25, the reviewer's review of the kept-character fix: a cut script counted as stamped, this kept only stamped lines,
-  // and every edit of a multi-cut script was refused as a re-timing); and a line the draft already had is script, never judged here (both plan checks).
+  // and every edit of a multi-cut script was refused as a re-timing); and a line the draft already had is script, never judged here, wherever it stands
+  // (both plan checks; the reviewer's build check: a small remix's binding line stands unstamped before the block, and an edit that dropped it was refused).
   const lines = normalizeDraftLayout(String(answer || "").replace(/^\s*```[a-z]*\s*$/gim, "")).split("\n");
   const was = scriptParts(before), flat = (l) => String(l).replace(/\s+/g, " ").trim();
-  const hi = lines.findIndex((l) => /^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l)), stamped = was.beats.length > 0, had = new Set(was.dialogue.map(flat));
+  const hi = lines.findIndex((l) => /^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l)), stamped = was.beats.length > 0;
+  const had = new Set(normalizeDraftLayout(String(before || "")).split("\n").map(flat).filter(Boolean));
   const dropped = [];
   const text = lines.filter((l, i) => {
     if (!l.trim() || /^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l) || TAIL_HEAD.test(l)) return true;
-    const keep = hi >= 0 && i > hi ? had.has(flat(l)) || isSpokenLine(l) : !stamped || isBeatLine(l);   // a remark ("Note: …") is no spoken line
+    const keep = had.has(flat(l)) || (hi >= 0 && i > hi ? isSpokenLine(l) : !stamped || isBeatLine(l));   // a remark ("Note: …") is no spoken line
     if (!keep) dropped.push(l.trim());
     return keep;
   }).join("\n").trim();
@@ -133,6 +135,17 @@ export function acceptWhole(before, answer, opts) {
  * One cheap corrective EDIT of the beats in hand. Returns the edited text, or null when there is nothing safe to take
  * (an outage and the ledger cap still throw — an edit never swallows either).
  */
+/** ⭐ A REPAIR IS JUDGED BY WHAT ITS FAULT CALLS FOR (the edit-not-rewrite law; 2026-09-25, both reviews of the kept-character fix: an unphotographed cut
+ *  repaired by merging two cuts into one carry was refused as "re-timed", and the take exited 3). A fault of the story's shape (needsRewrite, and no-cuts,
+ *  too-long) earns a restage: accepted by the writer's own cut count, with every spoken line and the Sound line kept. A word fault is an EDIT and passes the
+ *  one guard. `next`/`now`: the scripts as lines; `faults`: the findings the repair was asked to fix; `cutsOk(lines)`: the writer's cut test. Pure. */
+export function repairAccepted(next, now, faults = [], { cutsOk = () => true } = {}) {
+  if (!Array.isArray(next) || !next.length) return false;
+  const restage = (Array.isArray(faults) ? faults : []).some((s) => { const rule = String(s).split(/[\s([]/)[0]; return needsRewrite({ rule }) || rule === "no-cuts" || rule === "too-long"; });
+  if (!restage) return editAccepted(now.join("\n"), next.join("\n")).ok;
+  const a = scriptParts(next.join("\n")), b = scriptParts(now.join("\n"));
+  return !!cutsOk(next) && a.dialogue.length >= b.dialogue.length && (!b.sound || !!a.sound);
+}
 export async function editBeats(text, { violations = [], modes = [], model = null, log = console.log, call = null } = {}) {
   const before = String(text || "");
   if (!before.trim() || !editable(violations)) return null;

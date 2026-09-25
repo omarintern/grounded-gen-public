@@ -244,14 +244,16 @@ export function keepPins(state, diff, intentText = "") {
     if (!att) continue;
     const nouns = String(att).toLowerCase().match(/[a-z]{4,}/g) || [];
     if (!nouns.some((n) => lcIntent.includes(n))) continue;   // nothing kept → the sweep alone governs
-    // the figure's ref BY THE CHARACTERS IT SHOWS, recorded with every picture from 2026-09-25 (both reviews of the kept-character fix: a portrait is
-    // "figure.jpg" with role "ref", so the filename convention never found a portrait's belongings); a parent recorded before then is found the old way,
-    // by naming convention (entity_/refs_redacted/ipref_ → role "figure": a single-figure parent has at most one, a multi-figure parent's carry the slug)
+    // the figure's OWN PHOTO, found by the characters it shows (recorded with every picture from 2026-09-25; both reviews of the kept-character fix: a portrait
+    // is "figure.jpg" with role "ref", so the filename convention never found a portrait's belongings), never a parent's frame (the reviewer's build check: after
+    // one small remix a frame was the only named picture, and it was taken for the photo). A picture recorded before names existed is found the old way,
+    // one picture at a time, by naming convention (entity_/refs_redacted/ipref_ → role "figure"; a multi-figure parent's carry the slug). While every video
+    // on the site predates names, that old way is the one that runs.
     const who = String(f.target || "").toLowerCase().replace(/\s+/g, " ").trim();
-    const named = refs.some((r) => Array.isArray(r.names) && r.names.length);
+    const unnamed = refs.filter((r) => !(Array.isArray(r.names) && r.names.length));
     const slugish = String(f.target).replace(/[^a-z0-9]+/gi, "").slice(0, 14).toLowerCase();
-    const ref = named ? (refs.find((r) => Array.isArray(r.names) && r.names.length === 1 && String(r.names[0]).toLowerCase().replace(/\s+/g, " ").trim() === who) || null)
-      : (refs.find((r) => r.role === "figure" && (refs.filter((x) => x.role === "figure").length === 1 || String(r.filename).toLowerCase().includes(slugish))) || null);
+    const ref = refs.find((r) => r.frame !== true && Array.isArray(r.names) && r.names.length === 1 && String(r.names[0]).toLowerCase().replace(/\s+/g, " ").trim() === who)
+      || unnamed.find((r) => r.role === "figure" && (unnamed.filter((x) => x.role === "figure").length === 1 || String(r.filename).toLowerCase().includes(slugish))) || null;
     if (ref) belongings.push({ figure: f.target, attachment: String(att), ref, replacement: f.to || null });
   }
   // ⚠ KEPT CUTS PIN THEIR PLATES (owner 2026-08-22): when every later place KEEPS, the parent's cut
