@@ -30,6 +30,11 @@ export function stateSummary(state) {
   };
 }
 
+/** THE DIALOGUE DIMENSION, ONE SHAPE FOR BOTH READERS OF A REMIX (2026-09-25, the reviewer's consultation; the owner: "confirm on 1 2 and 3"): the standard reader
+ *  and the escalation planner answer it in the same words, and the executor reads both through dialogueOf. An escalated surgery forced "keep" and copied
+ *  the parent's block verbatim, so a line the maker asked for could never reach the take and the quoted-words check had nothing to read. */
+export const DIALOGUE_FIELD = `"dialogue":{"op":"keep|rewrite|remove","instruction":null|"..."}`;
+export const dialogueOf = (raw) => (["rewrite", "remove"].includes(raw?.op) ? { op: raw.op, instruction: raw?.instruction ? String(raw.instruction) : null } : { op: "keep", instruction: null });
 export async function parseRemixIntent(state, intentText) {
   const s = stateSummary(state);
   const ask =
@@ -44,7 +49,7 @@ export async function parseRemixIntent(state, intentText) {
     ` "world":{"op":"keep|change","to":"<new opening place or null>","keep_explicit":true|false} (keep_explicit = the user's OWN WORDS keep the place — "same kitchen", "keep the room", "still in this hallway", "in the same place"; false when the words merely say nothing about the place),\n` +
     ` "cuts":[{"target":"<later place>","op":"keep|change|remove","to":null|"..."}] (one per later place),\n` +
     ` "action":{"op":"keep|rewrite","instruction":"<precisely what now happens, in the user's own words completed minimally — null when keep>"},\n` +
-    ` "dialogue":{"op":"keep|rewrite|remove","instruction":null|"..."},\n` +
+    ` ${DIALOGUE_FIELD},\n` +
     ` "props":[{"target":"<existing prop>","op":"swap|remove","to":null|"..."} or {"target":null,"op":"add","to":"..."}],\n` +
     ` "clearance_delta":["<every NEW proper name, character, or brand the intent introduces — empty when none>"],\n` +
     ` "vague": true|false (true when the words name NOTHING concrete to change)\n}`;
@@ -81,7 +86,7 @@ export function normalizeDiff(raw, state) {
   }
   for (const pl of laterPlaces) if (!d.cuts.some((c) => String(c.target).toLowerCase() === pl)) d.cuts.push({ target: pl, op: "keep", to: null });
   if (raw.action?.op === "rewrite" && raw.action?.instruction) d.action = { op: "rewrite", instruction: String(raw.action.instruction) };
-  if (["rewrite", "remove"].includes(raw.dialogue?.op)) d.dialogue = { op: raw.dialogue.op, instruction: raw.dialogue?.instruction ? String(raw.dialogue.instruction) : null };
+  d.dialogue = dialogueOf(raw.dialogue);
   for (const pr of Array.isArray(raw.props) ? raw.props : []) {
     const op = ["swap", "remove", "add"].includes(pr?.op) ? pr.op : null;
     if (op) d.props.push({ target: pr?.target ? String(pr.target) : null, op, to: pr?.to ? String(pr.to) : null });
@@ -420,13 +425,13 @@ export async function planRemixEscalation(state, intentText) {
     `Sound sections, no camera language), keeping any parent refs you list: keeping the world ref means the SAME ` +
     `opening photograph; keeping a figure ref means its pixels ride as a reference, bound by your note.\n` +
     `Return ONLY JSON {"solvable":bool,"why":"one plain sentence","path":"surgery|reframe",` +
-    `"script_instruction":"for surgery, precisely what changes — else null",` +
+    `"script_instruction":"for surgery, precisely what changes — else null",${DIALOGUE_FIELD},` +
     `"effective_prompt":"for reframe, the new one-line prompt — else null",` +
     `"refs":[{"filename":"<exactly as in the bag>","keep":bool,"note":"how the kept ref binds — null when dropped"}],` +
     `"resource":["<anything new that must be sourced — advisory>"],` +
     `"clearance_delta":["<every NEW proper name or brand introduced — empty when none>"],` +
     `"duration":null|"<Ns> only when the demand needs a different length"}`;
-  return await providerJson([textPart(ask)], { maxTokens: 800, temperature: 0.15 });
+  return await providerJson([textPart(ask)], { temperature: 0.15 });   // ROOM is the helper's, sized for the thinking (2026-09-25, the reviewer's consultation: at 800 an answer cut off was paid again)
 }
 
 /** The mechanical gate on the plan — the laws as validators. Pure, gate-testable. Returns violations. */

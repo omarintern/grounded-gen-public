@@ -20,7 +20,7 @@ export const DIALOGUE_STAMPS = dialogueStamps(Number(process.env.BEAT_DURATION) 
 //
 // Reproduce the speech as written — the words are the owner's requirement and are not ours to rewrite — and
 // change only WHO EACH LINE IS AIMED AT, against what is actually in the frame.
-export const dialogueClause = () => {
+export const dialogueClause = ({ grid = true } = {}) => {   // grid: false for the multi-cut writer (2026-09-25, below)
   const d = (process.env.PLAN_DIALOGUE || "").trim();
   if (!d) return "";
   // THE SPEAKER IS ASSIGNED AT THE PLAN, NEVER HERE (owner 2026-09-15: "a line doesn't need to move between figures if it gets it right at assignment" — B8: the clause
@@ -129,7 +129,10 @@ export const dialogueClause = () => {
         // field along. Prose asking for spread lost 6 times in 8: "no amount of 'span the full duration'
         // elsewhere could win against a literal format spec" (see BEAT_STAMPS above). So compute the seconds
         // and hand them over, exactly as the beats get theirs.
-        + `⚠ USE THESE EXACT TIMINGS FOR THE DIALOGUE LINES: ${DIALOGUE_STAMPS.map((t) => `[${t}s]`).join(" ")} `
+        // ⚠ …BUT NOT FOR THE MULTI-CUT WRITER (2026-09-25, the reviewer's consultation; the owner: "confirm on 1 2 and 3"): its Cut lines carry no stamps and the
+        // video model decides where it cuts, so a fixed grid beside the voice law (each line at the second its speaker is seen) could put a line over the
+        // other character. That writer keeps the carried-voice permission above; the voice law times its lines.
+        + (grid ? `⚠ USE THESE EXACT TIMINGS FOR THE DIALOGUE LINES: ${DIALOGUE_STAMPS.map((t) => `[${t}s]`).join(" ")} `
         + `— one fragment per stamp, in order, breaking the sentence at its own natural clause boundaries. `
         + `⚠ THAT IS ONE SPEAKER'S SENTENCE CARRIED ACROSS STAMPS, AND IT IS NOT THE ONLY SHAPE. Two DIFFERENT figures may share one `
         + `stamp when they speak at once — an interruption, an answer cutting in, two voices together. Keep them both, each with its own `
@@ -138,7 +141,7 @@ export const dialogueClause = () => {
         + `Two fragments at the top is the reflex and it is wrong: it lands the last words a third of the way `
         + `in and leaves the rest of the clip silent. The final stamp is deliberately late so the voice is `
         + `still going when the last image arrives. If the line genuinely cannot divide that many ways, use `
-        + `FEWER fragments but keep the LAST one on the LAST stamp — never bunch them at the start.\n`
+        + `FEWER fragments but keep the LAST one on the LAST stamp — never bunch them at the start.\n` : "")
         + `⚠ SPLITTING IS NOT REWRITING, AND IT DOES NOT BREAK THE KEEP-THE-WORDS RULE ABOVE. The words and `
         + `their order stay EXACTLY as given — you are choosing only where the sentence BREAKS and when each `
         + `part is heard. Add no word, remove no word, reorder nothing. If you find yourself keeping the line `
