@@ -365,8 +365,8 @@ export function denameSpeakers(block, modesJson = process.env.IP_FIGURES) {
         if (mode.mode === "omit") { omit = true; return side; }
         changed = true; return `${side.match(/^\s*/)[0]}${wordFor(mode)}${side.match(/\s*$/)[0]}`;
       }).join("");
-      if (p.kind !== "paren") return p.text;
-      // a name inside the parenthetical ("(to Wendy)") is inside the label as well — the word replaces the name, the rest of the note stays
+      if (p.kind !== "paren" && p.kind !== "note") return p.text;
+      // a name inside the parenthetical ("(to Wendy)") or a bracketed note is inside the label as well — the word replaces the name, the rest of the note stays
       let paren = p.text;
       for (const mode of modes) for (const n of mode?.names || []) {
         const k = String(n); if (k.length < 3 || !new RegExp(`(?:^|[^A-Za-z])${_esc(k)}(?=$|[^A-Za-z])`, "i").test(paren)) continue;
