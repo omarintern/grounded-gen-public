@@ -5,7 +5,7 @@
 // either copy is edited. ZERO text change at extraction; _ground_prompt imports its own former text from here.
 // Model-visible doctrine lives in the clause functions; pure machinery (the deterministic dialogue builder,
 // the FINE_DETAIL regex) rides along. speechReach already lives in _gate_rules (shared there, not here).
-import { dialogueStamps, musicRequested, captureFormNoun, SPEAKER_LABEL_MAX } from "./_gate_rules.mjs";
+import { dialogueStamps, musicRequested, captureFormNoun, readSpeakerLine } from "./_gate_rules.mjs";
 import { rideFromEnv } from "./_ride.mjs";   // the ride's handheld exception is carved where the camera law is stated (2026-09-09)
 import { replacementFact } from "./_ride_writer.mjs";   // the golden grammar is written once and imported, never pasted (2026-09-18)
 
@@ -349,28 +349,34 @@ export function denameSpeakers(block, modesJson = process.env.IP_FIGURES) {
   const lines = String(block).split("\n");
   const out = [];
   for (const l of lines) {
-    // the label runs as long as the name law makes it (job 69bb989b, 2026-09-13: a 148-character de-named label with "to Wendy" never parsed under the old 80 cap)
-    const m = l.match(new RegExp(String.raw`^(\s*)([^:\n(\[]{1,${SPEAKER_LABEL_MAX}}?)(\s*(?:\([^)]*\)\s*)*(?:\[\d+(?:\.\d+)?s\]\s*)?:)(.*)$`));
-    if (!m) { out.push(l); continue; }
+    // ⭐ THE ONE SPEAKER-LABEL READER, loose (2026-09-25, both reviews of the kept-character fix: this read only "label (manner) [Ns]:", so "Jack Torrance [3s]
+    // (manic): …", "Jack Torrance (manic) to the rider [2s]: …" and the planner's "Jack Torrance (manic, shouting) to the rider: …" kept the name). The label
+    // runs as long as the name law makes it (job 69bb989b, 2026-09-13: a 148-character de-named label with "to Wendy").
+    const r = readSpeakerLine(l, { loose: true });
+    if (!r) { out.push(l); continue; }
     let omit = false, changed = false;
     // THE ADDRESSEE IS A LABEL TOO (job 69bb989b: "the twins in matching blue dresses to Wendy (creepy, unison) [3s]:" — the seat-cast name as the listener
-    // survived to the check twice and spent both re-asks). The head splits at its " to "; each side that carries a name becomes the figure's word, the rest
-    // stays; a head that IS the name stays the velocal8 case (the whole head → the guise).
-    const head = m[2].split(/(\s+to\s+)/i).map((side, i) => {
-      if (i % 2) return side;
-      const mode = nameIn(side); if (!mode) return side;
-      if (mode.mode === "omit") { omit = true; return side; }
-      changed = true; return wordFor(mode);
+    // survived to the check twice and spent both re-asks). Each side of a " to " that carries a name becomes the figure's word, the rest stays; a head that
+    // IS the name stays the velocal8 case (the whole head → the guise).
+    const label = r.parts.map((p) => {
+      if (p.kind === "name" || p.kind === "to") return p.text.split(/(\s+to\s+|^\s*to\s+)/i).map((side, i) => {
+        if (i % 2 || !side.trim()) return side;
+        const mode = nameIn(side); if (!mode) return side;
+        if (mode.mode === "omit") { omit = true; return side; }
+        changed = true; return `${side.match(/^\s*/)[0]}${wordFor(mode)}${side.match(/\s*$/)[0]}`;
+      }).join("");
+      if (p.kind !== "paren") return p.text;
+      // a name inside the parenthetical ("(to Wendy)") is inside the label as well — the word replaces the name, the rest of the note stays
+      let paren = p.text;
+      for (const mode of modes) for (const n of mode?.names || []) {
+        const k = String(n); if (k.length < 3 || !new RegExp(`(?:^|[^A-Za-z])${_esc(k)}(?=$|[^A-Za-z])`, "i").test(paren)) continue;
+        if (mode.mode === "omit") { omit = true; continue; }
+        paren = paren.replace(new RegExp(`(^|[^A-Za-z])${_esc(k)}(?=$|[^A-Za-z])`, "gi"), `$1${wordFor(mode)}`); changed = true;
+      }
+      return paren;
     }).join("");
-    // a name inside the parenthetical ("(to Wendy)") is inside the label as well — the word replaces the name, the rest of the note stays
-    let paren = m[3];
-    for (const mode of modes) for (const n of mode?.names || []) {
-      const k = String(n); if (k.length < 3 || !new RegExp(`(?:^|[^A-Za-z])${_esc(k)}(?=$|[^A-Za-z])`, "i").test(paren)) continue;
-      if (mode.mode === "omit") { omit = true; continue; }
-      paren = paren.replace(new RegExp(`(^|[^A-Za-z])${_esc(k)}(?=$|[^A-Za-z])`, "gi"), `$1${wordFor(mode)}`); changed = true;
-    }
     if (omit) continue;   // an omitted figure neither speaks nor is spoken to: its line is dropped
-    out.push(changed ? `${m[1]}${head}${paren}${m[4]}` : l);
+    out.push(changed ? `${r.lead}${label}${r.sep}${r.words}` : l);
   }
   const kept = out.filter((l) => /:\s*"/.test(l) || /^\s*\S.*:\s*\S/.test(l)).length;
   return kept ? out.join("\n") : null;

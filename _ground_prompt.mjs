@@ -701,7 +701,10 @@ if (BEAT_STYLE !== "template") {
   // The guard itself lives in _gate_rules.mjs (moveInlineSpeech, owner 2026-09-22) so the gate RUNS it on the strings that broke,
   // instead of reading this file's source. The terminal block is the canonical location — it carries the timings, and it is what
   // applyAudioFill and the slop meter read — so a line found in the beats moves INTO it, and a copy the block already holds comes out.
-  const _moved = moveInlineSpeech(beatLine, { planDialogue: process.env.PLAN_DIALOGUE || "", proseFigures: process.env.PROSE_FIGURES || "", workTitles: process.env.WORK_TITLES || "", dename: denameSpeakers });
+  // the speakers it can name: the prose figures, and the kept characters the parent's frames carry (their handles; 2026-09-25, the reviewer's plan check: a
+  // frame-carried character is no prose figure any more, and a line of its would otherwise go to a bare label)
+  const _speakers = [process.env.PROSE_FIGURES || "", ...String(process.env.CAST_FRAME_NOTE || "").split("; ").map((h) => h.trim())].filter(Boolean).join(" | ");
+  const _moved = moveInlineSpeech(beatLine, { planDialogue: process.env.PLAN_DIALOGUE || "", proseFigures: _speakers, workTitles: process.env.WORK_TITLES || "", dename: denameSpeakers });
   beatLine = _moved.beatLine;
   if (_moved.mode === "moved") {
     console.warn(`[GUARD] dialogue: ${_moved.moved} spoken line(s) were narrated INSIDE the beats and no Dialogue block existed — MOVED into one terminal block, timings preserved (doctrine drifting; fix the root).`);

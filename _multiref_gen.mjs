@@ -219,7 +219,7 @@ for (let i = 0; i < POLL_N; i++) {
     // runs. The server enriches with the plan digest at close; the delivery hook archives to the app store.
     try {
       const { assembleGenState } = await import("./_gen_state.mjs");
-      const refNames = (() => { try { const m = JSON.parse(process.env.REF_NAMES || "{}"); return m && typeof m === "object" ? m : {}; } catch { return {}; } })();   // which photo is whose (2026-09-25)
+      const refNames = (() => { try { const m = JSON.parse(process.env.REF_NAMES || "[]"); return Array.isArray(m) ? m : []; } catch { return []; } })();   // the characters each picture shows, by position (2026-09-25)
       const st = assembleGenState({ id: process.env.LEDGER_JOB || slug, slug, prompt_text: promptText, refs, refNames, aspect, duration, resolution: RESOLUTION, endpoint: ENDPOINT, queue_id: qid });
       const dir = join(HERE, "out", "_state");
       mkdirSync(dir, { recursive: true });

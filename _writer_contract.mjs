@@ -7,7 +7,7 @@
 // ⚠ NON-INTERFERENCE (owner 2026-08-12): consumed ONLY by _ground_shotset's celeb fact-path, which is
 // double-gated (WRITER_FACTS==="1" AND CELEB_LENS set). The non-© world-build call (_run:1597, no CELEB_LENS)
 // can never reach it; the ip-character branch (_ground_prompt) never touches this file.
-import { ledgerToks, dialogueShape, validateBeatsAgainstLedger, normalizeDraftLayout, CUT_LABEL, isSpokenLine } from "./_gate_rules.mjs";   // dialogueShape: the SHARED dialogue-skeleton law (word floor, both-parties-speak, sentence-button) — v2, benchmark-verified 6/6 before wiring
+import { ledgerToks, dialogueShape, validateBeatsAgainstLedger, normalizeDraftLayout, CUT_LABEL, isSpokenLine, readSpeakerLine, lawShapedLine, TAIL_HEAD, SOUND_HEAD } from "./_gate_rules.mjs";   // dialogueShape: the SHARED dialogue-skeleton law (word floor, both-parties-speak, sentence-button) — v2, benchmark-verified 6/6 before wiring
 
 const SIZE_WORDS = /\b(small|tiny|distant|far away|faraway|in the distance|at a distance|speck)\b/i;
 const CAMERA_WORDS = /\b(pans?|panning|zooms?|zooming|push(?:es)?[- ]?in|tilts?|tilting|dolly|camera)\b/i;
@@ -84,17 +84,28 @@ export const ipSwapClause = (role) => `takes the place of ${role} at the action 
 export const CUT_LINE = CUT_LABEL;   // one pattern, shared with the one reader: "Cut 2:", "[4s] Cut 2:", "**Cut 2:**", "Cut 2 –" (2026-09-25)
 /** ⭐⭐ A MULTI-CUT SCRIPT, KEPT WHOLE (owner 2026-09-25, "lets fix these now"): the Cut lines, then the Dialogue block, then the Sound line, laid out the
  *  canonical way. The multi-cut writer's parser kept only its Cut lines, so its take never carried a line or a sound of its own. What a model wraps around
- *  the script is not the script: before the block a line stays only as a Cut line, inside it only as a spoken line (it carries a colon). Pure. */
-export function keepCutScript(text) {
+ *  the script is not the script: before the block a line stays only as a Cut line, inside it only as a spoken line (the one reader's test). Nothing leaves
+ *  silently (both plan checks, 2026-09-25): `log`, when given, hears every line left out and every line kept off the law's exact shape. */
+export function keepCutScript(text, { log = null } = {}) {
   let ls = normalizeDraftLayout(String(text || "").replace(/^\s*```[a-z]*\s*$/gim, "")).split("\n").map((l) => l.trim());
   // a Sound sentence written at the end of a Cut line is the terminal line in the wrong place: MOVED out, never rewritten (the single-take writer's own move)
-  if (!ls.some((l) => /^\**\s*Sound\s*\**\s*[:\u2014\u2013-]/i.test(l))) {
+  if (!ls.some((l) => SOUND_HEAD.test(l))) {
     let moved = "";
-    ls = ls.map((l) => CUT_LINE.test(l) && !moved ? l.replace(/(?<=[.!?]\s)Sound\s*[:\u2014\u2013-]\s*[^\n]*$/i, (m) => { moved = m.trim(); return ""; }).trimEnd() : l);
+    ls = ls.map((l) => CUT_LINE.test(l) && !moved ? l.replace(/(?<=[.!?]\s)Sound\s*(?:\([^)\n]*\)\s*)?[:\u2014\u2013-]\s*[^\n]*$/i, (m) => { moved = m.trim(); return ""; }).trimEnd() : l);
     if (moved) ls.push(moved);
   }
   const hi = ls.findIndex((l) => /^\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l));
-  return ls.filter((l, i) => l && (CUT_LINE.test(l) || /^\**\s*Sound\s*\**\s*[:\u2014\u2013-]/i.test(l) || i === hi || (hi >= 0 && i > hi && isSpokenLine(l))));
+  const kept = [], left = [], off = [];
+  ls.forEach((l, i) => {
+    if (!l) return;
+    if (CUT_LINE.test(l) || SOUND_HEAD.test(l) || i === hi) { kept.push(l); return; }
+    if (hi >= 0 && i > hi && isSpokenLine(l)) { kept.push(l); if (!lawShapedLine(l)) off.push(l); return; }
+    left.push(l);
+  });
+  const q = (xs) => xs.map((x) => `"${x.length > 80 ? `${x.slice(0, 80)}…` : x}"`).join(" · ");
+  if (log && left.length) log(`  \u2298 the keep step left out ${left.length} line(s), no Cut line and no spoken line: ${q(left)}`);
+  if (log && off.length) log(`  \u25c7 kept off the law's exact shape (label (manner) [Ns]: "words"): ${q(off)}`);
+  return kept;
 }
 export const cutLinesOf = (text) => String(text || "").split("\n").map((l) => l.trim()).filter((l) => CUT_LINE.test(l));
 /** DISTINCT cut NUMBERS, not cut LINES — cuts are VANTAGES, beats are moments, and the law admits many beats
@@ -431,11 +442,10 @@ export function writerFindings(text, { subjectLook = "", lens = "85mm", wantCuts
     // ⭐⭐ THE LAW'S OWN LINE SHAPE PASSES (2026-09-25, both reviews of the follow-up): the law now asks for `label (manner) [Ns]: "words"`, and this check took
     // only `Name:` or `Name (to Other):` up to 41 characters, so every multi-cut take with speech would have bought a re-ask that taught the old shape. A
     // line with no colon, a label with no words, a bracketed stage direction or a quote in the label still fails.
-    if (/^\s*Sound\s*[:\u2014\u2013-]/i.test(l)) continue;
-    // THE NAME CLASS STAYS VERBATIM (owner 2026-08-16: "we shouldnt produce new character classes"): letters, digits, spaces, . ' , - — no bracketed stage
-    // direction, no quote in the label. What joins it is the engine's own line shape: the manner parenthetical, the line's [Ns], an addressee. No length cap:
-    // the colon bounds a label (2026-09-13, the ONE-cap ruling: a de-named label runs long).
-    if (!/^\s*(?:\[\d+(?:\.\d+)?s\]\s*)?[\w .'\u2019,-]+(?:\s*\([^)\n]*\))*\s*(?:\[\d+(?:\.\d+)?s\])?\s*(?:(?:to|at|toward|towards)\s+[\w .'\u2019,-]+)?\s*:\s*\S/.test(l)) { v.push({ rule: "dialogue-label", cut: null }); break; }
+    if (TAIL_HEAD.test(l)) continue;
+    // THE ONE SPEAKER-LABEL READER (2026-09-25, both reviews of the kept-character fix): the name class verbatim (owner 2026-08-16), the manner, the second
+    // and an addressee in any order, no length cap (the 2026-09-13 ONE-cap ruling). The same reader the keep step and the de-namer use.
+    if (!readSpeakerLine(l)) { v.push({ rule: "dialogue-label", cut: null }); break; }
   }
   // ⭐⭐ THE `advisory` FLAG IS NOW LOAD-BEARING (owner-directed hardening, 2026-08-16). It existed in the
   // codebase — _gate_rules pushes exchange-floor/button-position with it — but NOTHING read it: dialogueShape's

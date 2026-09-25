@@ -29,7 +29,7 @@ export function refRole(file, order) {
 }
 
 /** The core record, written by the gen at submission time — everything the child alone knows. */
-export function assembleGenState({ id, slug, prompt_text, refs, refNames = {}, aspect, duration, resolution, endpoint, queue_id, engine = "grounded-1.0" }) {
+export function assembleGenState({ id, slug, prompt_text, refs, refNames = [], aspect, duration, resolution, endpoint, queue_id, engine = "grounded-1.0" }) {
   return {
     id: String(id || slug || ""),
     engine,
@@ -45,8 +45,10 @@ export function assembleGenState({ id, slug, prompt_text, refs, refNames = {}, a
         let filename = String(file).split("/").pop() || `ref${order}.jpg`;
         if (seen.has(filename)) filename = `${order}_${filename}`;
         seen.add(filename);
-        const name = refNames && typeof refNames[String(file)] === "string" ? refNames[String(file)] : "";   // the character a photo is of (2026-09-25)
-        return { order, file: String(file), filename, role: refRole(file, order), ...(name ? { name } : {}) };
+        // the characters this picture shows, by its place in the bag (2026-09-25: a photo shows one, a parent's frame may show two; a path is no key, the gen
+        // re-encodes some files)
+        const names = Array.isArray(refNames) && Array.isArray(refNames[order]) ? refNames[order].filter((n) => typeof n === "string" && n.trim()) : [];
+        return { order, file: String(file), filename, role: refRole(file, order), ...(names.length ? { names } : {}) };
       });
     })(),
     aspect: String(aspect || ""),

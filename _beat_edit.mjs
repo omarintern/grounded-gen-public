@@ -17,7 +17,7 @@
 // the video. The guard below is what makes it an EDIT and not a rewrite in disguise — an answer that re-times, re-counts or re-stages the
 // take is REFUSED here and the run falls back to the re-ask it would have made anyway.
 import { providerText } from "./provider-llm.mjs";
-import { normalizeDraftLayout, scriptParts, isSpokenLine } from "./_gate_rules.mjs";   // the one reader of a script's parts (2026-09-25)
+import { normalizeDraftLayout, scriptParts, isSpokenLine, isBeatLine, TAIL_HEAD } from "./_gate_rules.mjs";   // the one reader of a script's parts (2026-09-25)
 
 /** The findings that are wrong WORDS on the page — the staging is sound. A name the maker used only for a manner is one (owner 2026-09-24, R6). */
 export const EDIT_RULES = new Set(["ip-name", "source-citation", "world-room", "plate-thing", "meta", "reference-name"]);
@@ -113,15 +113,20 @@ export function acceptWhole(before, answer, opts) {
   // What the model wrapped AROUND the script is not the script (the stamped-line filter this replaces threw it away by construction): a code fence, a
   // preface above the beats where the draft's beats are stamped, a remark in the block that is no spoken line (it carries no colon). The script's own
   // lines are never touched.
+  // ⭐ THE BEATS ARE THE ONE READER'S (2026-09-25, the reviewer's review of the kept-character fix: a cut script counted as stamped, this kept only stamped lines,
+  // and every edit of a multi-cut script was refused as a re-timing); and a line the draft already had is script, never judged here (both plan checks).
   const lines = normalizeDraftLayout(String(answer || "").replace(/^\s*```[a-z]*\s*$/gim, "")).split("\n");
-  const hi = lines.findIndex((l) => /^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l)), stamped = scriptParts(before).beats.length > 0;
+  const was = scriptParts(before), flat = (l) => String(l).replace(/\s+/g, " ").trim();
+  const hi = lines.findIndex((l) => /^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l)), stamped = was.beats.length > 0, had = new Set(was.dialogue.map(flat));
+  const dropped = [];
   const text = lines.filter((l, i) => {
-    if (!l.trim() || /^\s*\**\s*(?:Dialogue|Sound|Set|Telling|Music)\s*\**\s*[:\u2014\u2013-]/i.test(l)) return true;
-    if (hi >= 0 && i > hi) return isSpokenLine(l);   // a remark ("Note: …") is no spoken line
-    return !stamped || /^\s*\[\d+(?:\.\d+)?s\]/.test(l);
+    if (!l.trim() || /^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l) || TAIL_HEAD.test(l)) return true;
+    const keep = hi >= 0 && i > hi ? had.has(flat(l)) || isSpokenLine(l) : !stamped || isBeatLine(l);   // a remark ("Note: …") is no spoken line
+    if (!keep) dropped.push(l.trim());
+    return keep;
   }).join("\n").trim();
   const v = editAccepted(before, text, opts);
-  return v.ok ? { ok: true, text, why: "" } : { ok: false, text: null, why: v.why };
+  return v.ok ? { ok: true, text, why: "", dropped } : { ok: false, text: null, why: v.why, dropped };
 }
 
 /**
@@ -141,6 +146,7 @@ export async function editBeats(text, { violations = [], modes = [], model = nul
   // ⭐ ONE ACCEPTANCE FOR EVERY EDIT (2026-09-25, the reviewer's review of the follow-up): this checked the raw answer, so a preface and a code fence around it
   // were accepted and shipped as the script. acceptWhole lays the answer out and drops what was wrapped around it, then applies the same guard.
   const verdict = acceptWhole(before, after);
+  if (verdict.dropped?.length) log(`  \u2298 the edit's answer carried ${verdict.dropped.length} line(s) that are not script, left out: ${verdict.dropped.map((x) => `"${x.slice(0, 70)}"`).join(" · ")}`);
   if (!verdict.ok) { log(`  ⊘ the edit was refused: ${verdict.why} — the writer is re-asked instead`); return null; }
   return `${verdict.text}\n`;
 }
