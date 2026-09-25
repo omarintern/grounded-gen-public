@@ -134,8 +134,7 @@ export const dialogueClause = () => {
         + `⚠ THAT IS ONE SPEAKER'S SENTENCE CARRIED ACROSS STAMPS, AND IT IS NOT THE ONLY SHAPE. Two DIFFERENT figures may share one `
         + `stamp when they speak at once — an interruption, an answer cutting in, two voices together. Keep them both, each with its own `
         + `label and manner, at that same second: they overlap, they do not queue. `
-        + `A SPOKEN LINE NEVER OUTRUNS THE BEAT THAT CARRIES IT: about three words a second, from its stamp to the next beat's stamp; no line begins in the take's last second. `
-        + `EVERY LINE SAYS HOW IT IS SAID: each speaker label ends in a short parenthetical of manner — (sing-song, mocking) — two or three words of delivery, never a body direction. `
+        // (the line's shape, its manner and its timing now ride voiceClause, which every writer gets: 2026-09-25)
         + `Two fragments at the top is the reflex and it is wrong: it lands the last words a third of the way `
         + `in and leaves the rest of the clip silent. The final stamp is deliberately late so the voice is `
         + `still going when the last image arrives. If the line genuinely cannot divide that many ways, use `
@@ -203,7 +202,12 @@ export const voiceClause = () =>
   `a bark, a roar, a cry, a laugh, a shout — whether the work assigned it or you are giving it one, is written once, in the final ` +
   `"Dialogue:" block, under that figure's own label and at the second it is heard. The beat at that second shows the figure MAKING it ` +
   `— the jaw dropping open, the chest heaving, the head thrown back — in words of its own. The beats carry what is seen, the block ` +
-  `carries what is heard, and the second they share is what joins them.`;
+  `carries what is heard, and the second they share is what joins them. ` +
+  // ⭐ THE LINE'S SHAPE, TOLD TO EVERY WRITER (2026-09-25, the reviewer's review of job 7c2de649): only the cuts paragraph said what a line looks like, a one-shot
+  // writer wrote "[8s] The man …: "ME LIKEY!"" (stamp first, no manner), and the laws below it read only the label-first shape. Moved here from there.
+  `Write each line as: the figure's label, a short parenthetical of how it is said — (sing-song, mocking), two or three words of delivery, ` +
+  `never a body direction — then its second in brackets, a colon, and the words in quotes: label (manner) [Ns]: "words". ` +
+  `A SPOKEN LINE NEVER OUTRUNS THE BEAT THAT CARRIES IT: about three words a second, from its stamp to the next beat's stamp; no line begins in the take's last second.`;
 
 // ── THE KEPT CAST RIDES THE PARENT'S OWN FRAME (owner 2026-09-23: "frame is better, this is perfect") — the deep-remix executor sets the note (the
 // frame's own handles for the kept characters); the beats name each kept character by its handle so the reference's pixels carry the rest, and the
@@ -1040,8 +1044,6 @@ export const beatStamps = (secs = Math.max(2, Math.round(Number(process.env.BEAT
     .filter((t) => t < secs); // any stamp BEFORE the end — reproduces the validated patterns:
                               // rabbit 8s = [0,2,4,6] (owner: perfect), porch 5s = [0,2,4] (near perfect)
 export const gotStamps = (t) => (String(t).match(/\[(\d+)s\]/g) || []).map((x) => x.replace(/\D/g, "")).join(",");
-export const parseStampedLines = (text, capN) =>
-  String(text).split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, capN);
 export const stampRetryPrompt = (stamps, userPrompt, text) =>
   `Rewrite these beats so there are EXACTLY ${stamps.length}, stamped ${stamps.map((t) => `[${t}s]`).join(" ")}. ` +
   `Keep the same story and wording as far as possible; redistribute or extend the action to fill every stamp. ` +

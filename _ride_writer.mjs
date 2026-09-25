@@ -6,7 +6,7 @@
 // later things or the photographed places, the mode's own laws) and ONE findings function. Mechanical repairs for FACTS only —
 // a frame-zero placement missing from beat zero is appended as a fact; a surviving place name is redacted by the run.
 import { rideFromEnv, rideWords } from "./_ride.mjs";
-import { worldNameFindings } from "./_gate_rules.mjs";
+import { worldNameFindings, scriptParts } from "./_gate_rules.mjs";   // + the one reader of a script's parts (2026-09-25)
 
 const _re = (s) => String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const _words = (s) => String(s || "").toLowerCase().split(/[^a-z0-9'-]+/).filter((w) => w.length >= 4 && !STOP.has(w));
@@ -188,10 +188,13 @@ const ANIMATE = /\b(?:walks?|walking|wanders?|wandering|strolls?|strolling|march
 /** THE BEAT LINES ONLY (dry-cave-local-2, 2026-09-11: the writer's Dialogue block was "[3s] The caretaker …: "…"", stamp first — every ride check read
  *  it as a beat, the last one as the LAST beat, and the run was refused for "the payoff does not send the ride on"). The beats end where the Dialogue
  *  header begins, and a stamped line shaped as speech (a label then a colon) is never a beat. Pure. */
-const SPEECH_SHAPED = /^\s*\[\d+(?:\.\d+)?s\]\s*[^:\n.]{1,80}?(?:\s*\([^)\n]{0,80}\))?\s*(?:\[\d+(?:\.\d+)?s\]\s*)?:\s*["“]?[A-Za-z]/;
+// ⭐ THE ONE READER, AND A SPOKEN LINE OPENS ON A QUOTE OR A CAPITAL (2026-09-25, the two reviews of job 7c2de649): the beats come from scriptParts,
+// which cuts at the Dialogue header however it is written. A stamped line before any header is speech when its colon is followed by a quote or by a
+// spoken sentence's capital ("The caretaker in the red jacket: Welcome."); a beat that runs on after a colon ("Hard cut to the lobby: the car rolls …")
+// stays a beat (the reviewer measured that the old shape read it as speech).
+const SPEECH_LINE = /^\s*\[\d+(?:\.\d+)?s\]\s*[^:\n.]{1,80}?(?:\s*\([^)\n]{0,80}\))?\s*(?:\[\d+(?:\.\d+)?s\]\s*)?:\s*(?:["\u201c]|[A-Z])/;
 export function beatLines(text) {
-  const t = String(text || ""); const cut = t.search(/^\s*Dialogue\s*:/im);
-  return (cut < 0 ? t : t.slice(0, cut)).split("\n").filter((l) => /^\s*\[\d+(?:\.\d+)?s\]/.test(l) && !SPEECH_SHAPED.test(l));
+  return scriptParts(text).beats.filter((l) => !SPEECH_LINE.test(l));
 }
 /** Figures of the world the take mentions but never makes perform: [{ name, at }]. Pure. */
 export function stillFigures(text, d) {
@@ -235,8 +238,9 @@ const STAMP_COLON = new RegExp(`\\[(\\d+(?:\\.\\d+)?)s\\]${ADDRESSEE_TAIL}\\s*:`
 const MANNER_TAG = new RegExp(`\\([^)\\n]{2,60}\\)\\s*\\[\\d+(?:\\.\\d+)?s\\]${ADDRESSEE_TAIL}\\s*:`);
 /** The Dialogue block's spoken lines: [{ label, line }] — the text after the Dialogue header, each "<label> [Ns]: …" line. */
 export function dialogueLines(text) {
-  const parts = String(text || "").split(/^\s*Dialogue\s*:/im); if (parts.length < 2) return [];
-  return parts.slice(1).join("\n").split("\n").map((l) => { const m = l.match(new RegExp(`^\\s*(.+?)\\s*\\[\\d+(?:\\.\\d+)?s\\]${ADDRESSEE_TAIL}\\s*:\\s*\\S`)); return m ? { label: m[1].trim(), line: l } : null; }).filter(Boolean);
+  // the block as the one reader gives it, every line written label first (2026-09-25: a stamp-first line was invisible here, so job 7c2de649's four lines
+  // never met the laws that every line says how it is said and none begins in the take's last second)
+  return scriptParts(text).dialogue.map((l) => { const m = l.match(new RegExp(`^\\s*(.+?)\\s*\\[\\d+(?:\\.\\d+)?s\\]${ADDRESSEE_TAIL}\\s*:\\s*\\S`)); return m ? { label: m[1].trim(), line: l } : null; }).filter(Boolean);
 }
 export const saysHow = (line) => MANNER_TAG.test(String(line || ""));
 // THE CLIMAX OWNS AT LEAST FOUR SECONDS, AND NEVER LESS THAN A THIRD (owner 2026-09-15, live 2516f272: "i never like for the last turns / climaxes of the ride to be

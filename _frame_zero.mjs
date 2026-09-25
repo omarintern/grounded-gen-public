@@ -19,7 +19,7 @@
 import { providerJson, textPart } from "./provider-llm.mjs";
 import { replacementFact, vehicleLeads } from "./_ride_writer.mjs";   // the composer is measured by the beat law it feeds (B6, 2026-09-15)
 import { rideWords, craftVehicle } from "./_ride.mjs";
-import { worldNameFindings, CAMERA_WORD_RE, isRideNoun } from "./_gate_rules.mjs";
+import { worldNameFindings, CAMERA_WORD_RE, isRideNoun, scriptParts, DIALOGUE_HEAD } from "./_gate_rules.mjs";   // + the one reader of a script's parts (2026-09-25)
 
 const _re = (s) => String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const STOP = new Set(["the", "and", "with", "from", "that", "this", "into", "onto", "over", "under", "through", "their", "there", "where", "which", "while", "then", "than", "them", "they", "your", "have", "been", "were", "also", "just", "only", "very", "some", "each", "same", "like", "near", "left", "right", "side", "sides", "ahead", "behind", "beside", "above", "below", "its", "his", "her", "for", "off", "out", "all", "one", "two", "far", "way", "top", "end"]);
@@ -167,7 +167,7 @@ export async function composeFrameZero(d, { model = process.env.PROVIDER_FRAME0_
 export function pieceReturns(text, d) {
   const i = frameZeroInputs(d); const out = [];
   const worldWords = new Set([...i.replacements.map((r) => r.by), ...i.additions.map((a) => a.thing), ...(d?.dressing?.later || []), ...((d?.dressing?.photographed || []).flatMap((p) => p?.qualities || []))].flatMap((s) => looseKeys(s)).map(stem));
-  const lines = String(text || "").split("\n").filter((l) => /^\s*\[\d+(?:\.\d+)?s\]/.test(l));
+  const lines = scriptParts(text).beats;   // the beats only: a spoken line is never a beat (2026-09-25)
   for (const r of i.replacements) {
     const keys = looseKeys(r.piece, [i.way, i.vehicle]).filter((k) => !worldWords.has(stem(k))); if (!keys.length) continue;
     const noun = surfaceNoun(r.piece);
@@ -186,7 +186,9 @@ export function carryReplacements(text, d) {
   const i = frameZeroInputs(d); const fixed = [];
   const worldWords = new Set([...i.replacements.map((r) => r.by), ...i.additions.map((a) => a.thing), ...(d?.dressing?.later || []), ...((d?.dressing?.photographed || []).flatMap((p) => p?.qualities || []))].flatMap((s) => looseKeys(s)).map(stem));
   const lines = String(text || "").split("\n"); let seenZero = false;
+  const _head = new RegExp(String.raw`^\s*${DIALOGUE_HEAD}`, "i");
   for (let n = 0; n < lines.length; n++) {
+    if (_head.test(lines[n])) break;   // the beats end where the Dialogue header begins: a spoken line is never rewritten as a beat (2026-09-25)
     const isBeat = /^\s*\[\d+(?:\.\d+)?s\]/.test(lines[n]); if (!isBeat) continue;
     if (!seenZero) { seenZero = true; continue; }
     // THE WHOLE PHRASE FIRST, FOR EVERY PIECE: a shorter piece's core words sit inside a longer piece's phrase ("ice wall" inside "the

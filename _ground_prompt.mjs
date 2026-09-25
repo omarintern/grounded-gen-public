@@ -11,12 +11,13 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { castFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23)
 import { installExitHandlers } from "./_exit.mjs";   // one exit contract for every process (2026-09-24)
 import { referenceVoicesLaw } from "./_beat_law.mjs";   // a name the maker used only for a manner: the writer alone knows whose (owner 2026-09-24)
+import { acceptWhole } from "./_beat_edit.mjs";   // a repair's answer, whole or not at all (owner 2026-09-25)
 import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, voiceClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
@@ -227,7 +228,14 @@ let writerInstruction = "";   // the writer contract, captured at _dump so the p
 // ⭐⭐ A RE-ASK CARRIES THE DRAFT IT IS ABOUT (engine review 2026-09-24, D2). The fine-detail, anchor and payoff re-asks said "rewrite the SAME beats …
 // keeping every earlier beat exactly" and never sent the beats: providerText sends one message, so the model wrote a new take from the contract, and
 // those re-asks landed 0 of 7 in the records while the retry that carried its draft fixed 7 of 10. The beats in hand now ride above the note.
-const draftFor = (text) => { const b = String(text || "").split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)); return b.length ? `\n\nYOUR PREVIOUS ATTEMPT (the beats to fix):\n${b.join("\n")}` : ""; };
+// ⭐⭐ …AND THE WHOLE SCRIPT, WHICH COMES BACK WHOLE (owner 2026-09-25: "im afraid of glues and mechanical solutions"; the two reviews of job 7c2de649).
+// The draft rode as its stamped lines only, so a re-ask never saw the Dialogue header or the Sound line and was told the spoken lines were beats; its
+// answer was then cut apart by code and joined to pieces of the old draft, and job 7c2de649's Dialogue block (the maker's "Me Likey", four times) was
+// cut out of a correct answer. A re-ask now sees the whole script and returns it whole, and the answer is taken as it came when it is an edit of the
+// script in hand (acceptWhole: the same beats at the same stamps, every block, every spoken line, most of the words); otherwise the script ships as it was.
+const draftFor = (text) => { const t = String(text || "").trim(); return t ? `\n\nYOUR PREVIOUS ATTEMPT (the whole script: every beat, then the Dialogue block and the Sound line):\n${t}` : ""; };
+const WHOLE_BACK = `Return the WHOLE script: every beat at its stamp, then the Dialogue block, then the Sound line, each exactly as it is unless this note reaches it. Nothing else, no commentary.`;
+const wholeAnswer = (answer, what) => { const v = acceptWhole(beatLine, answer); if (!v.ok) console.warn(`  [${what}] the answer is not an edit of the script in hand (${v.why}) — the script ships as it was`); return v.ok ? v.text : null; };
 // ⭐⭐ THE STAND-IN LAW IS REMOVED (owner 2026-09-22: "the standin law is stale, so it and anything bouncing off of it should be
 // corrected. it should be removed"). It was built when a take was one instruction over one photograph and a creature took a human's
 // place in it. The engine grounds differently now: the plate is frame zero, figures are CONJURED into it, and what the photograph
@@ -413,7 +421,7 @@ if (BEAT_STYLE !== "template") {
   // disagreement with a prescribed list: it means an illegal COUNT (outside {${...}}), a DECIMAL stamp, an
   // opening that is not [0s], disorder, or a stamp past the duration. Vacuum-lab measured 7/7 legal under
   // this contract with counts varying by material — the variance is the point of the ruling.
-  const stampList = (t) => ((normalizeDraftLayout(String(t)).split(/^\s*Dialogue\s*:/im)[0]).match(/^[ \t]*\[(\d+(?:\.\d+)?)s\]/gm) || []).map((x) => Number(x.replace(/[^\d.]/g, "")));   // the beats only — a Dialogue block written "[3s] Speaker: …" is not a beat (dry-cave-local-2)
+  const stampList = (t) => scriptParts(t).beats.map((l) => Number((l.match(/^\[(\d+(?:\.\d+)?)s\]/) || [0, 0])[1]));   // the beats only — a Dialogue block written "[3s] Speaker: …" is not a beat (dry-cave-local-2)
   // ⚠ COMPLETENESS + LABEL LAWS RIDE THE SAME VALIDATOR (owner 2026-08-21, penguin deep remix: beat [4s]
   // shipped ending "lets out a flat" and a line labeled "Speaker" — both are output defects the check-the-
   // output pattern owns; a fifth restatement in the ask is not the fix).
@@ -451,7 +459,7 @@ if (BEAT_STYLE !== "template") {
     // ⚠ THE CAMERA'S CHROME IS NEVER WRITTEN — ANY REGISTER (owner 2026-09-21, job d6921814: "under the trail camera's washed overlay and corner
     // marks" drew a camcorder viewfinder — brackets and battery icons — over a take whose frame zero was a real fixed camera's own frame; the
     // photograph carries the device's look, and written chrome is invented chrome). Beats only: the Dialogue block may say what it likes.
-    { const _chrome = String(t).split(/^\s*Dialogue\s*:/im)[0].match(CHROME_WORDS);
+    { const _chrome = scriptParts(t).beats.join("\n").match(CHROME_WORDS);
       if (_chrome) fails.push(`a beat writes the camera's own chrome ("${_chrome[0]}") — the photograph carries the device's look: delete the chrome words and write only what happens in the scene`); }
     // CINEMATIC (owner 2026-08-25: «ensure dream mode produces cuts in prompt without refs»): the register's
     // signature move is MANDATED in the contract; this is the backstop — a cinematic script with no hard cut
@@ -552,7 +560,7 @@ if (BEAT_STYLE !== "template") {
     // below (the same words twice), and a [2.5s] beat, legally re-asked and then shipped when the retry did not
     // improve, was deleted here without a word. One spelling, one ceiling.
     text = normalizeDraftLayout(text);   // beats · Dialogue · Sound, wherever the writer put them (a header mid-beats swallowed the beats after it)
-    lines = text.split(new RegExp(String.raw`^\s*${DIALOGUE_HEAD}`, "im"))[0].split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, Math.max(...COUNTS));
+    lines = scriptParts(text).beats.slice(0, Math.max(...COUNTS));   // the one reader (2026-09-25): the beats end where the Dialogue header begins
   } else {
     // Continuous prose: keep every non-empty line, but strip any timestamps the model emits out of habit.
     lines = text.split("\n").map((l) => l.trim().replace(/^\[\d+s\]\s*/, ""))
@@ -664,12 +672,13 @@ if (BEAT_STYLE !== "template") {
         `pitched at something that small can only be shown by moving CLOSER, and the model then invents that ` +
         `vantage with nothing to ground it. Rewrite the SAME beats, keeping every event and the payoff exactly ` +
         `as they are, but describe the post-cut action by what the WHOLE BODY does at the distance the ` +
-        `photograph was taken from. Do not name the limb or the object in the grip. Change nothing else.`,
+        `photograph was taken from. Do not name the limb or the object in the grip. Change nothing else. ${WHOLE_BACK}`,
         { maxTokens: 12000, temperature: 0.2, model: REPAIR_MODEL, tag: "writer-retry" });   // ROOM (2026-09-23, see provider-llm): cut off at 4000 on live jobs, answers at 3600-8000
-      const relines = t2.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+s\]/.test(l)).slice(0, ACCEPTED_N);
-      const stillBad = relines.filter((l) => FINE_DETAIL.test(l)).length;
-      if (relines.length && !stillBad) { beatLine = relines.join("\n"); console.log(`[GUARD] beats: repaired on retry`); }
-      else console.warn(`[GUARD] beats: retry ${relines.length ? "STILL names fine detail" : "failed to parse"} — shipping the original (expect a close payoff)`);
+      // WHOLE OR NOT AT ALL (2026-09-25): this took the answer's stamped lines AS the script, so the Dialogue block and the Sound line went every time it fired
+      const next = wholeAnswer(t2, "GUARD");
+      const stillBad = next ? scriptParts(next).beats.filter((l) => FINE_DETAIL.test(l)).length : 0;
+      if (next && !stillBad) { beatLine = next; console.log(`[GUARD] beats: repaired on retry`); }
+      else if (next) console.warn(`[GUARD] beats: retry STILL names fine detail — shipping the original (expect a close payoff)`);
     } catch (e) {
       if (e?.name === "ProviderInfraError") throw e;
       console.warn(`[GUARD] beats: retry errored (${String(e.message).slice(0, 60)}) — shipping the original`);
@@ -778,8 +787,6 @@ try {
     const sv = await swapVerdict(seen.standin || String(seen.scene || "the scene"), seen.standin_placement, intent.target, beatLine);
     if (sv.verdict) console.error(`  [swap:${swapActs() ? "live" : "shadow"}] beat zero ${sv.verdict.toUpperCase()} — position ${JSON.stringify(sv.position)} · facing ${JSON.stringify(sv.facing)}${swapActs() ? "" : "  (recorded only)"}`);
     if (swapActs() && sv.verdict === "unanchored" && writerInstruction) {
-      const _bl = beatLine.split("\n");
-      const _i0 = _bl.findIndex((l) => /^\[\d+(?:\.\d+)?s\]/.test(l.trim()));
       console.warn(`  [anchor] beat zero states neither position nor facing — re-asking once so the subject is placed in the frame.`);
       try {
         const { text: t4 } = await providerText(
@@ -789,15 +796,13 @@ try {
           `or WHICH WAY it faces, and a first frame with neither drifts. Rewrite the SAME beats at the SAME ` +
           `timestamps, changing ONLY the opening beat so it states the subject's position in the frame and its ` +
           `facing.${has(seen.standin) ? ` Everything the photograph already holds — ${seen.standin} among it — stays exactly as photographed and is never replaced or written out.` : ""} ` +
-          `Return the full beat list and nothing else.`,
+          WHOLE_BACK,
           { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });   // ROOM (2026-09-23, see provider-llm): cut off at 4000 on live jobs, answers at 3600-8000
-        const rl = t4.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
-        if (rl.length !== ACCEPTED_N) console.warn(`  [swap] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
-        else {
-          const rebuilt = rl.join("\n");
-          const sv2 = await swapVerdict(seen.standin || String(seen.scene || "the scene"), seen.standin_placement, intent.target, rebuilt);
+        const next = wholeAnswer(t4, "swap");   // whole or not at all (2026-09-25)
+        if (next) {
+          const sv2 = await swapVerdict(seen.standin || String(seen.scene || "the scene"), seen.standin_placement, intent.target, next);
           if (sv2.verdict === "anchored") {
-            beatLine = rebuilt + (_i0 >= 0 && _bl.slice(_i0 + rl.length).length ? "\n" + _bl.slice(_i0 + rl.length).join("\n") : "");
+            beatLine = next;
             console.log(`  [swap] repaired — beat zero now states position ${JSON.stringify(sv2.position)} · facing ${JSON.stringify(sv2.facing)}`);
           } else console.warn(`  [swap] retry still ${String(sv2.verdict || "unjudged").toUpperCase()} — shipping the original (expect a loose first frame).`);
         }
@@ -813,7 +818,7 @@ try {
   const { payoffVerdict, payoffActs } = await import("./_payoff_check.mjs");
   if (telling() === "observational") console.error("  [payoff] view held \u2014 no payoff is owed; the check and its re-ask are skipped");
   const pv = (RIDE || telling() === "observational") ? { verdict: null } : await payoffVerdict(requestForLaws(process.env.USER_PROMPT || userPrompt || ""), beatLine);   // a ride's ending is the ride's own law (held|quick by the plan): the payoff judge is never called for it (velocal10: a paid call per pass, then ignored)
-  if (pv.verdict) console.error(`  [payoff:${payoffActs() ? "live" : "shadow"}] last beat ${pv.verdict.toUpperCase()}${pv.why ? ` — ${pv.why}` : ""}${payoffActs() ? "" : "  (recorded only)"}`);
+  if (pv.verdict) console.error(`  [payoff:${payoffActs() ? "live" : "shadow"}] last beat ${pv.verdict.toUpperCase()}${pv.why ? ` — ${pv.why}` : ""}${pv.judged ? ` (judged: "${String(pv.judged).slice(0, 80)}")` : ""}${payoffActs() ? "" : "  (recorded only)"}`);
   // ── THE REPAIR (owner 2026-08-19: "i dont see payoff") ──────────────────────────────────────────────────
   // ⚠⚠ THE CHECK WAS RIGHT AND DID NOTHING. payoffActs() existed but was read ONLY to change the word in the
   // log line — there was no repair behind it, so "live" meant "print live". Measured on both runs of
@@ -826,11 +831,6 @@ try {
   // with a loud warning if it does not — a working clip with a flat payoff beats no clip.
   if (RIDE && payoffActs() && pv.verdict === "completes" && writerInstruction) console.warn(`  [payoff] a ride: the ride's own finale laws own the ending (the story's turn, held or quick by the plan) — no escalation re-ask spent`);
   if (!RIDE && payoffActs() && pv.verdict === "completes" && writerInstruction) {
-    // The dialogue block is APPENDED as a trailing section, so beats and block separate cleanly and the
-    // block's [Ns] stamps still line up as long as the retry keeps the same stamps (it is told to).
-    const _bl = beatLine.split("\n");
-    const _lastBeatIdx = _bl.map((l) => /^\[\d+(?:\.\d+)?s\]/.test(l.trim())).lastIndexOf(true);
-    const _tail = _lastBeatIdx >= 0 ? _bl.slice(_lastBeatIdx + 1).join("\n") : "";
     console.warn(`  [payoff] last beat only COMPLETES the request — re-asking once for a beat that ESCALATES.`);
     try {
       const { text: t3 } = await providerText(
@@ -842,18 +842,15 @@ try {
         `further — commit harder, or answer the situation with something THE SCENE'S OWN WORLD already ` +
         `supplies that the request never named. Do not introduce a new place, a new character, or a prop the ` +
         `frame cannot afford. If an earlier beat set up a turn that nothing answered, ANSWERING IT is the ` +
-        `escalation. Return the full beat list and nothing else.`,
+        `escalation. ${WHOLE_BACK}`,
         { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });   // ROOM (2026-09-23, see provider-llm): cut off at 4000 on live jobs, answers at 3600-8000
-      const rl = t3.split("\n").map((l) => l.trim()).filter((l) => /^\[\d+(?:\.\d+)?s\]/.test(l)).slice(0, ACCEPTED_N);
-      if (rl.length !== ACCEPTED_N) {
-        console.warn(`  [payoff] retry returned ${rl.length}/${ACCEPTED_N} beats — shipping the original.`);
-      } else {
+      const next = wholeAnswer(t3, "payoff");   // whole or not at all (2026-09-25): the join here is what cut job 7c2de649's Dialogue block out
+      if (next) {
         // ⚠ VERIFY, DO NOT ASSUME. The retry is judged by the SAME check that failed it; a retry that still
         // only completes is not an improvement worth the risk of a worse-written beat.
-        const rebuilt = rl.join("\n");
-        const pv2 = await payoffVerdict(requestForLaws(process.env.USER_PROMPT || userPrompt || ""), rebuilt);
+        const pv2 = await payoffVerdict(requestForLaws(process.env.USER_PROMPT || userPrompt || ""), next);
         if (pv2.verdict === "escalates") {
-          beatLine = rebuilt + (_tail ? "\n" + _tail : "");
+          beatLine = next;
           console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`);
         } else console.warn(`  [payoff] retry still ${String(pv2.verdict || "unjudged").toUpperCase()} — shipping the original (expect a flat payoff).`);
       }

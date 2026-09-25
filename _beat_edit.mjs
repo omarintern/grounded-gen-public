@@ -17,6 +17,7 @@
 // the video. The guard below is what makes it an EDIT and not a rewrite in disguise — an answer that re-times, re-counts or re-stages the
 // take is REFUSED here and the run falls back to the re-ask it would have made anyway.
 import { providerText } from "./provider-llm.mjs";
+import { normalizeDraftLayout, scriptParts } from "./_gate_rules.mjs";   // the one reader of a script's parts (2026-09-25)
 
 /** The findings that are wrong WORDS on the page — the staging is sound. A name the maker used only for a manner is one (owner 2026-09-24, R6). */
 export const EDIT_RULES = new Set(["ip-name", "source-citation", "world-room", "plate-thing", "meta", "reference-name"]);
@@ -30,7 +31,7 @@ export const needsRewrite = (x) => STORY_RULES.has(x?.rule) || (x?.rule === "rid
 export const editable = (list) => Array.isArray(list) && list.length > 0 && list.every((x) => x && x.rule && !needsRewrite(x));
 
 const _esc = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const _stamps = (t) => (String(t || "").match(/^[ \t>*]*\[\d+(?:\.\d+)?s\]/gm) || []).map((s) => s.trim());
+const _stamps = (t) => scriptParts(t).beats.map((l) => (l.match(/^\[\d+(?:\.\d+)?s\]/) || [""])[0]);   // the BEATS' stamps, read by the one reader: a spoken line is never a beat (2026-09-25)
 const _blocks = (t) => ["Dialogue", "Sound", "Set", "Telling", "Music"].filter((h) => new RegExp(String.raw`^\s*\**\s*${h}\s*\**\s*[:—–-]`, "im").test(String(t || "")));
 const _content = (t) => new Set(String(t || "").toLowerCase().match(/[a-z][a-z'-]{3,}/g) || []);
 
@@ -91,10 +92,36 @@ export function editAccepted(before, after, { keep = 0.6 } = {}) {
   const b0 = _blocks(before), b1 = _blocks(a);
   const lost = b0.filter((h) => !b1.includes(h));
   if (lost.length) return { ok: false, why: `the edit dropped the ${lost.join(" and ")} block` };
+  // ⭐ NO SPOKEN LINE IS LOST (2026-09-25, the reviewer's review of job 7c2de649): "block kept" meant "header kept", so an answer that kept "Dialogue:" and emptied
+  // it passed. An edit may add a line (a finding can ask for one); it never takes one away.
+  const sp0 = scriptParts(before).dialogue.length, sp1 = scriptParts(a).dialogue.length;
+  if (sp1 < sp0) return { ok: false, why: `the edit dropped ${sp0 - sp1} spoken line${sp0 - sp1 === 1 ? "" : "s"} of ${sp0}` };
   const w0 = _content(before), w1 = _content(a);
   const kept = w0.size ? [...w0].filter((w) => w1.has(w)).length / w0.size : 1;
   if (kept < keep) return { ok: false, why: `the edit kept only ${Math.round(kept * 100)}% of the draft's words — a rewrite, not an edit` };
   return { ok: true, why: "" };
+}
+
+/**
+ * ⭐⭐ A REPAIR'S ANSWER IS TAKEN WHOLE OR NOT AT ALL (owner 2026-09-25: "im afraid of glues and mechanical solutions"; the two reviews of job 7c2de649).
+ * The fine-detail, anchor and payoff re-asks each had their answer cut apart by code and joined to pieces of the old draft, and job 7c2de649's model
+ * returned a whole, correct script whose Dialogue block the join threw away. The answer is laid out the way the first draft was (beats, the Dialogue
+ * block, the Sound line) and taken as it came when it is an edit of the script in hand: the same beats at the same stamps, every block, every spoken
+ * line, most of the words. Otherwise the caller ships the script it already has. Pure.
+ */
+export function acceptWhole(before, answer, opts) {
+  // What the model wrapped AROUND the script is not the script (the stamped-line filter this replaces threw it away by construction): a code fence, a
+  // preface above the beats where the draft's beats are stamped, a remark in the block that is no spoken line (it carries no colon). The script's own
+  // lines are never touched.
+  const lines = normalizeDraftLayout(String(answer || "").replace(/^\s*```[a-z]*\s*$/gim, "")).split("\n");
+  const hi = lines.findIndex((l) => /^\s*\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l)), stamped = scriptParts(before).beats.length > 0;
+  const text = lines.filter((l, i) => {
+    if (!l.trim() || /^\s*\**\s*(?:Dialogue|Sound|Set|Telling|Music)\s*\**\s*[:\u2014\u2013-]/i.test(l)) return true;
+    if (hi >= 0 && i > hi) return l.includes(":");
+    return !stamped || /^\s*\[\d+(?:\.\d+)?s\]/.test(l);
+  }).join("\n").trim();
+  const v = editAccepted(before, text, opts);
+  return v.ok ? { ok: true, text, why: "" } : { ok: false, text: null, why: v.why };
 }
 
 /**
