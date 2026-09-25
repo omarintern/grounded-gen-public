@@ -134,9 +134,7 @@ export const dialogueClause = ({ grid = true } = {}) => {   // grid: false for t
         // other character. That writer keeps the carried-voice permission above; the voice law times its lines.
         + (grid ? `⚠ USE THESE EXACT TIMINGS FOR THE DIALOGUE LINES: ${DIALOGUE_STAMPS.map((t) => `[${t}s]`).join(" ")} `
         + `— one fragment per stamp, in order, breaking the sentence at its own natural clause boundaries. `
-        + `⚠ THAT IS ONE SPEAKER'S SENTENCE CARRIED ACROSS STAMPS, AND IT IS NOT THE ONLY SHAPE. Two DIFFERENT figures may share one `
-        + `stamp when they speak at once — an interruption, an answer cutting in, two voices together. Keep them both, each with its own `
-        + `label and manner, at that same second: they overlap, they do not queue. `
+        + `⚠ THAT IS ONE SPEAKER'S SENTENCE CARRIED ACROSS STAMPS. `   // (two voices at one second moved into voiceClause, which every writer gets: 2026-09-25)
         // (the line's shape, its manner and its timing now ride voiceClause, which every writer gets: 2026-09-25)
         + `Two fragments at the top is the reflex and it is wrong: it lands the last words a third of the way `
         + `in and leaves the rest of the clip silent. The final stamp is deliberately late so the voice is `
@@ -210,6 +208,9 @@ export const voiceClause = () =>
   // writer wrote "[8s] The man …: "ME LIKEY!"" (stamp first, no manner), and the laws below it read only the label-first shape. Moved here from there.
   `Write each line as: the figure's label, a short parenthetical of how it is said — (sing-song, mocking), two or three words of delivery, ` +
   `never a body direction — then its second in brackets, a colon, and the words in quotes: label (manner) [Ns]: "words". ` +
+  // two voices at once, told to every writer (moved here from the timing grid, 2026-09-25: the multi-cut writer lost it with the grid; the reviewer's third build check)
+  `Two different figures may share one second when they speak at once — an interruption, an answer cutting in, two voices together: each keeps its ` +
+  `own label and manner at that second; they overlap, they do not queue. ` +
   `A SPOKEN LINE NEVER OUTRUNS THE BEAT THAT CARRIES IT: about three words a second, from its stamp to the next beat's stamp; no line begins in the take's last second.`;
 
 // ── THE KEPT CAST RIDES THE PARENT'S OWN FRAME (owner 2026-09-23: "frame is better, this is perfect") — the deep-remix executor sets the note (the

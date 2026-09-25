@@ -34,7 +34,9 @@ export function stateSummary(state) {
  *  and the escalation planner answer it in the same words, and the executor reads both through dialogueOf. An escalated surgery forced "keep" and copied
  *  the parent's block verbatim, so a line the maker asked for could never reach the take and the quoted-words check had nothing to read. */
 export const DIALOGUE_FIELD = `"dialogue":{"op":"keep|rewrite|remove","instruction":null|"..."}`;
-export const dialogueOf = (raw) => (["rewrite", "remove"].includes(raw?.op) ? { op: raw.op, instruction: raw?.instruction ? String(raw.instruction) : null } : { op: "keep", instruction: null });
+export const dialogueOf = (raw) => (raw?.op === "remove" ? { op: "remove", instruction: raw?.instruction ? String(raw.instruction) : null }
+  : raw?.op === "rewrite" && String(raw?.instruction || "").trim() ? { op: "rewrite", instruction: String(raw.instruction) }
+  : { op: "keep", instruction: null });   // a rewrite with no words is no change (both third build checks: it sent "DIALOGUE: null" to surgery, which refused)
 export async function parseRemixIntent(state, intentText) {
   const s = stateSummary(state);
   const ask =
@@ -485,7 +487,10 @@ export function originalFigureFor(term, state) {
 }
 export function escalationTerms(plan, state, intentText) {
   const known = ` ${String(state?.prompt_text || "").toLowerCase()} ${String(state?.plan?.user_prompt || "").toLowerCase()} ${(state?.plan?.figures || []).map((f) => String(f?.name || "").toLowerCase()).join(" ")} `;
-  const text = `${plan?.effective_prompt || ""} ${plan?.script_instruction || ""}`.toLowerCase();
+  // …and the speakers its dialogue change adds (the reviewer's third build check: an escalated surgery can now add a line, and nothing after it checks names);
+  // the quoted words are speech, never a speaker, so they are not looked up
+  const said = String(plan?.dialogue?.instruction || "").replace(/["\u201c][^"\u201c\u201d]*["\u201d]/g, " ");
+  const text = `${plan?.effective_prompt || ""} ${plan?.script_instruction || ""} ${said}`.toLowerCase();
   const fresh = [...new Set((text.match(/[a-z][a-z'-]{3,}/g) || []).filter((w) => !_ESC_STOP.has(w) && !known.includes(w)))].slice(0, 8);
   return [...new Set([...(Array.isArray(plan?.clearance_delta) ? plan.clearance_delta : []).map((x) => String(x).trim()).filter(Boolean), ...fresh])];
 }
