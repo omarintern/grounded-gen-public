@@ -490,7 +490,7 @@ export function escalationTerms(plan, state, intentText) {
   // …and the speakers its dialogue change adds (the reviewer's third build check: an escalated surgery can now add a line, and nothing after it checks names);
   // the quoted words are speech, never a speaker, so they are not looked up
   const said = String(plan?.dialogue?.instruction || "").replace(/["\u201c][^"\u201c\u201d]*["\u201d]/g, " ");
-  const text = `${plan?.effective_prompt || ""} ${plan?.script_instruction || ""} ${said}`.toLowerCase();
+  const text = `${said} ${plan?.effective_prompt || ""} ${plan?.script_instruction || ""}`.toLowerCase();   // the speakers FIRST: the scan keeps eight words, and a wordy instruction filled them (the reviewer's fourth build check)
   const fresh = [...new Set((text.match(/[a-z][a-z'-]{3,}/g) || []).filter((w) => !_ESC_STOP.has(w) && !known.includes(w)))].slice(0, 8);
   return [...new Set([...(Array.isArray(plan?.clearance_delta) ? plan.clearance_delta : []).map((x) => String(x).trim()).filter(Boolean), ...fresh])];
 }
