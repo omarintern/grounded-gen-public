@@ -7,7 +7,7 @@
 // ⚠ NON-INTERFERENCE (owner 2026-08-12): consumed ONLY by _ground_shotset's celeb fact-path, which is
 // double-gated (WRITER_FACTS==="1" AND CELEB_LENS set). The non-© world-build call (_run:1597, no CELEB_LENS)
 // can never reach it; the ip-character branch (_ground_prompt) never touches this file.
-import { ledgerToks, dialogueShape, validateBeatsAgainstLedger } from "./_gate_rules.mjs";   // dialogueShape: the SHARED dialogue-skeleton law (word floor, both-parties-speak, sentence-button) — v2, benchmark-verified 6/6 before wiring
+import { ledgerToks, dialogueShape, validateBeatsAgainstLedger, normalizeDraftLayout, scriptParts } from "./_gate_rules.mjs";   // dialogueShape: the SHARED dialogue-skeleton law (word floor, both-parties-speak, sentence-button) — v2, benchmark-verified 6/6 before wiring
 
 const SIZE_WORDS = /\b(small|tiny|distant|far away|faraway|in the distance|at a distance|speck)\b/i;
 const CAMERA_WORDS = /\b(pans?|panning|zooms?|zooming|push(?:es)?[- ]?in|tilts?|tilting|dolly|camera)\b/i;
@@ -82,6 +82,16 @@ export const ipSwapClause = (role) => `takes the place of ${role} at the action 
 // stamps + CUT-N + per-cut capture sentence. Both shapes parse; the stamp consistency check below fires only
 // on stamped texts, so legacy callers are byte-identical.
 export const CUT_LINE = /^(?:\[\d+(?:\.\d+)?s\]\s*)?cut \d+\s*[:—-]/i;
+/** ⭐⭐ A MULTI-CUT SCRIPT, KEPT WHOLE (owner 2026-09-25, "lets fix these now"): the Cut lines, then the Dialogue block, then the Sound line, laid out the
+ *  canonical way. The multi-cut writer's parser kept only its Cut lines, so its take never carried a line or a sound of its own. What a model wraps around
+ *  the script is not the script: before the block a line stays only as a Cut line, inside it only as a spoken line (it carries a colon). Pure. */
+export function keepCutScript(text) {
+  const ls = normalizeDraftLayout(String(text || "").replace(/^\s*```[a-z]*\s*$/gim, "")).split("\n").map((l) => l.trim());
+  const hi = ls.findIndex((l) => /^\**\s*Dialogue\s*\**\s*[:\u2014\u2013-]/i.test(l));
+  return ls.filter((l, i) => l && (CUT_LINE.test(l) || /^Sound\s*[:\u2014\u2013-]/i.test(l) || i === hi || (hi >= 0 && i > hi && l.includes(":"))));
+}
+/** How many spoken lines a kept script carries: a repair that returns fewer is not taken (the edit guard's own rule). Pure. */
+export const spokenCount = (lines) => scriptParts((Array.isArray(lines) ? lines : [lines]).join("\n")).dialogue.length;
 export const cutLinesOf = (text) => String(text || "").split("\n").map((l) => l.trim()).filter((l) => CUT_LINE.test(l));
 /** DISTINCT cut NUMBERS, not cut LINES — cuts are VANTAGES, beats are moments, and the law admits many beats
  *  inside one vantage ("One line per BEAT, every one of them inside the SAME cut"). Counting LINES made the law
