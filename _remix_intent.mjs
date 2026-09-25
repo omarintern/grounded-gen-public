@@ -453,6 +453,21 @@ const _ESC_STOP = new Set(["that", "with", "into", "from", "then", "this", "thei
  *  new term names — sameCharacter over its name, its canonical name and the resolver's term, either way round — or null. Every figure in a finished
  *  original's plan passed that run's gates. Matched on the CAST only, never on the original's free words: "a jack russell terrier" must not make
  *  Jack Torrance "not new". Pure. */
+/** THE NAME A CHANGE-LIST TERM IS LOOKED UP BY (owner 2026-09-25: plain words are never looked up). `names` is the planner's own name reader's answer over the
+ *  original's words and the remix's. A term is a name when a name's words are all in it (a word matches its plural or a longer form: "lil caesars mascot" holds
+ *  "Lil Caesar"; the work a name is written with, "Jack (The Shining)", is not its words, so "jack" holds it); the name is returned as the reader wrote it,
+ *  the one the term matches exactly first. A name is never found in ONE of its own words: "man" is not "Iron Man", "mascot" is not "lil caesars mascot",
+ *  "rock" is not "The Rock". null = plain words. A reader that failed (names.failed) returns the term itself: everything is looked up, as before. Pure. */
+const _DELTA_STOP = new Set(["in", "on", "at", "of", "to", "by", "an", "as", "is", "it", "or", "and", "with", "for", "from", "into", "onto", "that", "this", "his", "her", "its", "their"]);
+const _deltaToks = (x) => String(x || "").toLowerCase().replace(/\([^)]*\)/g, " ").split(/[^a-z0-9']+/).filter((w) => w.length >= 2 && !_DELTA_STOP.has(w));
+const _covers = (a, b) => a.length > 0 && a.every((x) => b.some((y) => y === x || (x.length >= 4 && y.length >= 4 && (y.startsWith(x) || x.startsWith(y)))));
+export function nameForDelta(term, names = []) {
+  if (names?.failed) return term;
+  const tt = _deltaToks(term);
+  const fits = (Array.isArray(names) ? names : []).map((n) => ({ n, nt: _deltaToks(n) })).filter(({ nt }) => _covers(nt, tt));
+  fits.sort((a, b) => Number(_covers(tt, b.nt)) - Number(_covers(tt, a.nt)) || b.nt.length - a.nt.length);
+  return fits[0]?.n || null;
+}
 export function originalFigureFor(term, state) {
   const figs = Array.isArray(state?.plan?.figures) ? state.plan.figures : [];
   return figs.find((f) => { const names = [f?.name, f?.canonical_name, f?.term].filter(Boolean); return sameCharacter(term, names) || names.some((n) => sameCharacter(n, [term])); }) || null;
