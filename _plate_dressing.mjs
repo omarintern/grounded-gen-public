@@ -146,6 +146,9 @@ const plateThings = (Array.isArray(read?.plate_things) ? read.plate_things : [])
 const platePeople = (CAPTURE || THING) ? (Array.isArray(read?.plate_people) ? read.plate_people : []).map((x) => String(x || "").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 4) : [];
 if (platePeople.length) console.log(`  ◇ people in the frame, never replaced, their places offered to the story's figures: ${platePeople.join(", ")}`);
 const _kindOf = (nm) => String((elements.find((x) => String(x?.name || "").toLowerCase() === String(nm || "").toLowerCase()) || {}).kind || "").toLowerCase();
+// …and under a capture form nothing replaces the dark, the sky or the light the camera recorded: they are the recording's (the reviewer's check of 42e1b36: "the dark
+// pitch-black night sky background becomes a massive peak" survived to beat zero); the same ambient test that keeps them out of the pieces
+for (const e of dressing.slice()) if (e.op === "replace" && (CAPTURE || THING) && (NEUTRAL_SURFACE.test(String(e.where || "").replace(/\s+/g, " ").trim()) || isAmbient(e.where))) { console.log(`  ◇ ${e.name}: dropped — "${e.where}" is the dark, the sky or the light the camera recorded, never replaced (the recording's own)`); dressing.splice(dressing.indexOf(e), 1); }
 for (const e of dressing.slice()) if (e.op === "replace" && isConstruction(e.where)) { console.log(`  ◇ ${e.name}: dropped — "${e.where}" is the light, the track bed or a bare platform, never replaced (the light follows the world)`); dressing.splice(dressing.indexOf(e), 1); }
 // A PIECE IS REPLACED BEFORE ANYTHING IS ADDED — simple arithmetic (owner 2026-09-15: "it should be simple math that a piece is replaced before anything is added";
 // B4: the pumpkin figures and the themed floor survived while the dials, the hedge walls and the maze marker had been spent as additions and later stops). While a set
@@ -168,8 +171,10 @@ if (TRANSFER && plateThings.length) {
     // line and the video kept the forest). A camera has no building to strike a piece to (the dark-ride strike below wrote "the show building's own black wall"
     // over a trail-cam frame: jobs 251b7f58, d6921814), but the place has ground, and nothing of the camera's photograph is ever left as itself.
     if (CAPTURE) {
-      const ground = elements.find((e) => /^(?:floor|exterior|space)$/.test(String(e?.surface || "")) || /\b(?:ground|floor|snow|sand|dirt|soil|rock|scree|gravel|grass|water|ice|mud|earth)\b/i.test(String(e?.name || "")))?.name || elements[elements.length - 1]?.name;
-      if (!ground) { _paired.push(`${piece} ← nothing (no thing of the place was read)`); continue; }
+      // the ground is the place's FLOOR surface (the read's own), never its far field: a peak is an exterior too (the reviewer's check of 42e1b36: the finder took
+      // "a massive snow-capped mountain peak" for the stump and the deer)
+      const ground = (elements.find((e) => String(e?.surface || "") === "floor") || elements.find((e) => /\b(?:ground|floor|moraine|scree|gravel|dirt|soil|sand|grass|mud|earth)\b/i.test(String(e?.name || "")) && !/\b(?:peak|ridge|summit|sky|wall|cliff|mountain|horizon)\b/i.test(String(e?.name || ""))))?.name;
+      if (!ground) { _paired.push(`${piece} ← nothing (no ground of the place was read)`); continue; }
       dressing.push({ name: ground, op: "replace", where: piece, why: "the place's own ground: a camera has no building, and nothing of the photograph stays as itself" }); _paired.push(`${piece} ← ${ground} (the place's ground)`); continue;
     }
     // NOTHING LEFT TO GIVE — THE PIECE IS STRUCK (owner 2026-09-15: nothing of the photograph's own set dressing survives; B5 left the jack-o'-lanterns, the wooden stand and
