@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, lastBeatOnly } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { castFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23)
@@ -851,10 +851,11 @@ try {
         // only completes is not an improvement worth the risk of a worse-written beat.
         const pv2 = await payoffVerdict(requestForLaws(process.env.USER_PROMPT || userPrompt || ""), next);
         if (pv2.verdict === "escalates") {
-          // ⭐⭐ ONLY THE LAST BEAT MOVES (2026-09-26, the penguin remix 6da2e918: told to keep every earlier beat exactly, the retry rewrote beat zero and
-          // put back the deer and the forest's pieces the first draft had left out). The retry's last beat is spliced into the original; the rest stays.
-          beatLine = lastBeatOnly(beatLine, next);
-          console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`);
+          // ⭐⭐ WHOLE OR NOT AT ALL (2026-09-26, the penguin remix 6da2e918: told to keep every earlier beat exactly, the retry rewrote beat zero and put
+          // back the deer and the forest's pieces the first draft had left out). The judged retry ships whole when its earlier beats are the original's;
+          // otherwise the original ships (the owner's 09-25 rule: no splice ships unread).
+          if (earlierBeatsKept(beatLine, next)) { beatLine = next; console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`); }
+          else console.warn(`  [payoff] the retry escalates but rewrote earlier beats \u2014 shipping the original whole (whole or not at all)`);
         } else console.warn(`  [payoff] retry still ${String(pv2.verdict || "unjudged").toUpperCase()} — shipping the original (expect a flat payoff).`);
       }
     } catch (e) {

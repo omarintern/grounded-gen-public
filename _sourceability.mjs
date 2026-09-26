@@ -181,7 +181,7 @@ export function appropriationOf(pairs = [], sure = SOURCEABLE_SURE, { named = []
 /** THE REDUCTIONS: a subject that cannot be photographed as itself but HAS a photographable kind — the kind's queries lead the hunt, the specifics are
  *  written (owner 2026-09-11: "my late grandmother's kitchen in Leeds would become a kitchen query however. our moat stands"). Pure. */
 export function sourceabilityReductions(verdicts = []) {
-  return (Array.isArray(verdicts) ? verdicts : []).filter((v) => v && v.sourceable === false && Array.isArray(v.reduction) && v.reduction.length).map((v) => ({ subject: v.subject, role: v.role, kinds: v.reduction.slice(0, 3), written: Array.isArray(v.written) ? v.written : [], inferred: v.inferred === true, kind: v.kind }));
+  return (Array.isArray(verdicts) ? verdicts : []).filter((v) => v && v.sourceable === false && Array.isArray(v.reduction) && v.reduction.length).map((v) => ({ subject: v.subject, ...(v.place ? { place: v.place } : {}), role: v.role, kinds: v.reduction.slice(0, 3), written: Array.isArray(v.written) ? v.written : [], inferred: v.inferred === true, kind: v.kind }));
 }
 /** A PHOTOGRAPHABLE THING IS PHOTOGRAPHED; ONLY THE UNPHOTOGRAPHABLE IS WRITTEN (owner 2026-09-18, reversing the same day's
  *  "a thing is written, never hunted": "it must be sourced for sure … the tsunami would replace the prompted tsunami … water replaces
