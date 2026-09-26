@@ -8,9 +8,9 @@
 // from those answers. One record of the choice rides into the run: { mode, from, why, names, who }.
 //   carry  the parent's frames carry the characters (they show another kind of place), and the new place is sourced: the path before this rule
 //   canon  another gen of the canon carries them in frames of another kind of place, every carried character and no one else; the new place is sourced
-//   reuse  nothing in the canon qualifies: the parent's own frame is the scene, no new place is sourced
-//   anew   nothing qualifies and the parent is stale (its script wrote the camera's chrome), or no frame of it shows them alone: no frame rides, the new
-//          place is sourced, and the characters are written as the parent recorded them
+//   reuse  nothing in the canon qualifies and the words keep the place: the parent's own frame is the scene, no new place is sourced
+//   anew   nothing qualifies and the words name a new place, or the parent is stale (its script wrote the camera's chrome), or no frame of it shows them
+//          alone: no frame rides, the place is sourced, and the characters are written as the parent recorded them
 
 const key = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const framesOf = (c) => new Set((Array.isArray(c?.frames) ? c.frames : []).map((n) => Math.round(Number(n))).filter((n) => n >= 1));
@@ -41,8 +41,8 @@ export const onlyThemFrame = (found = [], carried = [], among = null) => onlyThe
  *  parent: { same: true|false|null (do the frames that would ride show the kind of place the remix puts its characters in), frame: n (its one frame of
  *          them alone, in that kind) }
  *  canon:  [{ id, framePaths }] the canon candidates actually read, in search order; framePaths are their frames of them alone in another kind of place
- *  stale:  the parent's script wrote the camera's chrome; keepExplicit: the remixer's own words keep the place */
-export function chooseStrip({ parent = null, canon = [], stale = false, keepExplicit = false } = {}) {
+ *  stale:  the parent's script wrote the camera's chrome; keepExplicit: the remixer's own words keep the place; named: the remixer's words name a new place */
+export function chooseStrip({ parent = null, canon = [], stale = false, keepExplicit = false, named = false } = {}) {
   if (keepExplicit) {
     // the remixer's own words keep the place (owner 09-25: "the film-strip should use that"); a stale parent's frame never becomes the scene
     if (!stale && parent?.frame) return { mode: "reuse", why: "the remixer's words keep the place: the parent's own frame is the scene" };
@@ -51,6 +51,8 @@ export function chooseStrip({ parent = null, canon = [], stale = false, keepExpl
   if (!parent || parent.same !== true) return { mode: "carry", why: parent?.same === false ? "the parent's frames show another kind of place: they carry, and the new place is sourced" : "no kind answer: the parent's frames carry as before" };
   const hit = (Array.isArray(canon) ? canon : []).find((c) => c && Array.isArray(c.framePaths) && c.framePaths.length);
   if (hit) return { mode: "canon", from: hit.id, why: `the parent's frames show the kind of place the remix puts its characters in; ${hit.id} shows them in another kind` };
+  // a place the words name is sourced, never the parent's frame in its stead (owner 2026-09-26, on "now they ride in a limo": "source the new place")
+  if (named) return { mode: "anew", why: "the remix names a new place of the parent's kind and nothing in the canon shows the characters elsewhere: the named place is sourced, the characters as recorded" };
   if (!stale && parent.frame > 0) return { mode: "reuse", why: "the parent's frames show the kind of place the remix puts its characters in and nothing in the canon shows them elsewhere: its own frame is the scene" };
   return { mode: "anew", why: stale ? "the parent's frames show the remix's kind of place, nothing shows the characters elsewhere, and the parent is stale: sourced anew, the characters as recorded" : "no frame of the parent shows every carried character alone: sourced anew, the characters as recorded" };
 }
