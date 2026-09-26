@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept, captureFormNoun, cameraAsActor } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept, captureFormNoun, cameraAsActor, mountOf } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { castFrameClause, reusedFrame, reusedFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23); or stands in frame zero (2026-09-26)
@@ -134,8 +134,9 @@ const b64 = readFileSync(worldRef).toString("base64");
 const _seenKeys = pinKeys("seen", { promptSha: _promptSha, plateSha: _plateSha });
 const _seenPinned = PIN_ON ? pinHit(_pin, "seen", _seenKeys) : null;
 if (_seenPinned) console.log("  \u25c7 the plate reading is this job's own — the same photograph and the same request, so it is not looked at again");
+const MOUNT = mountOf(process.env);   // a doorbell camera hangs on the door: the same reading says what of it shows and at which edge (owner 2026-09-27)
 const seen = _seenPinned || await providerJson([
-  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant currently AT THE ACTION SPOT, if any. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so it is animated, never conjured twice),"standin_placement":"foreground | side | background | none",${ELEMENTS_FIELD}}.`),
+  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant currently AT THE ACTION SPOT, if any. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so it is animated, never conjured twice),"standin_placement":"foreground | side | background | none",${ELEMENTS_FIELD}${MOUNT ? `,${MOUNT.field}` : ""}}.`),
   imagePart("image/jpeg", b64),
 ], { maxTokens: 2400, temperature: 0.2 });
 if (!_seenPinned) _keepRead("seen", _seenKeys, seen);
@@ -334,6 +335,7 @@ if (BEAT_STYLE !== "template") {
   const instruction = _dump(
     spanHeader() +
     `${borrowedCamera() ? "SCENE AT FRAME ZERO" : "SCENE AS PHOTOGRAPHED"}: ${seen.scene}\n` +
+    `${MOUNT ? MOUNT.clause(seen.mount) : ""}` +
     // ON A REMIX (2026-09-09): the reframed request is the user's request applied to the parent's video, and the remix words are the CHANGE —
     // never the other way round (job 6280175e: the change was presented as the request and the parent's register, place and camera reference
     // rode as demoted context; the beats lost them). The parent's request stands wherever the change is silent.
@@ -883,5 +885,6 @@ try {
 writeFileSync(outFile, beatLine + "\n");
 console.log(`target : ${intent.target} · action: ${intent.action}${intent.secondary ? ` · +${intent.secondary}` : ""}`);
 console.log(`scene : ${seen.scene}`);
+if (MOUNT) { const _e = MOUNT.edgeOf(seen.mount); console.log(`mount : ${_e === "none" ? "none of the door shows; it is behind the lens" : _e ? `the door shows at the ${_e} edge` : "(the reading did not answer the door's edge; the writer is told only that the camera hangs on it)"}`); }
 console.log(`standin: "${seen.standin}" [${seen.standin_placement}] → ${mode}`);
 console.log(`\nBEATS → ${outFile}\n ${beatLine}`);
