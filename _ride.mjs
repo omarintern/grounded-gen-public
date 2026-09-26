@@ -353,8 +353,11 @@ export function firstStopSlots(slots = [], first = "", q = "") {
   const norm = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/\s+/g, " ").trim();
   const list = Array.isArray(slots) ? slots.slice() : [];
   const qq = String(q || first || "").trim();
-  const byWords = list.find((v) => norm(v?.scope) === norm(first) || (Array.isArray(v?.queries) ? v.queries : []).some((x) => norm(x) === norm(qq) || norm(x) === norm(first)));
-  const hit = byWords || list[0] || null;
+  // …never onto the world's own opening (a beat-0 slot, worldOwnedSlotQueries): made plan-owed it lost its world claim and the writer was told the
+  // photographed place was that slot (build check 2026-09-26). It stays in the list exactly as the planner wrote it, as cutDestinations leaves it.
+  const opening = (v) => String(v?.beat ?? "").replace(/s$/i, "").trim() === "0";
+  const byWords = list.find((v) => !opening(v) && (norm(v?.scope) === norm(first) || (Array.isArray(v?.queries) ? v.queries : []).some((x) => norm(x) === norm(qq) || norm(x) === norm(first))));
+  const hit = byWords || list.find((v) => !opening(v)) || null;
   if (!hit) return { slots: [{ beat: null, queries: [...new Set([qq, first].filter(Boolean))], scope: first }], joined: "new" };
   const led = { ...hit, beat: null, queries: [qq, ...(Array.isArray(hit.queries) ? hit.queries : []).filter((x) => norm(x) !== norm(qq))] };
   return { slots: [led, ...list.filter((v) => v !== hit)], joined: byWords ? "words" : "order" };
