@@ -18,7 +18,7 @@ import { castFrameClause, reusedFrame, reusedFrameClause } from "./_beat_law.mjs
 import { installExitHandlers } from "./_exit.mjs";   // one exit contract for every process (2026-09-24)
 import { referenceVoicesLaw } from "./_beat_law.mjs";   // a name the maker used only for a manner: the writer alone knows whose (owner 2026-09-24)
 import { acceptWhole } from "./_beat_edit.mjs";   // a repair's answer, whole or not at all (owner 2026-09-25)
-import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, appropriationFrame, borrowedCamera, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, voiceClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, borrowedCamera, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, voiceClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
@@ -142,7 +142,7 @@ if (!_seenPinned) _keepRead("seen", _seenKeys, seen);
 // ⭐⭐ UNDER A BORROWED CAMERA THE SCENE IS THE FRAME AT ZERO (owner 2026-09-26, the penguin remix 6da2e918). The photograph read above is the camera's, taken
 // somewhere else: its scene ("a dark forest clearing") and its occupant (the deer, "the place's own, stays exactly as photographed") belong to that other place.
 // Every consumer of this reading (the scene line, the swap clause, the anchor re-ask, the invoke list) reads the appropriation's frame instead, in one place.
-{ const _bc = borrowedCamera(); if (_bc) { const _fz = appropriationFrame(); seen.scene = _fz || `${_bc.place || "the maker's place"}, seen through this ${String(_bc.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || _bc.form}`; seen.standin = "none"; seen.standin_is_target = false; seen.elements = []; console.log(`  \u25c7 a borrowed camera: the scene is the frame at zero (${_fz ? "the maker's place written into it" : "the read did not answer; the place by name"}), and the camera's photograph holds no occupant of the story's place`); } }
+{ const _bc = borrowedCamera(); if (_bc) { seen.scene = `${_bc.place || "the maker's place"}, seen through this ${String(_bc.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || _bc.form}`; seen.standin = "none"; seen.standin_is_target = false; seen.elements = []; console.log(`  \u25c7 a borrowed camera: the scene is the maker's place seen through it (the map states frame zero piece by piece)`); } }
 
 // 2b. READ THE CHARACTER REFS (VLM) — what does the sourced character actually LOOK like, and what does it
 // CARRY or WEAR that the beats can put to work? A signature the beats never touch is a signature the action
@@ -468,7 +468,7 @@ if (BEAT_STYLE !== "template") {
     // beat shipped "and the camera tracks with it"; this check lived only inside the cinematic guard below).
     // …under a CAPTURE form the camera is a thing of the scene the subject may look at (the maker's "looks at the camera"; the 2026-09-26 penguin take lost it
     // here, a paid retry before the ledger ever saw it); a camera MOVE still fails there, by the ledger's own list
-    if (captureFormNoun(process.env) ? !!cameraAsActor(t, process.env.APPARATUS_NOUN || "") : /\bthe camera\b/i.test(t))
+    if (captureFormNoun(process.env) ? !!cameraAsActor(t, process.env.APPARATUS_NOUN || captureFormNoun(process.env)) : /\bthe camera\b/i.test(t))
       fails.push(`a beat names the camera ("the camera tracks with it") — the camera is never a character: delete the camera clause and write only what the subject does${genMood() === "cinematic" ? ' (for a cut, write "Hard cut to …")' : ""}`);
     // ⚠ THE CAMERA'S CHROME IS NEVER WRITTEN — ANY REGISTER (owner 2026-09-21, job d6921814: "under the trail camera's washed overlay and corner
     // marks" drew a camcorder viewfinder — brackets and battery icons — over a take whose frame zero was a real fixed camera's own frame; the

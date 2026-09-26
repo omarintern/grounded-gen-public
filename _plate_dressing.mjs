@@ -164,19 +164,23 @@ if (TRANSFER && plateThings.length) {
     if (unplaced) { dressing.push({ name: unplaced, op: "replace", where: piece, why: "arithmetic: a piece is replaced before anything is added" }); _paired.push(`${piece} ← ${unplaced}`); continue; }
     const addIdx = dressing.findIndex((e) => e.op === "add");
     if (addIdx >= 0) { const e = dressing[addIdx]; dressing[addIdx] = { name: e.name, op: "replace", where: piece, why: `arithmetic: the addition at "${e.where}" becomes this piece's replacement` }; _paired.push(`${piece} ← ${e.name} (was added)`); continue; }
-    // ⭐⭐ UNDER A CAPTURE FORM A PIECE WITH NO TAKER STAYS AS ITSELF (owner 2026-09-21, jobs 251b7f58 and d6921814: the dark-ride strike below wrote "the show
-    // building's own black wall" where a trail-cam frame's trees, stump and sky stood — a ride's building leaking into an outdoor take). A camera has no
-    // building to strike a piece to; the appropriation block's own law is "a piece with no replacement is named as itself, in its place". The strike is the ride's.
-    if (CAPTURE) { _paired.push(`${piece} stays as itself (a camera has no building to strike it to)`); continue; }
+    // ⭐⭐ UNDER A CAPTURE FORM A PIECE WITH NO TAKER TAKES THE PLACE'S OWN GROUND (owner 2026-09-26, 6da2e918: the stump and the deer "stayed as themselves" by this
+    // line and the video kept the forest). A camera has no building to strike a piece to (the dark-ride strike below wrote "the show building's own black wall"
+    // over a trail-cam frame: jobs 251b7f58, d6921814), but the place has ground, and nothing of the camera's photograph is ever left as itself.
+    if (CAPTURE) {
+      const ground = elements.find((e) => /^(?:floor|exterior|space)$/.test(String(e?.surface || "")) || /\b(?:ground|floor|snow|sand|dirt|soil|rock|scree|gravel|grass|water|ice|mud|earth)\b/i.test(String(e?.name || "")))?.name || elements[elements.length - 1]?.name;
+      if (!ground) { _paired.push(`${piece} ← nothing (no thing of the place was read)`); continue; }
+      dressing.push({ name: ground, op: "replace", where: piece, why: "the place's own ground: a camera has no building, and nothing of the photograph stays as itself" }); _paired.push(`${piece} ← ${ground} (the place's ground)`); continue;
+    }
     // NOTHING LEFT TO GIVE — THE PIECE IS STRUCK (owner 2026-09-15: nothing of the photograph's own set dressing survives; B5 left the jack-o'-lanterns, the wooden stand and
     // the forest floor standing in the Shining ride when the world had only four things): a piece with no taker becomes the show building's own — a black wall where a
     // prop, a figure or scenery stood, the bare floor beside the way where a floor piece lay — the ride's building, which stays by law, and nothing of the other ride's theme.
     const floorish = /\b(?:floor|ground|carpet|rug|path|steps?|stairs?)\b/i.test(piece);
     dressing.push({ name: floorish ? `the bare floor beside the ${wayWord}` : "the show building's own black wall", op: "replace", where: piece, why: "struck: nothing of the photograph's dressing survives; no thing of the world was left to give" }); _paired.push(`${piece} ← struck (${floorish ? "bare floor" : "black wall"})`);
   }
-  if (_paired.length) console.log(`  ◇ replaced before added (arithmetic — every set piece has a taker while a thing is left; a piece with none is ${CAPTURE ? "left as itself" : "struck"}): ${_paired.join(" · ")}`);
+  if (_paired.length) console.log(`  ◇ replaced before added (arithmetic — every set piece has a taker while a thing is left; a piece with none ${CAPTURE ? "takes the place's ground" : "is struck"}): ${_paired.join(" · ")}`);
 }
-if (TRANSFER && plateThings.length) console.log(`  ◇ the photograph's own set pieces, most foreign first (each named at frame zero as what it becomes, or as itself only when the world has nothing left to give): ${plateThings.join(", ")}`);
+if (TRANSFER && plateThings.length) console.log(`  ◇ the photograph's own set pieces, most foreign first (each named at frame zero as what it becomes${CAPTURE ? "" : ", or as itself only when the world has nothing left to give"}): ${plateThings.join(", ")}`);
 try { writeFileSync(`${plate}.dressing.json`, JSON.stringify({ role, dressing, plate_things: plateThings, plate_people: platePeople }, null, 2)); } catch {}
 if (!dressing.length) { console.log("  ◇ the photograph has no surface or space for the world's things here"); process.exit(2); }
 console.log(`  ✓ ${dressing.length} thing(s) placed on the photograph's own space — written into the take, never painted`);
