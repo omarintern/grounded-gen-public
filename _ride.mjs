@@ -253,7 +253,11 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const title = _stripCast(p.world_clearance?.setName) || _stripCast(p.world_theme?.work) || _stripCast(setEnt?.canonical_name || setEnt?.term) || (plan ? workTitlesOf(p)[0] : "");
   const setting = String(p.form?.setting || "").replace(/\s+/g, " ").trim();
   const themedSetting = /\b(?:themed|dark ride|indoor|enclos\w*|show building)\b/i.test(setting);
-  const mode = family === "dark ride" && named ? "theme" : family === "coaster" && (named || themedSetting) ? "architecture" : named ? "places" : "setting";
+  // ⭐⭐ A DARK RIDE IS A THEME BY ITS FAMILY, NAMED WORK OR NOT (owner 2026-09-26, the cruise ride 00b8c26a: "Unnamed rides' rooms are sent to video"; both
+  // reviews). An unnamed dark ride took the setting branch: its rooms were judged as plates, never read for their things, the seat read with the dark-ride law
+  // off and no frame zero composed, so the locked seat's own set pieces were never replaced (the 09-09 mushroom, in every unnamed dark ride). A themed ride
+  // reads the photographs that ride when it has no rooms of a work, and composes frame zero from what they hold.
+  const mode = family === "dark ride" ? "theme" : family === "coaster" && (named || themedSetting) ? "architecture" : named ? "places" : "setting";
   const interior = plan ? isInteriorWorld(p) : false;
   const places = (Array.isArray(p.form?.places) ? p.form.places : []).map((x) => String(x || "").trim()).filter(Boolean);
   // the seat's second query on a dark ride: the maker's world words when they are a theme, never a work's title (a title in a dark-ride
