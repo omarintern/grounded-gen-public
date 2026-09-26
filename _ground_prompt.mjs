@@ -340,7 +340,7 @@ if (BEAT_STYLE !== "template") {
           : "")
       : `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n`) +
     (!String(process.env.REMIX_CHANGE || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() !== userPrompt
-      ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${RIDE?.world?.mode === "theme" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
+      ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${RIDE?.world?.mode === "theme" && RIDE?.world?.named ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
     `${swapClause}\n${comedyClause}\n${vocalizationClause()}\n${voiceClause()}\n${belongingClause()}\n${castFrameClause()}\n${rideBlock(RIDE)}${workTitlesClause()}${referenceVoicesLaw()}${ipFiguresLaw()}${frameZeroRegisterClause()}${appropriationBlock()}${thingBlock()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
