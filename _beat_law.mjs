@@ -7,6 +7,7 @@
 // the FINE_DETAIL regex) rides along. speechReach already lives in _gate_rules (shared there, not here).
 import { dialogueStamps, musicRequested, captureFormNoun, readSpeakerLine } from "./_gate_rules.mjs";
 import { rideFromEnv } from "./_ride.mjs";   // the ride's handheld exception is carved where the camera law is stated (2026-09-09)
+import { frameText } from "./_frame_read.mjs";   // the frame at zero, as every writer reads it (2026-09-26)
 import { replacementFact } from "./_ride_writer.mjs";   // the golden grammar is written once and imported, never pasted (2026-09-18)
 
 export const DIALOGUE_STAMPS = dialogueStamps(Number(process.env.BEAT_DURATION) || 4, Number(process.env.CUT_BUDGET) || 0);
@@ -233,6 +234,7 @@ export const workTitlesClause = () =>
 // photograph IS — the plate's own register, not a camera word. The run repairs mechanically when the writer leaves it out.
 export const frameZeroRegisterClause = () => {
   const n = captureFormNoun(process.env); if (!n) return "";
+  if (appropriationFrame()) return "";   // a borrowed camera's frame zero is the maker's place written into it (appropriationBlock), never "the place as photographed" (2026-09-26)
   const shown = /^cctv$/i.test(n) ? "CCTV" : n.toLowerCase();
   // THE STATEMENT IS MANDATED ONLY WHEN THE WORDS ARE RE-AUTHORED AGAINST A KEPT PLATE (owner 2026-09-09, on the record: the badger, the
   // cymbal monkeys and Redmond Barry kept their monochrome security-camera look with NO register word at beat zero — the plate carried it;
@@ -247,9 +249,25 @@ export const frameZeroRegisterClause = () => {
 // read for the things that take the form frame's own pieces. The writer never sees either picture's map by accident: it is told,
 // first, in the grammar a ride has used for its own replacements since 2026-09-10, because a replacement written as a CHANGE
 // ("becomes", "turns into") makes the model animate the morph instead of opening on the scene. Empty when nothing appropriated.
+/** The frame at zero the appropriation read wrote (one record, plan.appropriation.frame via APPROPRIATION_MAP), as the writer reads it; "" when none. */
+export const appropriationFrame = () => {
+  let m = null; try { m = JSON.parse(process.env.APPROPRIATION_MAP || ""); } catch { m = null; }
+  return m && typeof m === "object" && m.frame && m.frame.near ? frameText({ ...m.frame, stands: Array.isArray(m.stands) ? m.stands : [] }) : "";
+};
 export const appropriationBlock = () => {
   let m = null; try { m = JSON.parse(process.env.APPROPRIATION_MAP || ""); } catch { m = null; }
   if (!m || typeof m !== "object" || !m.form) return "";
+  // ⭐⭐ POSITIVE LAW ONLY (owner 2026-09-26, the penguin remix 6da2e918: "swapping is saying negative instructions and since no posive instructions are
+  // being made its leaving the elements we dont mention"). Frame zero is described as the maker's place seen through this camera; the camera's own
+  // photograph is never named piece by piece, so its old pieces are gone and its light, colour and marks, never mentioned, stay.
+  const frame = appropriationFrame();
+  if (frame) {
+    const dev0 = String(m.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || String(m.form);
+    return `⚠⚠ THIS TAKE IS WHAT A ${dev0.toUpperCase()} RECORDED IN ${String(m.place || "THE MAKER'S PLACE").toUpperCase()}. The photograph you are looking at is that camera: its vantage, its colour and its light (the darkness or the daylight it recorded in) belong to the recording, carried by the photograph from the first beat to the last, and a night stays night. The camera is fixed; it is never a character and never moves, and the beats describe the place and the figures, never the recording.\n` +
+      `⚠⚠ FRAME ZERO, AS THIS CAMERA SEES ${String(m.place || "THE PLACE").toUpperCase()}: ${frame} Beat zero describes exactly this frame, in these words, as a standing fact already in place before the first frame; the figures named here are the only living things in it, and every later beat stays inside it.\n` +
+      `⚠⚠ THE SECOND PHOTOGRAPH SHOWS THE PLACE'S OWN MATTER; IT IS NEVER A PLACE THE TAKE GOES. The take never leaves this frame: no cut, no arrival, no second location. Everything that happens, happens inside it.\n`;
+  }
+  // the ride's own map (a worn or driven ride's seat photograph with nothing composed onto it, _run.mjs) keeps its grammar until a ride case shows otherwise
   const facts = (Array.isArray(m.placements) ? m.placements : []).map((l) => replacementFact(String(l), "")).filter(Boolean);
   const pieces = (Array.isArray(m.plateThings) ? m.plateThings : []).filter(Boolean);
   const people = (Array.isArray(m.platePeople) ? m.platePeople : []).filter(Boolean);
