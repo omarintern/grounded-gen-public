@@ -7,7 +7,7 @@
 // the FINE_DETAIL regex) rides along. speechReach already lives in _gate_rules (shared there, not here).
 import { dialogueStamps, musicRequested, captureFormNoun, readSpeakerLine } from "./_gate_rules.mjs";
 import { rideFromEnv } from "./_ride.mjs";   // the ride's handheld exception is carved where the camera law is stated (2026-09-09)
-import { frameText } from "./_frame_read.mjs";   // the frame at zero, as every writer reads it (2026-09-26)
+import { frameText, frameFacts, standsText } from "./_frame_read.mjs";   // the frame at zero, as every writer reads it (2026-09-26)
 import { replacementFact } from "./_ride_writer.mjs";   // the golden grammar is written once and imported, never pasted (2026-09-18)
 
 export const DIALOGUE_STAMPS = dialogueStamps(Number(process.env.BEAT_DURATION) || 4, Number(process.env.CUT_BUDGET) || 0);
@@ -249,13 +249,17 @@ export const workTitlesClause = () =>
 // photograph IS — the plate's own register, not a camera word. The run repairs mechanically when the writer leaves it out.
 export const frameZeroRegisterClause = () => {
   const n = captureFormNoun(process.env); if (!n) return "";
-  if (borrowedCamera()) return "";   // a borrowed camera's frame zero is the maker's place written into it (appropriationBlock), never "the place as photographed" (2026-09-26; keyed on the camera, never on the read's success: build check 2)
   const shown = /^cctv$/i.test(n) ? "CCTV" : n.toLowerCase();
+  const device = shown === "CCTV" ? "security camera" : shown;
+  const addressed = `The recording device is a THING of the scene and may be ADDRESSED as one — a subject notices the ${device} and looks straight into its lens — that is the subject's action, not a camera word, and it holds the footage's look through the payoff.`;
+  // a borrowed camera's frame zero is the maker's place written into it (appropriationBlock), never "the place as photographed"; the device stays a thing
+  // that may be looked at (the 2026-09-26 penguin take lost the maker's "looks at the camera" with the whole clause)
+  if (borrowedCamera()) return `⚠ ${addressed}\n`;
   // THE STATEMENT IS MANDATED ONLY WHEN THE WORDS ARE RE-AUTHORED AGAINST A KEPT PLATE (owner 2026-09-09, on the record: the badger, the
   // cymbal monkeys and Redmond Barry kept their monochrome security-camera look with NO register word at beat zero — the plate carried it;
   // the one loss was the T-rex REMIX, whose denser, larger action was re-authored against the parent's kept plate). A fresh gen may state
   // it, as the bear's writer did by choice; a kept-plate remix must, and the run repairs it in when the writer leaves it out.
-  return `⚠ FRAME ZERO IS THIS PHOTOGRAPH, WHICH A ${shown === "CCTV" ? "security camera" : shown} MADE: beat zero describes what it shows — the place as photographed, its objects and occupants — and never announces the device as a caption ("${n} footage: …" is not written; the look is the picture's own and every later beat stays inside it). The recording device is a THING of the scene and may be ADDRESSED as one — a subject notices the ${shown === "CCTV" ? "security camera" : shown} and looks straight into its lens — that is the subject's action, not a camera word, and it holds the footage's look through the payoff.\n`;
+  return `⚠ FRAME ZERO IS THIS PHOTOGRAPH, WHICH A ${shown === "CCTV" ? "security camera" : shown} MADE: beat zero describes what it shows — the place as photographed, its objects and occupants — and never announces the device as a caption ("${n} footage: …" is not written; the look is the picture's own and every later beat stays inside it). ${addressed}\n`;
 };
 // ⭐⭐ AN APPROPRIATED TAKE IS TWO PHOTOGRAPHS, AND THE FIRST ONE IS THE CAMERA (owner 2026-09-18). When a capture form is
 // unlikely at the place the maker named, the form is hunted as itself in that KIND of place and the place is hunted as itself;
@@ -274,7 +278,7 @@ export const borrowedCamera = () => {
 /** The frame at zero the appropriation read wrote (one record, plan.appropriation.frame via APPROPRIATION_MAP), as the writer reads it; "" when none. */
 export const appropriationFrame = () => {
   let m = null; try { m = JSON.parse(process.env.APPROPRIATION_MAP || ""); } catch { m = null; }
-  return m && typeof m === "object" && m.frame && m.frame.near ? frameText({ ...m.frame, stands: Array.isArray(m.stands) ? m.stands : [] }) : "";
+  return m && typeof m === "object" && m.frame && Array.isArray(m.frame.map) && m.frame.map.length ? frameText({ ...m.frame, stands: Array.isArray(m.stands) ? m.stands : [] }) : "";
 };
 export const appropriationBlock = () => {
   let m = null; try { m = JSON.parse(process.env.APPROPRIATION_MAP || ""); } catch { m = null; }
@@ -282,15 +286,21 @@ export const appropriationBlock = () => {
   // ⭐⭐ POSITIVE LAW ONLY (owner 2026-09-26, the penguin remix 6da2e918: "swapping is saying negative instructions and since no posive instructions are
   // being made its leaving the elements we dont mention"). Frame zero is described as the maker's place seen through this camera; the camera's own
   // photograph is never named piece by piece, so its old pieces are gone and its light, colour and marks, never mentioned, stay.
-  const frame = appropriationFrame();
   if (borrowedCamera()) {
     const dev0 = String(m.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || String(m.form);
     const place0 = String(m.place || "the maker's place");
     // the camera never moving is the law of a FIXED device (a trail camera, a doorbell); a drone or a helmet camera borrowed the same way moves (build check 2)
     const fixed = captureFormNoun(process.env) ? " The camera is fixed; it is never a character and never moves." : "";
-    const camera = `⚠⚠ THIS TAKE IS WHAT A ${dev0.toUpperCase()} RECORDED IN ${place0.toUpperCase()}. The photograph you are looking at is that camera: its vantage, its colour and its light (the darkness or the daylight it recorded in) belong to the recording, carried by the photograph from the first beat to the last, and a night stays night.${fixed} The beats describe the place and the figures, never the recording.\n`;
-    const zero = frame
-      ? `⚠⚠ FRAME ZERO, AS THIS CAMERA SEES ${place0.toUpperCase()}: ${frame} Beat zero describes exactly this frame, in these words, as a standing fact already in place before the first frame; the figures named here are the only living things in it, and every later beat stays inside it.\n`
+    const camera = `⚠⚠ THIS TAKE IS WHAT A ${dev0.toUpperCase()} RECORDED IN ${place0.toUpperCase()}. The photograph you are looking at is that camera: its vantage, its colour and its light (the darkness or the daylight it recorded in) belong to the recording, carried by the photograph from the first beat to the last, and a night stays night.${fixed} THE CAMERA'S OWN CHROME IS NEVER WRITTEN — no overlay, timestamp, camera number, corner mark, viewfinder, REC mark or battery in any beat: the photograph carries the device's real look.\n`;
+    // ⭐⭐ THE REPLACEMENT MAP, IN THE DARK RIDE'S GRAMMAR (owner 2026-09-26: "we do replacements with dark rides. and weve done it before with some unpublished
+    // penguin gens"): every piece of the camera's photograph is named as what it becomes, "<the place's thing> where <the piece> stood", each fact anchoring the
+    // words to that photograph; nothing is left as itself, and the light, the colour and the marks, never mentioned, stay. The morning's positive description
+    // (9212b0b) named no piece, so the words matched the place's photograph as well and the video followed it (the 21:04 take, daylight).
+    const facts = frameFacts(m.frame), who = standsText(Array.isArray(m.stands) ? m.stands : []);
+    const zero = facts.length
+      ? `⚠⚠ FRAME ZERO IS THIS FRAME WITH ${place0.toUpperCase()} IN IT. Every piece this photograph holds is named at frame zero as WHAT IT BECOMES, in this grammar and no other: ` +
+        `"<the place's thing> where <the piece> stood". A replacement is a STANDING FACT, already in place before the first frame, never a change on screen: nothing becomes, turns into, morphs or is replaced while the video runs. ` +
+        `The replacements, already in place at [0s]: ${facts.join(" | ")}.${who ? ` ${who}` : ""} Beat zero states them in these words; the figures named here are the only living things in it, and every later beat stays inside it.\n`
       : `⚠⚠ FRAME ZERO IS ${place0.toUpperCase()} AS THIS CAMERA SEES IT: beat zero describes ${place0}'s own ground, what stands in it and where the figures stand, from this camera's vantage and in its light, as a standing fact already in place before the first frame; the story's figures are the only living things in it, and every later beat stays inside it.\n`;
     return camera + zero + `⚠⚠ ANY SECOND PHOTOGRAPH SHOWS THE PLACE'S OWN MATTER; IT IS NEVER A PLACE THE TAKE GOES. The take never leaves this frame: no cut, no arrival, no second location. Everything that happens, happens inside it.\n`;
   }
@@ -384,7 +394,7 @@ export function denameSpeakers(block, modesJson = process.env.IP_FIGURES) {
   const nameIn = (s) => { const low = String(s).toLowerCase(); return modes.find((x) => (x?.names || []).some((n) => { const k = String(n).toLowerCase(); return k.length >= 3 && new RegExp(`(?:^|[^a-z])${_esc(k)}(?=$|[^a-z])`).test(low); })); };
   // the seat-cast figure IS the riders (owner 2026-09-13: "wendy as the riders" — the seat itself, never seen); a de-named figure is its guise; no guise on
   // record is still never the name (dry-shining-1: the actor's name as the speaker)
-  const wordFor = (mode) => mode.seat ? "the riders" : (String(mode.guise || "").trim() || (rideFromEnv() ? "an animatronic figure" : "a figure"));
+  const wordFor = (mode) => mode.seat ? "the riders" : (String(mode.prose || mode.guise || "").trim() || (rideFromEnv() ? "an animatronic figure" : "a figure"));   // the prose first, as every other reader (2026-09-26)
   const lines = String(block).split("\n");
   const out = [];
   for (const l of lines) {
@@ -579,10 +589,13 @@ export const charSigBlock = (charSig) => (
 );
 
 // MUSIC THE MAKER ASKED FOR (owner 2026-09-07): allowed, in the Sound block, DIEGETIC — its source is in the scene.
+// On a remix the maker's words are the change alone, so the parent's own words are read with them (both reviews of the 2026-09-26 penguin take: the
+// parent's Sound line had been the only carrier of its music, and it carried the summit's ropes with it).
+const musicAsked = () => musicRequested([process.env.RAW_USER_PROMPT || process.env.USER_PROMPT || "", process.env.REMIX_PARENT_WORDS || ""].join("\n"));
 const musicClause = () => (
   rideFromEnv()?.family === "dark ride"
     ? `⚠ THE RIDE'S OWN SHOW MUSIC IS THE FORM'S, AND IT IS A RECORDING: a dark ride plays a recording through its own speakers — write the Sound: line as that recording, by era and genre, NEVER a named song, album or artist, heard the way a public-address system sounds in a dark show building: from speakers in the walls, tinny and echoing, with the hiss and crackle of the system, at ONE LEVEL through the whole take — it never swells, rises, falls or thins with what happens (music that follows the action is a score, and no score is laid over the scene); with it the mechanical hum of the track and the sounds of each tableau, from the tableau itself, as the vehicle passes it. It is the only music, and never "no music". `
-    : musicRequested(process.env.RAW_USER_PROMPT || process.env.USER_PROMPT || "")
+    : musicAsked()
     ? `⚠ THE REQUEST NAMES MUSIC, SO MUSIC IS ALLOWED — write it in the Sound: line as DIEGETIC music with its SOURCE in the ` +
       `scene ("warped 1930s swing from the ride's own speakers", "a brass band on the stand", "a radio on the counter"), described ` +
       `by era and genre, NEVER a named song, album or artist (a named work trips the provider's copyright check). It plays where ` +
@@ -596,7 +609,7 @@ export const soundLaw = () => (
     `action is outside the frame, "we dont know whats happening" until the consequence arrives — so the sound must ` +
     `tell us. Author DIEGETIC sound that does narrative work: an approach heard before it is seen, a bell or an ` +
     `engine locating something off-frame, an impact heard rather than shown, sound STOPPING to mark an event. Name ` +
-    `sound in the beat that needs it. ⚠ AUTHOR THE SOUNDSCAPE — DO NOT LEAVE THE AUDIO SLOT TO THE FALLBACK. End the beats with a Sound: line naming the DIEGETIC ambience of each world the clip visits, in order, specific to what is on screen (water, a crowd, a mechanism, wind)${musicRequested(process.env.RAW_USER_PROMPT || process.env.USER_PROMPT || "") ? "" : `, closing with "no music"`}. A specific soundscape crowds out the generator's urge to score; a generic room-tone fallback invites it. ` +
+    `sound in the beat that needs it. ⚠ AUTHOR THE SOUNDSCAPE — DO NOT LEAVE THE AUDIO SLOT TO THE FALLBACK. End the beats with a Sound: line naming the DIEGETIC ambience of each world the clip visits, in order, specific to what is on screen (water, a crowd, a mechanism, wind)${musicAsked() ? "" : `, closing with "no music"`}. A specific soundscape crowds out the generator's urge to score; a generic room-tone fallback invites it. ` +
     musicClause() +
     `Ambient and diegetic only.\n\n`
 );

@@ -349,11 +349,17 @@ if (BEAT_STYLE !== "template") {
         // the parent's summit into the new place's Sound line; the reviewer's design review: "the parent's Sound keeps its voices, never its place"; the reviewer's build review:
         // "no music" is register, so the parent's music choice stands). The Dialogue rides whole; the Sound line rides for its music.
         (String(process.env.REMIX_PARENT_SCRIPT || "").trim()
-          ? (borrowedCamera()
-            ? (() => { const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)); const _v = _pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue].join("\n") : "", _snd = String(_pp.sound || "").trim();
-                return (_v ? `THE PARENT'S VOICES (its Dialogue):\n${_v}\n— everything the change does not touch keeps these voices, the language they speak and their register exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n` : "") +
-                  (_snd ? `THE PARENT'S SOUND LINE, FOR ITS MUSIC: its music, or its lack of music, stands; every other sound belongs to this take's place. The line: ${_snd.replace(/^Sound\s*:\s*/i, "")}\n` : ""); })()
-            : `THE PARENT'S SCRIPT (its beats, its Dialogue, its Sound):\n${String(process.env.REMIX_PARENT_SCRIPT).trim()}\n— everything the change does not touch keeps this script's voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n`)
+          ? (() => {
+              // ⭐ THE PARENT'S SOUNDS BELONG TO ITS PLACE (both reviews of the 2026-09-26 penguin take: "faint creak of the climbing ropes" rode from the summit into
+              // Everest's Sound line, rule or no rule). When the place is kept (WORLD_PIN: the words keep it, or the parent's own frame is the scene) the whole
+              // script rides as before; when the place is sourced anew its Sound line stays behind, and under a borrowed camera its beats stay behind too
+              // (they were written over the camera's own photograph). Music is read from the maker's words and the parent's (musicAsked), never from this line.
+              const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)), _placeKept = !!process.env.WORLD_PIN;
+              if (_placeKept) return `THE PARENT'S SCRIPT (its beats, its Dialogue, its Sound):\n${String(process.env.REMIX_PARENT_SCRIPT).trim()}\n— everything the change does not touch keeps this script's voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n`;
+              const _dlg = _pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue].join("\n") : "";
+              const _body = borrowedCamera() ? _dlg : [..._pp.beats, ...(_dlg ? ["", _dlg] : [])].join("\n").trim();
+              return _body ? `THE PARENT'S ${borrowedCamera() ? "VOICES (its Dialogue)" : "SCRIPT (its beats and its Dialogue)"}:\n${_body}\n— everything the change does not touch keeps these voices, the language they speak and their register exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n` : "";
+            })()
           : "")
       : `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n`) +
     (!String(process.env.REMIX_CHANGE || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() && String(process.env.RAW_USER_PROMPT || "").trim() !== userPrompt

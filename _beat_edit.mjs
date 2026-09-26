@@ -35,8 +35,10 @@ const _stamps = (t) => scriptParts(t).beats.map((l) => (l.match(/^\[\d+(?:\.\d+)
 const _blocks = (t) => ["Dialogue", "Sound", "Set", "Telling", "Music"].filter((h) => new RegExp(String.raw`^\s*\**\s*${h}\s*\**\s*[:—–-]`, "im").test(String(t || "")));
 const _content = (t) => new Set(String(t || "").toLowerCase().match(/[a-z][a-z'-]{3,}/g) || []);
 
-/** The words the edit must write instead of a name: "Little Caesars" → "the toga-wearing Roman man …". Pure. */
-export function denameMap(modes = [], phraseOf = (m) => m?.guise || m?.prose || "") {
+/** The words the edit must write instead of a name: "Little Caesars" → "the toga-wearing Roman man …". The PROSE first: the phrase the cast ledger handed
+ *  the writer (the run's promptRef, the kept look on a remix), and the resolver's guise only when there is none, as redactIpNames and castLedger read it
+ *  (both reviews of the 2026-09-26 penguin take: the guise put the film's whale-tooth pendant on a figure whose kept look was a surfboard necklace). Pure. */
+export function denameMap(modes = [], phraseOf = (m) => m?.prose || m?.guise || "") {
   const out = [];
   for (const m of Array.isArray(modes) ? modes : []) {
     if (!m || (m.mode !== "dename" && m.mode !== "omit")) continue;
@@ -56,7 +58,8 @@ export function editInstruction(violations = [], modes = []) {
   const faults = list.filter((v) => EDIT_RULES.has(v?.rule)).map(line), soft = list.filter((v) => !EDIT_RULES.has(v?.rule) && v?.rule !== "provider").map(line);
   const provider = list.filter((v) => v?.rule === "provider").map((v) => `- ${String(v?.figure || "").replace(/\s+/g, " ").trim()}`);
   const manner = list.some((v) => v?.rule === "reference-name");
-  const dn = denameMap(modes);
+  // the swap list rides only an edit that has a name fault in hand (both take reviews: it rode a camera-word edit and rewrote every mention of a figure)
+  const dn = list.some((v) => v?.rule === "ip-name") ? denameMap(modes) : [];
   const swaps = dn.filter((d) => d.mode === "dename" && d.phrase).map((d) => `- ${d.names.map((n) => `"${n}"`).join(" / ")} → write the figure as: ${d.phrase}`);
   const gone = dn.filter((d) => d.mode === "omit").map((d) => `- ${d.names.map((n) => `"${n}"`).join(" / ")} → this figure does not appear: take it out of the line it is in and leave the rest of that line standing`);
   return [
