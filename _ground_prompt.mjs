@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept, captureFormNoun, cameraAsActor } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { castFrameClause, reusedFrame, reusedFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23); or stands in frame zero (2026-09-26)
@@ -354,7 +354,8 @@ if (BEAT_STYLE !== "template") {
               // Everest's Sound line, rule or no rule). When the place is kept (WORLD_PIN: the words keep it, or the parent's own frame is the scene) the whole
               // script rides as before; when the place is sourced anew its Sound line stays behind, and under a borrowed camera its beats stay behind too
               // (they were written over the camera's own photograph). Music is read from the maker's words and the parent's (musicAsked), never from this line.
-              const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)), _placeKept = !!process.env.WORLD_PIN;
+              // The bit is REMIX_PLACE_KEPT (pinsFor): WORLD_PIN alone is also the kept form plate under a borrowed camera (the reviewer's build check).
+              const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)), _placeKept = process.env.REMIX_PLACE_KEPT === "1";
               if (_placeKept) return `THE PARENT'S SCRIPT (its beats, its Dialogue, its Sound):\n${String(process.env.REMIX_PARENT_SCRIPT).trim()}\n— everything the change does not touch keeps this script's voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n`;
               const _dlg = _pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue].join("\n") : "";
               const _body = borrowedCamera() ? _dlg : [..._pp.beats, ...(_dlg ? ["", _dlg] : [])].join("\n").trim();
@@ -465,7 +466,9 @@ if (BEAT_STYLE !== "template") {
     if (gen.length) fails.push(`a dialogue label names nobody (${gen[0].trim().slice(0, 30)}) — name the figure`);
     // ⚠ THE CAMERA IS NEVER WRITTEN — ANY REGISTER (owner 2026-09-01, punch-monkey postmortem: a candid
     // beat shipped "and the camera tracks with it"; this check lived only inside the cinematic guard below).
-    if (/\bthe camera\b/i.test(t))
+    // …under a CAPTURE form the camera is a thing of the scene the subject may look at (the maker's "looks at the camera"; the 2026-09-26 penguin take lost it
+    // here, a paid retry before the ledger ever saw it); a camera MOVE still fails there, by the ledger's own list
+    if (captureFormNoun(process.env) ? !!cameraAsActor(t, process.env.APPARATUS_NOUN || "") : /\bthe camera\b/i.test(t))
       fails.push(`a beat names the camera ("the camera tracks with it") — the camera is never a character: delete the camera clause and write only what the subject does${genMood() === "cinematic" ? ' (for a cut, write "Hard cut to …")' : ""}`);
     // ⚠ THE CAMERA'S CHROME IS NEVER WRITTEN — ANY REGISTER (owner 2026-09-21, job d6921814: "under the trail camera's washed overlay and corner
     // marks" drew a camcorder viewfinder — brackets and battery icons — over a take whose frame zero was a real fixed camera's own frame; the
@@ -877,11 +880,6 @@ try {
     }
   }
 } catch { /* a check that cannot run is not a verdict */ }
-// a log, not a law (evidence first): does beat zero still name what the borrowed camera's photograph held and the place took?
-{ let _am = null; try { _am = JSON.parse(process.env.APPROPRIATION_MAP || ""); } catch { _am = null; }
-  const _b0 = String(scriptParts(beatLine).beats[0] || "").toLowerCase();
-  const _hit = (Array.isArray(_am?.taken) ? _am.taken : []).filter((x) => { const w = String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").trim(); return w.length > 3 && _b0.includes(w); });
-  if (_hit.length) console.warn(`  \u26a0 beat zero still names what the camera's photograph held and the place took: ${_hit.join(", ")}`); }
 writeFileSync(outFile, beatLine + "\n");
 console.log(`target : ${intent.target} · action: ${intent.action}${intent.secondary ? ` · +${intent.secondary}` : ""}`);
 console.log(`scene : ${seen.scene}`);

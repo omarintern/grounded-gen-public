@@ -308,6 +308,8 @@ export function rideWords(d) {
     if ((craftVehicle(craft) === "boat" || BOAT.test(craft)) && !/water|channel|river|sea|ocean|canal|lake|rapids|flume|wave|surf|bay|harbou?r/i.test(way)) way = "water";   // a jet ski is a hull too (BOAT), whatever the judge's list calls it
   }
   const watery = d?.water === true || /boat|flume|rapids|water/i.test(String(d?.noun || ""));   // the decision's own water flag first (2026-09-15)
+  // a borrowed camera's map (kind "capture", _frame_read.mapDecision) has no way and no vehicle: a fixed camera's frame, held by the ride's own hold (2026-09-26)
+  if (d?.kind === "capture") return { way: "", vehicle: "" };
   return {
     way: way || (d?.kind === "driven" ? "road" : d?.kind === "worn" ? "way ahead" : watery ? "water channel" : d?.family === "coaster" ? "rails" : "way ahead"),
     vehicle: vehicle || (d?.kind === "driven" ? "vehicle" : d?.kind === "worn" ? "wearer's own apparatus" : watery ? "boat" : d?.family === "coaster" ? "car" : "vehicle"),

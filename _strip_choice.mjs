@@ -104,6 +104,9 @@ export function pinsFor({ mode = "carry", from = "", why = "", plate = null, kee
   if (mode === "reuse" && frame0) env.WORLD_PIN = frame0;
   else if (plate && keepsPlace) env.WORLD_PIN = plate;
   else if (plate) { env.WORLD_SKIP = plate; env.WORLD_FALLBACK = plate; }
+  // the one bit that says the place is the parent's (the writer keeps the parent's whole script then); WORLD_PIN alone cannot say it, since a borrowed camera
+  // pins the kept FORM plate the same way (the reviewer's build check of a6b3155)
+  if ((mode === "reuse" && frame0) || (plate && keepsPlace)) env.REMIX_PLACE_KEPT = "1";
   const ph = Array.isArray(parent?.handles) ? parent.handles : [];
   const handles = mode === "carry" ? ph
     : mode === "canon" ? [...(Array.isArray(canon?.handles) ? canon.handles : []), ...ph.filter((h) => h.change).map((h) => ({ ...h, rides: false, frame: null }))]
