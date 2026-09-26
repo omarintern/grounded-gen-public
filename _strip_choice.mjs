@@ -37,6 +37,17 @@ export function onlyThemFrames(found = [], carried = [], among = null, max = 2) 
 /** The one frame that shows every carried character and no one else (frame zero holds them all at once); 0 when none. Pure. */
 export const onlyThemFrame = (found = [], carried = [], among = null) => onlyThemFrames(found, carried, among, 1)[0] || 0;
 
+/** THE PARENT'S OWN ANSWER, from its reading (both build checks: this had only been matched as source text). Pure.
+ *  same:  do the frames that would ride (`riding`, 1-based) show the kind of place the remix puts its characters in; null with no answer
+ *  frame: its one frame of them alone in that kind, for frame zero; of any kind when the words keep the place (the place is the parent's; the reviewer)
+ *  own:   its own frames of them alone in another kind: the parent is the first gen of the canon to carry them, at no read (both build checks) */
+export function parentKinds({ found = [], places = [], riding = [], names = [], keepExplicit = false } = {}) {
+  const at = (k) => new Set((Array.isArray(places) ? places : []).filter((p) => p && p.same === k).flatMap((p) => (Array.isArray(p.frames) ? p.frames : [])));
+  const sameAt = at(true), otherAt = at(false), ride = Array.isArray(riding) ? riding : [];
+  const same = ride.some((n) => sameAt.has(n)) ? true : ride.length > 0 && ride.every((n) => otherAt.has(n)) ? false : null;
+  return { same, frame: onlyThemFrame(found, names, keepExplicit ? null : sameAt), own: same === true ? onlyThemFrames(found, names, otherAt) : [] };
+}
+
 /** The mode, from the readers' answers. Pure.
  *  parent: { same: true|false|null (do the frames that would ride show the kind of place the remix puts its characters in), frame: n (its one frame of
  *          them alone, in that kind) }
@@ -104,9 +115,10 @@ export function pinsFor({ mode = "carry", from = "", why = "", plate = null, kee
     env.CAST_FRAME_NOTE = handles.filter((h) => h.rides).map((h) => h.handle).join("; ");
     env.CAST_FRAME_NAMES = JSON.stringify(Object.fromEntries(frames.map((fp) => [fp, handles.filter((h) => h.rides && h.frame === fp).map((h) => h.name)])));   // who each frame shows (2026-09-25)
   }
-  // who stands in frame zero (reuse) or rides a frame: each by the description it rides with, else by name
+  // who stands in frame zero (reuse) or rides a frame: each by the description it rides with, never by its name (both build checks: an owned name reached
+  // the writer); one with no description at all is left out of the words, and the frame still shows it
   const riding = mode === "reuse" ? (Array.isArray(presence) ? presence : []) : handles.filter((h) => h.rides).map((h) => h.name);
-  const who = riding.map((n) => (handles.find((h) => key(h.name) === key(n) && h.handle) || {}).handle || n);
+  const who = riding.map((n) => (handles.find((h) => key(h.name) === key(n) && h.handle) || {}).handle || "").filter(Boolean);
   env.REMIX_STRIP = JSON.stringify({ mode, ...(from ? { from } : {}), why, names: riding, who });
   return { env, handles };
 }

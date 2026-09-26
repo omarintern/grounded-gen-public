@@ -352,7 +352,7 @@ if (BEAT_STYLE !== "template") {
           ? (borrowedCamera()
             ? (() => { const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)); const _v = _pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue].join("\n") : "", _snd = String(_pp.sound || "").trim();
                 return (_v ? `THE PARENT'S VOICES (its Dialogue):\n${_v}\n— everything the change does not touch keeps these voices, the language they speak and their register exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n` : "") +
-                  (_snd ? `THE PARENT'S SOUND LINE: ${_snd.replace(/^Sound\s*:\s*/i, "")}\n— its music, or its silence, stands; every other sound in this take's Sound line is this take's own place.\n` : ""); })()
+                  (_snd ? `THE PARENT'S SOUND LINE, FOR ITS MUSIC: its music, or its lack of music, stands; every other sound belongs to this take's place. The line: ${_snd.replace(/^Sound\s*:\s*/i, "")}\n` : ""); })()
             : `THE PARENT'S SCRIPT (its beats, its Dialogue, its Sound):\n${String(process.env.REMIX_PARENT_SCRIPT).trim()}\n— everything the change does not touch keeps this script's voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n`)
           : "")
       : `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n`) +
