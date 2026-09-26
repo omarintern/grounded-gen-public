@@ -345,12 +345,14 @@ if (BEAT_STYLE !== "template") {
         // ⭐ UNDER A BORROWED CAMERA ONLY ITS VOICES RIDE (2026-09-26, the penguin remix 6da2e918): the parent's beats were written in the old grammar over
         // the camera's photograph ("where the uneven dirt ground … was", "under a trail camera overlay"), so they carried the old pieces and the chrome into
         // a frame that is now written positively. The ruling's own list is what rides: voices, language, register (owner 2026-09-21).
-        // ⭐ …AND ITS SOUND STAYS WITH ITS PLACE (2026-09-26, the penguin take on the staged build: "faint creak of the climbing ropes" rode from the parent's summit
-        // into the new place's Sound line; the reviewer's design review: "the parent's Sound keeps its voices, never its place"). The Dialogue rides; the Sound is the new place's.
+        // ⭐ …AND ITS SOUNDS ARE THE NEW PLACE'S, ITS MUSIC STANDING (2026-09-26, the penguin take on the staged build: "faint creak of the climbing ropes" rode from
+        // the parent's summit into the new place's Sound line; the reviewer's design review: "the parent's Sound keeps its voices, never its place"; the reviewer's build review:
+        // "no music" is register, so the parent's music choice stands). The Dialogue rides whole; the Sound line rides for its music.
         (String(process.env.REMIX_PARENT_SCRIPT || "").trim()
           ? (borrowedCamera()
-            ? (() => { const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)); const _v = _pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue].join("\n") : "";
-                return _v ? `THE PARENT'S VOICES (its Dialogue):\n${_v}\n— everything the change does not touch keeps these voices, the language they speak and their register exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n` : ""; })()
+            ? (() => { const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)); const _v = _pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue].join("\n") : "", _snd = String(_pp.sound || "").trim();
+                return (_v ? `THE PARENT'S VOICES (its Dialogue):\n${_v}\n— everything the change does not touch keeps these voices, the language they speak and their register exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n` : "") +
+                  (_snd ? `THE PARENT'S SOUND LINE: ${_snd.replace(/^Sound\s*:\s*/i, "")}\n— its music, or its silence, stands; every other sound in this take's Sound line is this take's own place.\n` : ""); })()
             : `THE PARENT'S SCRIPT (its beats, its Dialogue, its Sound):\n${String(process.env.REMIX_PARENT_SCRIPT).trim()}\n— everything the change does not touch keeps this script's voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n`)
           : "")
       : `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n`) +

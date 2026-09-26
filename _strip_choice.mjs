@@ -1,58 +1,70 @@
 // WHICH FILM STRIP CARRIES A REMIX'S CHARACTERS (owner 2026-09-26). "whatever a remix is of, it is grabbing that filmstrip, but my idea was to source
 // outside of that if location of remix is same as that being remixed, in which case it can reach into another gen in the cannon for film strip if it
-// uses a different place"; "if not then to reuse instead of source new"; "the camcorder gen is part of stale code that made a mistake in writing form".
-// Why: a character frame competes with the new place photo only when it shows the same KIND of place the words describe. The Denzel car remix carried
-// the store frames against a car photo and the car won; the penguin take carried the parent's summit frame against an Everest photo and the summit won.
-// The words decide the kind (the remix's own record: world keep or change); the strip's reader says what kind of place its frames show; code decides
-// the mode from those answers. One record of the choice rides into the run: { mode, from, frames, names, why }.
-//   carry  the parent's strip carries the characters (a different kind of place), and the new place is sourced: today's path
-//   canon  another gen of the canon carries them (a different kind of place, every carried character and no one else in its frame), new place sourced
+// uses a different place"; "if not then to reuse instead of source new"; "the camcorder gen is part of stale code that made a mistake in writing form";
+// "i just hope that another parent in the canon can be used too if it contains the character(s)".
+// Why: a character frame competes with the new place photo only when it shows the same KIND of place the remix puts its characters in. The Denzel car
+// remix carried the store frames against a car photo and the car won; the penguin take carried the parent's summit frame against an Everest photo and
+// the summit won. The strip's reader names each kind of place its frames show and whether the remix puts its characters there; code decides the mode
+// from those answers. One record of the choice rides into the run: { mode, from, why, names, who }.
+//   carry  the parent's frames carry the characters (they show another kind of place), and the new place is sourced: the path before this rule
+//   canon  another gen of the canon carries them in frames of another kind of place, every carried character and no one else; the new place is sourced
 //   reuse  nothing in the canon qualifies: the parent's own frame is the scene, no new place is sourced
-//   anew   nothing qualifies and the parent is stale (its script wrote the camera's chrome): no strip, the new place sourced, the characters in words
+//   anew   nothing qualifies and the parent is stale (its script wrote the camera's chrome), or no frame of it shows them alone: no frame rides, the new
+//          place is sourced, and the characters are written as the parent recorded them
 
 const key = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const framesOf = (c) => new Set((Array.isArray(c?.frames) ? c.frames : []).map((n) => Math.round(Number(n))).filter((n) => n >= 1));
 
-/** The frame (1-based) that shows every one of `carried` and no other character the reader listed, earliest first; 0 when none does. `found` is the
- *  reader's list: [{ name, frames: [n] }]. Pure. */
-export function onlyThemFrame(found = [], carried = []) {
+/** Up to `max` frames (1-based) that together show every one of `carried`, each showing no other character the reader listed, taken from `among` (a Set)
+ *  when given: the earliest frame holding them all first, else the earliest pair (owner 2026-09-24: "or frames if its a video with cuts and the character
+ *  sought for preservation are frames apart"). `found` is the reader's list: [{ name, also, frames: [n] }]. [] when none. Pure. */
+export function onlyThemFrames(found = [], carried = [], among = null, max = 2) {
   const want = [...new Set((Array.isArray(carried) ? carried : []).map(key).filter(Boolean))];
-  if (!want.length) return 0;
+  if (!want.length) return [];
   const list = Array.isArray(found) ? found : [];
-  const framesOf = (c) => new Set((Array.isArray(c?.frames) ? c.frames : []).map((n) => Math.round(Number(n))).filter((n) => n >= 1));
   const theirs = want.map((w) => list.find((c) => key(c?.name) === w || key(c?.also) === w));
-  if (theirs.some((c) => !c)) return 0;
-  const others = list.filter((c) => !theirs.includes(c));
-  const blocked = new Set(others.flatMap((c) => [...framesOf(c)]));
-  const sets = theirs.map(framesOf);
-  const common = [...sets[0]].filter((n) => sets.every((s) => s.has(n)) && !blocked.has(n)).sort((a, b) => a - b);
-  return common[0] || 0;
+  if (theirs.some((c) => !c)) return [];
+  const blocked = new Set(list.filter((c) => !theirs.includes(c)).flatMap((c) => [...framesOf(c)]));
+  const clean = [...new Set(theirs.flatMap((c) => [...framesOf(c)]))].filter((n) => !blocked.has(n) && (!among || among.has(n))).sort((a, b) => a - b);
+  const one = clean.find((n) => theirs.every((c) => framesOf(c).has(n)));
+  if (one) return [one];
+  if (max < 2) return [];
+  for (let i = 0; i < clean.length; i++) for (let j = i + 1; j < clean.length; j++)
+    if (theirs.every((c) => framesOf(c).has(clean[i]) || framesOf(c).has(clean[j]))) return [clean[i], clean[j]];
+  return [];
 }
 
+/** The one frame that shows every carried character and no one else (frame zero holds them all at once); 0 when none. Pure. */
+export const onlyThemFrame = (found = [], carried = [], among = null) => onlyThemFrames(found, carried, among, 1)[0] || 0;
+
 /** The mode, from the readers' answers. Pure.
- *  parent: { same: true|false|null, frame: n (its only-them frame), frames: [paths] }; the parent strip's kind answer and its frames
- *  canon:  [{ id, same, frame, framePath }] the canon candidates actually read, in search order
+ *  parent: { same: true|false|null (do the frames that would ride show the kind of place the remix puts its characters in), frame: n (its one frame of
+ *          them alone, in that kind) }
+ *  canon:  [{ id, framePaths }] the canon candidates actually read, in search order; framePaths are their frames of them alone in another kind of place
  *  stale:  the parent's script wrote the camera's chrome; keepExplicit: the remixer's own words keep the place */
 export function chooseStrip({ parent = null, canon = [], stale = false, keepExplicit = false } = {}) {
   if (keepExplicit) {
     // the remixer's own words keep the place (owner 09-25: "the film-strip should use that"); a stale parent's frame never becomes the scene
     if (!stale && parent?.frame) return { mode: "reuse", why: "the remixer's words keep the place: the parent's own frame is the scene" };
-    return { mode: "carry", why: stale ? "the words keep the place, but the parent is stale: its frame never becomes the scene" : "the words keep the place and no frame shows every carried character: the parent's strip carries as before" };
+    return { mode: "carry", why: stale ? "the words keep the place, but the parent is stale: its frame never becomes the scene" : "the words keep the place and no frame shows every carried character alone: the parent's frames carry as before" };
   }
-  if (!parent || parent.same !== true) return { mode: "carry", why: parent?.same === false ? "the parent's strip shows a different kind of place: it carries, and the new place is sourced" : "no kind answer: the parent's strip carries as before" };
-  const hit = (Array.isArray(canon) ? canon : []).find((c) => c && c.same === false && c.frame > 0 && c.framePath);
-  if (hit) return { mode: "canon", from: hit.id, why: `the parent shows the same kind of place; ${hit.id} carries every character in a different kind of place` };
-  if (!stale && parent.frame > 0) return { mode: "reuse", why: "the parent shows the same kind of place and nothing in the canon carries them elsewhere: its own frame is the scene" };
-  return { mode: "anew", why: stale ? "the parent shows the same kind of place, nothing carries them elsewhere, and the parent is stale: sourced anew, the characters in words" : "no frame of the parent shows every carried character alone: sourced anew, the characters in words" };
+  if (!parent || parent.same !== true) return { mode: "carry", why: parent?.same === false ? "the parent's frames show another kind of place: they carry, and the new place is sourced" : "no kind answer: the parent's frames carry as before" };
+  const hit = (Array.isArray(canon) ? canon : []).find((c) => c && Array.isArray(c.framePaths) && c.framePaths.length);
+  if (hit) return { mode: "canon", from: hit.id, why: `the parent's frames show the kind of place the remix puts its characters in; ${hit.id} shows them in another kind` };
+  if (!stale && parent.frame > 0) return { mode: "reuse", why: "the parent's frames show the kind of place the remix puts its characters in and nothing in the canon shows them elsewhere: its own frame is the scene" };
+  return { mode: "anew", why: stale ? "the parent's frames show the remix's kind of place, nothing shows the characters elsewhere, and the parent is stale: sourced anew, the characters as recorded" : "no frame of the parent shows every carried character alone: sourced anew, the characters as recorded" };
 }
 
-/** The canon's search order (owner 2026-09-26; both design reviews): the parent's own ancestors nearest first, then every other gen of the canon newest
- *  first. `rows` are the app's rows of one root, [{ id, parent_id, created_at }]; the parent's own row is left out. Pure. */
-export function canonOrder(rows = [], parentRow = "") {
+/** The canon's search order (owner 2026-09-26; both reviews): the parent's own ancestors nearest first, then every other gen, the ones whose records name
+ *  more of the carried characters first (`rankOf`, a count; records rank, never exclude), newest first within a rank. `rows` are the app's rows of one
+ *  root, [{ id, parent_id, created_at }]; the parent's own row is left out. Pure. */
+export function canonOrder(rows = [], parentRow = "", rankOf = () => 0) {
   const list = (Array.isArray(rows) ? rows : []).filter((r) => r && r.id);
   const byId = new Map(list.map((r) => [String(r.id), r]));
   const up = [];
   for (let at = String(byId.get(String(parentRow))?.parent_id || ""), guard = 0; at && byId.has(at) && guard < 64; at = String(byId.get(at).parent_id || ""), guard++) up.push(byId.get(at));
-  const rest = list.filter((r) => String(r.id) !== String(parentRow) && !up.includes(r)).sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0));
+  const rest = list.filter((r) => String(r.id) !== String(parentRow) && !up.includes(r))
+    .sort((a, b) => (Number(rankOf(b)) || 0) - (Number(rankOf(a)) || 0) || Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0));
   return [...up, ...rest];
 }
 
@@ -66,4 +78,33 @@ export function lookChangedBetween(rows = [], a = "", b = "", names = [], change
   const upTo = (l) => (common ? l.slice(0, l.indexOf(common)) : l);
   const want = new Set((Array.isArray(names) ? names : []).map(key).filter(Boolean));
   return [...upTo(la), ...upTo(lb)].some((id) => [...(changed.get(id) || [])].some((n) => want.has(key(n))));
+}
+
+/** THE PINS, FROM THE CHOICE (the reviewer's build check: the decision was only ever read as source text). Pure.
+ *  plate: the parent's place photograph when the words keep the place (null when they change it); frame0: the parent's one frame of them alone (reuse);
+ *  parent: the parent's reading { frames, handles }; canon: the canon's { frames, handles } (its frames, its own descriptions); presence: every carried
+ *  character a frame pins as it is. → { env, handles }: the run's env and the characters as they ride (REMIX_KEPT_FIGURES reads them). */
+export function pinsFor({ mode = "carry", from = "", why = "", plate = null, keepsPlace = false, frame0 = "", parent = { frames: [], handles: [] }, canon = null, presence = [] } = {}) {
+  const env = {};
+  // the place: the parent's own frame is the scene (reuse); the words keep the parent's photograph; else the place is sourced and the photograph stands
+  // behind a hunt that finds nothing (the 09-09 law), when the words kept it at all
+  if (mode === "reuse" && frame0) env.WORLD_PIN = frame0;
+  else if (plate && keepsPlace) env.WORLD_PIN = plate;
+  else if (plate) { env.WORLD_SKIP = plate; env.WORLD_FALLBACK = plate; }
+  const ph = Array.isArray(parent?.handles) ? parent.handles : [];
+  const handles = mode === "carry" ? ph
+    : mode === "canon" ? [...(Array.isArray(canon?.handles) ? canon.handles : []), ...ph.filter((h) => h.change).map((h) => ({ ...h, rides: false, frame: null }))]
+    : mode === "reuse" ? ph.map((h) => ({ ...h, rides: !h.change && !!frame0, frame: !h.change && frame0 ? frame0 : null }))
+    : ph.map((h) => ({ ...h, rides: false, frame: null }));
+  const frames = mode === "carry" ? (Array.isArray(parent?.frames) ? parent.frames : []) : mode === "canon" ? (Array.isArray(canon?.frames) ? canon.frames : []) : [];
+  if (frames.length) {
+    env.CAST_FRAME = frames[0]; env.CAST_FRAMES = JSON.stringify(frames);
+    env.CAST_FRAME_NOTE = handles.filter((h) => h.rides).map((h) => h.handle).join("; ");
+    env.CAST_FRAME_NAMES = JSON.stringify(Object.fromEntries(frames.map((fp) => [fp, handles.filter((h) => h.rides && h.frame === fp).map((h) => h.name)])));   // who each frame shows (2026-09-25)
+  }
+  // who stands in frame zero (reuse) or rides a frame: each by the description it rides with, else by name
+  const riding = mode === "reuse" ? (Array.isArray(presence) ? presence : []) : handles.filter((h) => h.rides).map((h) => h.name);
+  const who = riding.map((n) => (handles.find((h) => key(h.name) === key(n) && h.handle) || {}).handle || n);
+  env.REMIX_STRIP = JSON.stringify({ mode, ...(from ? { from } : {}), why, names: riding, who });
+  return { env, handles };
 }

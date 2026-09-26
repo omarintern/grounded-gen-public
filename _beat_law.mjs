@@ -214,12 +214,13 @@ export const castFrameClause = () =>
   `images. The places in those images are NOT this video's place and nothing of them appears here: only the characters come from them.`;
 // ⭐⭐ A REUSED FRAME IS FRAME ZERO WITH THE STORY'S FIGURES IN IT (owner 2026-09-26: "if not then to reuse instead of source new"). When the remix's place is the
 // same kind as the parent's footage and no other gen of the canon carries the characters elsewhere, the parent video's own frame is the photograph, and the
-// carried characters stand in it (the remix executor's REMIX_STRIP record, mode "reuse"). → { names, handles, who } | null
+// carried characters stand in it (the remix executor's REMIX_STRIP record, mode "reuse"; a ride or a world build carries the frame as the characters' own
+// frame instead, asFrame, and the kept-cast clause speaks for it). → { names, who } | null, `who` each character by its description, else its name
 export const reusedFrame = () => {
   let r = null; try { r = JSON.parse(process.env.REMIX_STRIP || ""); } catch { r = null; }
-  if (!r || typeof r !== "object" || r.mode !== "reuse") return null;
-  const names = (Array.isArray(r.names) ? r.names : []).filter((n) => typeof n === "string" && n.trim()), handles = (Array.isArray(r.handles) ? r.handles : []).filter((h) => typeof h === "string" && h.trim());
-  return { names, handles, who: (handles.length ? handles : names).join("; ") };
+  if (!r || typeof r !== "object" || r.mode !== "reuse" || r.asFrame === true) return null;
+  const list = (a) => (Array.isArray(a) ? a : []).filter((x) => typeof x === "string" && x.trim());
+  return { names: list(r.names), who: list(r.who).join("; ") };
 };
 export const reusedFrameClause = () => {
   const r = reusedFrame(); if (!r) return "";

@@ -63,24 +63,25 @@ export const carryPickPrompt = ({ remix = "", parentWords = "", known = [], n = 
   `the mascot"); otherwise "keep". What the remix asks a character to DO, where it goes or what it says never drops it;\n` +
   `- "look_change": only what the remix changes about how this character LOOKS or WHAT it is (its body, face, clothes, kind); empty when the remix ` +
   `changes only what it does, where it is, or what it says.\n` +
-  // ⭐⭐ THE KIND OF PLACE, ASKED ON THE SAME LOOK (owner 2026-09-26: a remix whose place is the same kind as the strip's reaches into the canon for a strip
-  // from a different place): given the remix's place in words, the reader says what kind of place the frames show and whether a photograph of the
-  // remix's place would show that kind. A kind is what a place is and what it is made of; the light, the hour, the weather, the camera and the people
-  // belong to the recording.
+  // ⭐⭐ THE KINDS OF PLACE, ASKED ON THE SAME LOOK (owner 2026-09-26: a remix whose place is the same kind as the strip's reaches into the canon for a strip
+  // from a different place): given the remix's place in words, the reader names each kind of place the frames show, with its frames, and says whether the
+  // remix puts its characters in that kind (per kind, because a video with cuts shows two; both build reviews). A kind is what a place is and what it is
+  // made of; the light, the hour, the weather, the camera and the people belong to the recording.
   (String(place || "").trim()
-    ? `The remix's place, in words: ${JSON.stringify(String(place).replace(/\s+/g, " ").trim().slice(0, 200))}. Also answer "place": "shows" is the kind of place these ` +
-      `frames show, in a few words; "same" is true when a photograph of the remix's place would show that same kind of place. A kind of place is what the ` +
-      `place is and what it is made of; the light, the hour, the weather, the camera and the people belong to the recording.\n`
+    ? `The remix's place, in words: ${JSON.stringify(String(place).replace(/\s+/g, " ").trim().slice(0, 200))}. Also answer "places": each kind of place these ` +
+      `frames show, once, with "frames" the frames that show it, "shows" that kind in a few words, and "same" true when this remix puts its characters in ` +
+      `that kind of place. A kind of place is what the place is and what it is made of; the light, the hour, the weather, the camera and the people belong ` +
+      `to the recording.\n`
     : "") +
   `Return ONLY JSON {"characters":[{"recorded":0,"name":"…","also_called":"","kind":"person|character|animal","frames":[n],"best":n,"carry":"keep|drop",` +
-  `"look_change":""}]${String(place || "").trim() ? `,"place":{"shows":"…","same":true}` : ""}}, characters [] when the video features no character.`;
+  (String(place || "").trim() ? `"look_change":""}],"places":[{"frames":[n],"shows":"…","same":true}]}, characters [] when the video features no character.` : `"look_change":""}]}, [] when the video features no character.`);
 
 const KIND = { person: "real_person", character: "ip", animal: "real_entity" };
 const key = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 /**
  * → { characters: [{ name, recorded, also, kind, carry, change, frame, handle, rides }], frames: [the paths that ride], found: [every character listed,
- *   with its frames], place: { shows, same } | null (asked only when `place` is given), allFrames: [every frame's path] } | null.
+ *   with its frames], places: [{ frames, shows, same }] (asked only when `place` is given), allFrames: [every frame's path] } | null.
  * `known` is the saved cast ([{ name, look, kind }]), a hint; a character the video shows and the list lacks is found all the same. Each kept or
  * changed character is described from ITS best frame (full size); at most CARRY_MAX_REFS distinct frames are used, the characters they show first.
  */
@@ -89,8 +90,10 @@ export async function readCarry({ strip, frames = [], remix = "", parentWords = 
   const b64 = (p) => readFileSync(p).toString("base64");
   // room to think: the pick reasons over six frames and a remix at once (the fast model reasons before it answers; a cut-off call is billed and re-asked)
   const pick = await judge([textPart(carryPickPrompt({ remix, parentWords, known, n: frames.length, place })), imagePart("image/jpeg", b64(strip))], { maxTokens: 4000, temperature: 0, tag: "carry-pick" });
-  // the kind answer and every character's own frames ride out with the result (the strip choice reads them: _strip_choice.mjs)
-  const placeKind = pick?.place && typeof pick.place === "object" ? { shows: String(pick.place.shows || "").replace(/\s+/g, " ").trim().slice(0, 120), same: typeof pick.place.same === "boolean" ? pick.place.same : null } : null;
+  // the kinds of place and every character's own frames ride out with the result (the strip choice reads them: _strip_choice.mjs)
+  const places = (Array.isArray(pick?.places) ? pick.places : []).filter((p) => p && typeof p === "object").map((p) => ({
+    frames: [...new Set((Array.isArray(p.frames) ? p.frames : []).map((x) => Math.round(Number(x))).filter((x) => x >= 1 && x <= frames.length))],
+    shows: String(p.shows || "").replace(/\s+/g, " ").trim().slice(0, 120), same: typeof p.same === "boolean" ? p.same : null })).filter((p) => p.frames.length);
   const found = (Array.isArray(pick?.characters) ? pick.characters : []).map((c) => {
     const best = Math.round(Number(c?.best)), no = Math.round(Number(c?.recorded)) || 0;
     const rec = no >= 1 && no <= known.length ? known[no - 1] : known.find((k) => key(k.name) && key(k.name) === key(c?.name));
@@ -101,9 +104,9 @@ export async function readCarry({ strip, frames = [], remix = "", parentWords = 
   }).filter((c) => c.name && c.best);
   // another gen of the canon is read for who it shows, in which frames, and in what kind of place; its characters are never described again (the parent's
   // own reading describes them: _strip_choice.mjs)
-  if (!describe) return { characters: [], frames: [], found, place: placeKind, allFrames: frames };
+  if (!describe) return { characters: [], frames: [], found, places, allFrames: frames };
   const kept = found.filter((c) => c.carry === "keep");
-  if (!kept.length) { log(`  carry: the remix carries no character the video features${found.length ? ` (${found.map((c) => `${c.name}: ${c.carry}`).join(", ")})` : ""}`); return found.length ? { characters: found.map((c) => ({ ...c, frame: null, handle: "", rides: false })), frames: [], found, place: placeKind, allFrames: frames } : null; }
+  if (!kept.length) { log(`  carry: the remix carries no character the video features${found.length ? ` (${found.map((c) => `${c.name}: ${c.carry}`).join(", ")})` : ""}`); return found.length ? { characters: found.map((c) => ({ ...c, frame: null, handle: "", rides: false })), frames: [], found, places, allFrames: frames } : null; }
   // the frames that RIDE the gen: the best frames of the characters kept as they are (the frame showing the most of them first, at most CARRY_MAX_REFS). A
   // character whose look the remix changes is described from its own frame, but that frame never rides for it: it would pin the look being changed.
   const same = kept.filter((c) => !c.change), changed = kept.filter((c) => c.change);
@@ -114,16 +117,24 @@ export async function readCarry({ strip, frames = [], remix = "", parentWords = 
   const out = [];
   for (const n of readOn) {
     const who = kept.filter((c) => c.best === n);
-    const read = await judge([textPart(castFrameReadPrompt(who.map((c) => ({ name: c.name, look: (known.find((k) => key(k.name) === key(c.name)) || {}).look || "" })))), imagePart("image/jpeg", b64(frames[n - 1]))],
-      { maxTokens: 1800, temperature: 0, tag: "carry-read" });
-    const list = Array.isArray(read?.characters) ? read.characters : [];
-    who.forEach((c, i) => {
-      const h = list.find((x) => Number(x?.n) === i + 1) || list[i];
-      const handle = h && h.visible !== false ? String(h.handle || "").replace(/\s+/g, " ").trim() : "";
-      out.push({ ...c, frame: frames[n - 1], rides: ride.includes(n) && !c.change, handle: handle && !handleCarriesName(handle, [c.name, c.also].filter(Boolean)) ? handle : "" });
-    });
+    const handles = await describeOnFrame(frames[n - 1], who.map((c) => ({ name: c.name, also: c.also, look: (known.find((k) => key(k.name) === key(c.name)) || {}).look || "" })), { judge });
+    who.forEach((c, i) => out.push({ ...c, frame: frames[n - 1], rides: ride.includes(n) && !c.change, handle: handles[i] }));
   }
   for (const c of found.filter((x) => x.carry === "drop")) out.push({ ...c, frame: null, handle: "", rides: false });
   log(`  carry: ${out.map((c) => `${c.name}${c.also ? ` (${c.also})` : ""} ${c.carry.toUpperCase()}${c.change ? ` with a new look: ${c.change}` : ""}${c.handle ? ` → "${c.handle}"` : ""}${c.rides ? " [its frame rides]" : ""}`).join(" · ")}`);
-  return { characters: out, frames: ride.map((n) => frames[n - 1]), found, place: placeKind, allFrames: frames };
+  return { characters: out, frames: ride.map((n) => frames[n - 1]), found, places, allFrames: frames };
+}
+
+/** Each character of `who` ([{ name, also, look }]) described as ONE frame shows it: the look the beats then name it by. "" for a character the frame does
+ *  not show or whose description carries its name. One vision call. */
+export async function describeOnFrame(framePath, who = [], { judge = providerJson } = {}) {
+  if (!framePath || !who.length) return who.map(() => "");
+  const read = await judge([textPart(castFrameReadPrompt(who.map((c) => ({ name: c.name, look: c.look || "" })))), imagePart("image/jpeg", readFileSync(framePath).toString("base64"))],
+    { maxTokens: 1800, temperature: 0, tag: "carry-read" });
+  const list = Array.isArray(read?.characters) ? read.characters : [];
+  return who.map((c, i) => {
+    const h = list.find((x) => Number(x?.n) === i + 1) || list[i];
+    const handle = h && h.visible !== false ? String(h.handle || "").replace(/\s+/g, " ").trim() : "";
+    return handle && !handleCarriesName(handle, [c.name, c.also].filter(Boolean)) ? handle : "";
+  });
 }
