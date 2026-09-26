@@ -18,7 +18,7 @@ import { castFrameClause } from "./_beat_law.mjs";   // the kept cast rides the 
 import { installExitHandlers } from "./_exit.mjs";   // one exit contract for every process (2026-09-24)
 import { referenceVoicesLaw } from "./_beat_law.mjs";   // a name the maker used only for a manner: the writer alone knows whose (owner 2026-09-24)
 import { acceptWhole } from "./_beat_edit.mjs";   // a repair's answer, whole or not at all (owner 2026-09-25)
-import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, appropriationFrame, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, voiceClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
+import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, appropriationFrame, borrowedCamera, thingBlock, DIALOGUE_STAMPS, dialogueClause, addresseeClause, renditionClause, FINE_DETAIL, buildDialogueBlock, denameSpeakers, legalBeatCounts, stampsLegal, stampsWhy, clampStamps, restampBeats, telling, viewLaw, singleBlock, charContextBlock, anthropomorphismClause, vocalizationClause, voiceClause, belongingClause, workTitlesClause, incompleteBeatLines, genericSpeakerLabels, genMood } from "./_beat_law.mjs";   // beatStamps deliberately NOT imported since 2026-08-20 — the grid is celeb-only now
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
@@ -142,7 +142,7 @@ if (!_seenPinned) _keepRead("seen", _seenKeys, seen);
 // ⭐⭐ UNDER A BORROWED CAMERA THE SCENE IS THE FRAME AT ZERO (owner 2026-09-26, the penguin remix 6da2e918). The photograph read above is the camera's, taken
 // somewhere else: its scene ("a dark forest clearing") and its occupant (the deer, "the place's own, stays exactly as photographed") belong to that other place.
 // Every consumer of this reading (the scene line, the swap clause, the anchor re-ask, the invoke list) reads the appropriation's frame instead, in one place.
-{ const _fz = appropriationFrame(); if (_fz) { seen.scene = _fz; seen.standin = "none"; seen.standin_is_target = false; seen.elements = []; console.log("  \u25c7 a borrowed camera: the scene is the frame at zero (the maker's place written into it), and the camera's photograph holds no occupant of the story's place"); } }
+{ const _bc = borrowedCamera(); if (_bc) { const _fz = appropriationFrame(); seen.scene = _fz || `${_bc.place || "the maker's place"}, seen through this ${String(_bc.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || _bc.form}`; seen.standin = "none"; seen.standin_is_target = false; seen.elements = []; console.log(`  \u25c7 a borrowed camera: the scene is the frame at zero (${_fz ? "the maker's place written into it" : "the read did not answer; the place by name"}), and the camera's photograph holds no occupant of the story's place`); } }
 
 // 2b. READ THE CHARACTER REFS (VLM) — what does the sourced character actually LOOK like, and what does it
 // CARRY or WEAR that the beats can put to work? A signature the beats never touch is a signature the action
@@ -311,7 +311,7 @@ const BEAT_STYLE = process.env.BEAT_STYLE || (_density >= SPEC_DENSE ? "minimal"
 console.log(`seesaw : spec-density ${_density} (dense at ${SPEC_DENSE}) → ${BEAT_STYLE}${process.env.BEAT_STYLE ? " (env override)" : ""}`);
 if (BEAT_STYLE !== "template") {
   // THE SAME LAW IN THE WRITER'S OWN WORDS: nothing is ever replaced, and what the photograph holds is the world's.
-  const swapClause = appropriationFrame() ? "" : seen.standin_is_target
+  const swapClause = borrowedCamera() ? "" : seen.standin_is_target
     ? `The ${intent.target} is ALREADY the creature in the photograph — do not introduce another, just animate it.`
     : has(seen.standin)
       ? `⚠ ${seen.standin} in the photograph is the place's own: it stays exactly as photographed, is never one of the story's figures, and never changes how a figure arrives; ${intent.target} is introduced into the scene where the words put it (${intent.action}).`
@@ -330,7 +330,7 @@ if (BEAT_STYLE !== "template") {
   const _dump = (t) => { writerInstruction = t; try { writeFileSync(join(HERE, "out/_aspect", `${slug}_instruction.txt`), t); } catch {} return t; };
   const instruction = _dump(
     spanHeader() +
-    `${appropriationFrame() ? "SCENE AT FRAME ZERO" : "SCENE AS PHOTOGRAPHED"}: ${seen.scene}\n` +
+    `${borrowedCamera() ? "SCENE AT FRAME ZERO" : "SCENE AS PHOTOGRAPHED"}: ${seen.scene}\n` +
     // ON A REMIX (2026-09-09): the reframed request is the user's request applied to the parent's video, and the remix words are the CHANGE —
     // never the other way round (job 6280175e: the change was presented as the request and the parent's register, place and camera reference
     // rode as demoted context; the beats lost them). The parent's request stands wherever the change is silent.
@@ -343,7 +343,7 @@ if (BEAT_STYLE !== "template") {
         // the camera's photograph ("where the uneven dirt ground … was", "under a trail camera overlay"), so they carried the old pieces and the chrome into
         // a frame that is now written positively. The ruling's own list is what rides: voices, language, register, sound (owner 2026-09-21).
         (String(process.env.REMIX_PARENT_SCRIPT || "").trim()
-          ? (appropriationFrame()
+          ? (borrowedCamera()
             ? (() => { const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)); const _v = [..._pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue] : [], ..._pp.sound ? [_pp.sound] : []].join("\n");
                 return _v ? `THE PARENT'S VOICES (its Dialogue and its Sound):\n${_v}\n— everything the change does not touch keeps these voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n` : ""; })()
             : `THE PARENT'S SCRIPT (its beats, its Dialogue, its Sound):\n${String(process.env.REMIX_PARENT_SCRIPT).trim()}\n— everything the change does not touch keeps this script's voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n`)

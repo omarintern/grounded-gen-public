@@ -356,7 +356,11 @@ export function firstStopSlots(slots = [], first = "", q = "") {
   // …never onto the world's own opening (a beat-0 slot, worldOwnedSlotQueries): made plan-owed it lost its world claim and the writer was told the
   // photographed place was that slot (build check 2026-09-26). It stays in the list exactly as the planner wrote it, as cutDestinations leaves it.
   const opening = (v) => String(v?.beat ?? "").replace(/s$/i, "").trim() === "0";
-  const byWords = list.find((v) => !opening(v) && (norm(v?.scope) === norm(first) || (Array.isArray(v?.queries) ? v.queries : []).some((x) => norm(x) === norm(qq) || norm(x) === norm(first))));
+  const wordsMatch = (v) => norm(v?.scope) === norm(first) || (Array.isArray(v?.queries) ? v.queries : []).some((x) => norm(x) === norm(qq) || norm(x) === norm(first));
+  // …and when the maker's first place IS the world's opening, the planner's list already leads with it: nothing is joined, moved or copied (build check 2,
+  // the reviewer: the order fallback led the NEXT stop with the first place's query, and a list of only the opening came back as a beat-less copy)
+  if (list.some((v) => opening(v) && wordsMatch(v))) return { slots: list, joined: "opening" };
+  const byWords = list.find((v) => !opening(v) && wordsMatch(v));
   const hit = byWords || list.find((v) => !opening(v)) || null;
   if (!hit) return { slots: [{ beat: null, queries: [...new Set([qq, first].filter(Boolean))], scope: first }], joined: "new" };
   const led = { ...hit, beat: null, queries: [qq, ...(Array.isArray(hit.queries) ? hit.queries : []).filter((x) => norm(x) !== norm(qq))] };
