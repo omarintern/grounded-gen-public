@@ -22,7 +22,7 @@ import { ipFiguresLaw, frameZeroRegisterClause, appropriationBlock, thingBlock, 
 import { rideBlock, dialogueLines, saysHow, linesOutrun } from "./_ride_writer.mjs";
 import { rideFromEnv } from "./_ride.mjs";
 import { COMEDY_LAW } from "./_writer_contract.mjs";   // the six comedy rules — construction, not placement
-import { recastLaw, RECAST_CAP, spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist, feedbackLaw } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
+import { spanHeader, goalBlock, framingConcessionBlock, proseFiguresBlock, plateQuestionerBlock, reconcileLaw, beatZeroLaw, trappingsLaw, charSigBlock, soundLaw, asWhileCheck, cutLaw, causalOrder, payoffLaw, seesawLaw, situationArc, outputShape, hardConstraints, finalChecklist, feedbackLaw } from "./_beat_law.mjs";   // the import-safe beat-law home (owner 2026-08-14: both writers consume the SAME BYTES — import, never paste)   // INVOKE + world-sim bar (seesaw half inline below; dedupe post-test)
 // THE WRITER IS THE PROSE MODEL (owner 2026-09-14: "the prose model has always been a better writer than the fast model, which is why we had it"). The world-build writer
 // has written on it since 08-11; this single-take writer never did, and on 09-07 the ride was routed here for the seat plate, so the ride's
 // writer changed model with the route and nobody decided it. Now the draft and every rewrite below write on the prose model; the intent extraction,
@@ -135,7 +135,7 @@ const _seenKeys = pinKeys("seen", { promptSha: _promptSha, plateSha: _plateSha }
 const _seenPinned = PIN_ON ? pinHit(_pin, "seen", _seenKeys) : null;
 if (_seenPinned) console.log("  \u25c7 the plate reading is this job's own — the same photograph and the same request, so it is not looked at again");
 const seen = _seenPinned || await providerJson([
-  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant/subject currently AT THE ACTION SPOT that the target should REPLACE — the body the model swaps. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so NO swap is needed),"standin_placement":"foreground | side | background | none","other_occupants":[{"body":"…","position":"…","doing":"…"}] (0-2 OTHER prominent REAL occupants — a person or animal — elsewhere in the frame, each described closely enough to pick it out; [] when there are none),${ELEMENTS_FIELD}}.`),
+  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant currently AT THE ACTION SPOT, if any. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so it is animated, never conjured twice),"standin_placement":"foreground | side | background | none",${ELEMENTS_FIELD}}.`),
   imagePart("image/jpeg", b64),
 ], { maxTokens: 2400, temperature: 0.2 });
 if (!_seenPinned) _keepRead("seen", _seenKeys, seen);
@@ -310,26 +310,14 @@ if (BEAT_STYLE !== "template") {
   const swapClause = seen.standin_is_target
     ? `The ${intent.target} is ALREADY the creature in the photograph — do not introduce another, just animate it.`
     : has(seen.standin)
-      ? `⚠ ${seen.standin} in the photograph stays exactly as photographed — the world's own, never replaced, never vacated and never written out; ${intent.target} is introduced into the scene where the words put it (${intent.action}).`
+      ? `⚠ ${seen.standin} in the photograph is the place's own: it stays exactly as photographed, is never one of the story's figures, and never changes how a figure arrives; ${intent.target} is introduced into the scene where the words put it (${intent.action}).`
       : `Beat 1 MUST introduce ${intent.target} into the scene at the natural action spot.`;
-  // ANTHROPOMORPHIC COMEDY — the point of the whole non-© branch, and the thing the minimal swap beat structurally
-  // cannot deliver. Owner 2026-07-30, on a pigeon that replaced a laundromat clerk: "the pigeon didnt work the
-  // register, it acted like a pigeon. comedy, the narrative way, is to overstep the usual and have the bird actually
-  // work the register in hilarous fashion."
-  // The swap template says WHAT the creature IS and never WHAT IT DOES, so the model renders a plausible animal
-  // standing in a human's place — which is the un-funny reading. The joke is COMPETENCE: the creature performing
-  // the human job deliberately and well, with specific physical business, not chaos and not animal behaviour.
-  // ⚠ CONTEXT-CARRIED (owner 2026-08-21): the human role is the sidecar's ACTUAL occupant being replaced —
-  // never invented. A creature already the scene's own animal (standin_is_target) or entering an empty
-  // natural spot gets the context law instead: a fox in snow behaves as a fox. The competence text for the
-  // real-role branch is UNCHANGED (the pigeon-register ruling) — it moved VERBATIM to _beat_law.
-  // SECONDARY RECASTS (owner 2026-08-29): every role-bearing occupant the story re-casts, cap 3
-  // bodies total. The plate-reader lists other occupants; the WRITER does the role matching (it
-  // holds the story); unmatched occupants stay real. Observability: the count is logged every run.
-  const _others = (Array.isArray(seen.other_occupants) ? seen.other_occupants : []).filter((o) => o && o.body && !/^none$/i.test(String(o.body))).slice(0, RECAST_CAP - 1);
-  if (_others.length) console.log(`  [recast] ${_others.length} secondary occupant(s) offered to the writer (cap ${RECAST_CAP} incl subject): ${_others.map((o) => String(o.body).slice(0, 40)).join(" | ")}`);
-  const humanRole = has(seen.standin) && !seen.standin_is_target ? seen.standin : null;
-  const comedyClause = anthropomorphismClause(intent.target, humanRole);
+  // ANTHROPOMORPHIC COMEDY — the point of the whole non-© branch (owner 2026-07-30, on a pigeon that replaced a laundromat clerk: "the pigeon
+  // didnt work the register, it acted like a pigeon. comedy, the narrative way, is to overstep the usual and have the bird actually work the register
+  // in hilarous fashion"). CONTEXT-CARRIED (owner 2026-08-21) and ONE SENTENCE since 2026-09-26: a creature the request or the scene puts in a
+  // human role performs it competently; in its own natural world it behaves as the creature. The occupant's job and the secondary recasts are
+  // gone (owner 2026-09-26: "we need to rid of recast rule" / "second leftover is also problematic"): a person in the photograph is the place's own.
+  const comedyClause = anthropomorphismClause(intent.target);
   // FULL OBSERVABILITY: dump the ENTIRE instruction the beat writer receives. Until now only its OUTPUT (the
   // beats) was inspectable, so the ruling that produced them — hundreds of lines of accumulated doctrine — was
   // invisible to review. Written every run to out/_aspect/<slug>_instruction.txt.
@@ -355,7 +343,7 @@ if (BEAT_STYLE !== "template") {
       ? `APP NARRATIVE (context only — its added adjectives and renamings NEVER override the user\'s own subject nouns${RIDE?.world?.mode === "theme" ? "; on this ride the world's places are redacted to \"scene\" on purpose — they are never named, their things are listed below" : ""}): "${narrativeForWriter(userPrompt)}"\n`
       : "") +
     `SUBJECT: ${intent.target} — ${intent.action}${has(intent.secondary) ? ` (also present: ${intent.secondary})` : ""}\n` +
-    `${swapClause}${recastLaw(_others)}\n${comedyClause}\n${vocalizationClause()}\n${voiceClause()}\n${belongingClause()}\n${castFrameClause()}\n${rideBlock(RIDE)}${workTitlesClause()}${referenceVoicesLaw()}${ipFiguresLaw()}${frameZeroRegisterClause()}${appropriationBlock()}${thingBlock()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
+    `${swapClause}\n${comedyClause}\n${vocalizationClause()}\n${voiceClause()}\n${belongingClause()}\n${castFrameClause()}\n${rideBlock(RIDE)}${workTitlesClause()}${referenceVoicesLaw()}${ipFiguresLaw()}${frameZeroRegisterClause()}${appropriationBlock()}${thingBlock()}\n${worldSimClause()}\n${invokeClause(BEAT_STYLE, seen.elements)}\n${addresseeClause()}\n${renditionClause()}\n${dialogueClause()}\n\n` +
     goalBlock() +
     framingConcessionBlock(framingConceded) +
     proseFiguresBlock() +

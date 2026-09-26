@@ -341,6 +341,21 @@ export function roomNameOf(query, titles = []) {
   return z.replace(/\s+(?:scene|interior|footage|set|still|frame)$/i, "").trim();
 }
 
+/** THE MAKER'S FIRST PLACE REORDERS THE PLANNER'S STOPS AND NEVER ADDS ONE (owner 2026-09-26, job 00b8c26a: a new stop for the first place made the
+ *  two-place union owe the captain's stop twice, and the ballroom and the engine room could never be reached). A stop that shares the place's words
+ *  leads; else the planner's first stop is the place, by order; a new stop only when the planner wrote none. The leading stop is plan-owed (beat
+ *  cleared) and its queries lead with the place's own phrase. Pure: returns { slots, joined: "words" | "order" | "new" }. */
+export function firstStopSlots(slots = [], first = "", q = "") {
+  const norm = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/\s+/g, " ").trim();
+  const list = Array.isArray(slots) ? slots.slice() : [];
+  const qq = String(q || first || "").trim();
+  const byWords = list.find((v) => norm(v?.scope) === norm(first) || (Array.isArray(v?.queries) ? v.queries : []).some((x) => norm(x) === norm(qq) || norm(x) === norm(first)));
+  const hit = byWords || list[0] || null;
+  if (!hit) return { slots: [{ beat: null, queries: [...new Set([qq, first].filter(Boolean))], scope: first }], joined: "new" };
+  const led = { ...hit, beat: null, queries: [qq, ...(Array.isArray(hit.queries) ? hit.queries : []).filter((x) => norm(x) !== norm(qq))] };
+  return { slots: [led, ...list.filter((v) => v !== hit)], joined: byWords ? "words" : "order" };
+}
+
 // ── THE ENV MIRROR — the one channel to the run's children (hunts, the writer) ────────────────────────────
 // APPARATUS_FORM / APPARATUS_KIND / APPARATUS_NOUN stay as the compact booleans other modules read (the register law, the scrape
 // route's log, the frame-zero body rule); RIDE carries the whole decision. Nothing else about the ride rides in env.

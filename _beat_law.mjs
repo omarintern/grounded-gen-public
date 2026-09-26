@@ -161,24 +161,14 @@ export const dialogueClause = ({ grid = true } = {}) => {   // grid: false for t
 export const ELICITED_FORM = /\b(?:interview|news|segment|report(?:er|age)?|broadcast|vox[- ]?pop|documentary|talk[- ]?show|press|podcast)\b/i;
 // ── ANTHROPOMORPHISM IS CONTEXT-CARRIED, NEVER A DEFAULT (owner 2026-08-21: «if its a nonanthropomorphic
 // thing like a fox in snow, or bear in a zoo, then it doesnt warrant anthropomorphism. context carries here
-// and prompting»). The competence joke (owner 2026-07-30, the pigeon register) is UNCHANGED where it was
-// measured — a creature REPLACING a human occupant performs that human's job. What died is the fallback that
-// INVENTED "the person who would normally be there" when no such occupant existed: a creature in its own
-// natural world behaves as the creature. humanRole = the actual occupant's description, or null when the
-// scene offers no human role to perform.
-export const anthropomorphismClause = (target, humanRole) => humanRole
-  ? `⚠ THIS IS THE JOKE, AND IT IS THE POINT OF THE SHOT. The ${target} must ACTUALLY PERFORM the human ` +
-    `job that ${humanRole} was doing — not merely stand in that spot behaving like a ${target}. Work out ` +
-    `what that job physically INVOLVES in this exact scene and have the creature DO IT, deliberately and ` +
-    `competently, with whatever body it has. Invent SPECIFIC physical business — but PITCH IT AT THE DISTANCE ` +
-    `THE PHOTOGRAPH WAS TAKEN FROM: business the WHOLE BODY performs and that reads from across the room, never ` +
-    `business identified by the limb that does it or by the small object in its grip. Specific and coarse are ` +
-    `not opposites — the same act can be written either way, and only one of them can be seen from here. ` +
-    `The humour comes from COMPETENCE, not from mess: it is funny because the animal is unmistakably ` +
-    `GOOD at a job it has no business doing, and treats it as completely routine. Do NOT write generic animal ` +
-    `behaviour (pecking at crumbs, flapping, sniffing around, looking cute) — that is the boring reading and it ` +
-    `wastes the shot. Do NOT have it fail, panic or wreck the place unless the prompt asked for that.`
-  : `⚠ ANTHROPOMORPHISM IS CARRIED BY CONTEXT AND PROMPTING, NEVER A DEFAULT. If the request or the scene ` +
+// and prompting»). A creature the request or the scene puts in a human role performs it competently, and that
+// competence is the joke (the 07-30 pigeon register); a creature in its own natural world behaves as the creature.
+// ⭐⭐ ONE SENTENCE (owner 2026-09-26: "second leftover is also problematic"; both reviews): the branch that handed the
+// writer the photographed occupant's job ("the human job that <stand-in> was doing") is GONE. It was built for the swap,
+// fed by the plate reader's stand-in whether or not anything replaced it, and in job 843cd56b gave the de-named Jack the
+// film's own man's job. The context sentence carries the joke from the request alone.
+export const anthropomorphismClause = (target) =>
+  `⚠ ANTHROPOMORPHISM IS CARRIED BY CONTEXT AND PROMPTING, NEVER A DEFAULT. If the request or the scene ` +
     `puts the ${target} in a HUMAN ROLE — a job, a station, a task a person would do there — it performs that ` +
     `role deliberately and competently with whatever body it has, and that competence is the joke. If the ` +
     `context is the creature's own natural world, it behaves AS THE CREATURE — no invented human job, no ` +
@@ -1059,27 +1049,8 @@ export const stampRetryPrompt = (stamps, userPrompt, text) =>
   `Keep the same story and wording as far as possible; redistribute or extend the action to fill every stamp. ` +
   `The request was "${userPrompt}" - EVERY verb in it must still appear. Return ONLY the beat lines.\n\n${text}`;
 
-// ── SECONDARY RECASTS (owner 2026-08-29, the cymbal-king ruling) ────────────────────────────────
-// "the swap grammar should recast every role-bearing occupant the story re-casts, not just the
-// subject's stand-in. but we should limit it to three." The validated moat law already says a real
-// in-role body is the SWAP TARGET, never an obstacle — a sleeping woman is the perfect stand-in for
-// a sleeping king. This extends that ruling from the subject's stand-in to every occupant the story
-// re-casts, hard-capped at three bodies total (subject included): the owner's stated worry is that
-// too many simultaneous swaps may diffuse the render, so the cap is a quality guard, not a nicety.
-export const RECAST_CAP = 3;
-
-/** The secondary-recast law block for the writer instruction. `others` = the plate-reader's list of
- *  OTHER real occupants (each {body, position, doing}); trimmed to RECAST_CAP-1 (the subject's own
- *  stand-in holds the first slot). Pure — vacuum-tested. Returns "" when there is nobody to recast. */
-export function recastLaw(others, cap = RECAST_CAP) {
-  const list = (Array.isArray(others) ? others : [])
-    .filter((o) => o && typeof o.body === "string" && o.body.trim() && !/^none$/i.test(o.body.trim()))
-    .slice(0, Math.max(0, cap - 1));
-  if (!list.length) return "";
-  const lines = list.map((o) => ` • ${o.body.trim()}${o.position ? ` (${String(o.position).trim()}` + (o.doing ? `, ${String(o.doing).trim()}` : "") + ")" : o.doing ? ` (${String(o.doing).trim()})` : ""}`).join("\n");
-  return `\nSECONDARY RECASTS — the photograph ALSO contains:\n${lines}\n` +
-    `When a story character's ROLE matches an occupant's — a sleeping person for a sleeping king, a clerk for the story's clerk — ` +
-    `beat zero MUST state that story body at the occupant's EXACT position, replacing it: the same replacement grammar as the subject. ` +
-    `⚠ HARD CAP: at most ${cap} bodies are replaced in total, the subject's stand-in included — recast only role-matching occupants. ` +
-    `Every other occupant KEEPS ITS PLACE: leave it real and unmentioned, and never invent a replacement for a body whose role the story does not name.`;
-}
+// ── SECONDARY RECASTS: GONE (owner 2026-09-26: "we need to rid of recast rule"; both reviews). The 08-29 law told the writer to put a
+// role-matching story character at a photographed occupant's EXACT position "with the same replacement grammar as the subject", the one
+// survivor of the stand-in law removed on 09-22 (fa3b805). It was the only way the writer ever learned of the raccoon run's stranger on the
+// steps (job 343b1596: the guy stayed outside instead of coming out of the door), and in the ballroom remix (843cd56b) it cast the film's own
+// actor. A person in the photograph is the place's own: never one of the story's figures (plates are places, 8303b01).
