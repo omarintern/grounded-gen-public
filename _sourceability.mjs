@@ -102,7 +102,10 @@ export function makerThings(plan = {}, { device = "", ride = null } = {}) {
   return out.slice(0, 3);
 }
 export function sourceabilitySubjects({ plan = {}, world = [], device = "", ride = null, rawPrompt = "" } = {}) {
-  const out = []; const add = (subject, role, required = true) => { const k = _key(subject); if (!k || out.some((o) => _key(o.subject) === k)) return; out.push({ subject: _norm(subject), role, required }); };
+  // ⭐ THE BARE PLACE RIDES ON THE RECORD (2026-09-26, job 49f068b3): a place is ASKED with the world's name beside it ("picnic table (french park
+  // picnic table)"), and the strike that removes a place the judge read as a thing matched the asked string against the bare place and never hit, so
+  // the table was held twice (a cut slot and a thing plate). The strike reads this field, never the asked words.
+  const out = []; const add = (subject, role, required = true, place = "") => { const k = _key(subject); if (!k || out.some((o) => _key(o.subject) === k)) return; out.push({ subject: _norm(subject), role, required, ...(place ? { place: _norm(place) } : {}) }); };
   const _qual = (p) => {
     // ⭐⭐ AN ORDERED PREFERENCE IS JUDGED ON ITS NAMED HALF (owner 2026-09-18): "everest-like mountains" asks for Everest first, so
     // the pair judge is asked about Everest. Its kind is the maker's own fallback and reaches the hunt as the reduction, not here.
@@ -119,12 +122,12 @@ export function sourceabilitySubjects({ plan = {}, world = [], device = "", ride
   if (ride) {
     const title = ride?.world?.named ? _norm(ride.world.title) : "";
     if (title) add(ride.world.mode === "theme" ? `the world of ${title}` : title, "world");
-    for (const p of places) add(title && ride.world.mode === "theme" ? `${title}: ${p}` : p, ride.world.mode === "theme" ? "room" : "place");
+    for (const p of places) add(title && ride.world.mode === "theme" ? `${title}: ${p}` : p, ride.world.mode === "theme" ? "room" : "place", true, p);
     if (ride.noun) add(`${ride.noun} POV footage`, "form");
     for (const t of makerThings(plan, { device, ride })) add(t, "thing", false);
   } else {
     if (device) add(/footage$/i.test(device) ? device : `${device} footage`, "form");
-    for (const p of places) add(_qual(p), "place");
+    for (const p of places) add(_qual(p), "place", true, p);
     if (!places.length) { const w = _norm(plan?.form?.setting || plan?.form?.world || world[0] || ""); if (w) add(w, "world"); }
     for (const t of makerThings(plan, { device, ride })) add(t, "thing", false);
   }
@@ -138,7 +141,7 @@ export function shapeVerdicts(raw, subjects = []) {
     const v = arr.find((x) => _key(x?.subject) === _key(s.subject)) || arr.find((x) => _key(x?.subject) && (_key(s.subject).includes(_key(x.subject)) || _key(x.subject).includes(_key(s.subject))));
     if (!v || typeof v.sourceable !== "boolean") continue;
     const c = Number(v.confidence); const reduction = (Array.isArray(v.reduction) ? v.reduction : []).map(_norm).filter(Boolean).slice(0, 3); const written = (Array.isArray(v.written) ? v.written : []).map(_norm).filter(Boolean).slice(0, 6);
-    out.push({ subject: s.subject, role: s.role, required: s.required !== false, sourceable: v.sourceable, reduction, written, inferred: v.inferred === true, confidence: Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 0, kind: _norm(v.kind || "other"), query: v.query ? _norm(v.query) : null, held_by: v.held_by ? _norm(v.held_by) : null, peopled: v.peopled === true ? true : v.peopled === false ? false : null, why: _norm(v.why).slice(0, 160) });
+    out.push({ subject: s.subject, ...(s.place ? { place: s.place } : {}), role: s.role, required: s.required !== false, sourceable: v.sourceable, reduction, written, inferred: v.inferred === true, confidence: Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 0, kind: _norm(v.kind || "other"), query: v.query ? _norm(v.query) : null, held_by: v.held_by ? _norm(v.held_by) : null, peopled: v.peopled === true ? true : v.peopled === false ? false : null, why: _norm(v.why).slice(0, 160) });
   }
   return out;
 }
@@ -232,12 +235,13 @@ export function thingVerdicts(verdicts = [], plan = {}, { seat = false } = {}) {
   for (const v of things) {
     const isThing = /^thing$/i.test(String(v.kind || "").trim());
     if (!isThing) continue;   // a role-"thing" subject the judge read as a place or a work is not a thing
-    const hit = places.find((p) => bare(p) === bare(v.subject));
+    const hit = places.find((p) => bare(p) === bare(v.place || v.subject));
     if (hit) gone.add(bare(hit));
     // THE THING QUERY KEEPS THE MAKER'S OWN WORD (owner 2026-09-19: "a big wave is different than tsunami, so it should have used tsunami in query"):
     // the judge composes the image query and may drift to a kind ("storm wave"); the subject's head word is prefixed whenever the query lost it.
-    if (v.sourceable === true) { if (!plates.some((x) => bare(x.subject) === bare(v.subject))) plates.push({ subject: _norm(v.subject), query: thingQuery(v.subject, v.query) }); }
-    else if (!written.some((w) => bare(w) === bare(v.subject))) written.push(hit || _norm(v.subject));
+    const _thing = v.place || v.subject;   // the thing's own words, never the world's name the question carried
+    if (v.sourceable === true) { if (!plates.some((x) => bare(x.subject) === bare(_thing))) plates.push({ subject: _norm(_thing), query: thingQuery(_thing, v.query) }); }
+    else if (!written.some((w) => bare(w) === bare(_thing))) written.push(hit || _norm(_thing));
   }
   // a place another photograph holds leaves the places and its slot exactly as a thing does (only the seat of a RIDE can hold one: `seat`)
   const held = heldPlaces(verdicts).filter((h) => h.kind === "thing" || seat);
