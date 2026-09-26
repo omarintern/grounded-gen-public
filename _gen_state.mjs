@@ -131,8 +131,12 @@ function _digest(plan) {
       meme_in_context: typeof f?.meme_in_context === "boolean" ? f.meme_in_context : undefined,
       public_figure: typeof f?.public_figure === "boolean" ? f.public_figure : undefined,
       household_name: typeof f?.household_name === "boolean" ? f.household_name : undefined,
+      // a look this remix changed (owner 2026-09-26, the canon strip rule): a frame made before the change never carries the character again
+      look_changed: f?.look_changed === true ? true : undefined,
     })),
     places: Array.isArray(plan.form?.places) ? plan.form.places : [],
+    // the film strip that carried this remix's characters (owner 2026-09-26): { mode: carry|canon|reuse|anew, from } (_strip_choice.mjs)
+    carried_from: plan.carried_from && typeof plan.carried_from === "object" && plan.carried_from.mode ? { mode: String(plan.carried_from.mode), ...(plan.carried_from.from ? { from: String(plan.carried_from.from) } : {}) } : undefined,
     // (the figures above are then overlaid with the cast AS THE TAKE SAW IT — realizedFigures, below)
     vantage: (Array.isArray(plan.slots?.vantage) ? plan.slots.vantage : []).map((v) => ({ beat: v?.beat ?? null, scope: v?.scope || null, queries: Array.isArray(v?.queries) ? v.queries : [], kernel: v?.kernel || null })),
     scene_requirements: Array.isArray(plan.scene_requirements) ? plan.scene_requirements : [],

@@ -14,7 +14,7 @@ import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_in
 import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { castFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23)
+import { castFrameClause, reusedFrame, reusedFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23); or stands in frame zero (2026-09-26)
 import { installExitHandlers } from "./_exit.mjs";   // one exit contract for every process (2026-09-24)
 import { referenceVoicesLaw } from "./_beat_law.mjs";   // a name the maker used only for a manner: the writer alone knows whose (owner 2026-09-24)
 import { acceptWhole } from "./_beat_edit.mjs";   // a repair's answer, whole or not at all (owner 2026-09-25)
@@ -227,6 +227,9 @@ if (seen.standin_is_target && !standinIsABody(seen.standin)) {
   console.log(`  \u25c7 the photograph holds an IMAGE of the subject, not the subject ("${String(seen.standin).slice(0, 80)}") \u2014 it stays as photographed and the subject is conjured`);
   seen.standin_is_target = false;
 }
+// ⭐⭐ A REUSED FRAME HOLDS THE STORY'S OWN FIGURES (owner 2026-09-26, the strip choice "reuse"): the photograph is the parent video's own frame and the bodies in it
+// are the carried characters themselves, so they are animated where they stand (the swap clause below says so in the writer's words: reusedFrameClause)
+{ const _rf = reusedFrame(); if (_rf) { seen.standin = _rf.who || seen.standin; seen.standin_is_target = true; console.log(`  \u25c7 a reused frame: the story's figures already stand in it (${_rf.names.join(", ") || "as the photograph shows them"})`); } }
 let ACCEPTED_N = Math.max(...COUNTS);
 let writerInstruction = "";   // the writer contract, captured at _dump so the payoff repair can re-ask with it
 // ⭐⭐ A RE-ASK CARRIES THE DRAFT IT IS ABOUT (engine review 2026-09-24, D2). The fine-detail, anchor and payoff re-asks said "rewrite the SAME beats …
@@ -311,7 +314,7 @@ const BEAT_STYLE = process.env.BEAT_STYLE || (_density >= SPEC_DENSE ? "minimal"
 console.log(`seesaw : spec-density ${_density} (dense at ${SPEC_DENSE}) → ${BEAT_STYLE}${process.env.BEAT_STYLE ? " (env override)" : ""}`);
 if (BEAT_STYLE !== "template") {
   // THE SAME LAW IN THE WRITER'S OWN WORDS: nothing is ever replaced, and what the photograph holds is the world's.
-  const swapClause = borrowedCamera() ? "" : seen.standin_is_target
+  const swapClause = reusedFrame() ? reusedFrameClause() : borrowedCamera() ? "" : seen.standin_is_target
     ? `The ${intent.target} is ALREADY the creature in the photograph — do not introduce another, just animate it.`
     : has(seen.standin)
       ? `⚠ ${seen.standin} in the photograph is the place's own: it stays exactly as photographed, is never one of the story's figures, and never changes how a figure arrives; ${intent.target} is introduced into the scene where the words put it (${intent.action}).`
@@ -341,11 +344,13 @@ if (BEAT_STYLE !== "template") {
         // remix — a full rewrite had never heard the parent's voices). Everything the change does not touch keeps them.
         // ⭐ UNDER A BORROWED CAMERA ONLY ITS VOICES RIDE (2026-09-26, the penguin remix 6da2e918): the parent's beats were written in the old grammar over
         // the camera's photograph ("where the uneven dirt ground … was", "under a trail camera overlay"), so they carried the old pieces and the chrome into
-        // a frame that is now written positively. The ruling's own list is what rides: voices, language, register, sound (owner 2026-09-21).
+        // a frame that is now written positively. The ruling's own list is what rides: voices, language, register (owner 2026-09-21).
+        // ⭐ …AND ITS SOUND STAYS WITH ITS PLACE (2026-09-26, the penguin take on the staged build: "faint creak of the climbing ropes" rode from the parent's summit
+        // into the new place's Sound line; the reviewer's design review: "the parent's Sound keeps its voices, never its place"). The Dialogue rides; the Sound is the new place's.
         (String(process.env.REMIX_PARENT_SCRIPT || "").trim()
           ? (borrowedCamera()
-            ? (() => { const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)); const _v = [..._pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue] : [], ..._pp.sound ? [_pp.sound] : []].join("\n");
-                return _v ? `THE PARENT'S VOICES (its Dialogue and its Sound):\n${_v}\n— everything the change does not touch keeps these voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n` : ""; })()
+            ? (() => { const _pp = scriptParts(String(process.env.REMIX_PARENT_SCRIPT)); const _v = _pp.dialogue.length ? ["Dialogue:", ..._pp.dialogue].join("\n") : "";
+                return _v ? `THE PARENT'S VOICES (its Dialogue):\n${_v}\n— everything the change does not touch keeps these voices, the language they speak and their register exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n` : ""; })()
             : `THE PARENT'S SCRIPT (its beats, its Dialogue, its Sound):\n${String(process.env.REMIX_PARENT_SCRIPT).trim()}\n— everything the change does not touch keeps this script's voices, the language they speak, their register and its sound exactly: a figure who spoke in words speaks in words here too. Only the change is written new.\n`)
           : "")
       : `WHAT THE USER ASKED FOR (their own words): "${String(process.env.RAW_USER_PROMPT || "").trim() || userPrompt}"\n`) +

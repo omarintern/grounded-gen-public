@@ -212,6 +212,20 @@ export const castFrameClause = () =>
   `⚠ THE KEPT CHARACTERS RIDE REFERENCE IMAGES: frames of an earlier video show them exactly as they must look here — ${process.env.CAST_FRAME_NOTE}. ` +
   `Name each at its first mention by that description and never describe them another way; their faces, build, skin and clothing come from those ` +
   `images. The places in those images are NOT this video's place and nothing of them appears here: only the characters come from them.`;
+// ⭐⭐ A REUSED FRAME IS FRAME ZERO WITH THE STORY'S FIGURES IN IT (owner 2026-09-26: "if not then to reuse instead of source new"). When the remix's place is the
+// same kind as the parent's footage and no other gen of the canon carries the characters elsewhere, the parent video's own frame is the photograph, and the
+// carried characters stand in it (the remix executor's REMIX_STRIP record, mode "reuse"). → { names, handles, who } | null
+export const reusedFrame = () => {
+  let r = null; try { r = JSON.parse(process.env.REMIX_STRIP || ""); } catch { r = null; }
+  if (!r || typeof r !== "object" || r.mode !== "reuse") return null;
+  const names = (Array.isArray(r.names) ? r.names : []).filter((n) => typeof n === "string" && n.trim()), handles = (Array.isArray(r.handles) ? r.handles : []).filter((h) => typeof h === "string" && h.trim());
+  return { names, handles, who: (handles.length ? handles : names).join("; ") };
+};
+export const reusedFrameClause = () => {
+  const r = reusedFrame(); if (!r) return "";
+  return `⚠⚠ FRAME ZERO IS A FRAME OF THE VIDEO THIS REMIX CHANGES, AND THE STORY'S FIGURES ALREADY STAND IN IT${r.who ? `: ${r.who}` : ""}. ` +
+    `Name each at its first mention by that description; at [0s] each is where this photograph shows it, looking as it shows it, and the story moves them from there.`;
+};
 // ── A KEPT BELONGING RIDES A REFERENCE IMAGE (owner 2026-08-21: «keeping plush would mean maintaining the
 // punch character-ref and referencing the plush from the image») — the deep-remix executor sets the note;
 // the beats bind the belonging to its pixels and the replacement grammar keeps the old holder out of frame.

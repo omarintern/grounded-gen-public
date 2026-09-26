@@ -47,7 +47,7 @@ export function timesFromCuts(cuts = [], duration = 9, n = CARRY_FRAMES) {
 const cast = (list = []) => (list.length ? list.map((k, i) => `${i + 1}. ${k.name}${k.look ? ` — ${String(k.look).replace(/\s+/g, " ").trim()}` : ""}`).join("\n") : "(none recorded)");
 
 /** The strip question, as the reasoning vision model is asked it. Pure. */
-export const carryPickPrompt = ({ remix = "", parentWords = "", known = [], n = CARRY_FRAMES } = {}) =>
+export const carryPickPrompt = ({ remix = "", parentWords = "", known = [], n = CARRY_FRAMES, place = "" } = {}) =>
   `These are ${n} frames from ONE video, tiled in a grid and numbered 1 to ${n}: left to right, top row first. A REMIX of this video asks: ` +
   `${JSON.stringify(String(remix).replace(/\s+/g, " ").trim().slice(0, 700))}.\n` +
   `The words that made this video: ${JSON.stringify(String(parentWords).replace(/\s+/g, " ").trim().slice(0, 1600))}.\n` +
@@ -63,31 +63,47 @@ export const carryPickPrompt = ({ remix = "", parentWords = "", known = [], n = 
   `the mascot"); otherwise "keep". What the remix asks a character to DO, where it goes or what it says never drops it;\n` +
   `- "look_change": only what the remix changes about how this character LOOKS or WHAT it is (its body, face, clothes, kind); empty when the remix ` +
   `changes only what it does, where it is, or what it says.\n` +
+  // ⭐⭐ THE KIND OF PLACE, ASKED ON THE SAME LOOK (owner 2026-09-26: a remix whose place is the same kind as the strip's reaches into the canon for a strip
+  // from a different place): given the remix's place in words, the reader says what kind of place the frames show and whether a photograph of the
+  // remix's place would show that kind. A kind is what a place is and what it is made of; the light, the hour, the weather, the camera and the people
+  // belong to the recording.
+  (String(place || "").trim()
+    ? `The remix's place, in words: ${JSON.stringify(String(place).replace(/\s+/g, " ").trim().slice(0, 200))}. Also answer "place": "shows" is the kind of place these ` +
+      `frames show, in a few words; "same" is true when a photograph of the remix's place would show that same kind of place. A kind of place is what the ` +
+      `place is and what it is made of; the light, the hour, the weather, the camera and the people belong to the recording.\n`
+    : "") +
   `Return ONLY JSON {"characters":[{"recorded":0,"name":"…","also_called":"","kind":"person|character|animal","frames":[n],"best":n,"carry":"keep|drop",` +
-  `"look_change":""}]}, [] when the video features no character.`;
+  `"look_change":""}]${String(place || "").trim() ? `,"place":{"shows":"…","same":true}` : ""}}, characters [] when the video features no character.`;
 
 const KIND = { person: "real_person", character: "ip", animal: "real_entity" };
 const key = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 /**
- * → { characters: [{ name, recorded, also, kind, carry, change, frame, handle, rides }], frames: [the paths that ride] } | null.
+ * → { characters: [{ name, recorded, also, kind, carry, change, frame, handle, rides }], frames: [the paths that ride], found: [every character listed,
+ *   with its frames], place: { shows, same } | null (asked only when `place` is given), allFrames: [every frame's path] } | null.
  * `known` is the saved cast ([{ name, look, kind }]), a hint; a character the video shows and the list lacks is found all the same. Each kept or
  * changed character is described from ITS best frame (full size); at most CARRY_MAX_REFS distinct frames are used, the characters they show first.
  */
-export async function readCarry({ strip, frames = [], remix = "", parentWords = "", known = [] } = {}, { judge = providerJson, log = () => {} } = {}) {
+export async function readCarry({ strip, frames = [], remix = "", parentWords = "", known = [], place = "", describe = true } = {}, { judge = providerJson, log = () => {} } = {}) {
   if (!strip || !frames.length) return null;
   const b64 = (p) => readFileSync(p).toString("base64");
   // room to think: the pick reasons over six frames and a remix at once (the fast model reasons before it answers; a cut-off call is billed and re-asked)
-  const pick = await judge([textPart(carryPickPrompt({ remix, parentWords, known, n: frames.length })), imagePart("image/jpeg", b64(strip))], { maxTokens: 4000, temperature: 0, tag: "carry-pick" });
+  const pick = await judge([textPart(carryPickPrompt({ remix, parentWords, known, n: frames.length, place })), imagePart("image/jpeg", b64(strip))], { maxTokens: 4000, temperature: 0, tag: "carry-pick" });
+  // the kind answer and every character's own frames ride out with the result (the strip choice reads them: _strip_choice.mjs)
+  const placeKind = pick?.place && typeof pick.place === "object" ? { shows: String(pick.place.shows || "").replace(/\s+/g, " ").trim().slice(0, 120), same: typeof pick.place.same === "boolean" ? pick.place.same : null } : null;
   const found = (Array.isArray(pick?.characters) ? pick.characters : []).map((c) => {
     const best = Math.round(Number(c?.best)), no = Math.round(Number(c?.recorded)) || 0;
     const rec = no >= 1 && no <= known.length ? known[no - 1] : known.find((k) => key(k.name) && key(k.name) === key(c?.name));
     return { name: rec ? rec.name : String(c?.name || "").replace(/\s+/g, " ").trim(), recorded: !!rec, also: String(c?.also_called || "").replace(/\s+/g, " ").trim(),
       kind: rec?.kind || KIND[String(c?.kind || "").toLowerCase()] || "real_person", carry: String(c?.carry) === "drop" ? "drop" : "keep",
-      change: String(c?.look_change || "").replace(/\s+/g, " ").trim(), best: best >= 1 && best <= frames.length ? best : 0 };
+      change: String(c?.look_change || "").replace(/\s+/g, " ").trim(), best: best >= 1 && best <= frames.length ? best : 0,
+      frames: (Array.isArray(c?.frames) ? c.frames : []).map((x) => Math.round(Number(x))).filter((x) => x >= 1 && x <= frames.length) };
   }).filter((c) => c.name && c.best);
+  // another gen of the canon is read for who it shows, in which frames, and in what kind of place; its characters are never described again (the parent's
+  // own reading describes them: _strip_choice.mjs)
+  if (!describe) return { characters: [], frames: [], found, place: placeKind, allFrames: frames };
   const kept = found.filter((c) => c.carry === "keep");
-  if (!kept.length) { log(`  carry: the remix carries no character the video features${found.length ? ` (${found.map((c) => `${c.name}: ${c.carry}`).join(", ")})` : ""}`); return found.length ? { characters: found.map((c) => ({ ...c, frame: null, handle: "", rides: false })), frames: [] } : null; }
+  if (!kept.length) { log(`  carry: the remix carries no character the video features${found.length ? ` (${found.map((c) => `${c.name}: ${c.carry}`).join(", ")})` : ""}`); return found.length ? { characters: found.map((c) => ({ ...c, frame: null, handle: "", rides: false })), frames: [], found, place: placeKind, allFrames: frames } : null; }
   // the frames that RIDE the gen: the best frames of the characters kept as they are (the frame showing the most of them first, at most CARRY_MAX_REFS). A
   // character whose look the remix changes is described from its own frame, but that frame never rides for it: it would pin the look being changed.
   const same = kept.filter((c) => !c.change), changed = kept.filter((c) => c.change);
@@ -109,5 +125,5 @@ export async function readCarry({ strip, frames = [], remix = "", parentWords = 
   }
   for (const c of found.filter((x) => x.carry === "drop")) out.push({ ...c, frame: null, handle: "", rides: false });
   log(`  carry: ${out.map((c) => `${c.name}${c.also ? ` (${c.also})` : ""} ${c.carry.toUpperCase()}${c.change ? ` with a new look: ${c.change}` : ""}${c.handle ? ` → "${c.handle}"` : ""}${c.rides ? " [its frame rides]" : ""}`).join(" · ")}`);
-  return { characters: out, frames: ride.map((n) => frames[n - 1]) };
+  return { characters: out, frames: ride.map((n) => frames[n - 1]), found, place: placeKind, allFrames: frames };
 }
