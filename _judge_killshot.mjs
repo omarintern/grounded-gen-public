@@ -271,7 +271,12 @@ export function contentFlagFails(flag) {
   // all." The ©-exposure it was guarding is read at GENERATION by the provider's own output gate, which is the
   // layer that actually refuses — this one only removed candidates before that layer could judge them.
   if (f === "third_party_media") return false;
-  return true;                                          // …unless this run renders children. Plus absent / unrecognised / every other flag.
+  // ⭐ DISTRESS AND PERSONAL_DATA LIFTED (owner 2026-09-27: "distress, personal_data should be lifted. because seedance will handle that if its that
+  // bad."). Both were August's design and never a ruling of his; the video model's own moderation is the stop for the extreme case. The judge still
+  // names them (recorded, never gating). What still rejects: symbol, nudity when the run renders children, minor+nudity in one frame, and a flag the
+  // judge did not return (fails closed, as ever).
+  if (f === "distress" || f === "personal_data") return false;
+  return true;                                          // symbol; nudity under the children rule; absent / unrecognised.
 }
 
 // ── MINORS: A STAGE'S POPULATION IS SCENERY; AN IDENTITY REF IS NOT (owner 2026-08-11) ────────────────────
