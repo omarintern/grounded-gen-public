@@ -108,7 +108,7 @@ export function stripPlaceWords(dressing, words = []) {
     photographed: Array.isArray(dressing.photographed) ? dressing.photographed.map((p) => ({ ...p, qualities: list(p.qualities) })) : dressing.photographed };
 }
 export const isFigureThing = (e) => FIGURE_KIND.test(String(e?.kind || "").trim()) || FIGURE_NOUN.test(headNoun(e?.name));
-export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], worldName = "", dark = d?.family === "dark ride", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
+export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], canonThings = [], worldName = "", dark = d?.family === "dark ride", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const mode = d?.world?.mode || "setting";
   const way = d?.words?.way || d?.seat?.reading?.way || "";
   const planThings = (Array.isArray(d?.world?.things) ? d.world.things : []).map((e) => ({ name: e.name, kind: e.kind, surface: e.surface }));
@@ -120,13 +120,22 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     // the brief owed were hunted, judged, anchored and handed in as laterPlates, which this mode does not read. The writer was told
     // "each is written as its things" and given no things, so it wrote the seat plate, and the seat plate was a stock ice cave. When
     // no room rode, the photographs that DID ride are read instead; a theme that has its rooms is untouched.
-    const _readPlates = roomPlates.length ? roomPlates : laterPlates.map((x) => x?.plate).filter(Boolean);
+    // THE WORK'S CANON, ALREADY READ (owner 2026-09-27, the Odyssey ride): a named work without frames rides as photographs of its material things, each read
+    // for the object alone by the thing channel; those reads are this list's, and the plates are never read again as rooms (a room read names the case and
+    // the plinth around a vase, never wanted).
+    const _canon = (Array.isArray(canonThings) ? canonThings : []).filter((c) => c && c.plate);
+    const _canonPlateSet = new Set(_canon.map((c) => c.plate));
+    const _canonRead = _canon.flatMap((c) => (Array.isArray(c.things) ? c.things : []).filter(Boolean).map((name) => ({ name, kind: c.kind === "character" ? "character" : "prop", surface: c.kind === "character" ? "space" : "object", plate: c.plate })));   // a character's effigy is a figure of the world: met later along the way, never at frame zero (the 09-11 rule)
+    const _readPlates = (roomPlates.length ? roomPlates : laterPlates.map((x) => x?.plate).filter(Boolean)).filter((p) => !_canonPlateSet.has(p));
     if (!roomPlates.length && _readPlates.length) log(`  ◇ the world offered no room photograph — the ${_readPlates.length} photograph(s) that DO ride are read for their things instead`);
-    const read = readRoomThings({ roomPlates: _readPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 4, cwd, env, log });   // supply meets demand (B5, 2026-09-15): four things a room, so a six-piece plate finds takers
+    if (_canonRead.length) log(`  ✎ the work's canon, read off its own photographs (things only): ${_canonRead.map((r) => r.name).join(" · ")}`);
+    // the canon comes FIRST: the six-thing cut below keeps the work's own things over a room's incidental ones (a room read of four things a plate would otherwise crowd them out)
+    const read = [..._canonRead, ...readRoomThings({ roomPlates: _readPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 4, cwd, env, log })];   // supply meets demand (B5, 2026-09-15): four things a room, so a six-piece plate finds takers
     // A SCENE INSIDE IS BUILT ONLY FROM A PHOTOGRAPH THAT RIDES (owner 2026-09-13: "if we're writing in rooms that aren't carried by plates then we're obviously
     // gonna get lesser results"). Draw 19 rode the maze and the elevator hallway (cream walls, wainscoting, tan linoleum), and the writer built the twins' room
     // from the plan's wallpaper and geometric carpet and the finale from the plan's splintered door — no photograph carried either, so the model had to invent
-    // them. The planner's own things no longer enter a themed ride's take: the world arrives as what its photographs show, and as the seat plate's replacements.
+    // them. The planner's own things no longer enter a themed ride's take: the world arrives as what its photographs show, and as the seat plate's replacements
+    // — and a named work without frames shows its things through photographs of its material canon (canonThings above, owner 2026-09-27), still photographs that ride.
     const things = dedupeThings(read).slice(0, 6);
     if (read.length) log(`  ✎ read off the world's rooms (things only): ${read.map((r) => r.name).join(" · ")}`);
     out.things = things;
@@ -136,7 +145,10 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     // wall, ceiling, floor or light — those are the ride's own; only the plate's set pieces take the world's things. FIGURES ARE NEVER AT FRAME ZERO (owner 2026-09-11):
     // only the world's things take the seat photograph's set pieces at frame zero; a figure is met later along the way, as a tableau
     const nonFigures = things.filter((e) => !isFigureThing(e));
-    const placedLines = placeOnPlate({ plate: seatPlate, things: nonFigures.slice(0, 6), role: seatRole, dark, way, cwd, env, log });   // dark = a dark ride's own words; an appropriating worn or driven form reads plainly (2026-09-14)   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
+    // A CANON OF TWO OR MORE KEEPS ITS LAST FOR LATER (the reviewer, the build check: two canon things both spent at frame zero leave no tableau and no finale on an 18 s take)
+    const _canonLast = _canonRead.length >= 2 ? String(_canonRead[_canonRead.length - 1].name).toLowerCase() : "";
+    const _atZero = nonFigures.filter((e) => String(e.name).toLowerCase() !== _canonLast);
+    const placedLines = placeOnPlate({ plate: seatPlate, things: _atZero.slice(0, 6), role: seatRole, dark, way, cwd, env, log });   // dark = a dark ride's own words; an appropriating worn or driven form reads plainly (2026-09-14)   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
     out.plateThings = placedLines.plateThings || [];
     out.placements = placedLines.map((l) => `${seatRole}: ${l}`);
     if (out.placements.length) log(`  ✓ frame zero's replacements, beside or ahead of the way: ${out.placements.map((l) => l.replace(`${seatRole}: `, "")).join(" | ").slice(0, 300)}`);
@@ -147,7 +159,8 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     // later things — the replacements and the tableaux are made of what the photograph shows; it is never written as somewhere the ride goes.
     out.photographed = laterPlates.filter((x) => x.plate && x.name).map((x) => ({ name: x.name, plate: x.plate, qualities: read.filter((r) => r.plate === x.plate).map((r) => r.name).slice(0, 4) }));
     if (out.photographed.length) log(`  ◉ photographs of the world ride with the seat, in story order: ${out.photographed.map((p) => `${p.name} (${p.qualities.join(" · ") || "its own room"})`).join("; ")}`);
-    const laterAll = nonFigures.filter((e) => !placed.includes(String(e.name).toLowerCase())).map((e) => e.name);
+    const _unplaced = nonFigures.filter((e) => !placed.includes(String(e.name).toLowerCase())).map((e) => e.name);
+    const laterAll = _canonLast ? [..._unplaced.filter((n) => n.toLowerCase() !== _canonLast), ..._unplaced.filter((n) => n.toLowerCase() === _canonLast)] : _unplaced;   // the work's own last thing is the finale, whatever a room offered after it
     // THE FINALE'S TABLEAU IS NEW (owner 2026-09-11: the twins met at the doors and again in the dark): the last unplaced thing is HELD BACK for the finale, never a later stop
     out.finale = laterAll.length ? laterAll[laterAll.length - 1] : "";
     out.later = laterAll.slice(0, Math.max(0, laterAll.length - 1)).slice(0, LATER_CAP);

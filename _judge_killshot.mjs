@@ -19,7 +19,7 @@
 // (owner: "No AI images ... a hard no go") and deliberately fails CLOSED. Never inline a shortened version here.
 import sharp from "sharp";
 import { providerJson, textPart, imagePart, PROVIDER_VLM_MODEL } from "./provider-llm.mjs";
-import { gateClauses } from "./_judge_identity.mjs";
+import { gateClauses, ARTIFACT_PHOTO_CLAUSE } from "./_judge_identity.mjs";
 
 async function smallViewAt(fp, px) {
   return (await sharp(fp).resize(px, px, { fit: "inside", withoutEnlargement: true })
@@ -201,7 +201,7 @@ export async function prefilterGrid(filePaths, subjectStr, opts = {}) {
       textPart(`This image is a CONTACT SHEET of ${files.length} SEPARATE candidate photographs, tiled in a ${cols}x${rows} grid and NUMBERED 1 to ${files.length} in white at the top-left of each cell, left to right then top to bottom. ` +
         `The cells are unrelated candidates for the same slot — NOT frames of one scene, NOT a sequence. ⚠ EACH CELL IS BOUNDED BY A BRIGHT MAGENTA BORDER: everything inside one magenta frame belongs to ONE candidate and nothing crosses it. The magenta and the number strips are artefacts of this sheet and belong to no candidate; a cell being one panel here does NOT make it a split-screen or composite. ` +
         `Answer TWO questions about EACH cell, independently:\n` +
-        `real_photo = is the content of this cell a photograph made by a REAL CAMERA pointed at a REAL SCENE THAT PHYSICALLY EXISTED? FALSE for a cartoon, illustration, render, graphic, or an image synthesised by a model. A frame of a film, a TV show or a video IS a real photograph (a staged set shot by a real camera is a real scene) — answer TRUE for a film still or a broadcast frame. ⚠ Judge only what is INSIDE the cell.\n` +
+        `real_photo = is the content of this cell a photograph made by a REAL CAMERA pointed at a REAL SCENE THAT PHYSICALLY EXISTED? FALSE for a cartoon, illustration, render, graphic, or an image synthesised by a model. A frame of a film, a TV show or a video IS a real photograph (a staged set shot by a real camera is a real scene) — answer TRUE for a film still or a broadcast frame.${ARTIFACT_PHOTO_CLAUSE} ⚠ Judge only what is INSIDE the cell.\n` +
         `shows_subject = does this cell clearly show: ${subjectStr}? ⚠ THE PLACE, NEVER THE REGISTER: when the subject names a place, judge whether THIS cell shows THAT PLACE — footage from the right KIND of camera showing a DIFFERENT place answers FALSE (a backyard camera frame is not a bedroom, however perfect its register). The capture register is verified elsewhere and can never substitute for the place.\n` +
         `⚠ WHEN YOU ARE UNSURE ABOUT A CELL, ANSWER null FOR THAT FIELD. A wrong FALSE discards a usable candidate; null simply sends it for a closer look, which costs little. Guessing helps nobody.\n` +
         `Return ONLY JSON {"cells":[{"n":1,"real_photo":bool|null,"shows_subject":bool|null}, …]} with EXACTLY ${files.length} entries in cell order.`),

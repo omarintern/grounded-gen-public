@@ -23,8 +23,9 @@ export const SOURCEABILITY_LAW =
   `A pairing is NOT judged as one photograph: the place is sourced and the actor is written, so "a penguin in the Oval Office" is the Oval Office, sourceable. ` +
   `THE PAIR IS JUDGED TOO (owner 2026-09-17: "would a trail cam be very likely in everest? answer is probably no"): when the subjects include a capture FORM and a PLACE, also say whether that form is plausibly found at that place in real footage — a trail camera on Mount Everest, a doorbell camera in the Sahara: unlikely; CCTV in a shopping mall: likely. ⭐⭐ A NAMED SITE IS NEVER A HABITAT (owner 2026-09-22, drawing the line across the board): a form's footage accumulates at a KIND of place, never at one address. Dashcam footage of a bridge is likely; of a NAMED bridge it is not, however ordinary the form is on bridges. So a place the maker NAMED — a brand's premises, a particular building, a titled landmark, any one site — is answered UNLIKELY, and "likely" belongs to the kind alone. Judge the place exactly as it is named, never the kind behind it. The form and the place are then sourced as two photographs and composed, which costs nothing and always works, while one photograph carrying both is a search for something nobody took. ALWAYS give the place's bare KIND as an image query ("snowy mountain ridge"), whether the form is likely there or not: when it is unlikely the form is hunted as itself in that kind of place and the specific place is written, and when it is likely the kind is the ladder the hunt falls back to if the pairing yields no photograph of the form. ` +
   `A CAPTURE FORM IS SOURCED IN ITS OWN HABITAT, NEVER AT THE REQUEST'S PLACE (owner 2026-09-18: "either it doesnt understand what determines 'trail cam' style or something else" — it understood the look and rejected every ordinary photograph; what did not exist was the SUPPLY). For a subject that is a FORM, "query" is where that form's footage is ABUNDANT: the places and subjects it is actually made of — a trail camera is forests, deer and bears at night; a security camera is shops, forecourts and hallways; a dashcam is roads. It is NEVER the place this request names, and never that place's kind: there is almost no trail-camera footage of any mountain, so a form-at-place query returns ordinary photographs of the place and a form-at-kind query returns the same. The place is sourced as ITSELF, separately, and the two photographs are composed. ` +
-  `A THING THE MAKER NAMED IS PHOTOGRAPHED AS ITSELF (owner 2026-09-18: the tsunami "must be sourced for sure"; a photographed thing is installed on the host photograph by replacement, water replaces water): a subject with role "thing" is an object or a phenomenon the request shows — a tsunami, a wildfire, a flood, a sandstorm, a crowd, a wreck, an animal as a thing. It is SOURCEABLE when real photographs of it exist, kind "thing", with its bare image query ("tsunami wave", "wildfire front"); a thing that cannot be photographed (a feeling, a style, an invented object) is NOT sourceable and is written. A person, a vehicle the maker rides, a named work's character and the capture form are never things. ` +
+  `A THING THE MAKER NAMED IS PHOTOGRAPHED AS ITSELF (owner 2026-09-18: the tsunami "must be sourced for sure"; a photographed thing is installed on the host photograph by replacement, water replaces water): a subject with role "thing" is an object or a phenomenon the request shows — a tsunami, a wildfire, a flood, a sandstorm, a crowd, a wreck, an animal as a thing. It is SOURCEABLE when real photographs of it exist, kind "thing", with its bare image query ("tsunami wave", "wildfire front"); a thing that cannot be photographed (a feeling, a style, an invented object) is NOT sourceable and is written. A person, a vehicle the maker rides, a named work's character and the capture form are never things (a character's EFFIGY is: a statue, an animatronic or a puppet of it, named as such, for a work without frames). ` +
   `A PLACE ANOTHER SUBJECT'S PHOTOGRAPH ALREADY HOLDS IS NOT PHOTOGRAPHED TWICE (owner 2026-09-18: "the open ocean as the place, is that its own image? no — we either source the water of the tsunami or grab it from the pov"): when a listed thing is a state or an event OF a listed place (a tsunami of the ocean, a wildfire of the forest, an avalanche of the mountainside, a flood of the street), the thing's photograph holds that place; and when the maker's own craft travels ON the place (a boat on the sea, a car on the road, skis on the snow), the seat photograph shot from aboard it holds the place. Say so in "held_by": the subject whose photograph holds this place (the thing's own subject, or the word "seat"), else null. ⭐⭐ THE SEAT HOLDS A MEDIUM, NEVER A NAMED PLACE: what a craft travels through is the same thing anywhere — water, road, snow, air — and a photograph from aboard holds it because there is nothing else to it. A place that has a NAME is known by what stands AT it, its sign, its frontage, its building, and the seat photograph is hunted for the form and never for those, so it cannot hold one however literally the craft travels on it. A named place stays its own photograph. A place with a look of its own that neither holds (a harbour, a reef, a coastal town, a mountain pass) stays its own photograph. ` +
+  `A NAMED WORK WITHOUT FRAMES IS GROUNDED BY ITS MATERIAL CANON (owner 2026-09-27, the Odyssey ride): a poem, a myth, a novel never filmed, a painting or a piece of music has no frames to photograph, so its world is carried by the REAL OBJECTS that carry it in the world — the artifacts, replicas, sculptures, effigies, editions and stagings a camera has stood before — each a THING photographed as itself (a museum's Greek vase, a replica warship, a statue of the giant), and the things the planner derived from such a work are the work's own, never inventions. A canon thing's query names the object, never a medium word (illustration, painting, drawing) and never the room or the museum that houses it. ` +
   `A PLACE'S OWN PEOPLE (owner 2026-09-26): for a subject with role "world", "place" or "room", say whether this video, as the maker's words stage it, shows the place with the people who belong to it at that moment, apart from the story's own figures, who are always added: "peopled" true, false when it shows the place empty of them, null when either reads right. ` +
   `Judge each subject on its own. Return ONLY JSON {"pairs":[{"form":string,"place":string,"likely":boolean,"confidence":0..1,"place_kind":string}],"subjects":[{"subject":string,"sourceable":boolean,"reduction":[string],"written":[string],"inferred":boolean,"confidence":0..1,"kind":"named place|work|kind of place|form|thing|private specific|invented|specific moment|abstraction|other","query":string|null,"held_by":string|null,"peopled":true|false|null,"why":string}]} ` +
   `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists the style words and specifics that go to the prose rather than the search; "query" is the best bare image query when sourceable; "confidence" is how sure you are.`;
@@ -80,6 +81,41 @@ export function likePlaceOf(noun = "", plan = {}) {
  *  renders true, identifies_material false, rides_as_the_seat false). They are asked of the sourceability judge as role "thing", after
  *  the places, so a tsunami is a subject and not a word the writer is left to imagine. Pure. */
 const _PERSON = /^(?:a |an |the )?(?:man|woman|person|people|guy|girl|boy|child|kid|rider|driver|pilot|tourist|couple|crowd of people|someone|figure)s?$/i;
+/** A NAMED WORK WITHOUT FRAMES (owner 2026-09-27): the clearance named a work, it is no set (no zones), and no shot set of its frames exists — a poem, a myth,
+ *  a novel never filmed, a painting. Its world cannot be photographed as places; it is grounded by its material canon (canonThings). Pure. */
+export function isWorkWithoutFrames(plan = {}) {
+  const wc = plan?.world_clearance || {};
+  // a WORK the maker's words identify (the resolver's search_kind), never any admitted entity: a venue, a landmark or a product is "named" too (the reviewer, the build check)
+  const work = (Array.isArray(wc.intent?.subjects) ? wc.intent.subjects : []).some((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work");
+  // …and one with no frames: not a set (zones), not broadcast (a film or show has its frames), not drawn (a cartoon has its cels), no shot set
+  const venue = wc.chainVenue === true || (Array.isArray(wc.entities) ? wc.entities : []).some((e) => /^(?:venue|chain)$/i.test(String(e?.kind || "")));   // a venue or a chain has its own photographs (the reviewer: the Oval Office, Little Caesars, the Jungle Cruise admitted on the first cut)
+  return work && !venue && wc.named === true && wc.isSet !== true && wc.broadcastOnly !== true && wc.drawn !== true && !(Array.isArray(plan?.slots?.world?.shotSet) && plan.slots.world.shotSet.length > 0);
+}
+/** The works the maker's words identify, by the resolver's own kind — never a figure the maker also named (workTitlesOf lists every identifying term, Stonks and Jack Torrance included). Pure. */
+export function workSubjectsOf(plan = {}) {
+  const subs = Array.isArray(plan?.world_clearance?.intent?.subjects) ? plan.world_clearance.intent.subjects : [];
+  return [...new Set(subs.filter((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work").flatMap((s) => [s.search_name, s.term]).map((x) => _norm(x)).filter(Boolean))];
+}
+const _MEDIUM_WORD = /\b(?:illustrations?|paintings?|drawings?|depictions?|renders?|renderings?|artworks?|images?|pictures?|prints?|sketch(?:es)?)\b/gi;
+const _OBJECT_WORD = /\b(?:animatronic|statue|sculpture|figure|effigy|puppet|mask|costume|doll|model|replica|prop|bust|relief|mannequin|carving|totem)\b/i;
+const _CANON_KINDS = new Set(["pattern", "prop", "fixture", "signage", "architecture", "character"]);
+/** THE WORK'S MATERIAL CANON AS THINGS (owner 2026-09-27: "theres always photographs that can be used"): for a named work without frames, the plan's
+ *  world_elements are the work's own things — each hunted as a photograph of the object itself: a medium word leaves the name (a "pottery illustration"
+ *  is hunted as the pottery), and a character of such a work is hunted as its effigy (a statue) unless its name already says what object it is. Up to
+ *  three; the bag decides how many ride. Pure. */
+export function canonEntries(plan = {}) {
+  if (!isWorkWithoutFrames(plan)) return [];
+  const out = [];
+  for (const e of (Array.isArray(plan?.world_elements) ? plan.world_elements : [])) {
+    const kind = String(e?.kind || "").toLowerCase().trim();
+    let name = String(e?.name || "").replace(_MEDIUM_WORD, " ").replace(/\s+/g, " ").replace(/\s+(?:of|on|in|with)\s*$/i, "").trim();
+    if (!name || !_CANON_KINDS.has(kind)) continue;
+    if (kind === "character" && !_OBJECT_WORD.test(name)) name = `${name} statue`;
+    if (!out.some((x) => _key(x.name) === _key(name))) out.push({ name: _norm(name), kind });   // the kind rides with the name: a character's effigy is a figure of the world, never at frame zero
+  }
+  return out.slice(0, 3);
+}
+export const canonThings = (plan = {}) => canonEntries(plan).map((e) => e.name);
 export function makerThings(plan = {}, { device = "", ride = null } = {}) {
   const bare = (x) => _key(x).replace(/^(?:the|a|an)\s+/, "");
   const terms = (Array.isArray(plan?.world_clearance?.intent?.subjects) ? plan.world_clearance.intent.subjects : [])
@@ -98,6 +134,12 @@ export function makerThings(plan = {}, { device = "", ride = null } = {}) {
     if (form && (_sq(b).includes(_sq(form)) || _sq(form).includes(_sq(b)))) continue;
     if ([...places, ...qualified].some((pl) => pl === b || (pl.length >= 4 && b.includes(pl)))) continue;   // "ocean" is the place "open ocean"; but "tsunami" inside the qualified "ocean with a tsunami" is a THING, not that place
     if (!out.includes(t)) out.push(t);
+  }
+  // …and the material canon of a named work without frames rides as the work's own things (owner 2026-09-27), under the same exclusions
+  for (const t of canonThings(plan)) {
+    const b = bare(t);
+    if (!b || _PERSON.test(b) || places.has(b) || qualified.has(b) || figures.has(b) || vehicle.has(b) || out.some((o) => bare(o) === b)) continue;
+    out.push(t);
   }
   return out.slice(0, 3);
 }
@@ -191,8 +233,10 @@ export function sourceabilityReductions(verdicts = []) {
  *  it: a wave is never the story's second LOCATION and never a cut. Returns the plan's places, public places, qualified places and
  *  vantage slots with every thing removed, the things to write, and the plates to hunt. Pure. */
 /** The image query for a thing: the judge's phrasing, with the subject's own head word prefixed when it is missing. Pure. */
+const _HOUSING_OR_MEDIUM = /\b(?:museum|gallery|exhibit(?:ion)?|display case|illustrations?|paintings?|drawings?|depictions?|renders?|artworks?|images?|pictures?|prints?)\b/gi;
 export function thingQuery(subject = "", query = "") {
-  const s = _norm(subject).replace(/^(?:the|a|an)\s+/i, ""), q = _norm(query || subject);
+  // the judge may add the room that houses a thing or the medium that depicts it; neither is the thing, and the prefilter would read the first as a place (the reviewer, 2026-09-27)
+  const s = _norm(subject).replace(/^(?:the|a|an)\s+/i, ""), q = _norm(String(query || subject).replace(_HOUSING_OR_MEDIUM, " ")) || _norm(subject);
   const words = s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2);   // any of the subject's own words present = the maker's word survived
   const kept = words.some((w) => new RegExp(`(?:^|[^a-z0-9])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(q));
   return words.length && !kept ? `${s} ${q}`.replace(/\s+/g, " ").trim() : q;
@@ -234,7 +278,11 @@ export function thingVerdicts(verdicts = [], plan = {}, { seat = false } = {}) {
   const plates = [], written = [], gone = new Set();
   for (const v of things) {
     const isThing = /^thing$/i.test(String(v.kind || "").trim());
-    if (!isThing) continue;   // a role-"thing" subject the judge read as a place or a work is not a thing
+    if (!isThing) {   // a role-"thing" subject the judge read as a place or a work is not a thing…
+      const _c = v.place || v.subject;   // …but a canon thing of a work without frames is the work's own: written, never lost (the reviewer, the build check)
+      if (canonThings(plan).some((c) => bare(c) === bare(_c)) && !written.some((w) => bare(w) === bare(_c))) written.push(_norm(_c));
+      continue;
+    }
     const hit = places.find((p) => bare(p) === bare(v.place || v.subject));
     if (hit) gone.add(bare(hit));
     // THE THING QUERY KEEPS THE MAKER'S OWN WORD (owner 2026-09-19: "a big wave is different than tsunami, so it should have used tsunami in query"):

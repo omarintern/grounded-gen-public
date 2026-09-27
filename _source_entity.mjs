@@ -5,6 +5,7 @@
 // Unlike _source_scene.mjs this optimizes IDENTITY LEGIBILITY, not candor/stage: pick the CLEAREST real
 // photo that shows the entity + its signature. No iphone bias, no usable_stage gate, no crop, no blur.
 //   node _source_entity.mjs "<entity search query>" <slug> "<what the photo must show>"
+
 import "./_meter_boot.mjs";   // ledger rides EVERY orchestration (owner, x26e) — self-boots if _run's bootstrap was bypassed
 import { isGeneratorSourced, refShapeOk } from "./_gate_rules.mjs";
 import { installExitHandlers } from "./_exit.mjs";
@@ -155,7 +156,7 @@ async function judge(fp) {
     const b64 = readFileSync(fp).toString("base64");
     const prompt = MODE === "ip"
       ? ipRubric(shows)
-      : `Return ONLY JSON {"real_photo":bool,"shows_subject":bool,"has_text_or_watermark_or_logo":bool,"legible":0..1}. real_photo = an actual photograph (NOT a cartoon/illustration/collage/graphic/meme-with-caption). shows_subject = the image clearly shows: ${shows}. has_text_or_watermark_or_logo = ANY overlaid caption, channel name, timestamp, watermark, or logo. legible = how CLEARLY and RECOGNIZABLY the subject reads — sharp, well-lit, the identity + its signature plainly visible (1.0) vs blurry/tiny/occluded/ambiguous (0.0).`;
+      : `Return ONLY JSON {"real_photo":bool,"shows_subject":bool,"has_text_or_watermark_or_logo":bool,"legible":0..1}. real_photo = an actual photograph (NOT a cartoon/illustration/collage/graphic/meme-with-caption, and never a painting, print or page DEPICTING the subject: a figure reference is the subject itself before a camera). shows_subject = the image clearly shows: ${shows}. has_text_or_watermark_or_logo = ANY overlaid caption, channel name, timestamp, watermark, or logo. legible = how CLEARLY and RECOGNIZABLY the subject reads — sharp, well-lit, the identity + its signature plainly visible (1.0) vs blurry/tiny/occluded/ambiguous (0.0).`;
     return await providerJson([textPart(prompt), imagePart("image/jpeg", b64)], { maxTokens: 3000, temperature: 0.1 });   // ROOM (2026-09-23, see provider-llm): cut off at 200 on live jobs, answers at 380-1600
   } catch (e) { if (e?.ledgerCap) throw e; return null; }   // a budget stop is ours, never "no usable photo" (2026-09-24); an outage still degrades to words
 }
