@@ -885,6 +885,6 @@ try {
 writeFileSync(outFile, beatLine + "\n");
 console.log(`target : ${intent.target} · action: ${intent.action}${intent.secondary ? ` · +${intent.secondary}` : ""}`);
 console.log(`scene : ${seen.scene}`);
-if (MOUNT) { const _e = MOUNT.edgeOf(seen.mount); console.log(`mount : ${_e === "none" ? "none of the door shows; it is behind the lens" : _e ? `the door shows at the ${_e} edge` : "(the reading did not answer the door's edge; the writer is told only that the camera hangs on it)"}`); }
+if (MOUNT) { const _e = MOUNT.edgeOf(seen.mount); console.log(`mount : ${_e === "behind" ? "the door is behind the lens" : /^behind-/.test(_e || "") ? `the door is behind the lens, to the ${_e.slice(7)}` : _e ? `the door shows at the ${_e} edge` : "(the reading did not answer where the door is; the writer is told only that the camera hangs on it)"}`); }
 console.log(`standin: "${seen.standin}" [${seen.standin_placement}] → ${mode}`);
 console.log(`\nBEATS → ${outFile}\n ${beatLine}`);
