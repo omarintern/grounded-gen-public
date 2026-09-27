@@ -12,7 +12,8 @@ import sharp from "sharp";
 import { providerJson, textPart, imagePart, PROVIDER_VLM_MODEL } from "./provider-llm.mjs";
 import { gateClauses } from "./_judge_identity.mjs";
 import { apparatusRe, AI_TELLS, GENERATOR_MARK_Q, SINGLE_FRAME_Q } from "./_gate_rules.mjs";
-import { registerLaw } from "./_register_law.mjs";   // one text for both judges (owner 2026-09-22)   // the form IS a named camera when its own noun names one (2026-09-22)
+import { registerLaw } from "./_register_law.mjs";
+import { safetyOnlyFails, killshotWhy } from "./_judge_killshot.mjs";   // the ONE content gate every judge reads (owner 2026-09-27: a seat plate's people are scenery like any plate's)   // one text for both judges (owner 2026-09-22)   // the form IS a named camera when its own noun names one (2026-09-22)
 
 async function viewAt(fp, px) {
   return (await sharp(fp).resize(px, px, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer()).toString("base64");
@@ -109,9 +110,11 @@ export function seatVerdict(j, { family = "other ridden" } = {}) {
   if (j.single_frame === false) return { aboard: false, why: "several pictures in one, or drawn over" };   // a plate is one frame (2026-09-23, the dashcam-ad collage)
   const ai = Number(j.ai_generated);
   if (Number.isFinite(ai) && ai > SEAT_AI_CEILING) return { aboard: false, why: `synthetic (${ai.toFixed(2)})` };
-  if (j.shows_minor === true) return { aboard: false, why: "a minor in frame" };
-  const flag = String(j.content_flag || "none").toLowerCase();
-  if (flag && flag !== "none") return { aboard: false, why: `content flag: ${flag}` };
+  // ⭐ A SEAT PLATE'S PEOPLE ARE SCENERY, LIKE ANY PLATE'S (owner 2026-08-11; re-affirmed 2026-09-27: "we dont gate against children, only inappropriate
+  // contexts that are nsfw"). The "a minor in frame" refusal that stood here since the 09-09 ride rewrite had no ruling behind it and is gone. The
+  // content flag reads the one shared gate every other judge reads: minor+nudity in one frame, distress / personal_data / symbol, nudity only when the
+  // run gates it, and a missing flag fails closed like everywhere else.
+  if (safetyOnlyFails(j, { plate: true })) return { aboard: false, why: `content flag: ${String(killshotWhy(j, undefined, { safetyOnly: true })).toLowerCase()}` };
   const riders = String(j.riders || "").toLowerCase();
   if (riders === "faces or profiles") return { aboard: false, why: "riders looked at from outside (faces or profiles)" };
   // ⭐⭐ A PICTURE OF THE CAMERA IS NOT FOOTAGE FROM IT (owner 2026-09-22, job 7c482091: the seat served for a dashcam was a stock
