@@ -11,10 +11,10 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept, captureFormNoun, cameraAsActor, mountOf } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept, captureFormNoun, cameraAsActor, mountOf, swapTargets, swapIn, personReturns, figureArrives } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
-import { castFrameClause, reusedFrame, reusedFrameClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23); or stands in frame zero (2026-09-26)
+import { castFrameClause, reusedFrame, reusedFrameClause, platePeopleClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23); or stands in frame zero (2026-09-26)
 import { installExitHandlers } from "./_exit.mjs";   // one exit contract for every process (2026-09-24)
 import { referenceVoicesLaw } from "./_beat_law.mjs";   // a name the maker used only for a manner: the writer alone knows whose (owner 2026-09-24)
 import { acceptWhole } from "./_beat_edit.mjs";   // a repair's answer, whole or not at all (owner 2026-09-25)
@@ -135,15 +135,16 @@ const _seenKeys = pinKeys("seen", { promptSha: _promptSha, plateSha: _plateSha }
 const _seenPinned = PIN_ON ? pinHit(_pin, "seen", _seenKeys) : null;
 if (_seenPinned) console.log("  \u25c7 the plate reading is this job's own — the same photograph and the same request, so it is not looked at again");
 const MOUNT = mountOf(process.env);   // a doorbell camera hangs on the door: the same reading says what of it shows and at which edge (owner 2026-09-27)
+const PEOPLE_FIELD = `"people":["each real person in this photograph, up to six, the most prominent first, each in the photograph's own words and by where they stand; [] if none"]`;   // the peopled plate (owner 2026-09-27): the map path's own question, asked of the place plate
 const seen = _seenPinned || await providerJson([
-  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant currently AT THE ACTION SPOT, if any. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so it is animated, never conjured twice),"standin_placement":"foreground | side | background | none",${ELEMENTS_FIELD}${MOUNT ? `,${MOUNT.field}` : ""}}.`),
+  textPart(`You are looking at the WORLD-REF photo a video model will animate. The video should feature: ${intent.target} (${intent.action}). Return ONLY JSON {"scene":"brief description of the real place/scene as photographed","standin":"the SINGLE real occupant currently AT THE ACTION SPOT, if any. Describe the ACTUAL body in THIS photograph closely enough to pick it out from any other — what it is doing, where it is, what it is wearing or carrying. If the action spot is empty say 'none'","standin_is_target":boolean (TRUE only if that occupant is ALREADY a ${intent.target} — the same kind of creature — so it is animated, never conjured twice),"standin_placement":"foreground | side | background | none",${ELEMENTS_FIELD}${MOUNT ? `,${MOUNT.field}` : ""},${PEOPLE_FIELD}}.`),
   imagePart("image/jpeg", b64),
 ], { maxTokens: 2400, temperature: 0.2 });
 if (!_seenPinned) _keepRead("seen", _seenKeys, seen);
 // ⭐⭐ UNDER A BORROWED CAMERA THE SCENE IS THE FRAME AT ZERO (owner 2026-09-26, the penguin remix 6da2e918). The photograph read above is the camera's, taken
 // somewhere else: its scene ("a dark forest clearing") and its occupant (the deer, "the place's own, stays exactly as photographed") belong to that other place.
 // Every consumer of this reading (the scene line, the swap clause, the anchor re-ask, the invoke list) reads the appropriation's frame instead, in one place.
-{ const _bc = borrowedCamera(); if (_bc) { seen.scene = `${_bc.place || "the maker's place"}, seen through this ${String(_bc.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || _bc.form}`; seen.standin = "none"; seen.standin_is_target = false; seen.elements = []; console.log(`  \u25c7 a borrowed camera: the scene is the maker's place seen through it (the map states frame zero piece by piece)`); } }
+{ const _bc = borrowedCamera(); if (_bc) { seen.scene = `${_bc.place || "the maker's place"}, seen through this ${String(_bc.form).replace(/\s*\b(?:footage|video|recording)\b\s*$/i, "").trim() || _bc.form}`; seen.standin = "none"; seen.standin_is_target = false; seen.elements = []; seen.people = []; console.log(`  \u25c7 a borrowed camera: the scene is the maker's place seen through it (the map states frame zero piece by piece)`); } }
 
 // 2b. READ THE CHARACTER REFS (VLM) — what does the sourced character actually LOOK like, and what does it
 // CARRY or WEAR that the beats can put to work? A signature the beats never touch is a signature the action
@@ -231,6 +232,15 @@ if (seen.standin_is_target && !standinIsABody(seen.standin)) {
 // ⭐⭐ A REUSED FRAME HOLDS THE STORY'S OWN FIGURES (owner 2026-09-26, the strip choice "reuse"): the photograph is the parent video's own frame and the bodies in it
 // are the carried characters themselves, so they are animated where they stand (the swap clause below says so in the writer's words: reusedFrameClause)
 { const _rf = reusedFrame(); if (_rf) { seen.standin = _rf.who || seen.standin; seen.standin_is_target = true; console.log(`  \u25c7 a reused frame: the story's figures already stand in it (${_rf.names.join(", ") || "as the photograph shows them"})`); } }
+// ⭐⭐ THE PEOPLED PLATE (owner 2026-09-27, the Stonk renders: "if a plate is peopled then they indeed replace" / "its the person swap that was important
+// here"). The photograph's people, as the reading listed them (anyone the photograph holds; owner: no gate against children); nothing on a ride, under a
+// borrowed camera (the map's own people law), in a reused frame, on a plate whose person is the cast's questioner, or in a photograph that already
+// holds the subject. When the list stands, the story figure in frame at the opening stands where one of them stood (platePeopleClause) and the
+// anchor pass below holds it there.
+const _peopleRead = Array.isArray(seen.people) ? seen.people.filter((p) => typeof p === "string").map((p) => p.trim()).filter(Boolean) : [];   // strings only: an object-shaped item is nobody (the reviewer, build check)
+const PEOPLE = (!RIDE && !borrowedCamera() && !reusedFrame() && process.env.PLATE_QUESTIONER !== "1" && !seen.standin_is_target) ? swapTargets(_peopleRead) : [];
+process.env.PLATE_PEOPLE_SWAP = PEOPLE.length ? "1" : "";   // the census and the "only what moves" lines fork on it (_beat_law)
+if (_peopleRead.length) console.log(`  \u25c7 the photograph's people: ${_peopleRead.join("; ")}${_peopleRead.length > PEOPLE.length ? ` \u2014 ${_peopleRead.length - PEOPLE.length} beyond the six, or this path keeps its people` : ""}${PEOPLE.length ? " \u2014 a story figure in frame at the opening stands where one of them stood" : ""}`);
 let ACCEPTED_N = Math.max(...COUNTS);
 let writerInstruction = "";   // the writer contract, captured at _dump so the payoff repair can re-ask with it
 // ⭐⭐ A RE-ASK CARRIES THE DRAFT IT IS ABOUT (engine review 2026-09-24, D2). The fine-detail, anchor and payoff re-asks said "rewrite the SAME beats …
@@ -261,8 +271,10 @@ if (seen.standin_is_target) {
   const T = String(intent.target).charAt(0).toUpperCase() + String(intent.target).slice(1);
   beatLine = `[0s] ${T} ${intent.action}${has(intent.secondary) ? `, with ${intent.secondary} in the scene` : ""}.`;
 } else {
-  mode = has(seen.standin) ? `conjure (the photograph's own occupants stay: ${seen.standin})` : "conjure (an empty action spot)";
-  beatLine = `[0s] ${intent.target} appears in the scene ${intent.action}; ${has(seen.standin) ? `${seen.standin} and ` : ""}everything else stays exactly as photographed.`;
+  mode = PEOPLE.length ? `conjure (a story figure stands where one of the photograph's people stood; the others stay)` : has(seen.standin) ? `conjure (the photograph's own occupants stay: ${seen.standin})` : "conjure (an empty action spot)";
+  beatLine = PEOPLE.length
+    ? `[0s] ${intent.target} appears in the scene ${intent.action}, where ${PEOPLE.includes(seen.standin) ? seen.standin : PEOPLE[0]} stood; everything else stays exactly as photographed.`   // the template opening takes a place too (the reviewer, build check)
+    : `[0s] ${intent.target} appears in the scene ${intent.action}; ${has(seen.standin) ? `${seen.standin} and ` : ""}everything else stays exactly as photographed.`;
 }
 // ── NARRATIVE BEATS (BEAT_STYLE=narrative) — the "narrative way": the user's prompt rewritten into a short
 // TEMPORAL script rather than one flat instruction. Owner 2026-07-29: "we need to test with the narrative-dense
@@ -317,7 +329,9 @@ if (BEAT_STYLE !== "template") {
   // THE SAME LAW IN THE WRITER'S OWN WORDS: nothing is ever replaced, and what the photograph holds is the world's.
   const swapClause = reusedFrame() ? reusedFrameClause() : borrowedCamera() ? "" : seen.standin_is_target
     ? `The ${intent.target} is ALREADY the creature in the photograph — do not introduce another, just animate it.`
-    : has(seen.standin)
+    : PEOPLE.length
+      ? platePeopleClause(PEOPLE, intent.target)   // the peopled plate (owner 2026-09-27): a story figure takes a person's place
+      : has(seen.standin)
       ? `⚠ ${seen.standin} in the photograph is the place's own: it stays exactly as photographed, is never one of the story's figures, and never changes how a figure arrives; ${intent.target} is introduced into the scene where the words put it (${intent.action}).`
       : `Beat 1 MUST introduce ${intent.target} into the scene at the natural action spot.`;
   // ANTHROPOMORPHIC COMEDY — the point of the whole non-© branch (owner 2026-07-30, on a pigeon that replaced a laundromat clerk: "the pigeon
@@ -803,6 +817,50 @@ try {
   // which body it is replacing — and with it the instruction to write that body out. The subject is now placed at the action spot.
   if (!RIDE && !seen.standin_is_target) {
     const { swapVerdict, swapActs } = await import("./_swap_check.mjs");
+    const { beatZeroOnly } = await import("./_swap_check.mjs");
+    // ⭐⭐ ON A PEOPLED PLATE THE SWAP IS THE ANCHOR (owner 2026-09-27; both design checks): "… where <person> stood" states the position by
+    // construction, so no extraction is bought; a beat zero that ENTERS the figure keeps the old question; a beat zero that does neither is
+    // re-asked once with the photograph's people, never with "stays exactly as photographed" (that note put the taken person back).
+    const _taken = PEOPLE.length ? swapIn(beatZeroOnly(beatLine), PEOPLE) : null;
+    const _enters = PEOPLE.length && !_taken ? figureArrives(beatLine, intent.target) : false;   // the FIGURE'S OWN arrival, anywhere in the script, owes no swap (the reviewer: the man out of the door at [3s]; the reviewer: a shopper stepping out of an aisle is not it)
+    if (_taken) {
+      console.log(`  [swap:${swapActs() ? "live" : "shadow"}] beat zero stands where "${_taken.slice(0, 70)}" stood \u2014 anchored by construction`);
+      const _back = personReturns(beatLine, _taken, PEOPLE);
+      if (_back.length) {
+        console.warn(`  [swap] the taken person is written again after beat zero (${_back.length} line(s): ${_back[0].slice(0, 90)}) \u2014 ${swapActs() && writerInstruction ? "asking once for the person to stay taken" : "recorded only"}`);
+        if (swapActs() && writerInstruction) {
+          try {
+            const { text: t5 } = await providerText(
+              writerInstruction + draftFor(beatLine) +
+              `\n\n\u26a0 YOUR PREVIOUS ATTEMPT IS FINE EXCEPT THAT THE PERSON WHOSE PLACE ${String(intent.target).toUpperCase()} TOOK IS WRITTEN AGAIN LATER. ` +
+              `At [0s] ${intent.target} stands where ${_taken} stood, so that person is not in the take: ${intent.target} is. Rewrite the SAME beats at the SAME timestamps, changing ONLY the lines that still name that person (${_back.map((l) => l.slice(0, 60)).join(" | ")}), so they act on ${intent.target} or on someone else the photograph holds. ` +
+              WHOLE_BACK,
+              { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });
+            const next = wholeAnswer(t5, "swap");
+            if (next && swapIn(beatZeroOnly(next), PEOPLE) === _taken && !personReturns(next, _taken, PEOPLE).length) { beatLine = next; console.log(`  [swap] repaired \u2014 the taken person stays taken`); }
+            else console.warn(`  [swap] retry still writes the taken person, or moved the swap \u2014 shipping the original`);
+          } catch (e) { if (e?.name === "ProviderInfraError") throw e; console.warn(`  [swap] repair errored (${String(e.message).slice(0, 60)}) \u2014 shipping the original`); }
+        }
+      }
+    } else if (PEOPLE.length && !_enters) {
+      console.warn(`  [swap:${swapActs() ? "live" : "shadow"}] beat zero neither takes a person's place nor enters ${intent.target} \u2014 ${swapActs() && writerInstruction ? "re-asking once with the photograph's people" : "recorded only"}`);
+      if (swapActs() && writerInstruction) {
+        try {
+          const { text: t4 } = await providerText(
+            writerInstruction + draftFor(beatLine) +
+            `\n\n\u26a0 YOUR PREVIOUS ATTEMPT IS FINE EXCEPT FOR ITS OPENING BEAT: it neither shows ${intent.target} arriving nor gives it a place. ` +
+            `THE PHOTOGRAPH'S PEOPLE: ${PEOPLE.join("; ")}. If ${intent.target} is in the frame from the first frame, it stands where one of them stood: rewrite the SAME beats at the SAME timestamps, changing the opening beat so that ${intent.target}, inside the action it is doing, stands where one of them stood, in the words "${intent.target} \u2026 where <that person> stood", and changing any later line that still names that person so it acts on ${intent.target} or on someone else the photograph holds; everyone else stays exactly as photographed. If ${intent.target} arrives later instead, show it arriving where it first appears (in from the edge, through a door) and take no one's place. ` +
+            WHOLE_BACK,
+            { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });
+          const next = wholeAnswer(t4, "swap");
+          const _t2 = next ? swapIn(beatZeroOnly(next), PEOPLE) : null;
+          if (_t2 && !personReturns(next, _t2, PEOPLE).length) { beatLine = next; console.log(`  [swap] repaired \u2014 beat zero stands where "${_t2.slice(0, 70)}" stood`); }
+          else if (_t2) console.warn(`  [swap] the retry takes "${_t2.slice(0, 50)}"'s place but writes them again later \u2014 shipping the original (whole or not at all)`);
+          else if (next && figureArrives(next, intent.target)) { beatLine = next; console.log(`  [swap] repaired \u2014 ${intent.target} now arrives, and takes no one's place`); }
+          else console.warn(`  [swap] retry still takes no one's place \u2014 shipping the original (the figure is conjured beside the photograph's people)`);
+        } catch (e) { if (e?.name === "ProviderInfraError") throw e; console.warn(`  [swap] repair errored (${String(e.message).slice(0, 60)}) \u2014 shipping the original`); }
+      }
+    } else {
     const sv = await swapVerdict(seen.standin || String(seen.scene || "the scene"), seen.standin_placement, intent.target, beatLine);
     if (sv.verdict) console.error(`  [swap:${swapActs() ? "live" : "shadow"}] beat zero ${sv.verdict.toUpperCase()} — position ${JSON.stringify(sv.position)} · facing ${JSON.stringify(sv.facing)}${swapActs() ? "" : "  (recorded only)"}`);
     if (swapActs() && sv.verdict === "unanchored" && writerInstruction) {
@@ -829,6 +887,8 @@ try {
         if (e?.name === "ProviderInfraError") throw e;
         console.warn(`  [swap] repair errored (${String(e.message).slice(0, 60)}) — shipping the original`);
       }
+    }
+  
     }
   }
 } catch { /* a check that cannot run is not a verdict */ }
@@ -872,8 +932,9 @@ try {
           // ⭐⭐ WHOLE OR NOT AT ALL (2026-09-26, the penguin remix 6da2e918: told to keep every earlier beat exactly, the retry rewrote beat zero and put
           // back the deer and the forest's pieces the first draft had left out). The judged retry ships whole when its earlier beats are the original's;
           // otherwise the original ships (the owner's 09-25 rule: no splice ships unread).
-          if (earlierBeatsKept(beatLine, next)) { beatLine = next; console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`); }
-          else console.warn(`  [payoff] the retry escalates but rewrote earlier beats \u2014 shipping the original whole (whole or not at all)`);
+          const _tk = PEOPLE.length ? swapIn((await import("./_swap_check.mjs")).beatZeroOnly(beatLine), PEOPLE) : null;   // a taken person may not come back through the payoff (the reviewer, build check)
+          if (earlierBeatsKept(beatLine, next) && (!_tk || !personReturns(next, _tk, PEOPLE).length)) { beatLine = next; console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`); }
+          else console.warn(`  [payoff] the retry escalates but rewrote earlier beats${_tk ? " or wrote the taken person back" : ""} \u2014 shipping the original whole (whole or not at all)`);
         } else console.warn(`  [payoff] retry still ${String(pv2.verdict || "unjudged").toUpperCase()} — shipping the original (expect a flat payoff).`);
       }
     } catch (e) {

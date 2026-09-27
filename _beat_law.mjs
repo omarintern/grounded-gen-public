@@ -258,7 +258,7 @@ export const frameZeroRegisterClause = () => {
   // cymbal monkeys and Redmond Barry kept their monochrome security-camera look with NO register word at beat zero — the plate carried it;
   // the one loss was the T-rex REMIX, whose denser, larger action was re-authored against the parent's kept plate). A fresh gen may state
   // it, as the bear's writer did by choice; a kept-plate remix must, and the run repairs it in when the writer leaves it out.
-  return `⚠ FRAME ZERO IS THIS PHOTOGRAPH, WHICH A ${shown === "CCTV" ? "security camera" : shown} MADE: beat zero describes what it shows — the place as photographed, its objects and occupants — and never announces the device as a caption ("${n} footage: …" is not written; the look is the picture's own and every later beat stays inside it). ${addressed}\n`;
+  return `⚠ FRAME ZERO IS THIS PHOTOGRAPH, WHICH A ${shown === "CCTV" ? "security camera" : shown} MADE: beat zero describes what it shows — the place as photographed, its objects and occupants${process.env.PLATE_PEOPLE_SWAP === "1" ? " (the one whose place a story figure takes excepted)" : ""} — and never announces the device as a caption ("${n} footage: …" is not written; the look is the picture's own and every later beat stays inside it). ${addressed}\n`;
 };
 // ⭐⭐ AN APPROPRIATED TAKE IS TWO PHOTOGRAPHS, AND THE FIRST ONE IS THE CAMERA (owner 2026-09-18). When a capture form is
 // unlikely at the place the maker named, the form is hunted as itself in that KIND of place and the place is hunted as itself;
@@ -478,6 +478,15 @@ export const RECONCILE_LAW = "⚠⚠ RECONCILE THE REQUEST WITH THE PHOTOGRAPH �
 
 export const reconcileLaw = () => `${RECONCILE_LAW}\n\n`;
 
+// ⭐⭐ THE PEOPLED PLATE (owner 2026-09-27): a story figure in the frame at the opening takes a person's place. This reverses the 09-22 "the place's
+// own" for the case the photograph holds people and the figure opens in frame; the borrowed camera's law (appropriationBlock) says the same with
+// "all". The writer chooses the person; the swap is a clause inside the figure's action (a copula sentence is re-asked by beatZeroDescriptive).
+export const platePeopleClause = (people, target) => {
+  const list = (Array.isArray(people) ? people : []).filter(Boolean);
+  if (!list.length) return "";
+  return `\u26a0\u26a0 THE PHOTOGRAPH'S PEOPLE: ${list.join("; ")}. When ${target} is in this frame from the first frame it TAKES ONE OF THEIR PLACES: the story opens where one of them stood, and beat zero names no other position for it. Choose the person whose spot the story's opening wants. Write it as a clause inside the action ${target} is doing, in this grammar and no other: "${target} … where <that person> stood" (a standing fact at [0s]: never a change on screen, never "replaces", never "instead of"). Everyone else in the photograph stays exactly as photographed, in their places, and the person whose place was taken is never written again. If the story has ${target} ENTER instead, it enters from off-frame and takes no one's place.\n`;
+};
+
 export const plateQuestionerBlock = () => (
 (process.env.PLATE_QUESTIONER === "1"
       ? `\u26a0 THE QUESTIONER IS ALREADY IN THE PHOTOGRAPH. Do not invent one and do not give them an ` +
@@ -517,7 +526,7 @@ export const beatZeroLaw = () => (
     `visible route, is the violation. A subject popping into [2s] or [4s] out of nowhere is one the camera has ` +
     `been treating as absent, so the generator CUTS to go and find it, and a cut is the one thing we never want. ` +
     `\u26a0 AND BEAT ZERO IS THE CENSUS OF FRAME ZERO: whoever and whatever the PHOTOGRAPH already contains is ` +
-    `present from the first frame, and beat zero holds them. ${borrowedCamera() ? "THE PLACE AT FRAME ZERO belongs to that census too: beat zero names the place as frame zero states it (the maker's place, seen through this camera) and what the action touches, so nothing of the frame is left for the generator to guess." : "THE PLACE AS PHOTOGRAPHED belongs to that census too: beat zero names the place the picture shows and the objects and occupants the action touches, so nothing of the frame is left for the generator to guess."} A device that made the photograph is NEVER announced as a caption — no "footage of …" at the head of a beat — its look is the picture's own and rides along untouched; the device is a thing of the scene a subject may look into. \u26a0 AND A BEAT IS NEVER A SENTENCE ABOUT THE VIDEO: its premise, its theme, its purpose, its makers, its audience or its form are not written as prose \u2014 a sentence about the video is not in the video. Where the words ask for narration or a reflexive voice, it is HEARD (a line in the Dialogue block \u2014 the narrator's, a figure's) or READ on a thing in the frame (a sign, a plaque, a banner), never prose and never ahead of frame zero. Had beat zero said "a woman is asleep in the bed" while the cats filed in, she ` +
+    `present from the first frame, and beat zero holds them.${process.env.PLATE_PEOPLE_SWAP === "1" ? " The one exception is the person whose place a story figure takes (THE PHOTOGRAPH'S PEOPLE, above): the figure stands there from the first frame, and that person is not written." : ""} ${borrowedCamera() ? "THE PLACE AT FRAME ZERO belongs to that census too: beat zero names the place as frame zero states it (the maker's place, seen through this camera) and what the action touches, so nothing of the frame is left for the generator to guess." : "THE PLACE AS PHOTOGRAPHED belongs to that census too: beat zero names the place the picture shows and the objects and occupants the action touches, so nothing of the frame is left for the generator to guess."} A device that made the photograph is NEVER announced as a caption — no "footage of …" at the head of a beat — its look is the picture's own and rides along untouched; the device is a thing of the scene a subject may look into. \u26a0 AND A BEAT IS NEVER A SENTENCE ABOUT THE VIDEO: its premise, its theme, its purpose, its makers, its audience or its form are not written as prose \u2014 a sentence about the video is not in the video. Where the words ask for narration or a reflexive voice, it is HEARD (a line in the Dialogue block \u2014 the narrator's, a figure's) or READ on a thing in the frame (a sign, a plaque, a banner), never prose and never ahead of frame zero. Had beat zero said "a woman is asleep in the bed" while the cats filed in, she ` +
     `would have been present throughout and the waking could happen in place \u2014 she was IN the photograph; leaving her unwritten denies the frame.\n` +
     `\u26a0\u26a0 BEAT ZERO LEADS WITH THE SCENE'S ACTUAL SUBJECT. Whoever or whatever the user's request is ABOUT is the grammatical subject of beat zero; anyone else present is CONTEXT and belongs in a subordinate clause or a following sentence, never in front. This is a writing rule first - a cat-choir joke that opens on a sleeping woman has its emphasis backwards - and it has a second, harder consequence. Promoting a vulnerable or unaware person to the opening subject of a covert-capture frame reads as surveillance of that person, and providers refuse it on content policy; the identical scene passes when the real subject leads. Do not soften or remove what happens - reorder so the real subject is in front and the person is present as context. `+
     `\u26a0\u26a0 BUT THE BAN IS ON MATERIALISING, NOT ON ARRIVING. A subject may appear at ANY beat PROVIDED the beat shows it ARRIVE by a route the frame already contains - through a door that opens, in from the edge of shot, up from behind furniture, down the stairs. What the generator cannot do is find a subject that simply BEGINS TO EXIST somewhere it was not: that is when it cuts. Ask which one you are writing. `+
@@ -536,7 +545,7 @@ export const beatZeroLaw = () => (
     `\u26a0 SO, THE SUMMARY IS THE TEST: for every actor and prop the story needs, ask whether the viewer can ` +
     `SEE WHERE IT CAME FROM in the beat that introduces it \u2014 yes means it may arrive at that moment (an ` +
     `entrance, a transformation, a cut); no means it belongs in beat zero. Whatever the photograph already ` +
-    `contains is in beat zero by census. Never drop what the user asked for.\n\n`
+    `contains is in beat zero by census${process.env.PLATE_PEOPLE_SWAP === "1" ? ", the one taken place excepted" : ""}. Never drop what the user asked for.\n\n`
 );
 
 export const trappingsLaw = () => (
@@ -961,7 +970,9 @@ export const hardConstraints = () => (
     // writer to keep the camera photograph's forest while the frame told it the place)
     (borrowedCamera()
       ? `• The setting is frame zero as stated above: beat zero states it once; after that, only what MOVES.\n• Keep every other part of frame zero exactly as stated.\n`
-      : `• Do NOT re-describe the setting; it is already in the photo. Only what MOVES.\n• Keep every other part of the scene exactly as photographed.\n`) +
+      : process.env.PLATE_PEOPLE_SWAP === "1"
+        ? `• Do NOT re-describe the setting; it is already in the photo. Only what MOVES.\n• Keep every other part of the scene exactly as photographed; the one place a story figure takes is stated in beat zero.\n`
+        : `• Do NOT re-describe the setting; it is already in the photo. Only what MOVES.\n• Keep every other part of the scene exactly as photographed.\n`) +
     `Return ONLY the beat lines, nothing else.\n\n`
 );
 

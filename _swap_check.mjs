@@ -61,7 +61,7 @@ export async function swapVerdict(standin, placement, target, beatsText) {
   try {
     const ask =
       `Below is the opening beat of a video that will be generated FROM a photograph.\n\n` +
-      `THE BEAT: ${beat0.slice(0, 400)}\n\n` +
+      `THE BEAT: ${beat0.slice(0, 900)}\n\n` +   // 900: render 2's swap clause sat at character 447 and was cut off at 400 (the reviewer, design check)
       `Extract ONLY what the beat itself STATES about where the subject is in the FRAME and which way it FACES.\n` +
       `Do not infer, do not fill gaps, do not be generous — if the beat does not say it, it is not stated.\n` +
       `· "position" = where in the picture (near/far, left/right, foreground/background, at/beside a named ` +
