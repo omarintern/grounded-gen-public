@@ -80,14 +80,21 @@ console.log(`\n─── entity search "${query}" ───`);
 // the gen still ships ref-grounded on its world plate. Aborting the whole run to save $… would be the
 // pay-the-ceiling-deliver-nothing failure in miniature.
 const ENTITY_RESERVE = Number(process.env.ENTITY_COST_USD || 0.16);   // 12 web rows ($…) + a worst-case 12-judge pass, rounded up (owner 2026-08-13: 12-max with the 5-then-decide judge control; shallow settle spends ~5 judges)
+const ENTITY_PAGE = Number(process.env.ENTITY_PAGE_USD || 0.08);   // the least a search can cost: one web page (12 rows × $… = $…), the kill-shot ($…) and the wall's PRE-CALL reserve for the first identity judge (~$…, _ledger.mjs's textBound; it bills about a cent, but the wall reserves before it calls), with margin — both build checks
 const ENTITY_CAP = Number(process.env.SPEND_CAP_USD || 0);
 if (ENTITY_CAP > 0) {
-  const { wouldExceed, report } = await import("./_spend.mjs");
-  if (wouldExceed(ENTITY_CAP, ENTITY_RESERVE)) {
+  const { wouldExceed, report, spent } = await import("./_spend.mjs");
+  // ⭐⭐ THE SEARCH SPENDS WHAT IS LEFT (owner 2026-09-27, Stonk f1845444: "why couldnt it spend $… or less for a stonk ref?"). This gate asked
+  // whether the WHOLE ladder still fit under the cap and skipped with $… left, when one page costs $…: a meme, whose identity is its picture,
+  // shipped as words for want of one web call. The hold-back the world hunt was asked to leave is advisory (its soft cap is its hard wall on every
+  // run since 09-18), so the guarantee cannot come from the cap; it comes from here: only a purse that cannot buy one page skips, less than the full
+  // ladder runs shallow, and the ledger's wall (exit 4) is the stop.
+  if (wouldExceed(ENTITY_CAP, ENTITY_PAGE)) {
     console.log(`  ✗ spend cap $${ENTITY_CAP} reached — SKIPPING this figure-ref (${report()})`);
     console.log(`    the figure will be carried by prose; the gen keeps its world plate.`);
     process.exit(0);
   }
+  if (wouldExceed(ENTITY_CAP, ENTITY_RESERVE)) console.log(`  \u25c7 $${(ENTITY_CAP - spent().total).toFixed(3)} left under the cap $${ENTITY_CAP}: less than the full ladder ($${ENTITY_RESERVE.toFixed(2)}), enough for a page \u2014 the search runs on what is left and the purse's wall ends it`);
 }
 const raw = await scrape(query);
 // ip mode KEEPS illustrations/cartoons/renders (they ARE the character ref); real mode drops them. Both drop PAID stock.
@@ -207,12 +214,20 @@ async function judgeOne(c) {
 const JUDGE_T1 = 5;
 const pool = cands.slice(0, 12);
 const cleanPass = (e) => (MODE === "ip" ? e.photo && !e.caption && !e.titleArt && !e.thirdMark && (ENSEMBLE || !e.coChars) : true);
-for (const c of pool.slice(0, JUDGE_T1)) { const e = await judgeOne(c); if (e) ok.push(e); }
-if (ok.some(cleanPass)) {
+// ⭐ THE WALL MAY END THE JUDGING, NEVER TAKE A PASSER IN HAND (owner 2026-09-27, Stonk f1845444; both build checks): under a thin purse the
+// ledger's wall can stop a judge mid-tranche. A passer already judged is kept and picked below; only an empty hand goes up as the budget stop.
+const judgeTranche = async (rows) => {
+  try { for (const c of rows) { const e = await judgeOne(c); if (e) ok.push(e); } return true; }
+  catch (e) { if (e?.ledgerCap && ok.some(cleanPass)) { console.log(`  ── the purse's wall ended the judging with ${ok.filter(cleanPass).length} clean passer(s) in hand — settling on them ──`); return false; } throw e; }   // a WINNABLE passer (a flagged ip passer would settle into "none passed"; the reviewer, build check 2)
+};
+const _t1 = await judgeTranche(pool.slice(0, JUDGE_T1));
+if (!_t1) {
+  // settled by the wall
+} else if (ok.some(cleanPass)) {
   console.log(`  ── settled in the first ${Math.min(JUDGE_T1, pool.length)} (clean passer) — ${Math.max(0, pool.length - JUDGE_T1)} deeper row(s) unjudged ──`);
 } else if (pool.length > JUDGE_T1) {
   console.log(`  ── no clean passer in the first ${Math.min(JUDGE_T1, pool.length)} — extending to ${pool.length} ──`);
-  for (const c of pool.slice(JUDGE_T1)) { const e = await judgeOne(c); if (e) ok.push(e); }
+  await judgeTranche(pool.slice(JUDGE_T1));
 }
 
 
