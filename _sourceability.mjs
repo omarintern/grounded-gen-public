@@ -89,7 +89,9 @@ export function isWorkWithoutFrames(plan = {}) {
   const work = (Array.isArray(wc.intent?.subjects) ? wc.intent.subjects : []).some((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work");
   // …and one with no frames: not a set (zones), not broadcast (a film or show has its frames), not drawn (a cartoon has its cels), no shot set
   const venue = wc.chainVenue === true || (Array.isArray(wc.entities) ? wc.entities : []).some((e) => /^(?:venue|chain)$/i.test(String(e?.kind || "")));   // a venue or a chain has its own photographs (the reviewer: the Oval Office, Little Caesars, the Jungle Cruise admitted on the first cut)
-  return work && !venue && wc.named === true && wc.isSet !== true && wc.broadcastOnly !== true && wc.drawn !== true && !(Array.isArray(plan?.slots?.world?.shotSet) && plan.slots.world.shotSet.length > 0);
+  // THE SUBJECT'S OWN RECORD ADMITS, NEVER THE PLAN'S `named` FLAG (owner 2026-09-27, the rerun 03e5671d: "the odyssey ride" in lower case resolved no world
+  // entity, so `named` was false while the subject record still read search_kind "work" / "The Odyssey"; the flag counts entities, the record names the work)
+  return work && !venue && wc.isSet !== true && wc.broadcastOnly !== true && wc.drawn !== true && !(Array.isArray(plan?.slots?.world?.shotSet) && plan.slots.world.shotSet.length > 0);
 }
 /** The works the maker's words identify, by the resolver's own kind — never a figure the maker also named (workTitlesOf lists every identifying term, Stonks and Jack Torrance included). Pure. */
 export function workSubjectsOf(plan = {}) {
