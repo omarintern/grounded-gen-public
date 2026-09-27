@@ -80,3 +80,32 @@ export async function swapVerdict(standin, placement, target, beatsText) {
 }
 
 export function swapActs() { return String(process.env.SWAP_CHECK || "1") === "1"; }
+
+/** THE MODEL READS WHICH PLACE WAS TAKEN (owner 2026-09-27: "i never greenlit scoring on that"; the law: the model reads meaning, code is mechanics).
+ *  On a peopled plate the code keeps no criteria of its own. One extraction over the whole script and the photograph's listed people answers: whose
+ *  place the figure has at [0s] (a number into the list, 0 for nobody), whether the figure ARRIVES instead, and the stamps after [0s] where the taken
+ *  person is written as still present. Extract, do not judge, as swapVerdict does; the rule (a swap is owed when neither) lives in the caller. */
+export async function swapRead(beatsText, people, target) {
+  const list = (Array.isArray(people) ? people : []).map((p) => String(p || "").trim()).filter(Boolean);
+  const mode = String(process.env.SWAP_CHECK || "1");
+  const none = { taken: null, arrives: false, returns: [], mode };
+  if (mode === "0" || !list.length || !String(beatsText || "").trim() || !target) return none;
+  try {
+    const ask =
+      `Below is the script of a video that will be generated FROM a photograph, and the people the photograph holds.\n\n` +
+      `THE PEOPLE:\n${list.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\n` +
+      `THE SCRIPT:\n${String(beatsText).slice(0, 6000)}\n\n` +
+      `Extract ONLY what the script itself STATES. Do not infer, do not fill gaps, do not be generous.\n` +
+      `\u00b7 "takes" = the number of the listed person whose place ${target} has at the opening beat [0s]: the beat says ${target} stands, sits or acts where that person stood, was or sat, or otherwise states that it is in that person's place. 0 when the opening beat states no such place.\n` +
+      `\u00b7 "arrives" = true only if some beat shows ${target} ITSELF entering the frame (in from an edge, through a door, out from behind something, into view); false when it is simply there, and false when someone else is the one entering.\n` +
+      `\u00b7 "returns" = the stamps (written like "4s") of the beats AFTER [0s] that write the taken person as still present or acting; [] when none, and [] when "takes" is 0.\n` +
+      `Return ONLY JSON {"takes":<0..${list.length}>,"arrives":<true|false>,"returns":["<stamp>", ...]}.`;
+    const { text } = await providerText(ask, { model: MODEL, maxTokens: 600, temperature: 0 });
+    let j = null; try { j = JSON.parse((String(text).match(/\{[\s\S]*\}/) || ["{}"])[0]); } catch {}
+    if (!j) return none;
+    const n = Number(j.takes);
+    const taken = Number.isInteger(n) && n >= 1 && n <= list.length ? list[n - 1] : null;
+    const returns = taken ? [...new Set((Array.isArray(j.returns) ? j.returns : []).map((s) => String(s || "").replace(/[\[\]\s]/g, "")).filter((s) => /^\d+(?:\.\d+)?s$/.test(s) && !/^0(?:\.0+)?s$/.test(s)))] : [];
+    return { taken, arrives: j.arrives === true, returns, mode };
+  } catch { return none; }
+}

@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { providerJson, providerText, textPart, imagePart } from "./provider-llm.mjs";
 import { sha, fileSha, pinKeys, pinHit, pinPut, readPin, writePin } from "./_read_pin.mjs";   // one job, one reading (owner 2026-09-22)
 import { ELEMENTS_FIELD, invokeClause, worldSimClause, specDensity } from "./_invoke.mjs";
-import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept, captureFormNoun, cameraAsActor, mountOf, swapTargets, swapIn, personReturns, figureArrives } from "./_gate_rules.mjs";
+import { speechReach, SPEECH_REACH_FLOOR, redactWorldNames, seatCastSubject, DIALOGUE_HEAD, normalizeDraftLayout, moveInlineSpeech, scriptParts, earlierBeatsKept, captureFormNoun, cameraAsActor, mountOf, swapTargets } from "./_gate_rules.mjs";
 import { splitSingleBeat, CHROME_WORDS, stripChromeClauses } from "./_gate_rules.mjs";
 import { speechHusk, standinIsABody } from "./_gate_rules.mjs";   // a beat that was only a line becomes the act of speaking (2026-09-22)   // a one-beat script is split across legal stamps, never shipped as one (owner 2026-09-07)
 import { castFrameClause, reusedFrame, reusedFrameClause, platePeopleClause } from "./_beat_law.mjs";   // the kept cast rides the parent's own frame (owner 2026-09-23); or stands in frame zero (2026-09-26)
@@ -817,27 +817,31 @@ try {
   // which body it is replacing — and with it the instruction to write that body out. The subject is now placed at the action spot.
   if (!RIDE && !seen.standin_is_target) {
     const { swapVerdict, swapActs } = await import("./_swap_check.mjs");
-    const { beatZeroOnly } = await import("./_swap_check.mjs");
+    const { swapRead } = await import("./_swap_check.mjs");
     // ⭐⭐ ON A PEOPLED PLATE THE SWAP IS THE ANCHOR (owner 2026-09-27; both design checks): "… where <person> stood" states the position by
-    // construction, so no extraction is bought; a beat zero that ENTERS the figure keeps the old question; a beat zero that does neither is
-    // re-asked once with the photograph's people, never with "stays exactly as photographed" (that note put the taken person back).
-    const _taken = PEOPLE.length ? swapIn(beatZeroOnly(beatLine), PEOPLE) : null;
-    const _enters = PEOPLE.length && !_taken ? figureArrives(beatLine, intent.target) : false;   // the FIGURE'S OWN arrival, anywhere in the script, owes no swap (the reviewer: the man out of the door at [3s]; the reviewer: a shopper stepping out of an aisle is not it)
+    // construction, so the position extraction is not bought; a script in which the figure ARRIVES keeps the old question; a script that does
+    // neither is re-asked once with the photograph's people, never with "stays exactly as photographed" (that note put the taken person back).
+    // ⭐⭐ AND THE MODEL READS WHICH PLACE WAS TAKEN (owner: "i never greenlit scoring on that"): one extraction over the script and the listed people
+    // says whose place the figure has at [0s], whether it arrives instead, and where the taken person is written again; the code compares names.
+    const _sr = PEOPLE.length ? await swapRead(beatLine, PEOPLE, intent.target) : { taken: null, arrives: false, returns: [] };
+    const _taken = _sr.taken;
+    const _enters = PEOPLE.length && !_taken ? _sr.arrives === true : false;
     if (_taken) {
       console.log(`  [swap:${swapActs() ? "live" : "shadow"}] beat zero stands where "${_taken.slice(0, 70)}" stood \u2014 anchored by construction`);
-      const _back = personReturns(beatLine, _taken, PEOPLE);
+      const _back = _sr.returns;   // the stamps where the taken person is written again, as the model read them
       if (_back.length) {
-        console.warn(`  [swap] the taken person is written again after beat zero (${_back.length} line(s): ${_back[0].slice(0, 90)}) \u2014 ${swapActs() && writerInstruction ? "asking once for the person to stay taken" : "recorded only"}`);
+        console.warn(`  [swap] the taken person is written again after beat zero (at [${_back.join("], [")}]) \u2014 ${swapActs() && writerInstruction ? "asking once for the person to stay taken" : "recorded only"}`);
         if (swapActs() && writerInstruction) {
           try {
             const { text: t5 } = await providerText(
               writerInstruction + draftFor(beatLine) +
               `\n\n\u26a0 YOUR PREVIOUS ATTEMPT IS FINE EXCEPT THAT THE PERSON WHOSE PLACE ${String(intent.target).toUpperCase()} TOOK IS WRITTEN AGAIN LATER. ` +
-              `At [0s] ${intent.target} stands where ${_taken} stood, so that person is not in the take: ${intent.target} is. Rewrite the SAME beats at the SAME timestamps, changing ONLY the lines that still name that person (${_back.map((l) => l.slice(0, 60)).join(" | ")}), so they act on ${intent.target} or on someone else the photograph holds. ` +
+              `At [0s] ${intent.target} stands where ${_taken} stood, so that person is not in the take: ${intent.target} is. Rewrite the SAME beats at the SAME timestamps, changing ONLY the lines that still name that person (at [${_back.join("], [")}]), so they act on ${intent.target} or on someone else the photograph holds. ` +
               WHOLE_BACK,
               { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });
             const next = wholeAnswer(t5, "swap");
-            if (next && swapIn(beatZeroOnly(next), PEOPLE) === _taken && !personReturns(next, _taken, PEOPLE).length) { beatLine = next; console.log(`  [swap] repaired \u2014 the taken person stays taken`); }
+            const _r5 = next ? await swapRead(next, PEOPLE, intent.target) : null;
+            if (_r5 && _r5.taken === _taken && !_r5.returns.length) { beatLine = next; console.log(`  [swap] repaired \u2014 the taken person stays taken`); }
             else console.warn(`  [swap] retry still writes the taken person, or moved the swap \u2014 shipping the original`);
           } catch (e) { if (e?.name === "ProviderInfraError") throw e; console.warn(`  [swap] repair errored (${String(e.message).slice(0, 60)}) \u2014 shipping the original`); }
         }
@@ -853,10 +857,10 @@ try {
             WHOLE_BACK,
             { maxTokens: 12000, temperature: 0.3, model: REPAIR_MODEL, tag: "writer-retry" });
           const next = wholeAnswer(t4, "swap");
-          const _t2 = next ? swapIn(beatZeroOnly(next), PEOPLE) : null;
-          if (_t2 && !personReturns(next, _t2, PEOPLE).length) { beatLine = next; console.log(`  [swap] repaired \u2014 beat zero stands where "${_t2.slice(0, 70)}" stood`); }
-          else if (_t2) console.warn(`  [swap] the retry takes "${_t2.slice(0, 50)}"'s place but writes them again later \u2014 shipping the original (whole or not at all)`);
-          else if (next && figureArrives(next, intent.target)) { beatLine = next; console.log(`  [swap] repaired \u2014 ${intent.target} now arrives, and takes no one's place`); }
+          const _r4 = next ? await swapRead(next, PEOPLE, intent.target) : null;
+          if (_r4?.taken && !_r4.returns.length) { beatLine = next; console.log(`  [swap] repaired \u2014 beat zero stands where "${_r4.taken.slice(0, 70)}" stood`); }
+          else if (_r4?.taken) console.warn(`  [swap] the retry takes "${_r4.taken.slice(0, 50)}"'s place but writes them again later \u2014 shipping the original (whole or not at all)`);
+          else if (_r4?.arrives) { beatLine = next; console.log(`  [swap] repaired \u2014 ${intent.target} now arrives, and takes no one's place`); }
           else console.warn(`  [swap] retry still takes no one's place \u2014 shipping the original (the figure is conjured beside the photograph's people)`);
         } catch (e) { if (e?.name === "ProviderInfraError") throw e; console.warn(`  [swap] repair errored (${String(e.message).slice(0, 60)}) \u2014 shipping the original`); }
       }
@@ -932,9 +936,9 @@ try {
           // ⭐⭐ WHOLE OR NOT AT ALL (2026-09-26, the penguin remix 6da2e918: told to keep every earlier beat exactly, the retry rewrote beat zero and put
           // back the deer and the forest's pieces the first draft had left out). The judged retry ships whole when its earlier beats are the original's;
           // otherwise the original ships (the owner's 09-25 rule: no splice ships unread).
-          const _tk = PEOPLE.length ? swapIn((await import("./_swap_check.mjs")).beatZeroOnly(beatLine), PEOPLE) : null;   // a taken person may not come back through the payoff (the reviewer, build check)
-          if (earlierBeatsKept(beatLine, next) && (!_tk || !personReturns(next, _tk, PEOPLE).length)) { beatLine = next; console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`); }
-          else console.warn(`  [payoff] the retry escalates but rewrote earlier beats${_tk ? " or wrote the taken person back" : ""} \u2014 shipping the original whole (whole or not at all)`);
+          const _pr = PEOPLE.length ? await (await import("./_swap_check.mjs")).swapRead(next, PEOPLE, intent.target) : null;   // a taken person may not come back through the payoff (the reviewer, build check); the model reads it
+          if (earlierBeatsKept(beatLine, next) && !(_pr?.returns || []).length) { beatLine = next; console.log(`  [payoff] repaired — last beat now ESCALATES${pv2.why ? ` (${pv2.why})` : ""}`); }
+          else console.warn(`  [payoff] the retry escalates but rewrote earlier beats${(_pr?.returns || []).length ? " or wrote the taken person back" : ""} \u2014 shipping the original whole (whole or not at all)`);
         } else console.warn(`  [payoff] retry still ${String(pv2.verdict || "unjudged").toUpperCase()} — shipping the original (expect a flat payoff).`);
       }
     } catch (e) {
