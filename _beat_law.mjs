@@ -1076,12 +1076,19 @@ export function restampBeats(text, map) {
 // would be the wrong instrument twice over: it contradicts the manner-only rule above by inviting the writer to state the canon,
 // and a new finding buys a paid re-ask on a job that had already bought three. So the canon is told, first, as what the figure
 // DOES by default in every beat it appears in. temperament and attachment stay exactly what they were, manner-only advice.
+// ⭐⭐ AND THE "ALWAYS" IS THE FIGURE AT REST; A BEAT'S ACTION WINS (owner 2026-09-27: "a canon pose holds only while the figure is at
+// rest, and a beat's hand action wins"; the Stonk rerun 37381fd4: the resolver's canon "stands rigidly with arms crossed" rode into a
+// beat that had him dragging a rotisserie chicken, and the generator satisfied both, two arms crossed and a third one dragging). The
+// 09-18 lesson stands: the canon rides through any action it can be held through (a gait, a carried thing); in a beat whose action it
+// cannot be held through, that action is the whole pose, whoever wrote it, and the canon comes back only when the action ends. The
+// header and the tail say "with what the action leaves free", so a pose is never read as the manner of an action that needs the
+// same hands (both build checks, 2026-09-27).
 export const charContextBlock = (canon) => (canon && (canon.temperament || canon.attachment || canon.always)
-  ? `⚠ CHARACTER CONTEXT — show it ONLY in HOW actions are performed, never as a statement; the character ` +
+  ? `⚠ CHARACTER CONTEXT — show it ONLY in HOW actions are performed, with whatever the action leaves free, never as a statement; the character ` +
     `never takes a sentence from the action, and ordinary props stay bare nouns (the figure's OWN signature object is the exception — it keeps its referenced identity, never recoloured): ` +
     `temperament: ${canon.temperament || "—"} · attachment: ${canon.attachment || "—"} · always: ${canon.always || "—"}\n` +
     (canon.always
-      ? `⚠⚠ AND THAT "ALWAYS" IS THE FIGURE'S OWN MOTION, IN EVERY BEAT IT IS IN: ${canon.who || "the figure"} ${canon.always} — that is HOW it crosses, approaches, waits, reacts and leaves, in the first beat and in the last, unless the MAKER’S OWN WORDS give it a different action at that beat (an app rewrite that adds a posture the maker never wrote does not). It is never stated as a fact about the figure and never takes a sentence of its own; it is the manner of whatever the beat already has it do.\n\n`
+      ? `⚠⚠ AND THAT "ALWAYS" IS THE FIGURE’S OWN MOTION AND CARRIAGE, IN EVERY BEAT IT IS IN, WITH WHATEVER THE BEAT’S ACTION LEAVES FREE: ${canon.who || "the figure"} ${canon.always} — that is HOW it stands, waits, crosses, reacts and leaves, in the first beat and in the last, and it rides through any action it can be held through (a walk keeps a gait and a carried thing). IN A BEAT WHOSE ACTION THE RESTING POSE CANNOT BE HELD THROUGH (the hands take something, the body does something else), THAT ACTION IS ITS WHOLE POSE FOR THE BEAT, whoever wrote it, the maker’s own words first: the pose gives way for exactly what the action takes and returns when the action ends, and a figure never keeps a pose its hands cannot hold while they do something else (an app rewrite that adds a posture the maker never wrote is not an action). It is never stated as a fact about the figure and never takes a sentence of its own; it is the manner of whatever the beat already has it do, with what the action leaves free.\n\n`
       : "\n")
   : "");
 
