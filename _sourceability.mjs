@@ -86,7 +86,8 @@ const _PERSON = /^(?:a |an |the )?(?:man|woman|person|people|guy|girl|boy|child|
 export function isWorkWithoutFrames(plan = {}) {
   const wc = plan?.world_clearance || {};
   // a WORK the maker's words identify (the resolver's search_kind), never any admitted entity: a venue, a landmark or a product is "named" too (the reviewer, the build check)
-  const work = (Array.isArray(wc.intent?.subjects) ? wc.intent.subjects : []).some((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work");
+  const likeness = likenessOf(plan);   // a work named as a likeness of the maker's place dresses it: the canon applies as it does when the work is the world (owner 2026-09-28)
+  const work = !!likeness || (Array.isArray(wc.intent?.subjects) ? wc.intent.subjects : []).some((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work");
   // …and one with no frames: not a set (zones), not broadcast (a film or show has its frames), not drawn (a cartoon has its cels), no shot set
   const venue = wc.chainVenue === true || (Array.isArray(wc.entities) ? wc.entities : []).some((e) => /^(?:venue|chain)$/i.test(String(e?.kind || "")));   // a venue or a chain has its own photographs (the reviewer: the Oval Office, Little Caesars, the Jungle Cruise admitted on the first cut)
   // …AND THE WORK MUST BE THE WORLD (the 2026-09-28 study: "a man reading moby dick on the subway" reads Moby-Dick as a material work; the book is read, the subway is the world):
@@ -94,15 +95,26 @@ export function isWorkWithoutFrames(plan = {}) {
   const _subs = Array.isArray(wc.intent?.subjects) ? wc.intent.subjects : [];
   const _bareN = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
   const _hay = _bareN([plan?.form?.world, plan?.world_theme?.work, plan?.slots?.world?.scope, ...(Array.isArray(plan?.slots?.world?.queries) ? plan.slots.world.queries : [])].filter(Boolean).join(" | "));
-  const worldIsWork = wc.named === true || plan?._meta?.rideNamedPre === true || _subs.some((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work" && (s.rides_as_the_seat === true || [s.search_name, s.term].some((n) => { const b = _bareN(n).replace(/\s+(?:ride|dark ride|coaster|rollercoaster)$/, ""); return !!b && _hay.includes(b); })));
+  const worldIsWork = !!likeness || wc.named === true || plan?._meta?.rideNamedPre === true || _subs.some((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work" && (s.rides_as_the_seat === true || [s.search_name, s.term].some((n) => { const b = _bareN(n).replace(/\s+(?:ride|dark ride|coaster|rollercoaster)$/, ""); return !!b && _hay.includes(b); })));
   // THE SUBJECT'S OWN RECORD ADMITS, NEVER THE PLAN'S `named` FLAG (owner 2026-09-27, the rerun 03e5671d: "the odyssey ride" in lower case resolved no world
   // entity, so `named` was false while the subject record still read search_kind "work" / "The Odyssey"; the flag counts entities, the record names the work)
   return work && worldIsWork && !venue && wc.isSet !== true && wc.broadcastOnly !== true && wc.drawn !== true && !(Array.isArray(plan?.slots?.world?.shotSet) && plan.slots.world.shotSet.length > 0);
 }
 /** The works the maker's words identify, by the resolver's own kind — never a figure the maker also named (workTitlesOf lists every identifying term, Stonks and Jack Torrance included). Pure. */
+/** A WORK NAMED AS A LIKENESS OF THE MAKER'S OWN PLACE (owner 2026-09-28: "a person's home is like its in the oddysey or illiad? my point goes further than just dark rides"; "would it
+ *  see home as the illiad as appropriation where it takes a home interior and prompts the replacements from illiad or odyssey plate(s)?" — yes): the place is the world and the work
+ *  DRESSES it with things of its mosaic, installed on the place's own photograph by replacement. THE RECORD DECIDES (both reviewers, round 5: a word list over the prompt read
+ *  "i'd like a man reading moby dick" as a likeness and missed "as if it's in"): the comprehension answers `dresses` per subject — the term of the place this thing lends its things
+ *  to, or "" — and a record without the field (a plan from before 2026-09-28) names no likeness. Returns the work's name, or "". Pure. */
+export function likenessOf(plan = {}) {
+  const subs = (Array.isArray(plan?.world_clearance?.intent?.subjects) ? plan.world_clearance.intent.subjects : []).filter((s) => s && String(s.search_kind || "").toLowerCase() === "work" && (s.search_name || s.term));
+  const d = subs.find((s) => String(s.dresses || "").trim());
+  return d ? _norm(d.search_name || d.term) : "";
+}
 export function workSubjectsOf(plan = {}) {
   const subs = Array.isArray(plan?.world_clearance?.intent?.subjects) ? plan.world_clearance.intent.subjects : [];
-  return [...new Set(subs.filter((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work").flatMap((s) => [s.search_name, s.term]).map((x) => _norm(x)).filter(Boolean))];
+  const lk = likenessOf(plan), bare = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+  return [...new Set(subs.filter((s) => s && String(s.search_kind || "").toLowerCase() === "work" && (s.identifies_material === true || (lk && [s.search_name, s.term].some((n) => bare(n) === bare(lk))))).flatMap((s) => [s.search_name, s.term]).map((x) => _norm(x)).filter(Boolean))];
 }
 const _MEDIUM_WORD = /\b(?:illustrations?|paintings?|drawings?|depictions?|renders?|renderings?|artworks?|images?|pictures?|prints?|sketch(?:es)?)\b/gi;
 const _HOUSING = /\s+(?:in|at|from)\s+(?:the\s+)?[^,;]*?\b(?:museum|gallery|galleries|collection|exhibit(?:ion)?|library|archive)\b.*$/i;   // "Homer bust in the British Museum" → "Homer bust" (the reviewer, round 3)
@@ -127,6 +139,7 @@ export function canonEntries(plan = {}) {
     if (!name || !_CANON_KINDS.has(kind)) continue;
     if (_SITE_HEAD.test(name)) continue;   // a place of the work is the places channel's, never a thing
     if (_works.some((w) => _bareK(w) === _bareK(name))) continue;   // a picture OF the work ("Odyssey illustration by Flaxman" → "Odyssey") is not an object of it
+    if (/\b(?:stills?|posters?|screenshots?|screen ?grabs?|photos?|photographs?|scenes?|clips?|frames?|trailers?)\b/i.test(raw) && _works.some((w) => _bareK(raw).includes(_bareK(w)))) continue;   // a still or a poster OF the work is a picture, not an object, and carries its cast's faces (the reviewer, round 5)
     if (kind === "character" && !_OBJECT_WORD.test(name)) name = `${name} statue`;
     if (!out.some((x) => _key(x.name) === _key(name))) out.push({ name: _norm(name), kind });   // the kind rides with the name: a character's effigy is a figure of the world, never at frame zero
   }

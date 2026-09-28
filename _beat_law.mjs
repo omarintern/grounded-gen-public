@@ -303,11 +303,12 @@ export const thingBlock = () => {
   const things = Array.isArray(m?.things) ? m.things.filter((t) => t && t.subject) : [];
   if (!things.length) return "";
   const host = m.host === "seat" ? "the seat photograph, the ride's own vantage" : "the photograph the take is shot from";
+  const likeness = String(m.likeness || "").trim();   // a work dressing the maker's place: its objects at the place's own scale (owner 2026-09-28; the reviewer, round 5: a colossal Cyclops in a living room)
   return things.map((t) => {
     const facts = (Array.isArray(t.placements) ? t.placements : []).map((l) => replacementFact(String(l), "")).filter(Boolean);
     const seen = (Array.isArray(t.things) ? t.things : []).filter(Boolean);
     return `⚠⚠ ONE OF THE REFERENCE PHOTOGRAPHS IS THE ${String(t.subject).toUpperCase()} ITSELF, NOT A PLACE. Frame zero is ${host}; the ${t.subject} is IN it from the first frame, ` +
-      `as that photograph shows it — its mass, its texture, its light — never smaller, never tidier, never a drawing of it. ` +
+      (likeness ? `as that photograph shows it — its texture, its light, its make — at THIS place's own scale, an object of ${likeness} set where such an object stands in a room (a shelf, a table, a mantel, a floor corner), never larger than the room holds, never a drawing of it. ` : `as that photograph shows it — its mass, its texture, its light — never smaller, never tidier, never a drawing of it. `) +
       `${facts.length ? `It stands where the host's own piece stood, a standing fact at [0s], never a change on screen: ${facts.join(" | ")}. ` : `Where it stands is the host's own space: name the host's piece it takes, in the grammar "<the ${t.subject}> where <the piece> was". `}` +
       `${seen.length ? `What that photograph holds: ${seen.join(", ")}. ` : ""}` +
       `The take never cuts to that photograph and never arrives there: it is a reference for the thing, and the thing is here.`;
