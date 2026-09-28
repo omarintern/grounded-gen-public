@@ -244,13 +244,20 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const family = kind === "driven" ? "driven" : kind === "worn" ? "worn" : (rideFamilyOf(noun) || "other ridden");
   const water = !boatWord && kind === "ridden" && (isWaterRide(rawPrompt) || isWaterRide(prompt) || WATER_WORDS.test(noun));   // the water route (2026-09-15): the maker's words put the seat on a boat
   const setEnt = (Array.isArray(resolved) ? resolved : []).find((e) => e?.is_set === true);
-  const named = !!(p.world_clearance?.named || p.world_clearance?.isSet === true || setEnt);
+  // ⭐⭐ THE SUBJECT RECORD NAMES THE WORLD TOO (owner 2026-09-27, the Odyssey reruns): the entity finder flip-flopped on "the odyssey ride" (an entity once, none the
+  // next time), so the theme preamble came and went; the comprehension's subject record read the same three words as the work "The Odyssey" every time (34 of 34 in
+  // the lower-case study). A subject the resolver kinded a WORK that identifies the material names the world, and its search name titles it — before the plan
+  // (resolved.intent) and from the plan (world_clearance.intent) alike.
+  const _subjects = Array.isArray(p.world_clearance?.intent?.subjects) ? p.world_clearance.intent.subjects : (Array.isArray(resolved?.intent?.subjects) ? resolved.intent.subjects : []);
+  // …on a DARK RIDE only, where the named world is a theme by design; every other form keeps the entity finder's `named` and its planner-owned admission (the reviewer, round 4)
+  const workSubj = family === "dark ride" ? _subjects.find((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work" && !(s.renders === false && String(s.replaced_by || "").trim())) : null;
+  const named = !!(p.world_clearance?.named || p.world_clearance?.isSet === true || setEnt || workSubj);
   // THE WORLD'S TITLE IS THE WORK (dry run velocal6, 2026-09-11): the material identifiers are every term the maker's words identify — the work, but also its
   // named figures ("The Shining ride", "jack torrence", "wendy") — and the first of them titled the world "The Shining Ride", which the sourceability judge
   // then called invented. The planner's own statement of the work (world_theme.work) and the resolver's set name come first; the identifiers are the fallback.
   // (velocal7: the planner echoed the ensemble's canonical name — "The Shining cast" — as the work; the clearance's setName is the work itself, "cast" stripped)
   const _stripCast = (t) => String(t || "").replace(/\s+(?:cast|crew|cast members)$/i, "").trim();
-  const title = _stripCast(p.world_clearance?.setName) || _stripCast(p.world_theme?.work) || _stripCast(setEnt?.canonical_name || setEnt?.term) || (plan ? workTitlesOf(p)[0] : "");
+  const title = _stripCast(p.world_clearance?.setName) || _stripCast(p.world_theme?.work) || _stripCast(setEnt?.canonical_name || setEnt?.term) || _stripCast(workSubj?.search_name) || (plan ? workTitlesOf(p)[0] : "");   // the work's own name before the identifiers ("The Odyssey", never "The Odyssey Ride")
   const setting = String(p.form?.setting || "").replace(/\s+/g, " ").trim();
   const themedSetting = /\b(?:themed|dark ride|indoor|enclos\w*|show building)\b/i.test(setting);
   // ⭐⭐ A DARK RIDE IS A THEME BY ITS FAMILY, NAMED WORK OR NOT (owner 2026-09-26, the cruise ride 00b8c26a: "Unnamed rides' rooms are sent to video"; both
@@ -273,7 +280,10 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
   const indoor = kind === "ridden" && family !== "dark ride" && mode !== "architecture" && (interior || (places.length > 0 && isInteriorWorld({ form: { world: places.join(" ") } })));
   const queries = boatWord ? [`${boatWord} ${boatCam} pov footage`, `first person ${boatCam} ${boatWord} footage`] : seatQueries(plateForm, { context, noun: makerKind || "", indoor, rand, water });
   const titles = plan ? workTitlesOf(p) : (title ? [title] : []);
-  const rooms = mode === "theme" && Array.isArray(p.slots?.world?.shotSet) ? p.slots.world.shotSet.map((q) => roomNameOf(q, titles)).filter(Boolean) : [];
+  // a mosaic's sources are rooms (a scene of the work) or OBJECTS (a statue, a replica, an artifact): the objects are named apart, never banned from the prose as rooms are (the reviewer, round 4)
+  const _srcs = mode === "theme" && Array.isArray(p.slots?.world?.shotSet) ? p.slots.world.shotSet : [];
+  const rooms = _srcs.filter((q) => isSceneSource(q)).map((q) => roomNameOf(q, titles)).filter(Boolean);
+  const objects = _srcs.filter((q) => !isSceneSource(q)).map((q) => objectNameOf(q, [...new Set([...titles, title].filter(Boolean))])).filter(Boolean);
   // HOW THE ENDING LANDS is the plan's decision (owner 2026-09-11: "climax doesn't need longest span. it all depends, because irony would have it end quick"):
   // held = experienced, the take stays in the event; quick = a button after the build. A ride defaults to held; the plan says otherwise only on the maker's words.
   const ending = String(p.read?.ending || "").trim().toLowerCase() === "quick" ? "quick" : "held";
@@ -282,7 +292,7 @@ export function rideDecision({ rawPrompt = "", prompt = "", resolved = [], plan 
     craft: boatWord || "",   // the maker's own word for the hull, kept so the seat ranking can prefer it (2026-09-18)
     // AN EVENT IS A NAMED WORLD (owner 2026-09-14: "even for a plate, 9/11 should be recognized as something sourced"): the probe's event entity
     // is a set whose zones are its most photographed scenes; on a dark ride it is a theme like a work, told to the planner as an EVENT
-    world: { named, title, mode, setting, words: worldWords, places, rooms, things: plan ? worldElements(p) : [], kind: setEnt?.kind === "event" ? "event" : (named ? "work" : ""), zones: Array.isArray(setEnt?.set_zones) ? setEnt.set_zones.map((z) => String(z || "").trim()).filter(Boolean) : [] },
+    world: { named, title, mode, setting, words: worldWords, places, rooms, objects, things: plan ? worldElements(p) : [], kind: setEnt?.kind === "event" ? "event" : (named ? "work" : ""), zones: Array.isArray(setEnt?.set_zones) ? setEnt.set_zones.map((z) => String(z || "").trim()).filter(Boolean) : [] },
     seat: { queries, ladder: seatLadder(family, water), plate: "", reading: null },
     words: { way: "", vehicle: "" },
     dressing: { placements: [], later: [], places: [] },
@@ -321,7 +331,9 @@ export function rideWords(d) {
 // resolved entities (is_set). So the planner is told first, and the shape is right from the top.
 export function preambleFor(d, { places = [] } = {}) {
   if (!d || d.family !== "dark ride" || !d.world?.named || !d.world?.title) return "";
-  const lead = (Array.isArray(places) ? places : []).map((p) => String(p || "").trim()).filter(Boolean).slice(0, 4);
+  const _wk = String(d.world?.title || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").trim();
+  const lead = (Array.isArray(places) ? places : []).map((p) => String(p || "").trim()).filter(Boolean)
+    .filter((p) => !rideNounTail(p) && p.toLowerCase().replace(/^(?:the|a|an)\s+/, "").trim() !== _wk).slice(0, 4);   // the ride phrase and the work's own name are never a source to lead with ("The Odyssey odyssey ride scene"; the reviewer, round 4)
   const kind = d.noun, w = d.world.title;
   const ev = d.world?.kind === "event", what = ev ? "EVENT" : "WORK";   // an event is themed like a work: its most photographed scenes are its rooms (2026-09-14)
   const zones = ev && !lead.length ? (Array.isArray(d.world?.zones) ? d.world.zones : []).slice(0, 4) : [];
@@ -329,7 +341,11 @@ export function preambleFor(d, { places = [] } = {}) {
     `• THE FORM IS A THEME PARK DARK RIDE ("${kind}"). The camera is the rider's seat; frame zero is a photograph taken from the seat; the world is what the ride carries past that seat.\n` +
     `• THE WORLD IS THE NAMED ${what} "${w}", AND ON A DARK RIDE A NAMED ${what} IS A THEME, NOT ${ev ? "A RE-ENACTMENT" : "AN ITINERARY"}. The ride never enters the ${ev ? "event's" : "work's"} places; the ${ev ? "event's most photographed scenes supply" : "work supplies"} THINGS that dress the ride's own scenes. Therefore, for THIS plan:\n` +
     `  – form.places = [] and slots.vantage = [] — no place of the work is a stop; execution.cuts = false. (This overrides any instruction below to list the places the request visits: on this form they are not visited, they are read.)\n` +
-    `  – world_theme = { work: "${w}", sources: up to 4 image-search queries for the work's rooms or scenes whose THINGS are worth reading, each shaped "${w} ${ev ? "<scene> photograph" : "<room> scene"}"${zones.length ? ` — its most photographed scenes, as the archives tag them: ${zones.join(" · ")}` : ""}${lead.length ? ` — the brief names the places the maker's video visits, and THEY LEAD, in this order: ${lead.map((p) => `"${w} ${p} scene"`).join(", ")}; add another room only after them` : ""} }.\n` +
+    (ev
+      ? ` – world_theme = { work: "${w}", sources: up to 4 image-search queries for the event's scenes whose THINGS are worth reading, each shaped "${w} <scene> photograph"${zones.length ? ` — its most photographed scenes, as the archives tag them: ${zones.join(" · ")}` : ""}${lead.length ? ` — the brief names the places the maker's video visits, and THEY LEAD, in this order: ${lead.map((p) => `"${w} ${p} scene"`).join(", ")}; add another room only after them` : ""} }.\n`
+      // ⭐⭐ A WORK'S WORLD IS A MOSAIC (owner 2026-09-27, the Odyssey ride: "the writer can invoke the odyssey that way or another. it can be a mosaic of things"): a film has rooms, a poem
+      // has statues, replicas, memorabilia, artifacts, murals and the films made from it — every photographable expression of the work is a source to read for its things
+      : ` – world_theme = { work: "${w}", sources: up to 4 image-search queries for the work's most photographed EXPRESSIONS of any kind — a film's scene (a film made from the work counts, under the film's own name), a museum artifact, a statue or a replica, memorabilia, a staging — a mosaic, in the mix the work itself calls for, each written as an image index captions it (a scene as "${w} <scene> scene", an object as the object itself: "<object> of ${w}")${lead.length ? ` — the brief names the places the maker's video visits, and THEY LEAD, in this order: ${lead.map((p) => `"${w} ${p} scene"`).join(", ")}; add another source only after them` : ""} }.\n`) +
     `  – world_elements: up to 6 of the work's most transferable THINGS — a pattern, a fixture, a prop, signage, architecture, a figure of the work described by clothing and posture — each with source = the world_theme source it is read from, and the surface it lives on.\n` +
     `  – the story is the ride's own scenes in order, UNNAMED (the next scene, a turn, a blackout), each carrying things; no scene is named after a place of the work, and read.restated says so; each scene is what a photograph of the work shows, ridden through in order, its things beside and ahead of the track and under it (never named after a place of the work, never a flat or a screen with figures before it); when the maker's words ask for a story (read.plot_required or read.drama_required true) the last scene MAY be the story's own turn acting on the ride, imagined from the work, never a stock effect chosen for size; when they ask for a view (both false — a bare ride is a view) no turn is owed: the ride passes its scenes and rests.\n` +
     `  – read.plot_required and read.drama_required are answered from the maker's words as on any form (owner 2026-09-15: a ride may be a view); where there IS a payoff, read.ending DECIDES HOW IT LANDS: "held" (the default — the rider is there to EXPERIENCE the climax: the last stretch of the take stays inside the event) or "quick" (a button — the payoff lands late and clean after the build, when the maker's words ask for irony, deadpan, a wink or a reversal). Deadpan is a register, never a size: quick shortens the landing, never the event.\n` +
@@ -339,6 +355,14 @@ export function preambleFor(d, { places = [] } = {}) {
 }
 /** A zone or source query reduced to the room's own name for the prose ban and the writer's log: the work's title and a query
  *  suffix (scene / interior / footage / set) stripped. "The Shining Overlook Hotel lobby scene" → "Overlook Hotel lobby". */
+/** A SOURCE THAT IS A SCENE: written "<Work> <scene> scene" (or photograph/interior/footage/set/still/frame); anything else the planner wrote is an OBJECT of the work. Pure. */
+export const isSceneSource = (q) => /\s(?:scene|photograph|interior|footage|set|still|frame)$/i.test(String(q || "").trim());
+/** the object's own name: "black-figure amphora of The Odyssey" → "black-figure amphora" */
+export function objectNameOf(query, titles = []) {
+  let z = String(query || "").replace(/\s+/g, " ").trim();
+  for (const t of Array.isArray(titles) ? titles : []) if (t) z = z.replace(new RegExp(`\\s+(?:of|from)\\s+(?:the\\s+)?${String(t).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`, "i"), "").replace(new RegExp(`^\\s*${String(t).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+`, "i"), "");
+  return z.trim();
+}
 export function roomNameOf(query, titles = []) {
   let z = String(query || "").replace(/\s+/g, " ").trim();
   for (const t of Array.isArray(titles) ? titles : []) if (t) z = z.replace(new RegExp(`^\\s*${String(t).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+`, "i"), "");

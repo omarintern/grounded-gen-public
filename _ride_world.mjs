@@ -108,7 +108,7 @@ export function stripPlaceWords(dressing, words = []) {
     photographed: Array.isArray(dressing.photographed) ? dressing.photographed.map((p) => ({ ...p, qualities: list(p.qualities) })) : dressing.photographed };
 }
 export const isFigureThing = (e) => FIGURE_KIND.test(String(e?.kind || "").trim()) || FIGURE_NOUN.test(headNoun(e?.name));
-export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], canonThings = [], worldName = "", dark = d?.family === "dark ride", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
+export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = [], canonThings = [], objectPlates = [], worldName = "", dark = d?.family === "dark ride", cwd = process.cwd(), env = process.env, log = console.log } = {}) {
   const mode = d?.world?.mode || "setting";
   const way = d?.words?.way || d?.seat?.reading?.way || "";
   const planThings = (Array.isArray(d?.world?.things) ? d.world.things : []).map((e) => ({ name: e.name, kind: e.kind, surface: e.surface }));
@@ -126,17 +126,25 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     const _canon = (Array.isArray(canonThings) ? canonThings : []).filter((c) => c && c.plate);
     const _canonPlateSet = new Set(_canon.map((c) => c.plate));
     const _canonRead = _canon.flatMap((c) => (Array.isArray(c.things) ? c.things : []).filter(Boolean).map((name) => ({ name, kind: c.kind === "character" ? "character" : "prop", surface: c.kind === "character" ? "space" : "object", plate: c.plate })));   // a character's effigy is a figure of the world: met later along the way, never at frame zero (the 09-11 rule)
-    const _readPlates = (roomPlates.length ? roomPlates : laterPlates.map((x) => x?.plate).filter(Boolean)).filter((p) => !_canonPlateSet.has(p));
+    // A MOSAIC'S OBJECT SOURCES (owner 2026-09-27): each is one photograph of one thing, read in thing mode for the object alone (the plinth and the case are never wanted), never as a room
+    const _objectSet = new Set((Array.isArray(objectPlates) ? objectPlates : []).filter(Boolean));
+    const _objectRead = [..._objectSet].flatMap((p) => readRoomThings({ roomPlates: [p], worldName: worldName || d?.world?.title || "the work", perRoom: 1, cwd, env: { ...env, TRANSFER_MODE: "thing", DARK_RIDE_DRESSING: "", SEAT_WAY: "" }, log }).slice(0, 1).map((e) => ({ ...e, kind: e.kind || "prop", surface: e.surface || "object", plate: p })));
+    if (_objectRead.length) log(`  ✎ the work's objects, read off their own photographs (one thing each): ${_objectRead.map((r) => r.name).join(" · ")}`);
+    const _readPlates = (roomPlates.length ? roomPlates : laterPlates.map((x) => x?.plate).filter(Boolean)).filter((p) => !_canonPlateSet.has(p) && !_objectSet.has(p));
     if (!roomPlates.length && _readPlates.length) log(`  ◇ the world offered no room photograph — the ${_readPlates.length} photograph(s) that DO ride are read for their things instead`);
     if (_canonRead.length) log(`  ✎ the work's canon, read off its own photographs (things only): ${_canonRead.map((r) => r.name).join(" · ")}`);
     // the canon comes FIRST: the six-thing cut below keeps the work's own things over a room's incidental ones (a room read of four things a plate would otherwise crowd them out)
-    const read = [..._canonRead, ...readRoomThings({ roomPlates: _readPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 4, cwd, env, log })];   // supply meets demand (B5, 2026-09-15): four things a room, so a six-piece plate finds takers
+    const _ownRead = [..._canonRead, ..._objectRead];   // the work's own things: one photograph, one read each
+    const read = [..._ownRead, ...readRoomThings({ roomPlates: _readPlates, worldName: worldName || d?.world?.title || "the world", perRoom: 4, cwd, env, log })];   // supply meets demand (B5, 2026-09-15): four things a room, so a six-piece plate finds takers
     // A SCENE INSIDE IS BUILT ONLY FROM A PHOTOGRAPH THAT RIDES (owner 2026-09-13: "if we're writing in rooms that aren't carried by plates then we're obviously
     // gonna get lesser results"). Draw 19 rode the maze and the elevator hallway (cream walls, wainscoting, tan linoleum), and the writer built the twins' room
     // from the plan's wallpaper and geometric carpet and the finale from the plan's splintered door — no photograph carried either, so the model had to invent
     // them. The planner's own things no longer enter a themed ride's take: the world arrives as what its photographs show, and as the seat plate's replacements
     // — and a named work without frames shows its things through photographs of its material canon (canonThings above, owner 2026-09-27), still photographs that ride.
-    const things = dedupeThings(read).slice(0, 6);
+    // a canon read is one photograph's own single read: never folded into another by the dedupe's word overlap (the reviewer, round 3: the amphora's "one-eyed giant" swallowed the effigy)
+    const _ownN = dedupeThings(_ownRead).length;   // compared against the deduped own list, so two overlapping own reads never drop every room read (the reviewer, round 4)
+    const _roomRead = dedupeThings(read.slice(_ownRead.length)).filter((e) => dedupeThings([..._ownRead, e]).length > _ownN);
+    const things = [..._ownRead.map((e) => ({ ...e, name: e.name })), ..._roomRead].slice(0, 6);
     if (read.length) log(`  ✎ read off the world's rooms (things only): ${read.map((r) => r.name).join(" · ")}`);
     out.things = things;
     out.figures = things.filter(isFigureThing).map((e) => e.name);
@@ -146,7 +154,8 @@ export function worldByMode(d, { seatPlate = "", roomPlates = [], laterPlates = 
     // only the world's things take the seat photograph's set pieces at frame zero; a figure is met later along the way, as a tableau
     const nonFigures = things.filter((e) => !isFigureThing(e));
     // A CANON OF TWO OR MORE KEEPS ITS LAST FOR LATER (the reviewer, the build check: two canon things both spent at frame zero leave no tableau and no finale on an 18 s take)
-    const _canonLast = _canonRead.length >= 2 ? String(_canonRead[_canonRead.length - 1].name).toLowerCase() : "";
+    const _canonNonFig = _ownRead.filter((e) => !isFigureThing(e));   // the effigy is a figure met later, never the finale's held-back thing (the reviewer, round 3: [statue, trireme] emptied frame zero back to the mushroom)
+    const _canonLast = _canonNonFig.length >= 2 ? String(_canonNonFig[_canonNonFig.length - 1].name).toLowerCase() : "";
     const _atZero = nonFigures.filter((e) => String(e.name).toLowerCase() !== _canonLast);
     const placedLines = placeOnPlate({ plate: seatPlate, things: _atZero.slice(0, 6), role: seatRole, dark, way, cwd, env, log });   // dark = a dark ride's own words; an appropriating worn or driven form reads plainly (2026-09-14)   // every thing is offered: the set pieces are covered most-foreign-first (owner 2026-09-10)
     out.plateThings = placedLines.plateThings || [];
