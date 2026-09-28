@@ -89,9 +89,15 @@ export function isWorkWithoutFrames(plan = {}) {
   const work = (Array.isArray(wc.intent?.subjects) ? wc.intent.subjects : []).some((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work");
   // …and one with no frames: not a set (zones), not broadcast (a film or show has its frames), not drawn (a cartoon has its cels), no shot set
   const venue = wc.chainVenue === true || (Array.isArray(wc.entities) ? wc.entities : []).some((e) => /^(?:venue|chain)$/i.test(String(e?.kind || "")));   // a venue or a chain has its own photographs (the reviewer: the Oval Office, Little Caesars, the Jungle Cruise admitted on the first cut)
+  // …AND THE WORK MUST BE THE WORLD (the 2026-09-28 study: "a man reading moby dick on the subway" reads Moby-Dick as a material work; the book is read, the subway is the world):
+  // the entity finder named it, or the pre-plan ride decision named the theme, or the subject rides as the seat, or the planner's own world names the work
+  const _subs = Array.isArray(wc.intent?.subjects) ? wc.intent.subjects : [];
+  const _bareN = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const _hay = _bareN([plan?.form?.world, plan?.world_theme?.work, plan?.slots?.world?.scope, ...(Array.isArray(plan?.slots?.world?.queries) ? plan.slots.world.queries : [])].filter(Boolean).join(" | "));
+  const worldIsWork = wc.named === true || plan?._meta?.rideNamedPre === true || _subs.some((s) => s && s.identifies_material === true && String(s.search_kind || "").toLowerCase() === "work" && (s.rides_as_the_seat === true || [s.search_name, s.term].some((n) => { const b = _bareN(n).replace(/\s+(?:ride|dark ride|coaster|rollercoaster)$/, ""); return !!b && _hay.includes(b); })));
   // THE SUBJECT'S OWN RECORD ADMITS, NEVER THE PLAN'S `named` FLAG (owner 2026-09-27, the rerun 03e5671d: "the odyssey ride" in lower case resolved no world
   // entity, so `named` was false while the subject record still read search_kind "work" / "The Odyssey"; the flag counts entities, the record names the work)
-  return work && !venue && wc.isSet !== true && wc.broadcastOnly !== true && wc.drawn !== true && !(Array.isArray(plan?.slots?.world?.shotSet) && plan.slots.world.shotSet.length > 0);
+  return work && worldIsWork && !venue && wc.isSet !== true && wc.broadcastOnly !== true && wc.drawn !== true && !(Array.isArray(plan?.slots?.world?.shotSet) && plan.slots.world.shotSet.length > 0);
 }
 /** The works the maker's words identify, by the resolver's own kind — never a figure the maker also named (workTitlesOf lists every identifying term, Stonks and Jack Torrance included). Pure. */
 export function workSubjectsOf(plan = {}) {
