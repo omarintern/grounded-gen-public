@@ -135,7 +135,7 @@ export function likenessPlanRepair(plan = {}) {
     let b = ` ${bare(x)} `; if (year) b = b.replace(new RegExp(`\\b${year}\\b`, "g"), " \u0000 ");   // the year leaves, its position remembered
     for (const n of names) if (!placeNouns.has(n)) b = b.replace(new RegExp(`(?:^|\\s)${esc(n)}(?=\\s|$)`, "g"), " \u0000 ");   // the title leaves, its position remembered
     const toks = b.split(/\s+/).filter(Boolean); const gone = toks.map((w) => w === "\u0000");
-    for (let k = 0; k < toks.length; k++) if (!gone[k] && medium.test(toks[k]) && (k === toks.length - 1 || gone[k + 1] || trail.test(toks[k + 1]))) gone[k] = true;   // a medium word leaves only when it IS the medium
+    for (let k = toks.length - 1; k >= 0; k--) if (!gone[k] && medium.test(toks[k]) && (k === toks.length - 1 || gone[k + 1] || trail.test(toks[k + 1]) || medium.test(toks[k + 1]))) gone[k] = true;   // a medium word leaves only when it IS the medium ("tv series scene" leaves whole; the reviewer, round 6)
     for (let k = 0; k < toks.length; k++) if (!gone[k] && trail.test(toks[k]) && (k === toks.length - 1 || gone[k - 1] || toks.slice(k + 1).every((_, m) => gone[k + 1 + m]))) gone[k] = true;   // scene/still/frame/footage leave at the end or beside what left
     const seen = new Set(); return toks.filter((w, k) => !gone[k] && !seen.has(w) && seen.add(w)).join(" ");
   };
@@ -150,7 +150,7 @@ export function likenessPlanRepair(plan = {}) {
   const qs = []; for (const q of qs0) { const s = namesWork(q) ? strip(q) : q; if (s && !qs.some((x) => bare(x) === bare(s))) qs.push(s); }
   if (!qs.some((q) => bare(q) === bare(place) || bare(q).includes(bare(place)))) qs.unshift(place);
   if (JSON.stringify(qs) !== JSON.stringify(qs0)) { w.world.queries = qs; changed = true; }
-  if (namesWork(w.world.kernel || "") || !String(w.world.kernel || "").trim()) { w.world.kernel = place.split(/\s+/).slice(0, 6).join(" "); changed = true; }
+  if (namesWork(w.world.kernel || "") || !String(w.world.kernel || "").trim() || names.includes(bare(w.world.kernel))) { w.world.kernel = place.split(/\s+/).slice(0, 6).join(" "); changed = true; }   // a kernel that is the title, even one that is a place word, becomes the place in its own words (the reviewer, round 6: "The Office")
   if (namesWork(scope0) || !scope0) { w.world.scope = place; changed = true; }
   return { changed, place };
 }
