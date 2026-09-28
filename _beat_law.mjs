@@ -307,6 +307,10 @@ export const thingBlock = () => {
   return things.map((t) => {
     const facts = (Array.isArray(t.placements) ? t.placements : []).map((l) => replacementFact(String(l), "")).filter(Boolean);
     const seen = (Array.isArray(t.things) ? t.things : []).filter(Boolean);
+    // A SCENE OF THE WORK (owner 2026-09-28, a likeness): the photograph is a frame of the work; what it lends the place is its THINGS, standing in the host's own pieces; the take never goes there
+    if (t.kind === "scene") return `⚠⚠ ${t.plate ? `ONE OF THE REFERENCE PHOTOGRAPHS IS A SCENE OF ${String(t.work || t.subject).toUpperCase()}, NOT A PLACE THE TAKE GOES` : `A SCENE OF ${String(t.work || t.subject).toUpperCase()} WAS READ FOR THIS TAKE (no photograph of it rides)`}. Frame zero is ${host}; the scene lends it ITS THINGS${seen.length ? ` — ${seen.join(", ")} —` : ""} at this place's own scale, ` +
+      `${facts.length ? `each standing where the host's own piece stood, a standing fact at [0s], never a change on screen: ${facts.join(" | ")}. ` : `each set where such a thing stands in this room, named in the grammar "<the thing> where <the host's piece> stood". `}` +
+      `The take never cuts to that photograph and never arrives there: it is a reference for the things, and the things are here.`;
     return `⚠⚠ ONE OF THE REFERENCE PHOTOGRAPHS IS THE ${String(t.subject).toUpperCase()} ITSELF, NOT A PLACE. Frame zero is ${host}; the ${t.subject} is IN it from the first frame, ` +
       (likeness ? `as that photograph shows it — its texture, its light, its make — at THIS place's own scale, an object of ${likeness} set where such an object stands in a room (a shelf, a table, a mantel, a floor corner), never larger than the room holds, never a drawing of it. ` : `as that photograph shows it — its mass, its texture, its light — never smaller, never tidier, never a drawing of it. `) +
       `${facts.length ? `It stands where the host's own piece stood, a standing fact at [0s], never a change on screen: ${facts.join(" | ")}. ` : `Where it stands is the host's own space: name the host's piece it takes, in the grammar "<the ${t.subject}> where <the piece> was". `}` +

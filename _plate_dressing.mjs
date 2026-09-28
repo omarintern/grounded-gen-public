@@ -24,6 +24,9 @@ const CAPTURE = process.env.TRANSFER_MODE === "capture";
 // then it wouldnt need those things"). Under TRANSFER_MODE=thing the photograph is read for the THING ITSELF and nothing else it holds,
 // and the host frame KEEPS everything of its own but the one counterpart the thing takes ("water replaces water"). Opt-in, by name.
 const THING = process.env.TRANSFER_MODE === "thing";
+// A LIKENESS (owner 2026-09-28: a home like it is in the Odyssey; a scene like the film Moments): the photograph is a scene OF THE WORK, read for the things a set dresser would
+// bring into the maker's own place to make it read as the work's — never a person (an actor is not a set piece; both reviewers, round 6), never the room's finish, never the room.
+const LIKENESS = process.env.TRANSFER_MODE === "likeness";
 
 if (process.argv[2] === "--things") {
   const [, , , roomPlate, worldName = "a themed world", nStr = "2"] = process.argv;
@@ -32,13 +35,18 @@ if (process.argv[2] === "--things") {
   const KINDS = new Set(["pattern", "prop", "fixture", "signage", "architecture", "character"]), SURFACES = new Set(["floor", "wall", "ceiling", "portal", "object", "exterior", "space"]);
   const SURF_KINDS = new Set(["wall", "ceiling", "floor", "light"]);
   const rb64 = readFileSync(roomPlate).toString("base64");
-  const THING_READ = THING
+  const THING_READ = LIKENESS
+    ? `This REAL photograph is a scene of ${worldName}. A video of a DIFFERENT place is being made from a DIFFERENT photograph, which keeps everything of its own; from this scene, name up to ${n} THINGS a set dresser would bring into that place to make it read as ${worldName}'s — a piece of furniture, a prop, a fixture, a pattern, signage — most telling of ${worldName} first, each at its own scale in the photograph's own words. ` +
+      `Never a person, however prominent; never a wall's, floor's or ceiling's finish; never the room or the place itself; never the light. ` +
+      `Return ONLY JSON {"things":[{"name":string,"kind":"prop|pattern|fixture|signage","surface":"floor|wall|ceiling|object|space","why":string}]}. "name" is concrete and short.`
+    : THING
     ? `This REAL photograph shows ${worldName}. A video is being made from a DIFFERENT photograph, the frame the take is shot from; that frame keeps everything of its own, and ONLY THE ${String(worldName).toUpperCase()} ITSELF is taken from this one. ` +
       (n === 1
         ? `Name ONE thing: the ${worldName} ITSELF as this photograph shows it, as one concrete phrase in the photograph's own words and at its true scale ("a towering dark wall of water with a white foaming crest", "a wall of orange flame across a hillside") — never a bare part-word like "crest", "face" or "mass". `
         : `Name up to ${n} things that ARE the ${worldName} or its parts, as this photograph shows them and at their true scale — its mass, its face, its crest, its spray, its texture — most of it first. `) +
       `Never anything else this photograph holds: no shore, town, cliff, sky, road, boat, building, tree or person, however prominent — they are not wanted. ` +
-      `Return ONLY JSON {"things":[{"name":string,"kind":"prop|pattern|architecture","surface":"space|object|exterior","why":string}]}. "name" is concrete and short, in the photograph's own words, and names the ${worldName} or a part of it, never the place around it.`
+      `Return ONLY JSON {"things":[{"name":string,"kind":"prop|pattern|architecture","surface":"space|object|exterior","real":bool,"why":string}]}. "name" is concrete and short, in the photograph's own words, and names the ${worldName} or a part of it, never the place around it. ` +
+      `"real" is true when this is the ${worldName} itself at its own size, false when the photograph shows a model, a toy, a miniature, a figurine, an ornament, a souvenir or a novelty made in its shape.`
     : "";
   const rr = await providerJson([
     textPart(THING_READ || ((CAPTURE
@@ -54,7 +62,7 @@ if (process.argv[2] === "--things") {
     imagePart("image/jpeg", rb64),
   ], { maxTokens: 2600, temperature: 0.2, tag: "read" });
   const _short = (x) => { const v = String(x || "").replace(/\s+/g, " ").trim(); if (v.length <= 90) return v; const cut = v.slice(0, 90); return cut.slice(0, Math.max(40, cut.lastIndexOf(" "))).trim(); };   // whole words: a thing's name is prose the writer repeats
-  const things = (Array.isArray(rr?.things) ? rr.things : []).map((t) => ({ name: _short(t?.name), kind: String(t?.kind || "").toLowerCase().trim(), surface: String(t?.surface || "wall").toLowerCase().trim(), why: String(t?.why || "").slice(0, 120) }))
+  const things = (Array.isArray(rr?.things) ? rr.things : []).map((t) => ({ name: _short(t?.name), kind: String(t?.kind || "").toLowerCase().trim(), surface: String(t?.surface || "wall").toLowerCase().trim(), why: String(t?.why || "").slice(0, 120), ...(t?.real === false ? { real: false } : {}) }))
     .filter((t) => t.name && KINDS.has(t.kind)).map((t) => ({ ...t, surface: SURFACES.has(t.surface) ? t.surface : "wall" })).slice(0, n);
   for (const t of things) console.log(`  ◇ ${t.name} [${t.kind} · ${t.surface}]${t.why ? ` — ${t.why}` : ""}`);
   // THE ROOM'S SURFACES ARE NO LONGER READ ON A RIDE (owner 2026-09-15, the set test re-read: "the fact it doesnt replace everything is what keeps it in the world"). The

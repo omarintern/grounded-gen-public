@@ -111,6 +111,49 @@ export function likenessOf(plan = {}) {
   const d = subs.find((s) => String(s.dresses || "").trim());
   return d ? _norm(d.search_name || d.term) : "";
 }
+/** A LIKENESS PLAN'S WORLD IS THE PLACE (owner 2026-09-28, the Moments run: the planner wrote the world "the Moments 1974 film scene" with the kernel "Moments 1974 film", so the
+ *  free index was asked about the film three times — a Beirette camera, baseball games, a Spokane skyline — while the paid index alone was asked for the room). When the record
+ *  says a work dresses the place, the world's name, its queries, its kernel and its scope are the place; the work's name leaves them all. Mutates and returns { changed, place }. Pure. */
+export function likenessPlanRepair(plan = {}) {
+  const lk = likenessOf(plan); if (!lk) return { changed: false, place: "" };
+  const subs = Array.isArray(plan?.world_clearance?.intent?.subjects) ? plan.world_clearance.intent.subjects : [];
+  const sub = subs.find((s) => s && String(s.dresses || "").trim() && String(s.search_kind || "").toLowerCase() === "work") || {};
+  const bare = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+  const names = [...new Set([sub.search_name, sub.term, lk].map(bare).filter(Boolean))];
+  const year = (String(sub.term || "").match(/\((\d{4})\)/) || [])[1] || "";
+  const esc = (n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const MEDIUM = /\b(?:film|movie|series|show|scene|still|frame|footage)\b/;
+  const placeNouns = new Set([plan?.slots?.world?.scope, ...(Array.isArray(plan.form?.places) ? plan.form.places : []), sub.dresses].map(bare).filter(Boolean));   // a title that is an ordinary place word ("Diner") is the PLACE where the planner listed it as one (the reviewer, round 6)
+  const hasWord = (b, n) => new RegExp(`(?:^|\\s)${esc(n)}(?=\\s|$)`).test(b);
+  // a phrase NAMES the work when it is the bare title (and the title is no place noun), or carries the title as whole words beside its year or a medium word: "Moments 1974 film scene" does, "diner interior" and "kitchen with a window" (the film It) do not
+  const namesWork = (x) => { const b = bare(x); if (!b) return false; return names.some((n) => (b === n && !placeNouns.has(n)) || (hasWord(b, n) && ((year && hasWord(b, year)) || MEDIUM.test(b)))); };
+  // the year and the medium words leave a phrase; the title leaves it unless it is a place noun; repeats collapse; what remains is the place's own words
+  // (the reviewer, round 6: "Cinema Paradiso movie theater scene" must keep "movie theater", "Day for Night film set scene" its "film set"): a medium word leaves only when it IS the medium — followed by a
+  // trailing word or the end — and scene/still/frame/footage leave only at the end
+  const strip = (x, { keepScene = false } = {}) => {
+    const trail = keepScene ? /^(?:still|frame|footage)$/ : /^(?:scene|still|frame|footage)$/, medium = /^(?:film|movie|series|show|tv)$/;
+    let b = ` ${bare(x)} `; if (year) b = b.replace(new RegExp(`\\b${year}\\b`, "g"), " \u0000 ");   // the year leaves, its position remembered
+    for (const n of names) if (!placeNouns.has(n)) b = b.replace(new RegExp(`(?:^|\\s)${esc(n)}(?=\\s|$)`, "g"), " \u0000 ");   // the title leaves, its position remembered
+    const toks = b.split(/\s+/).filter(Boolean); const gone = toks.map((w) => w === "\u0000");
+    for (let k = 0; k < toks.length; k++) if (!gone[k] && medium.test(toks[k]) && (k === toks.length - 1 || gone[k + 1] || trail.test(toks[k + 1]))) gone[k] = true;   // a medium word leaves only when it IS the medium
+    for (let k = 0; k < toks.length; k++) if (!gone[k] && trail.test(toks[k]) && (k === toks.length - 1 || gone[k - 1] || toks.slice(k + 1).every((_, m) => gone[k + 1 + m]))) gone[k] = true;   // scene/still/frame/footage leave at the end or beside what left
+    const seen = new Set(); return toks.filter((w, k) => !gone[k] && !seen.has(w) && seen.add(w)).join(" ");
+  };
+  const w = plan.slots = plan.slots || {}; w.world = w.world || {};
+  const scope0 = String(w.world.scope || "").trim(), places = Array.isArray(plan.form?.places) ? plan.form.places.map((p) => String(p || "").trim()).filter(Boolean) : [];
+  const place = (scope0 && !namesWork(scope0) ? scope0 : "") || places.find((p) => !namesWork(p)) || strip(String(sub.dresses || ""), { keepScene: true }) || strip(String(plan.form?.world || ""));
+  if (!place) return { changed: false, place: "" };
+  let changed = false;
+  plan.form = plan.form || {};
+  if (namesWork(plan.form.world || "")) { plan.form.world = place; changed = true; }
+  const qs0 = Array.isArray(w.world.queries) ? w.world.queries.map((q) => String(q || "").trim()).filter(Boolean) : [];
+  const qs = []; for (const q of qs0) { const s = namesWork(q) ? strip(q) : q; if (s && !qs.some((x) => bare(x) === bare(s))) qs.push(s); }
+  if (!qs.some((q) => bare(q) === bare(place) || bare(q).includes(bare(place)))) qs.unshift(place);
+  if (JSON.stringify(qs) !== JSON.stringify(qs0)) { w.world.queries = qs; changed = true; }
+  if (namesWork(w.world.kernel || "") || !String(w.world.kernel || "").trim()) { w.world.kernel = place.split(/\s+/).slice(0, 6).join(" "); changed = true; }
+  if (namesWork(scope0) || !scope0) { w.world.scope = place; changed = true; }
+  return { changed, place };
+}
 export function workSubjectsOf(plan = {}) {
   const subs = Array.isArray(plan?.world_clearance?.intent?.subjects) ? plan.world_clearance.intent.subjects : [];
   const lk = likenessOf(plan), bare = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
