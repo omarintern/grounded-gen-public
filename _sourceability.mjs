@@ -368,14 +368,21 @@ export const placeDescriptors = (phrase = "", kind = "") => _wordsOf(phrase).fil
  *    phrase's, and fewer), never a planner's synonym ("urban neighborhood" is no bare form of "hood", which has none; the reviewer, build check).
  *  `wrap` puts a device form's words (and a dark scene's night words) on what it adds. The shape of a named place's ladder (named, then its kind) and a
  *  later place's (its descriptors, then its noun). null when nothing changes. Pure. */
+/** The phrase's own bare place: the first of `bare` that is the phrase without some of its words (every word of it the phrase's, and fewer); "" when none
+ *  is ("urban neighborhood" is no bare form of "hood", which has none). One reader for the ladder and for what its retries may count as the place (the reviewer,
+ *  second check). Pure. */
+export function phraseBare(phrase = "", bare = []) {
+  const p = _norm(phrase), words = _wordsOf(p).filter((w) => !_FUNCTION_W.has(w));
+  return (Array.isArray(bare) ? bare : [bare]).map((x) => _norm(x)).find((x) => {
+    const bw = _wordsOf(x).filter((w) => !_FUNCTION_W.has(w));
+    return bw.length > 0 && bw.length < words.length && bw.every((w) => saysAll(p, w));
+  }) || "";
+}
 export function makerPlaceLadder(qs = [], { phrase = "", paid = "", bare = [], actorFirst = false, wrap = (x) => x } = {}) {
   const p = _norm(phrase), words = _wordsOf(p).filter((w) => !_FUNCTION_W.has(w));
   if (!words.length) return null;
   const says = (q) => words.every((w) => saysAll(q, w));
-  const b0 = (Array.isArray(bare) ? bare : [bare]).map((x) => _norm(x)).find((x) => {
-    const bw = _wordsOf(x).filter((w) => !_FUNCTION_W.has(w));
-    return bw.length > 0 && bw.length < words.length && bw.every((w) => saysAll(p, w));
-  }) || "";
+  const b0 = phraseBare(p, bare);
   const q0 = String(qs[0] || "").trim(), q1 = String(qs[1] || "").trim();
   let a = q0, b = q1, placed = false;
   if (!says(a)) {
