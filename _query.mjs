@@ -44,7 +44,10 @@ export const OV_VANTAGE = /\b(?:iphone|footage|pov|p\.o\.v\.?|onboard|on-board|o
 // are its outside, and its inside is a place of its own. So that phrase IS the bare place the free library is asked for, on both roads (the shape here,
 // the core in scrape.mjs), and the lint lets it carry its word.
 const RIDDEN_THING = "car|cars|truck|van|minivan|bus|coach|train|subway|metro|tram|trolley|streetcar|plane|airplane|aeroplane|aircraft|jet|airliner|helicopter|boat|ship|yacht|ferry|limo|limousine|taxi|cab|rv|camper|motorhome|ambulance|spaceship|spacecraft|rocket|submarine|suv|pickup|jeep|tractor";
-const RIDDEN_INTERIOR = new RegExp(`\\b(?:${RIDDEN_THING})\\s+interior\\b`, "i");
+// …and the inside of a craft one stands in but never drives past (2026-10-02, the reviewer: "ufo interior" must reach the free index whole): its inside only, never
+// a vehicle the plate must carry (the reviewer, build check: "cup and saucer" and "a ufo over the highway" are no vehicle a camera rides)
+const RIDDEN_CRAFT = "starship|mothership|ufo|flying saucer";
+const RIDDEN_INTERIOR = new RegExp(`\\b(?:${RIDDEN_THING}|${RIDDEN_CRAFT})\\s+interior\\b`, "i");
 /** "car interior", "bus interior": the inside of a thing you ride in, a place of its own. Pure. */
 export const isRiddenInterior = (q) => RIDDEN_INTERIOR.test(String(q || ""));
 const VEHICLE = new RegExp(`\\b(?:${RIDDEN_THING})s?\\b`, "i");

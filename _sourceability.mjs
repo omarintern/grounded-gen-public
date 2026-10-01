@@ -22,12 +22,12 @@ export const SOURCEABLE_SURE = Number(process.env.SOURCEABILITY_SURE || 0.85);
 // it needs to be inferred, so sometimes its works against us to assume the identity of a thing as a given" — so identity binds what the maker NAMED,
 // and where their words leave the thing open the kind is inferred (the law's INFERRED, said so), a neighbour included.
 export const KIND_IDENTITY_LAW =
-  `\u2b50\u2b50 A KIND KEEPS WHAT THE MAKER NAMED. The maker names a thing when their word picks out one kind a person would recognise in a photograph; their words leave it open when several different kinds would answer them. A named thing's kind, and every query written for it, names that thing: broader, or in a built form a camera has stood before (made as a set, a full-size replica or exhibit of it, a building made in its shape), so that a person shown the photograph names what it shows by the maker's own word. A broader query sheds only the words that make the thing one unphotographed instance; the words that say what it is stay. Where the maker's words leave the thing open, the kind is INFERRED: the most photographable thing that fits what they said, with "inferred" set true, and there a neighbouring thing is a fair reading. A neighbour that shares only a look, a category or a use stands in for a named thing only when neither it nor any built form of it is photographed, and then "inferred" is set true. Where a demand holds two things, each keeps its own kind: two photographs. Each kind is a PLACE or a THING the scene holds; the scene's people and creatures are conjured into the place. `;
+  `\u2b50\u2b50 A KIND KEEPS WHAT THE MAKER NAMED. The maker names a thing when their word picks out one kind a person would recognise in a photograph; their words leave it open when several different kinds would answer them. A named thing's kind is that thing as a photograph shows it: a person shown the photograph names what it shows by the maker's own word. Its query says it in the maker's own word first, and otherwise in whatever words its photographs are found under (a synonym, a broader word, a built form a camera has stood before: made as a set, a full-size replica or exhibit of it, a building made in its shape) while a person shown the photograph would still use the maker's word. Where the maker's words leave the thing open, the kind is INFERRED: the most photographable thing that fits what they said, with "inferred" set true, and there a neighbouring thing is a fair reading. A neighbour that shares only a look, a category or a use stands in for a named thing only when neither it nor any built form of it is photographed, and then "inferred" is set true. Where a demand holds two things, each keeps its own kind: two photographs. Each kind is a PLACE or a THING the scene holds; the scene's people and creatures are conjured into the place. `;
 
 /** THE IMPROVISER'S FORM OF THE LAW (the reviewer review, 2026-10-01): it sees the scene and the place, never the maker's raw words, so the named-or-open
  *  question was settled upstream (the judge's "inferred", carried as PLACE_INFERRED) and it is told which. Beside the judge's law, so the two cannot drift. Pure. */
 export const placeIdentityLaw = (place, inferred = false) => place
-  ? `THE PLACE KEEPS ITS IDENTITY: every query names "${place}" itself \u2014 broader, or in a built form a camera has stood before (a set, a full-size replica or exhibit, a building in its shape). A broader query sheds only the words that make it one unphotographed instance; the words that say what it is stay. A neighbour that shares only a look, a category or a use is a different place. ${inferred ? `"${place}" was inferred from open words: once every form of it has failed, another reading of the scene is fair.` : `"${place}" is the maker's own word: it stays through every attempt.`}`
+  ? `THE PLACE KEEPS ITS IDENTITY: a person shown the photograph calls it "${place}". Say it in these words first, and otherwise in whatever words its photographs are found under (a synonym, a broader word, a built form a camera has stood before: a set, a full-size replica or exhibit, a building in its shape) while that person would still call it "${place}". A neighbour that shares only a look, a category or a use is a different place. ${inferred ? `"${place}" was read from open words: once every way of saying it has failed, another reading of the scene is fair.` : `"${place}" is what the maker asked for: every attempt is still a photograph of it.`}`
   : "";
 
 // ⭐⭐ WHICH KIND HOSTS (owner 2026-10-01: "appropriation is first", "themed version is fallback", and "the two-photo split depends on which is most
@@ -35,7 +35,7 @@ export const placeIdentityLaw = (place, inferred = false) => place
 // (the reviewer 5.1's wording, the reviewer 5.5's "together" field): the camera and the bodies decide the host and the maker's grammar reads it; supply is the run's
 // ladder (the roles swap, then the place built as both, then the host alone), never the judge's decision. Declared above SOURCEABILITY_LAW, which reads it.
 export const HOST_RULE =
-  `\u2b50\u2b50 WHEN A SUBJECT REDUCES TO MORE THAN ONE KIND, SAY WHICH HOSTS. The HOST is the kind whose space the maker's words put the camera and the bodies in at the opening: the frame opens on its photograph, so it is a place with floor, standing room and a way in. Every other kind ENTERS the host's photograph: as a PLACE when it is a room, a shell or a ground whose surfaces and signature pieces take the host's walls, ceiling, windows, lights and fixtures (a shell around the room, a view beyond it, the ground under it); as a THING when it is one object or fixture that stands in the host where one of the host's own pieces stood. The maker's grammar decides: in "X in Y" the camera stands in X and Y is its shell; in "Y with X in it" the camera stands in Y and X is a thing in it. A kind that is an object, a finish or a view never hosts. "host" names the hosting kind's query; "enters" lists each other kind as "place" or "thing"; "identity" gives, for each kind in "reduction" and in its order, the one word every query for it keeps. Every query in "reduction" is one bare image phrase for one kind. `;
+  `\u2b50\u2b50 WHEN A SUBJECT REDUCES TO MORE THAN ONE KIND, SAY WHICH HOSTS. The HOST is the kind whose space the maker's words put the camera and the bodies in at the opening: the frame opens on its photograph, so it is a place with floor, standing room and a way in. Every other kind ENTERS the host's photograph: as a PLACE when it is a room, a shell or a ground whose surfaces and signature pieces take the host's walls, ceiling, windows, lights and fixtures (a shell around the room, a view beyond it, the ground under it); as a THING when it is one object or fixture that stands in the host where one of the host's own pieces stood. The maker's grammar decides: in "X in Y" the camera stands in X and Y is its shell; in "Y with X in it" the camera stands in Y and X is a thing in it. A kind that is an object, a finish or a view never hosts. "host" names the hosting kind's query; "enters" lists each other kind as "place" or "thing"; "identity" gives, for each kind in "reduction" and in its order, the maker's own word for it, the word a person shown its photograph would use. Every query in "reduction" is one bare image phrase for one kind. `;
 
 export const SOURCEABILITY_LAW =
   `You decide, BEFORE any image search is run, what REAL PHOTOGRAPH(S) can ground each subject. The platform grounds every video on real photographs and WRITES the specifics into them; nothing is ever refused for lack of a photograph — a subject that no query yields as itself is REDUCED to its photographable KIND(S), and a subject with no visible kind is INFERRED into the scene that would depict it. ` +
@@ -313,6 +313,43 @@ export function kindName(q = "") {
     .replace(/\b(?:replica|exhibit|mock[- ]?up)\b(?:\s+of(?:\s+(?:a|an|the))?)?/gi, " ")   // a built form's own word ("replica of a ...")
     .replace(/^\s*of\s+(?:a|an|the)\s+/i, "").replace(/\s+/g, " ").trim();
   return out || s;
+}
+/** two words are one word, plural-blind both ways ("house"/"houses", "bus"/"buses", "store"/"stores"; the reviewer, build check: a stripped "s" made "hous"). Pure. */
+export const sameWord = (a, b) => { const x = String(a || "").toLowerCase(), y = String(b || "").toLowerCase(); return !!x && !!y && (x === y || `${x}s` === y || `${x}es` === y || `${y}s` === x || `${y}es` === x); };
+const _wordsOf = (s) => String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [];
+/** every word of `phrase` stands in `text` as a whole word, plural-blind ("barn" and "barbershop" are not the bar). Pure. */
+export const saysAll = (text, phrase) => { const t = _wordsOf(text), p = _wordsOf(phrase); return p.length > 0 && p.every((w) => t.some((x) => sameWord(x, w))); };
+/** THE MAKER'S WORD IN THE KIND'S OWN FRAME (owner 2026-10-02: "reproduce but not require"; both design checks): when the judge worded a kind without the
+ *  maker's own word, one search says it in that word, beside the judge's. The word must be the MAKER'S (it appears in their own words, whole and plural-blind,
+ *  so a judge's synonym never passes for it), and the search keeps the kind's own frame: its frame word ("ufo interior"), else the word before the kind, the
+ *  kind's own words said once ("moon crater field", "pirate ship deck", "club dance floor": a head noun is the kind, never a frame; the reviewer, build check).
+ *  "" when the kind already says it, when the word is generic ("room"), when it is a place the run hunts as named (`named`: the preference ladder leads with
+ *  a proper noun; the reviewer, build check), or nothing qualifies. Pure. */
+const _FRAME_WORD = new Set(["interior", "exterior", "inside", "outside", "view"]);
+const _GENERIC_ID = new Set(["interior", "exterior", "inside", "outside", "view", "room", "place", "area", "space", "scene", "setting", "background", "surface"]);
+export function makerWordSearch(query = "", identity = "", makerWords = "", named = []) {
+  const q = _norm(query), id = _norm(identity).toLowerCase().replace(/^(?:the|a|an)\s+/, "");
+  if (!q || !id || id.split(/\s+/).length > 3) return "";
+  const idW = _wordsOf(id);
+  if (!idW.length || idW.every((w) => _GENERIC_ID.has(w))) return "";                    // a generic word names no kind (both build checks)
+  if (!saysAll(makerWords, id)) return "";                                                 // the maker's own word, never the judge's
+  if (saysAll(q, id)) return "";                                                           // the kind already says it
+  if ((Array.isArray(named) ? named : []).some((n) => saysAll(n, id))) return "";          // a proper noun is hunted as named
+  const frame = [...new Set(_wordsOf(q).filter((w) => _FRAME_WORD.has(w)))];
+  if (frame.length) return `${id} ${frame.join(" ")}`;
+  const rest = q.split(/\s+/).filter((tok) => !idW.some((w) => sameWord(w, tok.toLowerCase().replace(/[^a-z0-9]/g, ""))));
+  return `${id} ${rest.join(" ")}`.trim();
+}
+/** THE LOCATION IS NEVER DROPPED (owner 2026-07-30), AND NEVER FORCED IN ONE WORD (owner 2026-10-02: "reproduce but not require"; the reviewer's design check): an
+ *  improvised pair that names the place in either search (any one of `words`, whole and plural-blind) stands as written; a pair that names it in neither
+ *  keeps its first search and makes its second the place itself, or, once the place itself was searched (`tried`), its second search with the place after
+ *  it, so no attempt repeats a search (the 07-31 law: a reordering is the same search; the reviewer, build check). Nothing is glued onto a pair that names it. Pure. */
+export function placePair(qs = [], { place = "", words = [], tried = [] } = {}) {
+  const live = qs.filter(Boolean);
+  if (!place || !words.length || !live.length || live.some((q) => words.some((w) => saysAll(q, w)))) return qs;
+  const same = (a, b) => _wordsOf(a).sort().join(" ") === _wordsOf(b).sort().join(" ");
+  const ran = (Array.isArray(tried) ? tried : []).some((t) => same(t, place));
+  return [qs[0] || place, ran ? `${qs[1] || qs[0]} ${place}`.replace(/\s+/g, " ").trim() : place];
 }
 /** THE RUN'S PLAN FOR A REDUCED SUBJECT OF TWO KINDS OR MORE (the host rule): the host frame zero hunts, the one kind that enters as a PLACE (its own
  *  photograph: the bag holds one second place, so a further one is written), the kinds that enter as THINGS (thing plates), each kind's identity word and
