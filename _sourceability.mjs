@@ -314,8 +314,10 @@ export function kindName(q = "") {
     .replace(/^\s*of\s+(?:a|an|the)\s+/i, "").replace(/\s+/g, " ").trim();
   return out || s;
 }
-/** two words are one word, plural-blind both ways ("house"/"houses", "bus"/"buses", "store"/"stores"; the reviewer, build check: a stripped "s" made "hous"). Pure. */
-export const sameWord = (a, b) => { const x = String(a || "").toLowerCase(), y = String(b || "").toLowerCase(); return !!x && !!y && (x === y || `${x}s` === y || `${x}es` === y || `${y}s` === x || `${y}es` === x); };
+/** two words are one word, plural-blind both ways ("house"/"houses", "bus"/"buses", "store"/"stores", "city"/"cities"; the reviewer, build check: a stripped "s" made "hous"). Pure. */
+export const sameWord = (a, b) => { const x = String(a || "").toLowerCase(), y = String(b || "").toLowerCase();
+  const ies = (p, q) => p.length > 2 && p.endsWith("y") && `${p.slice(0, -1)}ies` === q;   // city/cities, factory/factories (the reviewer, second check)
+  return !!x && !!y && (x === y || `${x}s` === y || `${x}es` === y || `${y}s` === x || `${y}es` === x || ies(x, y) || ies(y, x)); };
 const _wordsOf = (s) => String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [];
 /** every word of `phrase` stands in `text` as a whole word, plural-blind ("barn" and "barbershop" are not the bar). Pure. */
 export const saysAll = (text, phrase) => { const t = _wordsOf(text), p = _wordsOf(phrase); return p.length > 0 && p.every((w) => t.some((x) => sameWord(x, w))); };
@@ -343,7 +345,9 @@ export function makerWordSearch(query = "", identity = "", makerWords = "", name
 /** THE LOCATION IS NEVER DROPPED (owner 2026-07-30), AND NEVER FORCED IN ONE WORD (owner 2026-10-02: "reproduce but not require"; the reviewer's design check): an
  *  improvised pair that names the place in either search (any one of `words`, whole and plural-blind) stands as written; a pair that names it in neither
  *  keeps its first search and makes its second the place itself, or, once the place itself was searched (`tried`), its second search with the place after
- *  it, so no attempt repeats a search (the 07-31 law: a reordering is the same search; the reviewer, build check). Nothing is glued onto a pair that names it. Pure. */
+ *  it, so no attempt repeats a search (the 07-31 law: a reordering is the same search; the reviewer, build check). Nothing is glued onto a pair that names it.
+ *  One search of the pair says the place's own words and the other stays free ("reproduce but not require"); a pair left as written once the place was
+ *  searched would end the net, since every hunt's first attempt already searches the place itself. Pure. */
 export function placePair(qs = [], { place = "", words = [], tried = [] } = {}) {
   const live = qs.filter(Boolean);
   if (!place || !words.length || !live.length || live.some((q) => words.some((w) => saysAll(q, w)))) return qs;
