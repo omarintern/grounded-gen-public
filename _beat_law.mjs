@@ -307,6 +307,12 @@ export const thingBlock = () => {
   return things.map((t) => {
     const facts = (Array.isArray(t.placements) ? t.placements : []).map((l) => replacementFact(String(l), "")).filter(Boolean);
     const seen = (Array.isArray(t.things) ? t.things : []).filter(Boolean);
+    // A PLACE AROUND THIS ONE (the host rule, owner 2026-10-01: "appropriation is first"): the photograph is the entering kind, and it lends the host its
+    // walls, ceiling, windows and lights; the host's floor, furniture and people are its own; the take never goes there
+    // (it is named by the maker's own word, the kind's identity, never the search phrase: "the UFO", not "UFO interior set or replica")
+    if (t.kind === "place") return `\u26a0\u26a0 ONE OF THE REFERENCE PHOTOGRAPHS IS THE ${String(t.name || t.subject).toUpperCase()}, AROUND THIS PLACE, NOT A PLACE THE TAKE GOES. Frame zero is ${host}: its floor, its furniture and its people are its own, and the ${t.name || t.subject} is around them${seen.length ? ` (${seen.join(", ")})` : ""}, as that photograph shows it, its make, its texture and its light, ` +
+      `${facts.length ? `each piece standing where the host's own piece stood, a standing fact at [0s], never a change on screen: ${facts.join(" | ")}. ` : `each of its pieces standing where the host's own wall, ceiling, window or light stood, named in the grammar "<the piece> where <the host's piece> stood". `}` +
+      `The take never cuts to that photograph and never arrives there: it is a reference for what surrounds the room, and it surrounds the room from the first frame.`;
     // A SCENE OF THE WORK (owner 2026-09-28, a likeness): the photograph is a frame of the work; what it lends the place is its THINGS, standing in the host's own pieces; the take never goes there
     if (t.kind === "scene") return `⚠⚠ ${t.plate ? `ONE OF THE REFERENCE PHOTOGRAPHS IS A SCENE OF ${String(t.work || t.subject).toUpperCase()}, NOT A PLACE THE TAKE GOES` : `A SCENE OF ${String(t.work || t.subject).toUpperCase()} WAS READ FOR THIS TAKE (no photograph of it rides)`}. Frame zero is ${host}; the scene lends it ITS THINGS${seen.length ? ` — ${seen.join(", ")} —` : ""} at this place's own scale, ` +
       `${facts.length ? `each standing where the host's own piece stood, a standing fact at [0s], never a change on screen: ${facts.join(" | ")}. ` : `each set where such a thing stands in this room, named in the grammar "<the thing> where <the host's piece> stood". `}` +

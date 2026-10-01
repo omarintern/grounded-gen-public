@@ -27,6 +27,12 @@ const THING = process.env.TRANSFER_MODE === "thing";
 // A LIKENESS (owner 2026-09-28: a home like it is in the Odyssey; a scene like the film Moments): the photograph is a scene OF THE WORK, read for the things a set dresser would
 // bring into the maker's own place to make it read as the work's — never a person (an actor is not a set piece; both reviewers, round 6), never the room's finish, never the room.
 const LIKENESS = process.env.TRANSFER_MODE === "likeness";
+// A PLACE THAT ENTERS ANOTHER PLACE'S PHOTOGRAPH (the host rule, owner 2026-10-01: "appropriation is first"; both reviews): the frame the take is shot
+// from keeps its room, its floor, its furniture and its people, and the entering place is AROUND it: its shell, the view beyond its windows, the ground
+// under it. So the read names the entering place's surfaces and signature pieces, its light included (a shell's light enters), and the placement offers
+// the host's walls, ceiling, windows and lights. No recording device is involved (capture mode's framing) and the room's finish is the point (which the
+// likeness read leaves out). Opt-in, by name.
+const PLACE_MODE = process.env.TRANSFER_MODE === "place";
 
 if (process.argv[2] === "--things") {
   const [, , , roomPlate, worldName = "a themed world", nStr = "2"] = process.argv;
@@ -47,6 +53,11 @@ if (process.argv[2] === "--things") {
       `Never anything else this photograph holds: no shore, town, cliff, sky, road, boat, building, tree or person, however prominent — they are not wanted. ` +
       `Return ONLY JSON {"things":[{"name":string,"kind":"prop|pattern|architecture","surface":"space|object|exterior","real":bool,"why":string}]}. "name" is concrete and short, in the photograph's own words, and names the ${worldName} or a part of it, never the place around it. ` +
       `"real" is true when this is the ${worldName} itself at its own size, false when the photograph shows a model, a toy, a miniature, a figurine, an ornament, a souvenir or a novelty made in its shape.`
+    : PLACE_MODE
+    ? `This REAL photograph shows ${worldName}. A video is being made from a DIFFERENT photograph, the frame the take is shot from, whose room keeps its floor, its furniture, its fixtures at hand and its people; ${worldName} is around that room: its shell, the view beyond its windows, the ground under it. ` +
+      `Name up to ${n} things from THIS photograph that carry ${worldName}'s identity, most distinctive first: its signature pieces (an opening, a fitting, a panel, a fixture), AND its own surfaces, its wall, its ceiling and its light, in a short phrase each, because the other frame's walls, ceiling, windows and lights become these. ` +
+      `Never a person; never a floor or a piece of furniture, which the other frame keeps; never the place itself as a whole. ` +
+      `Return ONLY JSON {"things":[{"name":string,"kind":"pattern|fixture|signage|architecture|prop","surface":"wall|ceiling|portal|exterior|space","why":string}],"surfaces":[{"kind":"wall|ceiling|light","name":string}]}. "name" is concrete and short, in the photograph's own words.`
     : "";
   const rr = await providerJson([
     textPart(THING_READ || ((CAPTURE
@@ -70,11 +81,11 @@ if (process.argv[2] === "--things") {
   // plate's construction is the ride's own and stands for the whole take; the world arrives as things. That ruling is about a RIDE and it is untouched: the owner
   // re-read it on 2026-09-18 against the Mushrooms and Elevator Surprises gen and it stands. A CAPTURE FORM has no building of its own, only an apparatus, so there
   // the surfaces ARE read and the other frame's construction becomes this place's (the Oval Office render: the study room's brown wall became the striped wallpaper).
-  const surfaces = CAPTURE
+  const surfaces = (CAPTURE || PLACE_MODE)
     ? (Array.isArray(rr?.surfaces) ? rr.surfaces : []).map((x) => ({ kind: String(x?.kind || "").toLowerCase().trim(), name: _short(x?.name) }))
-        .filter((x) => x.name && SURF_KINDS.has(x.kind)).filter((x, i, a) => a.findIndex((y) => y.kind === x.kind) === i)
+        .filter((x) => x.name && SURF_KINDS.has(x.kind) && !(PLACE_MODE && x.kind === "floor")).filter((x, i, a) => a.findIndex((y) => y.kind === x.kind) === i)
     : [];
-  if (CAPTURE && surfaces.length) console.log(`  ◇ and its construction: ${surfaces.map((x) => `${x.kind} ${x.name}`).join("; ")}`);
+  if ((CAPTURE || PLACE_MODE) && surfaces.length) console.log(`  ◇ and its construction: ${surfaces.map((x) => `${x.kind} ${x.name}`).join("; ")}`);
   try { writeFileSync(`${roomPlate}.things.json`, JSON.stringify({ world: worldName, things, surfaces }, null, 2)); } catch {}
   if (!things.length) { console.log("  ◇ the room offered nothing distinctive to transfer"); process.exit(2); }
   console.log(`  ✓ ${things.length} thing(s) read off the room — to be written onto the ride, never painted`);
@@ -84,7 +95,7 @@ const [plate, elementsJson, role = "a photograph the ride passes through"] = pro
 if (!plate || !elementsJson) { console.error('usage: node _plate_dressing.mjs <plate.jpg> \'<elements json>\' "<role>"'); process.exit(1); }
 let elements = [];
 try { elements = JSON.parse(elementsJson); } catch { console.error("  ✗ elements json unreadable"); process.exit(1); }
-elements = (Array.isArray(elements) ? elements : []).slice(0, 3);
+elements = (Array.isArray(elements) ? elements : []).slice(0, PLACE_MODE ? 4 : 3);   // an entering place offers its wall, its ceiling, its light and a signature piece
 if (!elements.length) { console.log("  ◇ no world things to place"); process.exit(2); }
 
 const b64 = readFileSync(plate).toString("base64");
@@ -107,8 +118,15 @@ const THING_PLACE = THING
     `Never the apparatus, never the vehicle or its parts, never a person: list each person under "plate_people" in the photograph's own words and by where they are, because they stay. ` +
     `Return ONLY JSON {"plate_things":[string],"dressing":[{"name":string,"op":"replace|add|skip","where":string,"why":string}],"plate_people":[string]}. Things: ${JSON.stringify(elements.map((e) => ({ name: e.name, kind: e.kind, surface: e.surface })))}`
   : "";
+// THE HOST OF AN ENTERING PLACE (the host rule): the room stays itself and the place around it takes its walls, ceiling, windows and lights
+const PLACE_HOST = PLACE_MODE
+  ? `This REAL photograph is ${role}. It is the video's FIRST FRAME, and its room stays itself: its floor, its furniture, its fixtures at hand and its people stay as they are. ANOTHER place is around this room, and its walls, its ceiling, its windows and its lights are that place's. ` +
+    `For each thing below, name the piece of this frame it takes the place of (a wall, the ceiling, a window or what shows through it, a door, a light fitting) and list those pieces in "plate_things", most prominent first; "add" when the frame has open wall or ceiling to hold it; "skip" when nothing plausible exists; never invent space. ` +
+    `A person is never a piece: list each person under "plate_people", in the photograph's own words and by where they are, because they stay. ` +
+    `Return ONLY JSON {"plate_things":[string],"dressing":[{"name":string,"op":"replace|add|skip","where":string,"why":string}],"plate_people":[string]}. Things: ${JSON.stringify(elements.map((e) => ({ name: e.name, kind: e.kind, surface: e.surface })))}`
+  : "";
 const read = await providerJson([
-  textPart(THING_PLACE || ((CAPTURE
+  textPart(THING_PLACE || PLACE_HOST || ((CAPTURE
     ? `This REAL photograph is ${role}: it is what a recording device made, and it is the video's FIRST FRAME. Its vantage, its overlay (a timestamp, a camera number, corner marks), its washed colour AND ITS LIGHT — the darkness or the daylight the recording was made in, the night or the day it shows — are the constants of the whole take and are never listed; a lamp, a floodlight, a screen or any other light FIXTURE the frame shows is a thing like any other and IS listed, the light it casts and the dark around it are not. EVERYTHING ELSE the frame shows belongs to a different place and becomes this video's place: its furniture, its props, its signs, AND its construction (the wall finish, the ceiling, the floor). ` +
       `A PERSON in the frame is NEVER a set piece and is never replaced by a thing: list each one separately under "plate_people", in the photograph's own words and by where they are, because the story's own figures will stand where they stood. `
     : `This REAL photograph is ${role}, seen from aboard a ride. A themed world's THINGS will be written into the video as dressing on this photograph's own surfaces and spaces. `) +
@@ -147,17 +165,17 @@ if (TRANSFER) console.log(`  ◇ the read listed as the photograph's own pieces 
 // ⚠ THE CONSTRUCTION FILTER IS THE RIDE'S (2026-09-18). It exists because a ride keeps its own building; a capture form has no
 // building, only an apparatus, so under capture mode a wall, a ceiling or a floor IS a piece and the filter narrows to the neutral
 // test alone. The light stays out either way: it follows the world's photographs and is never named as a piece.
-const plateThings = (Array.isArray(read?.plate_things) ? read.plate_things : []).map((x) => String(x || "").replace(/\s+/g, " ").trim()).filter((x) => x && x.length <= 60 && !NEUTRAL_SURFACE.test(x) && ((CAPTURE || THING) ? !isAmbient(x) : !isConstruction(x))).slice(0, 8);   // a thing's counterpart is a piece of the frame as a capture form's are
+const plateThings = (Array.isArray(read?.plate_things) ? read.plate_things : []).map((x) => String(x || "").replace(/\s+/g, " ").trim()).filter((x) => x && x.length <= 60 && (PLACE_MODE ? !isAmbient(x) : !NEUTRAL_SURFACE.test(x) && ((CAPTURE || THING) ? !isAmbient(x) : !isConstruction(x)))).slice(0, 8);   // a thing's counterpart is a piece of the frame as a capture form's are
 // ⭐⭐ A PERSON IS NEVER A SET PIECE (owner 2026-09-18, "as in the successful nordic oval office gen"): the read lists the people
 // the frame holds and nothing of the world replaces them. Their positions go to the writer, who stands the story's own figures
 // where they stood ("a tall nordic stands guard beside the desk where the person at the laptop sat").
-const platePeople = (CAPTURE || THING) ? (Array.isArray(read?.plate_people) ? read.plate_people : []).map((x) => String(x || "").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 4) : [];
+const platePeople = (CAPTURE || THING || PLACE_MODE) ? (Array.isArray(read?.plate_people) ? read.plate_people : []).map((x) => String(x || "").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 4) : [];
 if (platePeople.length) console.log(`  ◇ people in the frame, never replaced, their places offered to the story's figures: ${platePeople.join(", ")}`);
 const _kindOf = (nm) => String((elements.find((x) => String(x?.name || "").toLowerCase() === String(nm || "").toLowerCase()) || {}).kind || "").toLowerCase();
 // …and under a capture form nothing replaces the dark, the sky or the light the camera recorded: they are the recording's (the reviewer's check of 42e1b36: "the dark
 // pitch-black night sky background becomes a massive peak" survived to beat zero); the same ambient test that keeps them out of the pieces
 for (const e of dressing.slice()) if (e.op === "replace" && (CAPTURE || THING) && (NEUTRAL_SURFACE.test(String(e.where || "").replace(/\s+/g, " ").trim()) || isAmbient(e.where))) { console.log(`  ◇ ${e.name}: dropped — "${e.where}" is the dark, the sky or the light the camera recorded, never replaced (the recording's own)`); dressing.splice(dressing.indexOf(e), 1); }
-for (const e of dressing.slice()) if (e.op === "replace" && isConstruction(e.where)) { console.log(`  ◇ ${e.name}: dropped — "${e.where}" is the light, the track bed or a bare platform, never replaced (the light follows the world)`); dressing.splice(dressing.indexOf(e), 1); }
+for (const e of dressing.slice()) if (e.op === "replace" && !PLACE_MODE && isConstruction(e.where)) { console.log(`  ◇ ${e.name}: dropped — "${e.where}" is the light, the track bed or a bare platform, never replaced (the light follows the world)`); dressing.splice(dressing.indexOf(e), 1); }
 // A PIECE IS REPLACED BEFORE ANYTHING IS ADDED — simple arithmetic (owner 2026-09-15: "it should be simple math that a piece is replaced before anything is added";
 // B4: the pumpkin figures and the themed floor survived while the dials, the hedge walls and the maze marker had been spent as additions and later stops). While a set
 // piece has no taker, the next thing goes to it — first a thing the read left unplaced, then a thing it had ADDED (the addition becomes the replacement) — in the read's

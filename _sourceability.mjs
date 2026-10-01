@@ -30,11 +30,19 @@ export const placeIdentityLaw = (place, inferred = false) => place
   ? `THE PLACE KEEPS ITS IDENTITY: every query names "${place}" itself \u2014 broader, or in a built form a camera has stood before (a set, a full-size replica or exhibit, a room or venue themed as it, a building in its shape). A broader query sheds only the words that make it one unphotographed instance; the words that say what it is stay. A neighbour that shares only a look, a category or a use is a different place. ${inferred ? `"${place}" was inferred from open words: once every form of it has failed, another reading of the scene is fair.` : `"${place}" is the maker's own word: it stays through every attempt.`}`
   : "";
 
+// ⭐⭐ WHICH KIND HOSTS (owner 2026-10-01: "appropriation is first", "themed version is fallback", and "the two-photo split depends on which is most
+// appropriate ... if not a form gen then appropriation is instead dependant on factors that determine which enters which"). Worded with both reviews
+// (the reviewer 5.1's wording, the reviewer 5.5's "together" field): the camera and the bodies decide the host and the maker's grammar reads it; supply is the run's
+// ladder (the roles swap, then the place built as both, then the host alone), never the judge's decision. Declared above SOURCEABILITY_LAW, which reads it.
+export const HOST_RULE =
+  `\u2b50\u2b50 WHEN A SUBJECT REDUCES TO MORE THAN ONE KIND, SAY WHICH HOSTS. The HOST is the kind whose space the maker's words put the camera and the bodies in at the opening: the frame opens on its photograph, so it is a place with floor, standing room and a way in. Every other kind ENTERS the host's photograph: as a PLACE when it is a room, a shell or a ground whose surfaces and signature pieces take the host's walls, ceiling, windows, lights and fixtures (a shell around the room, a view beyond it, the ground under it); as a THING when it is one object or fixture that stands in the host where one of the host's own pieces stood. The maker's grammar decides: in "X in Y" the camera stands in X and Y is its shell; in "Y with X in it" the camera stands in Y and X is a thing in it. A kind that is an object, a finish or a view never hosts. "host" names the hosting kind's query; "enters" lists each other kind as "place" or "thing"; "identity" gives, for each kind in "reduction" and in its order, the one word every query for it keeps; "together" is one image query for a single real place built as both (a venue, a set or a room made or themed as the entering kind), the photograph that stands in when the two cannot both be found, else null. Every query in "reduction" is one bare image phrase for one kind. `;
+
 export const SOURCEABILITY_LAW =
   `You decide, BEFORE any image search is run, what REAL PHOTOGRAPH(S) can ground each subject. The platform grounds every video on real photographs and WRITES the specifics into them; nothing is ever refused for lack of a photograph — a subject that no query yields as itself is REDUCED to its photographable KIND(S), and a subject with no visible kind is INFERRED into the scene that would depict it. ` +
   `SOURCEABLE AS ITSELF: a named real place with public photographs (a landmark, a public building, a chain, a stadium — including an official-only interior such as an office of state, which press and official photographs cover); the world of a named film, show or game (its own frames exist); a KIND of place or scene (a medieval bedchamber, a diner at night, a subway car, an office interior); a capture form by its bare words (security camera footage, dashcam footage, a rollercoaster POV); an animal or species, a vehicle, a common object. ` +
   `REDUCED TO ITS KIND(S): a private or unknown specific ("my late grandmother's kitchen in Leeds" → a domestic kitchen; the grandmother's things are written); an invented place ("the kitchen of a wizard on the moon" → a kitchen AND the moon's surface, two photographs; the wizard's things written); a specific moment ("the second a stranger's dog sneezed in 2019" → a living room; the dog and its sneeze are the story, added and written). ` +
   KIND_IDENTITY_LAW +
+  HOST_RULE +
   `EVERY PHOTOGRAPHABLE NOUN OF A DEMAND IS ITS OWN KIND, and a STYLE is never sourced, only written: "the moon in retrograde style with tall buildings" → the moon AND tall buildings, two photographs, "retrograde style" written into the prose — a style is not a specific appropriation. ` +
   `INFERRED: a pure abstraction or a subject that is nothing but a description ("the feeling of a Tuesday afternoon" → a quiet living room in flat afternoon light; "the concept of debt" → a kitchen table covered in opened envelopes) — infer the most photographable scene that would depict it, and say so. ` +
   `A pairing is NOT judged as one photograph: the place is sourced and the actor is written, so "a penguin in the Oval Office" is the Oval Office, sourceable. ` +
@@ -44,8 +52,8 @@ export const SOURCEABILITY_LAW =
   `A PLACE ANOTHER SUBJECT'S PHOTOGRAPH ALREADY HOLDS IS NOT PHOTOGRAPHED TWICE (owner 2026-09-18: "the open ocean as the place, is that its own image? no — we either source the water of the tsunami or grab it from the pov"): when a listed thing is a state or an event OF a listed place (a tsunami of the ocean, a wildfire of the forest, an avalanche of the mountainside, a flood of the street), the thing's photograph holds that place; and when the maker's own craft travels ON the place (a boat on the sea, a car on the road, skis on the snow), the seat photograph shot from aboard it holds the place. Say so in "held_by": the subject whose photograph holds this place (the thing's own subject, or the word "seat"), else null. ⭐⭐ THE SEAT HOLDS A MEDIUM, NEVER A NAMED PLACE: what a craft travels through is the same thing anywhere — water, road, snow, air — and a photograph from aboard holds it because there is nothing else to it. A place that has a NAME is known by what stands AT it, its sign, its frontage, its building, and the seat photograph is hunted for the form and never for those, so it cannot hold one however literally the craft travels on it. A named place stays its own photograph. A place with a look of its own that neither holds (a harbour, a reef, a coastal town, a mountain pass) stays its own photograph. ` +
   `A NAMED WORK WITHOUT FRAMES IS GROUNDED BY ITS MATERIAL CANON (owner 2026-09-27, the Odyssey ride): a poem, a myth, a novel never filmed, a painting or a piece of music has no frames to photograph, so its world is carried by the REAL OBJECTS that carry it in the world — the artifacts, replicas, sculptures, effigies, editions and stagings a camera has stood before — each a THING photographed as itself (a museum's Greek vase, a replica warship, a statue of the giant), and the things the planner derived from such a work are the work's own, never inventions. A canon thing's query names the object, never a medium word (illustration, painting, drawing) and never the room or the museum that houses it. ` +
   `A PLACE'S OWN PEOPLE (owner 2026-09-26): for a subject with role "world", "place" or "room", say whether this video, as the maker's words stage it, shows the place with the people who belong to it at that moment, apart from the story's own figures, who are always added: "peopled" true, false when it shows the place empty of them, null when either reads right. ` +
-  `Judge each subject on its own. Return ONLY JSON {"pairs":[{"form":string,"place":string,"likely":boolean,"confidence":0..1,"place_kind":string}],"subjects":[{"subject":string,"sourceable":boolean,"reduction":[string],"written":[string],"inferred":boolean,"confidence":0..1,"kind":"named place|work|kind of place|form|thing|private specific|invented|specific moment|abstraction|other","query":string|null,"held_by":string|null,"peopled":true|false|null,"why":string}]} ` +
-  `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists the style words and specifics that go to the prose rather than the search; "query" is the best bare image query when sourceable; "confidence" is how sure you are.`;
+  `Judge each subject on its own. Return ONLY JSON {"pairs":[{"form":string,"place":string,"likely":boolean,"confidence":0..1,"place_kind":string}],"subjects":[{"subject":string,"sourceable":boolean,"reduction":[string],"written":[string],"inferred":boolean,"confidence":0..1,"kind":"named place|work|kind of place|form|thing|private specific|invented|specific moment|abstraction|other","query":string|null,"held_by":string|null,"peopled":true|false|null,"host":string|null,"enters":[{"query":string,"as":"place|thing"}],"identity":[string],"together":string|null,"why":string}]} ` +
+  `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists the style words and specifics that go to the prose rather than the search; "query" is the best bare image query when sourceable; "host", "enters", "identity" and "together" are answered when "reduction" holds more than one kind, else null and empty; "confidence" is how sure you are.`;
 
 const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
 const _key = (s) => _norm(s).toLowerCase();
@@ -273,9 +281,57 @@ export function shapeVerdicts(raw, subjects = []) {
     const v = arr.find((x) => _key(x?.subject) === _key(s.subject)) || arr.find((x) => _key(x?.subject) && (_key(s.subject).includes(_key(x.subject)) || _key(x.subject).includes(_key(s.subject))));
     if (!v || typeof v.sourceable !== "boolean") continue;
     const c = Number(v.confidence); const reduction = (Array.isArray(v.reduction) ? v.reduction : []).map(_norm).filter(Boolean).slice(0, 3); const written = (Array.isArray(v.written) ? v.written : []).map(_norm).filter(Boolean).slice(0, 6);
-    out.push({ subject: s.subject, ...(s.place ? { place: s.place } : {}), role: s.role, required: s.required !== false, sourceable: v.sourceable, reduction, written, inferred: v.inferred === true, confidence: Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 0, kind: _norm(v.kind || "other"), query: v.query ? _norm(v.query) : null, held_by: v.held_by ? _norm(v.held_by) : null, peopled: v.peopled === true ? true : v.peopled === false ? false : null, why: _norm(v.why).slice(0, 160) });
+    const kindPair = v.sourceable === false ? shapeKindPair(v, reduction) : null;
+    out.push({ subject: s.subject, ...(s.place ? { place: s.place } : {}), role: s.role, required: s.required !== false, sourceable: v.sourceable, reduction, written, inferred: v.inferred === true, confidence: Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 0, kind: _norm(v.kind || "other"), query: v.query ? _norm(v.query) : null, held_by: v.held_by ? _norm(v.held_by) : null, peopled: v.peopled === true ? true : v.peopled === false ? false : null, ...(kindPair ? { kindPair } : {}), why: _norm(v.why).slice(0, 160) });
   }
   return out;
+}
+/** THE HOST RULE'S ANSWER, matched onto the reduction's own queries (both reviews, 2026-10-01): the hosting kind, each other kind as a place or a thing,
+ *  the one word each kind's queries keep (in the reduction's order), and the single photograph built as both. A host or an entering kind that names no
+ *  listed kind is dropped, so a silent or stray answer leaves the lead kind hosting (fails open). Null under two kinds. Pure. */
+export function shapeKindPair(v = {}, reduction = []) {
+  const kinds = (Array.isArray(reduction) ? reduction : []).map(_norm).filter(Boolean);
+  if (kinds.length < 2) return null;
+  const match = (q) => { const k = _key(q); if (!k) return ""; return kinds.find((x) => _key(x) === k) || kinds.find((x) => _key(x).includes(k) || k.includes(_key(x))) || ""; };
+  const host = match(v?.host) || null;
+  const enters = [];
+  for (const e of (Array.isArray(v?.enters) ? v.enters : [])) {
+    const q = match(typeof e === "string" ? e : e?.query);
+    if (!q || q === host || enters.some((x) => x.query === q)) continue;
+    enters.push({ query: q, as: String(e?.as || "").toLowerCase().trim() === "thing" ? "thing" : "place" });
+  }
+  const identity = (Array.isArray(v?.identity) ? v.identity : []).slice(0, kinds.length).map((w) => _norm(w).slice(0, 32));
+  const _t = _norm(v?.together || "");
+  const together = (/^(?:null|none|n\/a|nothing|-)$/i.test(_t) ? "" : _t).slice(0, 100) || null;   // a word for "nothing" is nothing (the reviewer, build check)
+  return { host, enters, identity, together };
+}
+/** A KIND'S NAME FOR THE WORDS (both build checks): its query without the built-form words a search needs ("UFO interior set or replica" → "UFO
+ *  interior"), for a writer or an improviser that is told what a photograph is, never how it was searched. Pure. */
+export function kindName(q = "") {
+  const s = _norm(q), out = s.replace(/\b(?:set|replica|exhibit|model|or|themed|built|mock[- ]?up|(?:full|life)[- ]size)\b/gi, " ").replace(/\s+/g, " ").trim();
+  return out || s;
+}
+/** THE RUN'S PLAN FOR A REDUCED SUBJECT OF TWO KINDS OR MORE (the host rule): the host frame zero hunts, the one kind that enters as a PLACE (its own
+ *  photograph: the bag holds one second place, so a further one is written), the kinds that enter as THINGS (thing plates), each kind's identity word and
+ *  the place built as both. A judge that named no entering kind leaves every other kind entering as a place: two kinds are two photographs. Null when
+ *  nothing enters. `kinds` are the reduction's place kinds (people already struck), `all` the reduction as the judge listed it. Pure. */
+export function kindPairPlan({ kinds = [], all = [], host = "", pair = null, subject = "", phrase = "" } = {}) {
+  const ks = (Array.isArray(kinds) ? kinds : []).map(_norm).filter(Boolean);
+  const h = ks.find((k) => _key(k) === _key(host)) || ks[0] || "";
+  if (ks.length < 2 || !h) return null;
+  const order = (Array.isArray(all) ? all : []).map(_key);
+  const idOf = (k) => { const i = order.indexOf(_key(k)); return i >= 0 ? _norm(pair?.identity?.[i] || "") : ""; };
+  // the judge's entering kinds first; a kind it left out still enters as a place, never lost (the reviewer, build check)
+  const judged = Array.isArray(pair?.enters) ? pair.enters.filter((e) => e && e.query) : [];
+  const omitted = ks.filter((k) => _key(k) !== _key(h) && !judged.some((e) => _key(e.query) === _key(k))).map((k) => ({ query: k, as: "place" }));
+  const enters = [...judged, ...omitted].filter((e) => _key(e.query) !== _key(h) && ks.some((k) => _key(k) === _key(e.query)));
+  if (!enters.length) return null;
+  const places = enters.filter((e) => e.as !== "thing"), things = enters.filter((e) => e.as === "thing");
+  return { subject: _norm(subject), phrase: _norm(phrase), host: h, hostIdentity: idOf(h),
+           place: places[0] ? { query: places[0].query, identity: idOf(places[0].query) } : null,
+           things: things.map((e) => ({ query: e.query, identity: idOf(e.query) })),
+           written: places.slice(1).map((e) => e.query),
+           together: _norm(pair?.together || "") || null, judged: !!(pair && pair.host && _key(pair.host) === _key(h)) };
 }
 /** THE PAIRS: a capture form judged against each place it must be found in. Only pairs of subjects actually asked are kept; a pair with no
  *  boolean "likely" is dropped (never acts). Pure. */
@@ -313,7 +369,7 @@ export function appropriationOf(pairs = [], sure = SOURCEABLE_SURE, { named = []
 /** THE REDUCTIONS: a subject that cannot be photographed as itself but HAS a photographable kind — the kind's queries lead the hunt, the specifics are
  *  written (owner 2026-09-11: "my late grandmother's kitchen in Leeds would become a kitchen query however. our moat stands"). Pure. */
 export function sourceabilityReductions(verdicts = []) {
-  return (Array.isArray(verdicts) ? verdicts : []).filter((v) => v && v.sourceable === false && Array.isArray(v.reduction) && v.reduction.length).map((v) => ({ subject: v.subject, ...(v.place ? { place: v.place } : {}), role: v.role, kinds: v.reduction.slice(0, 3), written: Array.isArray(v.written) ? v.written : [], inferred: v.inferred === true, kind: v.kind }));
+  return (Array.isArray(verdicts) ? verdicts : []).filter((v) => v && v.sourceable === false && Array.isArray(v.reduction) && v.reduction.length).map((v) => ({ subject: v.subject, ...(v.place ? { place: v.place } : {}), role: v.role, kinds: v.reduction.slice(0, 3), written: Array.isArray(v.written) ? v.written : [], inferred: v.inferred === true, kind: v.kind, kindPair: v.kindPair || null }));
 }
 /** A PHOTOGRAPHABLE THING IS PHOTOGRAPHED; ONLY THE UNPHOTOGRAPHABLE IS WRITTEN (owner 2026-09-18, reversing the same day's
  *  "a thing is written, never hunted": "it must be sourced for sure … the tsunami would replace the prompted tsunami … water replaces
