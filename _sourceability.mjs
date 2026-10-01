@@ -355,6 +355,20 @@ export function makersPlacePhrase(candidates = [], makerWords = "") {
   }
   return "";
 }
+/** THE MAKER'S OWN WORDS FOR THE OPENING PLACE, read from the parse's records (owner 2026-10-02; both quick checks): its qualified phrase; else the setting,
+ *  when it is about the opening place (it shares a word with it) or the judge's own query for the opening says its head noun; else a qualified phrase whose
+ *  head noun that query says, never a later place's (the 10-02 study: the planner renamed the maker's "the hood" to "street corner", and the parse filed it
+ *  under its own "neighborhood"; the judge's query "hood street corner" says "hood"). Only a record whose every word is the maker's (makersPlacePhrase). Pure. */
+const _placeKeyOf = (x) => String(x || "").toLowerCase().replace(/^(?:the|a|an)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+const _samePlaceOf = (a, b) => { const x = _placeKeyOf(a), y = _placeKeyOf(b); return !!x && !!y && (x === y || x.includes(y) || y.includes(x)); };
+export function openingPlacePhrase({ places = [], setting = "", qualified = {}, judgeQuery = "", makerWords = "" } = {}) {
+  const ps = Array.isArray(places) ? places : [], open = String(ps[0] || ""), later = ps.slice(1), q = (qualified && typeof qualified === "object") ? qualified : {};
+  const head = (x) => { const w = placeDescriptors(x, ""); return w[w.length - 1] || ""; };
+  const heard = (x) => !!judgeQuery && !!head(x) && saysAll(judgeQuery, head(x));
+  const about = !open || placeDescriptors(setting, "").some((w) => saysAll(open, w)) || heard(setting);
+  const agrees = (Object.entries(q).find(([k, v]) => heard(v) && !later.some((l) => _samePlaceOf(l, k) || _samePlaceOf(l, v))) || ["", ""])[1];
+  return makersPlacePhrase([q[open], about ? setting : "", agrees], makerWords);
+}
 /** The maker's descriptors of a place: the words of their phrase the bare kind does not say ("dreamy" of "dreamy forest" for "forest"). Pure. */
 export const placeDescriptors = (phrase = "", kind = "") => _wordsOf(phrase).filter((w) => !_FUNCTION_W.has(w) && !saysAll(kind, w));
 /** THE MAKER'S PLACE LADDER (owner 2026-10-02: "paid routes get those kinds of search, slang or semi-descriptive (dreamy forest is good). and there should
