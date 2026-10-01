@@ -49,7 +49,13 @@ export function assembleGenState({ id, slug, prompt_text, refs, refNames = [], a
         // remix never takes it for a character's own photo; a path is no key, the gen re-encodes some files)
         const who = Array.isArray(refNames) ? refNames[order] : null;
         const names = (Array.isArray(who) ? who : Array.isArray(who?.names) ? who.names : []).filter((n) => typeof n === "string" && n.trim());
-        return { order, file: String(file), filename, role: refRole(file, order), ...(names.length ? { names } : {}), ...(who?.frame === true ? { frame: true } : {}) };
+        // ⭐⭐ THE TWO KINDS RIDE ON THEIR PHOTOGRAPHS (part 4, both design checks): frame zero says what it hosts, and whether it is the place built as both or
+        // the pair's roles swapped; the photograph of the place around it says what it is and what it lent, so a remix keeps, changes or removes it by its words
+        const lab = who && typeof who === "object" && !Array.isArray(who) ? who : {};
+        const _s = (v, n) => String(v || "").replace(/\s+/g, " ").trim().slice(0, n);
+        return { order, file: String(file), filename, role: refRole(file, order), ...(names.length ? { names } : {}), ...(who?.frame === true ? { frame: true } : {}),
+          ...(_s(lab.host, 60) ? { host: _s(lab.host, 60), hostKind: _s(lab.hostKind, 120) } : {}), ...(lab.together === true ? { together: true } : {}), ...(lab.swapped === true ? { swapped: true } : {}),
+          ...(_s(lab.enters, 60) ? { enters: _s(lab.enters, 60), kind: _s(lab.kind, 120), things: (Array.isArray(lab.things) ? lab.things : []).filter((x) => typeof x === "string" && x.trim()).slice(0, 6).map((x) => _s(x, 90)) } : {}) };
       });
     })(),
     aspect: String(aspect || ""),

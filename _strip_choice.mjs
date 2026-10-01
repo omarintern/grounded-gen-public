@@ -37,6 +37,15 @@ export function onlyThemFrames(found = [], carried = [], among = null, max = 2) 
 /** The one frame that shows every carried character and no one else (frame zero holds them all at once); 0 when none. Pure. */
 export const onlyThemFrame = (found = [], carried = [], among = null) => onlyThemFrames(found, carried, among, 1)[0] || 0;
 
+/** THE PARENT'S EMPTY FRAME (owner 2026-10-01: a remix that keeps the place and carries no character opens on "an empty frame of the parent"): the earliest
+ *  frame that shows no character the reader listed, one of the remix's own kind of place first; 0 when every frame shows someone. Pure. */
+export function emptyFrame(found = [], places = [], total = 0, peopled = []) {
+  const listed = new Set([...(Array.isArray(found) ? found : []).flatMap((c) => [...framesOf(c)]), ...(Array.isArray(peopled) ? peopled : []).map((n) => Math.round(Number(n)))]);
+  const sameAt = new Set((Array.isArray(places) ? places : []).filter((p) => p && p.same === true).flatMap((p) => (Array.isArray(p.frames) ? p.frames : []).map((n) => Math.round(Number(n)))));
+  const empties = Array.from({ length: Math.max(0, Math.floor(Number(total) || 0)) }, (_, i) => i + 1).filter((n) => !listed.has(n));
+  return empties.find((n) => sameAt.has(n)) || empties[0] || 0;
+}
+
 /** THE PARENT'S OWN ANSWER, from its reading (both build checks: this had only been matched as source text). Pure.
  *  same:  do the frames that would ride (`riding`, 1-based) show the kind of place the remix puts its characters in; null with no answer
  *  frame: its one frame of them alone in that kind, for frame zero; of any kind when the words keep the place (the place is the parent's; the reviewer)

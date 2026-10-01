@@ -22,9 +22,12 @@ export function stateSummary(state) {
   const p = state?.plan || {};
   const figures = (p.figures || []).map((f) => `${f.name}${f.promptRef ? ` (${f.promptRef})` : ""}`).join(" · ") || (p.subject || "the subject");
   const beats = String(state?.prompt_text || "").split("\n").filter((l) => /^\[\d/.test(l.trim())).join("\n");
+  // the place around the opening, when the video has one: the parent's record names it on its own photograph (part 4, both design checks)
+  const enterRef = (Array.isArray(state?.refs) ? state.refs : []).find((r) => typeof r?.enters === "string" && r.enters.trim());
   return {
     figures,
     places: Array.isArray(p.places) ? p.places : [],
+    around: enterRef ? String(enterRef.enters).trim() : "",
     beats,
     dialogue: /(^|\n)\s*Dialogue\s*:/i.test(String(state?.prompt_text || "")),
   };
@@ -42,13 +45,14 @@ export async function parseRemixIntent(state, intentText) {
   const ask =
     `A video exists. Its state:\n` +
     `FIGURES: ${s.figures}\n` +
-    `PLACES: opening "${s.places[0] || "?"}"${s.places.length > 1 ? `; later: ${s.places.slice(1).map((x) => `"${x}"`).join(", ")}` : ""}\n` +
+    `PLACES: opening "${s.places[0] || "?"}"${s.around ? `, with "${s.around}" around it` : ""}${s.places.length > 1 ? `; later: ${s.places.slice(1).map((x) => `"${x}"`).join(", ")}` : ""}\n` +
     `STORY:\n${s.beats}\n\n` +
     `A user wants to REMIX it. Their words: """${String(intentText || "").slice(0, 500)}"""\n\n` +
     `LAW: a remix changes ONLY what the user names — everything else KEEPS. Never invent a change the words do not ask for.\n` +
     `Return ONLY JSON {\n` +
     ` "figures":[{"target":"<existing figure name>","op":"keep|swap|remove","to":"<replacement as the user named it, or null>","look":"<on a keep ONLY: when the user changes how THIS figure looks or what it wears or holds, that change in the user's own words; else null>"}] (one entry per EXISTING figure; append {"target":null,"op":"add","to":"..."} only for a genuinely new figure),\n` +
     ` "world":{"op":"keep|change","to":"<new opening place or null>","keep_explicit":true|false} (keep_explicit = the user's OWN WORDS keep the place — "same kitchen", "keep the room", "still in this hallway", "in the same place"; false when the words merely say nothing about the place),\n` +
+    ` "enters":{"op":"keep|change|remove","to":null|"..."} (the place around the opening: "keep" while the remix's opening stays inside it, "change" with the new place around it, "remove" when the remix's opening has none),\n` +
     ` "cuts":[{"target":"<later place>","op":"keep|change|remove","to":null|"..."}] (one per later place),\n` +
     ` "action":{"op":"keep|rewrite","instruction":"<precisely what now happens, in the user's own words completed minimally — null when keep>"},\n` +
     ` ${DIALOGUE_FIELD},\n` +
@@ -80,7 +84,14 @@ export function normalizeDiff(raw, state) {
   }
   for (const name of knownFigures) if (!d.figures.some((f) => String(f.target || "").toLowerCase() === name)) d.figures.push({ target: name, op: "keep", to: null, look: null });
   if (raw.world?.op === "change" && raw.world?.to) d.world = { op: "change", to: String(raw.world.to) };
-  else if (raw.world?.keep_explicit === true) d.world.keepExplicit = true;   // the words keep the place → the parent's plate rides (WORLD_PIN); otherwise the environment is RE-SOURCED
+  else if (raw.world?.keep_explicit === true) d.world.keepExplicit = true;   // the words keep the place → the parent's plate rides (WORLD_PIN); silent words keep it too since 2026-10-01 (_remix_run keepsPlace)
+  // THE PLACE AROUND THE OPENING HAS ITS OWN OP (part 4, both design checks: "a diner in a UFO" changes the opening and keeps the UFO): the reader's answer,
+  // else keep while the opening keeps and remove when the opening changes (a new place brings its own surroundings)
+  { const e = raw.enters || raw.world?.enters || null, op = ["keep", "change", "remove"].includes(e?.op) ? e.op : null;
+    const had = (Array.isArray(state?.refs) ? state.refs : []).some((r) => typeof r?.enters === "string" && r.enters.trim());   // a place the parent recorded (the reviewer, part 4 check)
+    d.world.enters = op === "change" && e?.to ? { op: "change", to: String(e.to) }
+      : !had ? { op: "keep", to: null }   // nothing recorded around the opening: nothing to keep or remove; this run's own judge decides
+      : op === "remove" ? { op: "remove", to: null } : op === "keep" ? { op: "keep", to: null } : { op: d.world.op === "change" ? "remove" : "keep", to: null }; }
   for (const c of Array.isArray(raw.cuts) ? raw.cuts : []) {
     const op = ["keep", "change", "remove"].includes(c?.op) ? c.op : "keep";
     if (!laterPlaces.has(String(c?.target || "").toLowerCase())) { if (op !== "keep") d.dropped.push(`cut place "${c?.target}" not in the parent`); continue; }
@@ -104,6 +115,7 @@ export function normalizeDiff(raw, state) {
     ...d.props.filter((p) => (p.op === "swap" || p.op === "add") && p.to).map((p) => p.to),
     ...(d.world.op === "change" && d.world.to ? [d.world.to] : []),
     ...d.cuts.filter((c) => c.op === "change" && c.to).map((c) => c.to),
+    ...(d.world.enters?.op === "change" && d.world.enters.to ? [d.world.enters.to] : []),
   ];
   d.clearance_delta = [...new Set([...mech, ...(Array.isArray(raw.clearance_delta) ? raw.clearance_delta : [])].map((x) => String(x).trim()).filter(Boolean))];
   return d;
@@ -291,6 +303,8 @@ export function describeDiff(diff) {
     else if (f.op === "keep" && f.look) lines.push(`FIGURE: ${f.target} stays the same figure, its look changed: ${f.look}`);
   }
   if (diff.world?.op === "change") lines.push(`OPENING PLACE: becomes ${diff.world.to}`);
+  if (diff.world?.enters?.op === "change" && diff.world.enters.to) lines.push(`AROUND THE OPENING: becomes ${diff.world.enters.to}`);
+  else if (diff.world?.enters?.op === "remove") lines.push(`AROUND THE OPENING: is REMOVED`);
   for (const c of diff.cuts || []) {
     if (c.op === "change") lines.push(`LATER PLACE: ${c.target} becomes ${c.to}`);
     else if (c.op === "remove") lines.push(`LATER PLACE: ${c.target} is REMOVED`);
@@ -351,6 +365,7 @@ export function reframeViolations(compiled, diff, sweeps = [], base = "") {
     if ((f.op === "swap" || f.op === "remove") && a && lc.includes(a)) v.push(`the ${f.op === "swap" ? "replaced" : "removed"} figure "${f.target}" is still named`);
   }
   if (diff.world?.op === "change") { const a = anchorOf(diff.world.to); if (a && !lc.includes(a)) v.push(`the new opening place "${diff.world.to}" is missing`); }
+  if (diff.world?.enters?.op === "change" && diff.world.enters.to) { const a = anchorOf(diff.world.enters.to); if (a && !lc.includes(a)) v.push(`the new place around the opening "${diff.world.enters.to}" is missing`); }
   for (const cu of diff.cuts || []) if (cu.op === "change") { const a = anchorOf(cu.to); if (a && !lc.includes(a)) v.push(`the new later place "${cu.to}" is missing`); }
   for (const pr of diff.props || []) if ((pr.op === "swap" || pr.op === "add") && pr.to) { const a = anchorOf(pr.to); if (a && !lc.includes(a)) v.push(`the new prop "${pr.to}" is missing`); }
   for (const s of sweeps) if (lc.includes(s.noun)) v.push(`"${s.noun}" belonged to the replaced figure "${s.figure}" and must leave with it`);
@@ -512,18 +527,17 @@ export function pinsFromPlan(plan, state) {
 export function routeStages(diff) {
   const figureChange = (diff.figures || []).some((f) => f.op !== "keep" || !!f.look);   // a kept figure whose look the user changed is a figure change (owner 2026-09-21)
   const worldChange = diff.world?.op === "change";
-  // A REMIX RE-SOURCES ITS ENVIRONMENT UNLESS THE WORDS KEEP IT (owner 2026-09-09: "reusing environments, which we can do if prompted (else not),
-  // produces something repetitive"). A kept-by-silence world is hunted afresh (deep path; the parent's plate excluded from the pool and held as the
-  // free fallback); REMIX_REUSE_WORLD=1 restores the old reuse for a test.
-  const worldResource = diff.world?.op === "keep" && diff.world?.keepExplicit !== true && process.env.REMIX_REUSE_WORLD !== "1";
+  // SILENT WORDS KEEP THE PLACE (owner 2026-10-01, "reuse a frame", over the 09-09 re-source, which made every silent remix deep): the world re-runs when the
+  // words change the opening or the place around it (part 4), never for silence
+  const aroundChange = diff.world?.enters?.op === "change" || diff.world?.enters?.op === "remove";
   const cutChange = (diff.cuts || []).some((c) => c.op !== "keep");
   const textChange = diff.action?.op === "rewrite" || diff.dialogue?.op !== "keep" || (diff.props || []).length > 0;
   const rerun = [];
   if (figureChange) rerun.push("entity");
-  if (worldChange || worldResource) rerun.push("world");
+  if (worldChange || aroundChange) rerun.push("world");
   if (cutChange) rerun.push("cuts");
   // beats rewrite whenever ANYTHING changes — the prompt must speak the new truth — and gen always re-runs
-  if (figureChange || worldChange || worldResource || cutChange || textChange) rerun.push("writer");
+  if (figureChange || worldChange || aroundChange || cutChange || textChange) rerun.push("writer");
   rerun.push("gen");
   return {
     rerun,

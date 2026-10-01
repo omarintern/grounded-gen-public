@@ -308,7 +308,12 @@ export function shapeKindPair(v = {}, reduction = []) {
 /** A KIND'S NAME FOR THE WORDS (both build checks): its query without the built-form words a search needs ("UFO interior set or replica" → "UFO
  *  interior"), for a writer or an improviser that is told what a photograph is, never how it was searched. Pure. */
 export function kindName(q = "") {
-  const s = _norm(q), out = s.replace(/\b(?:set|replica|exhibit|model|or|themed|built|mock[- ]?up|(?:full|life)[- ]size)\b/gi, " ").replace(/\s+/g, " ").trim();
+  const BF = "(?:set|replica|exhibit|model|mock[- ]?up)";
+  const s = _norm(q), out = s
+    .replace(/\b(?:full|life)[- ]size\b/gi, " ")
+    .replace(new RegExp(`\\b${BF}\\s+or\\s+${BF}\\b`, "gi"), " ")                 // "set or replica": the search's alternatives
+    .replace(/\b(?:replica|exhibit|mock[- ]?up)\b(?:\s+of(?:\s+(?:a|an|the))?)?/gi, " ")   // a built form's own word ("replica of a ...")
+    .replace(/^\s*of\s+(?:a|an|the)\s+/i, "").replace(/\s+/g, " ").trim();
   return out || s;
 }
 /** THE RUN'S PLAN FOR A REDUCED SUBJECT OF TWO KINDS OR MORE (the host rule): the host frame zero hunts, the one kind that enters as a PLACE (its own

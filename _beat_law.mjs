@@ -219,6 +219,8 @@ export const reusedFrame = () => {
   let r = null; try { r = JSON.parse(process.env.REMIX_STRIP || ""); } catch { r = null; }
   if (!r || typeof r !== "object" || r.mode !== "reuse" || r.asFrame === true) return null;
   const list = (a) => (Array.isArray(a) ? a : []).filter((x) => typeof x === "string" && x.trim());
+  // an EMPTY frame of the parent (owner 2026-10-01, a remix that carries no one) holds the place alone: its figures are introduced as on any plate (the reviewer, part 4 check)
+  if (!list(r.names).length) return null;
   return { names: list(r.names), who: list(r.who).join("; ") };
 };
 export const reusedFrameClause = () => {

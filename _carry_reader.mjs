@@ -102,11 +102,14 @@ export async function readCarry({ strip, frames = [], remix = "", parentWords = 
       change: String(c?.look_change || "").replace(/\s+/g, " ").trim(), best: best >= 1 && best <= frames.length ? best : 0,
       frames: (Array.isArray(c?.frames) ? c.frames : []).map((x) => Math.round(Number(x))).filter((x) => x >= 1 && x <= frames.length) };
   }).filter((c) => c.name && c.best);
+  // every frame the reader saw anyone in, a character it listed without a usable best frame included: such a frame is never "empty" (the reviewer, part 4 check)
+  const peopled = [...new Set((Array.isArray(pick?.characters) ? pick.characters : []).flatMap((c) => [...(Array.isArray(c?.frames) ? c.frames : []), c?.best])
+    .map((x) => Math.round(Number(x))).filter((x) => x >= 1 && x <= frames.length))];
   // another gen of the canon is read for who it shows, in which frames, and in what kind of place; its characters are never described again (the parent's
   // own reading describes them: _strip_choice.mjs)
-  if (!describe) return { characters: [], frames: [], found, places, allFrames: frames };
+  if (!describe) return { characters: [], frames: [], found, places, allFrames: frames, peopled };
   const kept = found.filter((c) => c.carry === "keep");
-  if (!kept.length) { log(`  carry: the remix carries no character the video features${found.length ? ` (${found.map((c) => `${c.name}: ${c.carry}`).join(", ")})` : ""}`); return found.length ? { characters: found.map((c) => ({ ...c, frame: null, handle: "", rides: false })), frames: [], found, places, allFrames: frames } : null; }
+  if (!kept.length) { log(`  carry: the remix carries no character the video features${found.length ? ` (${found.map((c) => `${c.name}: ${c.carry}`).join(", ")})` : ""}`); return found.length ? { characters: found.map((c) => ({ ...c, frame: null, handle: "", rides: false })), frames: [], found, places, allFrames: frames, peopled } : { characters: [], frames: [], found: [], places, allFrames: frames, peopled }; }   // a strip that shows no one still answers its places and frames (part 4)
   // the frames that RIDE the gen: the best frames of the characters kept as they are (the frame showing the most of them first, at most CARRY_MAX_REFS). A
   // character whose look the remix changes is described from its own frame, but that frame never rides for it: it would pin the look being changed.
   const same = kept.filter((c) => !c.change), changed = kept.filter((c) => c.change);
@@ -122,7 +125,7 @@ export async function readCarry({ strip, frames = [], remix = "", parentWords = 
   }
   for (const c of found.filter((x) => x.carry === "drop")) out.push({ ...c, frame: null, handle: "", rides: false });
   log(`  carry: ${out.map((c) => `${c.name}${c.also ? ` (${c.also})` : ""} ${c.carry.toUpperCase()}${c.change ? ` with a new look: ${c.change}` : ""}${c.handle ? ` → "${c.handle}"` : ""}${c.rides ? " [its frame rides]" : ""}`).join(" · ")}`);
-  return { characters: out, frames: ride.map((n) => frames[n - 1]), found, places, allFrames: frames };
+  return { characters: out, frames: ride.map((n) => frames[n - 1]), found, places, allFrames: frames, peopled };
 }
 
 /** Each character of `who` ([{ name, also, look }]) described as ONE frame shows it: the look the beats then name it by. "" for a character the frame does
