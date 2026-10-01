@@ -22,12 +22,12 @@ export const SOURCEABLE_SURE = Number(process.env.SOURCEABILITY_SURE || 0.85);
 // it needs to be inferred, so sometimes its works against us to assume the identity of a thing as a given" — so identity binds what the maker NAMED,
 // and where their words leave the thing open the kind is inferred (the law's INFERRED, said so), a neighbour included.
 export const KIND_IDENTITY_LAW =
-  `\u2b50\u2b50 A KIND KEEPS WHAT THE MAKER NAMED. The maker names a thing when their word picks out one kind a person would recognise in a photograph; their words leave it open when several different kinds would answer them. A named thing's kind is that thing as a photograph shows it: a person shown the photograph names what it shows by the maker's own word. Its query says it in the maker's own word first, and otherwise in whatever words its photographs are found under (a synonym, a broader word, a built form a camera has stood before: made as a set, a full-size replica or exhibit of it, a building made in its shape) while a person shown the photograph would still use the maker's word. Where the maker's words leave the thing open, the kind is INFERRED: the most photographable thing that fits what they said, with "inferred" set true, and there a neighbouring thing is a fair reading. A neighbour that shares only a look, a category or a use stands in for a named thing only when neither it nor any built form of it is photographed, and then "inferred" is set true. Where a demand holds two things, each keeps its own kind: two photographs. Each kind is a PLACE or a THING the scene holds; the scene's people and creatures are conjured into the place. `;
+  `\u2b50\u2b50 A KIND KEEPS WHAT THE MAKER NAMED. The maker names a thing when their word picks out one kind a person would recognise in a photograph; their words leave it open when several different kinds would answer them. A named thing's kind is that thing as a photograph shows it: a person shown the photograph names what it shows by the maker's own word. Its query says it in the maker's own words, their slang and their descriptors included: a word may join them to keep it what it is (a built form a camera has stood before: made as a set, a full-size replica or exhibit of it, a building made in its shape; a word that keeps it a place), never replace them. Where nothing is photographed in the maker's words, the run falls back to the bare kind (those words without their descriptors) on its own. Where the maker's words leave the thing open, the kind is INFERRED: the most photographable thing that fits what they said, with "inferred" set true, and there a neighbouring thing is a fair reading. A neighbour that shares only a look, a category or a use stands in for a named thing only when neither it nor any built form of it is photographed, and then "inferred" is set true. Where a demand holds two things, each keeps its own kind: two photographs. Each kind is a PLACE or a THING the scene holds; the scene's people and creatures are conjured into the place. `;
 
 /** THE IMPROVISER'S FORM OF THE LAW (the reviewer review, 2026-10-01): it sees the scene and the place, never the maker's raw words, so the named-or-open
  *  question was settled upstream (the judge's "inferred", carried as PLACE_INFERRED) and it is told which. Beside the judge's law, so the two cannot drift. Pure. */
 export const placeIdentityLaw = (place, inferred = false) => place
-  ? `THE PLACE KEEPS ITS IDENTITY: a person shown the photograph calls it "${place}". Say it in these words first, and otherwise in whatever words its photographs are found under (a synonym, a broader word, a built form a camera has stood before: a set, a full-size replica or exhibit, a building in its shape) while that person would still call it "${place}". A neighbour that shares only a look, a category or a use is a different place. ${inferred ? `"${place}" was read from open words: once every way of saying it has failed, another reading of the scene is fair.` : `"${place}" is what the maker asked for: every attempt is still a photograph of it.`}`
+  ? `THE PLACE KEEPS ITS IDENTITY: a person shown the photograph calls it "${place}". Its queries say it in these words: a word may join them (a built form a camera has stood before: a set, a full-size replica or exhibit, a building in its shape; a word that keeps it this place), never replace them; when they find nothing, its bare kind (these words without their descriptors). A neighbour that shares only a look, a category or a use is a different place. ${inferred ? `"${place}" was read from open words: once every way of saying it has failed, another reading of the scene is fair.` : `"${place}" is what the maker asked for: every attempt is still a photograph of it.`}`
   : "";
 
 // ⭐⭐ WHICH KIND HOSTS (owner 2026-10-01: "appropriation is first", "themed version is fallback", and "the two-photo split depends on which is most
@@ -44,7 +44,8 @@ export const SOURCEABILITY_LAW =
   KIND_IDENTITY_LAW +
   HOST_RULE +
   `EVERY PHOTOGRAPHABLE NOUN OF A DEMAND IS ITS OWN KIND, and a STYLE is never sourced, only written: "the moon in retrograde style with tall buildings" → the moon AND tall buildings, two photographs, "retrograde style" written into the prose — a style is not a specific appropriation. ` +
-  `INFERRED: a pure abstraction or a subject that is nothing but a description ("the feeling of a Tuesday afternoon" → a quiet living room in flat afternoon light; "the concept of debt" → a kitchen table covered in opened envelopes) — infer the most photographable scene that would depict it, and say so. ` +
+  `\u2b50\u2b50 A QUALITY OF A PLACE IS ITS OWN LOOK, SEARCHED AND NEVER WRITTEN (owner 2026-10-02: "we dont prompt for qualities, especially qualities of places. we'd search dreamy forest"): a word the maker attaches to a place noun, a feeling included ("a dreamy forest", "a foggy pier", "an abandoned mall"), is that place's look and part of its query, and a kind of place said with its qualities is sourceable as the maker said it. A STYLE is what the maker names as the whole video's rendering ("in retrograde style", a medium, black and white). ` +
+  `INFERRED: a pure abstraction or a subject that is nothing but a description, with no place noun of its own ("the feeling of a Tuesday afternoon" → a quiet living room in flat afternoon light; "the concept of debt" → a kitchen table covered in opened envelopes) — infer the most photographable scene that would depict it, and say so. ` +
   `A pairing is NOT judged as one photograph: the place is sourced and the actor is written, so "a penguin in the Oval Office" is the Oval Office, sourceable. ` +
   `THE PAIR IS JUDGED TOO (owner 2026-09-17: "would a trail cam be very likely in everest? answer is probably no"): when the subjects include a capture FORM and a PLACE, also say whether that form is plausibly found at that place in real footage — a trail camera on Mount Everest, a doorbell camera in the Sahara: unlikely; CCTV in a shopping mall: likely. ⭐⭐ A NAMED SITE IS NEVER A HABITAT (owner 2026-09-22, drawing the line across the board): a form's footage accumulates at a KIND of place, never at one address. Dashcam footage of a bridge is likely; of a NAMED bridge it is not, however ordinary the form is on bridges. So a place the maker NAMED — a brand's premises, a particular building, a titled landmark, any one site — is answered UNLIKELY, and "likely" belongs to the kind alone. Judge the place exactly as it is named, never the kind behind it. The form and the place are then sourced as two photographs and composed, which costs nothing and always works, while one photograph carrying both is a search for something nobody took. ALWAYS give the place's bare KIND as an image query ("snowy mountain ridge"), whether the form is likely there or not: when it is unlikely the form is hunted as itself in that kind of place and the specific place is written, and when it is likely the kind is the ladder the hunt falls back to if the pairing yields no photograph of the form. ` +
   `A CAPTURE FORM IS SOURCED IN ITS OWN HABITAT, NEVER AT THE REQUEST'S PLACE (owner 2026-09-18: "either it doesnt understand what determines 'trail cam' style or something else" — it understood the look and rejected every ordinary photograph; what did not exist was the SUPPLY). For a subject that is a FORM, "query" is where that form's footage is ABUNDANT: the places and subjects it is actually made of — a trail camera is forests, deer and bears at night; a security camera is shops, forecourts and hallways; a dashcam is roads. It is NEVER the place this request names, and never that place's kind: there is almost no trail-camera footage of any mountain, so a form-at-place query returns ordinary photographs of the place and a form-at-kind query returns the same. The place is sourced as ITSELF, separately, and the two photographs are composed. ` +
@@ -53,7 +54,7 @@ export const SOURCEABILITY_LAW =
   `A NAMED WORK WITHOUT FRAMES IS GROUNDED BY ITS MATERIAL CANON (owner 2026-09-27, the Odyssey ride): a poem, a myth, a novel never filmed, a painting or a piece of music has no frames to photograph, so its world is carried by the REAL OBJECTS that carry it in the world — the artifacts, replicas, sculptures, effigies, editions and stagings a camera has stood before — each a THING photographed as itself (a museum's Greek vase, a replica warship, a statue of the giant), and the things the planner derived from such a work are the work's own, never inventions. A canon thing's query names the object, never a medium word (illustration, painting, drawing) and never the room or the museum that houses it. ` +
   `A PLACE'S OWN PEOPLE (owner 2026-09-26): for a subject with role "world", "place" or "room", say whether this video, as the maker's words stage it, shows the place with the people who belong to it at that moment, apart from the story's own figures, who are always added: "peopled" true, false when it shows the place empty of them, null when either reads right. ` +
   `Judge each subject on its own. Return ONLY JSON {"pairs":[{"form":string,"place":string,"likely":boolean,"confidence":0..1,"place_kind":string}],"subjects":[{"subject":string,"sourceable":boolean,"reduction":[string],"written":[string],"inferred":boolean,"confidence":0..1,"kind":"named place|work|kind of place|form|thing|private specific|invented|specific moment|abstraction|other","query":string|null,"held_by":string|null,"peopled":true|false|null,"host":string|null,"enters":[{"query":string,"as":"place|thing"}],"identity":[string],"why":string}]} ` +
-  `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists the style words and specifics that go to the prose rather than the search; "query" is the best bare image query when sourceable; "host", "enters" and "identity" are answered when "reduction" holds more than one kind, else null and empty; "confidence" is how sure you are.`;
+  `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists what no photograph of the place shows (the story's own people and events, the video's rendering style), never a quality of the place; "query", when sourceable, says the place in the maker's own words, their slang and descriptors included ("the hood", "dreamy forest"): a word may join them to keep it a place ("ghetto hood"), never replace them; "host", "enters" and "identity" are answered when "reduction" holds more than one kind, else null and empty; "confidence" is how sure you are.`;
 
 const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
 const _key = (s) => _norm(s).toLowerCase();
@@ -341,6 +342,48 @@ export function makerWordSearch(query = "", identity = "", makerWords = "", name
   if (frame.length) return `${id} ${frame.join(" ")}`;
   const rest = q.split(/\s+/).filter((tok) => !idW.some((w) => sameWord(w, tok.toLowerCase().replace(/[^a-z0-9]/g, ""))));
   return `${id} ${rest.join(" ")}`.trim();
+}
+/** THE MAKER'S OWN WORDS FOR A PLACE (owner 2026-10-02: "hood is not inner city neighborhood, its the hood or ghetto hood"): the first of `candidates` (the
+ *  parse's qualified opening place, then its setting) whose every content word is the maker's, its article or possessive dropped; "" when none is. A
+ *  rewording is never the maker's phrase, and one word of the maker's is not enough (both design checks). Pure. */
+const _FUNCTION_W = new Set(["the", "a", "an", "of", "in", "on", "at", "to", "and", "or", "with", "by", "for", "from", "into", "my", "our", "your", "his", "her", "their", "its"]);
+export function makersPlacePhrase(candidates = [], makerWords = "") {
+  for (const c of (Array.isArray(candidates) ? candidates : [])) {
+    const p = _norm(c).replace(/^(?:(?:the|a|an|my|our|your|his|her|their|its)\s+)+/i, "");
+    const content = _wordsOf(p).filter((w) => !_FUNCTION_W.has(w));
+    if (content.length && content.every((w) => saysAll(makerWords, w))) return p;
+  }
+  return "";
+}
+/** The maker's descriptors of a place: the words of their phrase the bare kind does not say ("dreamy" of "dreamy forest" for "forest"). Pure. */
+export const placeDescriptors = (phrase = "", kind = "") => _wordsOf(phrase).filter((w) => !_FUNCTION_W.has(w) && !saysAll(kind, w));
+/** THE MAKER'S PLACE LADDER (owner 2026-10-02: "paid routes get those kinds of search, slang or semi-descriptive (dreamy forest is good). and there should
+ *  be fallbacks such that dreamy forest with null results falls back to forest. the free library gets bare location as usual however"): a place's two searches say
+ *  the maker's own words for it, then fall back to the same place without their descriptors; the free index keeps the bare place (the run's kernel). Over
+ *  the run's two searches `qs`:
+ *  - the first must say every content word of `phrase`, else the maker's words (`paid`, the judge's wording, when it says them all: "ghetto hood" for "hood";
+ *    else the phrase) lead and the first follows; a first that asks for an actor stays first and the maker's words go second (`actorFirst`: a real subject
+ *    already in its place wins, the 09-23 rule; the reviewer, build check);
+ *  - a second that needs every descriptor becomes the bare place: the first of `bare` that is the phrase without some of its words (every word of it the
+ *    phrase's, and fewer), never a planner's synonym ("urban neighborhood" is no bare form of "hood", which has none; the reviewer, build check).
+ *  `wrap` puts a device form's words (and a dark scene's night words) on what it adds. The shape of a named place's ladder (named, then its kind) and a
+ *  later place's (its descriptors, then its noun). null when nothing changes. Pure. */
+export function makerPlaceLadder(qs = [], { phrase = "", paid = "", bare = [], actorFirst = false, wrap = (x) => x } = {}) {
+  const p = _norm(phrase), words = _wordsOf(p).filter((w) => !_FUNCTION_W.has(w));
+  if (!words.length) return null;
+  const says = (q) => words.every((w) => saysAll(q, w));
+  const b0 = (Array.isArray(bare) ? bare : [bare]).map((x) => _norm(x)).find((x) => {
+    const bw = _wordsOf(x).filter((w) => !_FUNCTION_W.has(w));
+    return bw.length > 0 && bw.length < words.length && bw.every((w) => saysAll(p, w));
+  }) || "";
+  const q0 = String(qs[0] || "").trim(), q1 = String(qs[1] || "").trim();
+  let a = q0, b = q1, placed = false;
+  if (!says(a)) {
+    const lead = wrap(paid && says(paid) ? _norm(paid) : p);
+    if (actorFirst && a) { b = lead; placed = true; } else { b = a || b; a = lead; }
+  }
+  if (!placed && b0 && (!b || says(b))) b = wrap(b0);
+  return a === q0 && b === q1 ? null : [a, b];
 }
 /** THE LOCATION IS NEVER DROPPED (owner 2026-07-30), AND NEVER FORCED IN ONE WORD (owner 2026-10-02: "reproduce but not require"; the reviewer's design check): an
  *  improvised pair that names the place in either search (any one of `words`, whole and plural-blind) stands as written; a pair that names it in neither
