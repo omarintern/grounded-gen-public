@@ -23,14 +23,21 @@ export const LOOK_CHANGE_LAW =
 const _say = (x) => String(x || "").replace(/\s+/g, " ").trim();
 const _key = (x) => _say(x).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 // the words of a look: three letters or more, never the glue between them
-const _GLUE = new Set(["the", "and", "with", "without", "its", "his", "her", "their", "now", "that", "this", "for", "from", "into", "onto", "over", "under", "has", "have", "who", "which", "not", "instead"]);
+const _GLUE = new Set(["the", "and", "with", "without", "its", "his", "her", "their", "now", "that", "this", "for", "from", "into", "onto", "over", "under", "has", "have", "who", "which", "not", "instead",
+  "wearing", "holding", "carrying", "riding"]);   // the connectives that introduce a thing: an added hat's "wearing" is nobody's invention (the reviewer, confirm check)
 const _content = (x) => [...new Set((String(x || "").toLowerCase().match(/[a-z0-9]+/g) || []).filter((w) => w.length >= 3 && !_GLUE.has(w)))];
 // the words of a change that order it or stand for the figure: never part of a look
 const _ORDER = new Set(["make", "makes", "give", "gives", "turn", "turns", "change", "changes", "let", "put", "get", "gets", "dress", "paint", "color", "colour", "please", "him", "she", "they", "them", "look", "looks", "should",
   "must", "will", "remove", "take", "lose", "add", "become", "becomes", "wear"]);
-// one word in two forms: plural-blind, or the same four-letter stem a few letters apart (wear, wearing; paint, painted)
-const _like = (a, b) => sameWord(a, b) || (a.length >= 4 && b.length >= 4 && a.slice(0, 4) === b.slice(0, 4) && Math.abs(a.length - b.length) <= 3);
+// one word in two forms: plural-blind, or the same base after -s, -es, -ed or -ing (wear, wearing; paint, painted; ride, riding). Never a shared stem:
+// "surfer" is not "surfboard" and "bear" is not "beard" (the reviewer, confirm check: a planner that removed the surfboard read as not having, and "a bear in a
+// suit" passed for "give him a beard")
+const _bases = (w) => [...new Set([w, ...(w.length > 3 && w.endsWith("s") ? [w.slice(0, -1)] : []), ...(w.length > 4 && w.endsWith("es") ? [w.slice(0, -2)] : []),
+  ...(w.length > 4 && w.endsWith("ed") ? [w.slice(0, -2), w.slice(0, -1)] : []), ...(w.length > 5 && w.endsWith("ing") ? [w.slice(0, -3), `${w.slice(0, -3)}e`] : [])])].filter((x) => x.length >= 3);
+const _like = (a, b) => sameWord(a, b) || _bases(a).some((x) => _bases(b).includes(x));
 const _in = (words, w) => words.some((x) => _like(x, w));
+// a look's clauses: what stands between its commas and connectives, each a list of content words
+const _clauses = (x) => String(x || "").toLowerCase().split(/,|\b(?:and|with|in|on|under|wearing|holding|carrying|riding)\b/).map(_content).filter((c) => c.length);
 const _esc = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const _holds = (text, name) => new RegExp(`(?:^|[^a-z0-9])${_esc(String(name).toLowerCase())}(?:[^a-z0-9]|$)`).test(String(text || "").toLowerCase());
 
@@ -42,14 +49,18 @@ export const sameLook = (a, b) => {
 };
 
 /** WHAT A LOOK SHOWS OF A CHANGE, against the parent's look (the reviewer, build check: the change must show, and what else leaves may not outnumber it):
- *  `entered` the change's own words that are now in the look, `left` the words the change names that are gone from it, `lost` what else is gone, `extra`
- *  what entered that neither the parent's look nor the change holds. `shows` when a word of the change entered or a word it names left. Pure. */
+ *  `entered` the change's own words that are now in the look, `left` the words the change names that are gone from it, `lost` what else is gone (never
+ *  the rest of a clause whose thing the change took away), `extra` what entered that neither the parent's look nor the change holds. `shows` when a word of
+ *  the change entered or a word it names left. An edit may lose as many other words as entered: a new colour replaces the old one. Pure. */
 export function shownChange(look, parent, change) {
   // the change's own words decide what it SHOWS (never its order or the pronoun it is said of); every word of it, the order's too, may stand in the look
   // ("he should wear a hat" → "…, wearing a hat")
   const w0 = _content(parent), w1 = _content(look), all = _content(change), wc = all.filter((w) => !_ORDER.has(w));
   const entered = wc.filter((w) => _in(w1, w) && !_in(w0, w)), left = wc.filter((w) => _in(w0, w) && !_in(w1, w));
-  return { shows: entered.length + left.length > 0, entered, left, lost: w0.filter((w) => !_in(w1, w) && !_in(all, w)), extra: w1.filter((w) => !_in(w0, w) && !_in(all, w)) };
+  // a thing the change names takes its own clause of the parent's look with it ("…, wearing a tiny red hat" leaves whole when the hat goes), and nothing
+  // else: the crest is in another clause than the surfboard (the reviewer, confirm check)
+  const gone = _clauses(parent).filter((c) => left.some((w) => _in(c, w))).flat();
+  return { shows: entered.length + left.length > 0, entered, left, lost: w0.filter((w) => !_in(w1, w) && !_in(all, w) && !_in(gone, w)), extra: w1.filter((w) => !_in(w0, w) && !_in(all, w)) };
 }
 
 /** a name the parent's look did not hold: the first of `names` that `text` carries, else "". The caller hands the names that are banned from a look (an
@@ -72,16 +83,18 @@ export function changedLookAccepted(parent, edited, { change = "", names = [], m
   const s = shownChange(e, p, change);
   if (!s.shows) return { ok: false, look: "", why: "the edit does not show the change" };
   if (s.extra.length) return { ok: false, look: "", why: `the edit added what the maker never asked for (${s.extra.slice(0, 5).join(", ")})` };
-  if (s.lost.length > s.entered.length + s.left.length) return { ok: false, look: "", why: `the edit lost what the change never named (${s.lost.slice(0, 5).join(", ")})` };
+  if (s.lost.length > s.entered.length) return { ok: false, look: "", why: `the edit lost what the change never named (${s.lost.slice(0, 5).join(", ")})` };
   return { ok: true, look: e, why: "" };
 }
 
 /** THE CHANGE IN LOOK-SHAPED WORDS, for the fallback (both design checks: the name-law repair pastes a kept look into beats, so the tail is never an order,
  *  a clause or a meta phrase). The maker's own words for the change, without the order ("make", "give"), without the figure it is said of (its name, a
- *  pronoun) and without "now"; a thing it now has takes "with", a thing taken away "without". "" when the change has no such shape, and the caller keeps the
- *  look and says so: an order to BECOME another thing (a change of kind never rides behind the old look), a clause, a modal, a bare order.
+ *  pronoun) and without "now"; a thing the words say it now has takes "with", a thing taken away "without". "" when the change has no such shape, and the
+ *  caller keeps the look and says so: an order to BECOME another thing or a bare thing that may be one (a change of kind never rides behind the old look), a
+ *  clause, a modal, a second order, a comparison.
  *    "white fur" → "white fur" · "make the possum white" → "white" · "give him a red hat" → "with a red hat" · "remove the hat" → "without the hat" ·
- *    "he is bald now" → "bald" · "it has wings now" → "with wings" · "make it a raccoon", "turn it into a robot", "he should wear a hat" → "". Pure. */
+ *    "he is bald now" → "bald" · "it has wings now" → "with wings" · "make it a raccoon", "a raccoon", "turn it into a robot", "he should wear a hat",
+ *    "swap the hat for a crown", "taller and give him a hat", "red hat instead of blue" → "". Pure. */
 export function lookShaped(change, names = []) {
   let s = _say(change).replace(/[.!?]+$/, "");
   if (!s || s.length > 160) return "";
@@ -94,20 +107,27 @@ export function lookShaped(change, names = []) {
   // what is left must be a look: never a clause (a verb of being or having, a modal, anywhere in it) and never one that opens on a subject, an order or a
   // possessive ("his hat is red")
   const verbed = (t) => /\b(?:is|are|was|were|has|have|had|should|must|will|would|can|could)\b/i.test(t);
-  const opens = (t) => /^(?:he|she|it|they|him|her|them|his|hers|its|their|i|you|we|may|might|do|does|did|make|give|turn|change|remove|take|lose|drop|add|put|wear|let|get|please)\b/i.test(t);
+  const opens = (t) => /^(?:he|she|it|they|him|her|them|his|hers|its|their|i|you|we|may|might|do|does|did|make|give|turn|change|swap|replace|switch|exchange|remove|take|lose|drop|add|put|wear|let|get|please)\b/i.test(t);
+  // …and never one that still holds an order, a becoming or a comparison anywhere ("taller and give him a hat", "red hat instead of blue", "same but blue")
+  const orders = (t) => /\b(?:make|give|turn|change|swap|replace|switch|exchange|remove|take|lose|drop|add|put|let|get|into|instead|rather|but|same)\b/i.test(t);
+  // a tail that points at something (an article, a pronoun, a possessive) is a look only when it opens as one: "with …", "without …", "in …", "wearing …"
+  const refs = (t) => /\b(?:a|an|the|some|he|she|it|they|him|her|them|his|hers|its|their)\b/i.test(t);
+  const led = (t) => /^(?:with|without|in|wearing|holding|carrying)\b/i.test(t);
   const gone = s.match(/^(?:remove|take off|take away|lose|get rid of)\s+(.+)$/i);
-  if (gone) { s = _say(gone[1]); return s.length >= 2 && !verbed(s) ? `without ${s}` : ""; }
+  if (gone) { s = _say(gone[1]); return s.length >= 2 && !verbed(s) && !orders(s) ? `without ${s}` : ""; }
   const having = strip(/^(?:give|add|put on|put|get)\b\s*/i);
-  const being = !having && strip(/^(?:make|turn|change|let|paint|colou?r|dress)\b\s*/i);
+  if (!having) strip(/^(?:make|turn|change|let|paint|colou?r|dress)\b\s*/i);
   figure();
   strip(/^(?:he|she|it|they)\b\s*/i);
   const has = strip(/^(?:has|have|gets)\b\s*/i);
   const became = strip(/^(?:into|to be|to|be|become|becomes)\b\s*/i);
   strip(/^(?:is|are|look|looks)\b\s*/i); strip(/^now\b[\s,]*/i);
-  if (s.length < 2 || opens(s) || verbed(s)) return "";
-  const thing = /^(?:a|an|the|some)\s/i.test(s);
-  if (thing && (being || became)) return "";
-  return (thing || has || having) && !/^(?:with|without|in|wearing|holding|carrying)\b/i.test(s) ? `with ${s}` : s;
+  if (s.length < 2 || opens(s) || verbed(s) || orders(s)) return "";
+  // a thing rides behind the look only when the words say the figure now HAS it ("give him a red hat", "it has wings"): a bare "a raccoon" may be what it
+  // BECOMES, and a change of kind never rides behind the old look (the reviewer, confirm check: "the possum is now a raccoon" → "now with a raccoon")
+  if (/^(?:a|an|the|some)\s/i.test(s)) return (having || has) && !became ? `with ${s}` : "";
+  if (having || has) return led(s) ? s : `with ${s}`;
+  return led(s) || !refs(s) ? s : "";
 }
 
 /** the parent's look with the change behind it, in look-shaped words; "" when the change has no such shape or would carry a name the look never held.
