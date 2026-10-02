@@ -314,18 +314,21 @@ export function dropDerivatives(entities) {
 
 /** THE COMPREHENSION'S READING OF A TERM ANOTHER PASS WORDED (build check, the reviewer, 2026-10-02: the extractor's "the tall greys" and the comprehension's "tall
  *  greys" are two model outputs, and an exact-string join between them dropped the reading, so the look-up was asked with no sense and a place answer stood).
- *  The same words first, plural-blind ("Nordic" finds "nordics"); then a subject that OPENS the term ("tall greys" for "tall grey aliens"), or a term that
- *  CLOSES the subject with no preposition before it ("greys" for "the tall greys"). A word the subject merely contains is another thing: "Starbucks" is not
- *  "a Starbucks barista" and "bar" is not "the man in the bar" (the reviewer, confirm check: the venue was read as the person named after it and discarded). And a
- *  subject never lends its reading to a longer term it merely closes: "Burger King" is not "a king", "Red Lobster" is not "a lobster" (the reviewer, final confirm;
- *  the cost is that "alien nordics" finds no reading for "nordics" and is asked with the sentence alone, which the cast's own guard covers). Pure. */
+ *  Three joins, each one the SAME thing under two wordings:
+ *   · the same words, article- and plural-blind ("the Nordics", "Nordic" for "nordics");
+ *   · a term that CLOSES the subject with no preposition before it: the subject's own head ("greys" for "the tall greys", "pier" for "the Santa Monica pier");
+ *   · the extractor's own composed form, a name with the work it belongs to in parentheses ("wendy (The Shining)" reads as "wendy").
+ *  A word a subject merely contains, or a longer term a subject merely opens or closes, is ANOTHER thing and finds no reading (the confirm checks, the reviewer: each
+ *  of these read a venue as the figure named like it and discarded its place answer): "Starbucks" is not "a Starbucks barista", "bar" is not "the man in the
+ *  bar", "Burger King" is not "a king", "Red Lobster" is not "a lobster", "Santa Monica" is not "Santa", "Wendy's" is not "wendy". A term with no reading is
+ *  asked with the maker's sentence alone, and the cast's own probe defaults to a figure and guards. Pure. */
 const _PREP = /(?:^| )(?:in|on|at|of|with|from|by|inside|outside|near|under|behind|beside|into|onto|over|above|below|around|through|across|among|between|against|along|toward|towards|within|for|to)(?: |$)/;
 const _termKey = (x) => norm(x).replace(/^(?:the|a|an|some)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim().split(" ").map((w) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w)).join(" ");
 export const readingOf = (subjects, term) => {
-  const k = _termKey(term), subs = (Array.isArray(subjects) ? subjects : []).filter((x) => x && _termKey(x.term));
-  if (!k) return null;
-  return subs.find((x) => _termKey(x.term) === k)
-    || subs.find((x) => { const s = _termKey(x.term); return k.startsWith(`${s} `) || (s.endsWith(` ${k}`) && !_PREP.test(s.slice(0, s.length - k.length))); }) || null;
+  const subs = (Array.isArray(subjects) ? subjects : []).filter((x) => x && _termKey(x.term));
+  const find = (k) => (!k ? null : subs.find((x) => _termKey(x.term) === k) || subs.find((x) => { const s = _termKey(x.term); return s.endsWith(` ${k}`) && !_PREP.test(s.slice(0, s.length - k.length)); }) || null);
+  const raw = String(term || ""), bare = raw.replace(/\s*\([^)]*\)\s*$/, "");
+  return find(_termKey(raw)) || (bare !== raw ? find(_termKey(bare)) : null);
 };
 /** ⭐⭐ A FIGURE STAYS A FIGURE (both design checks, 2026-10-02): a look-up that answers a PLACE for a term the maker's words read as a figure or a person did
  *  not find that figure ("nordics" → the Nordic countries), so the place is never its identity. Only the answer's own kind decides: a person or a mascot tied
