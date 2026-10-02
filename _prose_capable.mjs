@@ -57,6 +57,8 @@ export async function proseCapable(name, opts = {}) {
       ),
     ], { maxTokens: 3000, temperature: 0.1 });   // ROOM (2026-09-23, see provider-llm): cut off at 700 on live jobs, answers at 1170-1400
 
+    // an answer that never says whether it knows the name is no answer: a failed read, never "the model does not know it" (build check, 2026-10-02)
+    if (!j || typeof j !== "object" || typeof j.known !== "boolean") return { mode: "charref", signatures: [], failed: true, reason: "probe failed (no usable answer) → ref" };
     const sigs = (j?.signatures || []).filter((s) => typeof s === "string" && s.trim().length > 2);
     // PROSE requires BOTH: a real prior (known) AND that it is not a one-off individual, AND enough concrete
     // signatures to actually write the clause with. Any shortfall falls back to a reference — the safe error,
@@ -64,6 +66,7 @@ export async function proseCapable(name, opts = {}) {
     const prose = j?.known === true && j?.has_canonical_original === false && sigs.length >= minSigs;
     return {
       mode: prose ? "prose" : "charref",
+      canonical: j?.has_canonical_original === true,   // one canonical original owns the name (read by describedLook)
       signatures: sigs,
       reason: prose
         ? `diffuse archetype, no canonical original (${sigs.length} signatures) → prose carries it`
@@ -73,8 +76,20 @@ export async function proseCapable(name, opts = {}) {
     };
   } catch (e) {
     // FAIL TOWARD THE REFERENCE: if we cannot tell, the loud failure is better than the quiet one.
-    return { mode: "charref", signatures: [], reason: `probe failed (${String(e.message).slice(0, 50)}) → ref` };
+    return { mode: "charref", signatures: [], failed: true, reason: `probe failed (${String(e.message).slice(0, 50)}) → ref` };
   }
+}
+
+/** THE LOOK OF A FIGURE CARRIED IN WORDS, read in the sense the maker's sentence gives its name (owner 2026-10-02, job e7ea8106). A figure is described only
+ *  on a look that was actually read: `ok` is false when one canonical original owns the name (pixels carry it, never a description) and when the look could
+ *  not be read (an outage proves nothing, and a name nobody checked is never written as the maker's own; both build checks). @fed the name and the maker's
+ *  words; `look` is injected by the tests. */
+export async function describedLook(name, context = "", { look = proseCapable } = {}) {
+  let pc = null; try { pc = await look(name, { context }); } catch { pc = null; }
+  const why = String(pc?.reason || "");
+  if (!pc || pc.failed === true || /probe failed/i.test(why)) return { ok: false, why: "its look could not be read" };
+  if (pc.canonical === true || (pc.mode === "charref" && /canonical original/i.test(why))) return { ok: false, why: "one canonical original owns it" };
+  return { ok: true, signatures: (Array.isArray(pc.signatures) ? pc.signatures : []).filter(Boolean) };
 }
 
 // CLI: node _prose_capable.mjs "Santa Claus" "punch monkey" …

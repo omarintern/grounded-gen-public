@@ -312,6 +312,19 @@ export function dropDerivatives(entities) {
   return out;
 }
 
+/** THE COMPREHENSION'S READING OF A TERM ANOTHER PASS WORDED (build check, the reviewer, 2026-10-02: the extractor's "the tall greys" and the comprehension's "tall
+ *  greys" are two model outputs, and an exact-string join between them dropped the reading, so the look-up was asked with no sense and a place answer stood).
+ *  The same words first, then one's words standing whole inside the other's, plural-blind ("Nordic" finds "nordics"). Pure. */
+const _termKey = (x) => norm(x).replace(/^(?:the|a|an|some)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim().split(" ").map((w) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w)).join(" ");
+export const readingOf = (subjects, term) => {
+  const k = _termKey(term), subs = (Array.isArray(subjects) ? subjects : []).filter((x) => x && _termKey(x.term));
+  if (!k) return null;
+  return subs.find((x) => _termKey(x.term) === k) || subs.find((x) => { const s = _termKey(x.term); return ` ${s} `.includes(` ${k} `) || ` ${k} `.includes(` ${s} `); }) || null;
+};
+/** ⭐⭐ A FIGURE STAYS A FIGURE (both design checks, 2026-10-02): a look-up that answers a PLACE for a term the maker's words read as a figure or a person did
+ *  not find that figure ("nordics" → the Nordic countries), so the place is never its identity. Only the answer's own kind decides: a person or a mascot tied
+ *  to a chain (chain_venue beside real_person) is still that person (the reviewer, build check). Pure. */
+export const placeForFigure = (kind, verdict) => ["figure", "person"].includes(String(kind || "").toLowerCase()) && verdict?.kind === "venue";
 export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) {   // raised 0.6→0.7: filter borderline confabulations (the probe now scores guesses <0.5)
   // ⚠ COMPREHENSION RUNS FIRST, AND ITS FAILURE IS NOT A VERDICT. Attached as a property like candidateCount
   // so every existing caller that treats this as a plain array is unaffected. A null intent means "we could
@@ -362,11 +375,11 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   // in order and logs, caches and routes exactly as it always did. Job 801511b4 asked its four one after another, 16 to 30 seconds each.
   const _asked = new Map(), _canons = new Map();
   // each term asked in the sense the maker's sentence gives it, with the comprehension's reading of it (the sense law above)
-  const _readOf = (t) => (subjects.find((x) => norm(x?.term) === norm(t)) || null);
+  const _readOf = (t) => readingOf(subjects, t);
   const _sense = (t) => ({ context: String(userPrompt || ""), kind: String(_readOf(t)?.search_kind || "") });
   // ⭐⭐ A FIGURE STAYS A FIGURE (both design checks): a look-up that answers a PLACE for a term the comprehension read as a figure or a person did not
   // find that figure ("nordics" → the Nordic countries), so the place is never its identity: no venue entity, no canonical name; the figure stays the maker's
-  const _placeForFigure = (t, r) => ["figure", "person"].includes(String(_readOf(t)?.search_kind || "").toLowerCase()) && (r?.kind === "venue" || r?.chain_venue === true);
+  const _placeForFigure = (t, r) => placeForFigure(_readOf(t)?.search_kind, r);
   const _needs = (t) => !WORN_DEVICE.test(String(t || "")) && !(seatTerms.length && isSeatCastTerm(t, seatTerms)) && (process.env.FRESH_PROBE === "1" || store[norm(t)] === undefined);
   await Promise.all([...new Map(queue.filter(({ term }) => _needs(term)).map(({ term }) => [norm(term), term])).entries()].map(async ([k, term]) => { _asked.set(k, await probe(term, _sense(term))); }));   // one look-up per key, as the loop's store made it
   await Promise.all([..._asked.entries()].filter(([, a]) => a && !a.probeFailed && a.specific_entity_found && (Number(a.confidence) || 0) >= minConfidence && canonNeeded(a))
@@ -449,7 +462,7 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
     .filter((t) => !already.has(norm(t)));
   const materialIdentifiers = [];
   const _idAsked = new Map();   // side by side, as above
-  await Promise.all([...new Map(idTerms.filter((t) => !(seatTerms.length && isSeatCastTerm(t, seatTerms)) && (process.env.FRESH_PROBE === "1" || store[norm(t)] === undefined)).map((t) => [norm(t), t])).entries()].map(async ([k, t]) => { _idAsked.set(k, await probe(t)); }));
+  await Promise.all([...new Map(idTerms.filter((t) => !(seatTerms.length && isSeatCastTerm(t, seatTerms)) && (process.env.FRESH_PROBE === "1" || store[norm(t)] === undefined)).map((t) => [norm(t), t])).entries()].map(async ([k, t]) => { _idAsked.set(k, await probe(t, _sense(t))); }));   // in its sense, as every look-up here (the reviewer, build check)
   for (const term of idTerms) {
     if (seatTerms.length && isSeatCastTerm(term, seatTerms)) continue;   // the seat never finds the plate — it is never in it
     const key = norm(term);
