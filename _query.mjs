@@ -49,13 +49,29 @@ const RIDDEN_THING = "car|cars|truck|van|minivan|bus|coach|train|subway|metro|tr
 // outside (a car, a craft, a tent, a creature's belly); the run publishes the list (OV_INSIDE, both wordings) and these phrases alone reach the free library
 // whole. The vehicle and craft lists that stood here are gone: a list fixes the cases it names and misses the next. With no judge (SOURCEABILITY=0, the
 // escape switch, or a judge that could not answer) nothing is listed and every place goes bare, the owner's default; the paid index still gets every word.
+// Each entry is a pair [said, asked] (insidePhrases): a wording of a judged inside, and the one or two words the free library is asked for it; a bare
+// phrase is its own pair.
+const _insidePair = (x) => { const [s, a] = (Array.isArray(x) ? x : [x, x]).map((y) => String(y || "").toLowerCase().trim()); return /\binterior$/.test(s) && /\binterior$/.test(a) ? [s, a] : null; };
 /** the judged insides this process carries (the run publishes them once the judge answers); read per call, never at load. */
-export const insideFromEnv = () => { try { const a = JSON.parse(process.env.OV_INSIDE || "[]"); return Array.isArray(a) ? a.map((x) => String(x || "").toLowerCase().trim()).filter((x) => /\binterior$/.test(x)) : []; } catch { return []; } };
+export const insideFromEnv = () => { try { const a = JSON.parse(process.env.OV_INSIDE || "[]"); return Array.isArray(a) ? a.map(_insidePair).filter(Boolean) : []; } catch { return []; } };
 const _escQ = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-/** The judged inside a query names ("car interior at night" → "car interior"), lower-cased, or "": whole words, the longest first. Pure over its list. */
+// one inside in any of its wordings (the reviewer, build check: an improviser's "the car's interior" reached the free library as "the car's", its "interior of the
+// car" as the car seen whole): possessive-, plural- and hyphen-blind, and said around the thing ("interior of the car", "inside a car") when nothing names
+// a different place after it ("inside the car wash" is the car wash)
+const _insideWords = (s) => ` ${String(s || "").toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/(\w)'s\b/g, "$1").replace(/\binteriors\b/g, "interior").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim()} `;
+const _OWNER_W = "(?:the|a|an|his|her|their|its|my|our|your|this|that) ";
+const _AFTER_W = "(?:at|in|on|with|during|while|and|or|by|near|from|for|under|over|through|after|before|as|to|into|of|photograph|photo|footage|video|iphone)";
+/** The free library's words for the judged inside a query names ("car interior at night" → "car interior", "submarine hull interior" → "submarine
+ *  interior" when the judge's list says so), lower-cased, or "": the longest wording first. Pure over its list. */
 export const riddenInteriorOf = (q, inside = []) => {
-  const t = ` ${String(q || "").toLowerCase().replace(/[^a-z0-9'-]+/g, " ").replace(/\s+/g, " ").trim()} `;
-  return [...(Array.isArray(inside) ? inside : [])].map((x) => String(x || "").toLowerCase().trim()).filter(Boolean).sort((a, b) => b.length - a.length).find((p) => new RegExp(` ${_escQ(p)} `).test(t)) || "";
+  const t = _insideWords(q);
+  const pairs = (Array.isArray(inside) ? inside : []).map(_insidePair).filter(Boolean).sort((a, b) => b[0].length - a[0].length);
+  for (const [said, asked] of pairs) {
+    const w = _insideWords(said).trim(), head = w.replace(/ interior$/, "");
+    if (!head || head === w) continue;
+    if (t.includes(` ${w} `) || new RegExp(` (?:interior of|inside(?: of)?) (?:${_OWNER_W})?${_escQ(head)} (?:$|${_AFTER_W} )`).test(t)) return asked;
+  }
+  return "";
 };
 /** a query naming a judged inside, a place of its own. Pure over its list. */
 export const isRiddenInterior = (q, inside = []) => !!riddenInteriorOf(q, inside);

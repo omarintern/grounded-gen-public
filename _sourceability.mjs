@@ -306,20 +306,31 @@ export function shapeVerdicts(raw, subjects = []) {
   }
   return out;
 }
-/** THE INSIDES THE JUDGE LISTED, FOR THE FREE LIBRARY (owner 2026-10-02: "The judge decides"): each listed "<thing> interior", and each judged kind it names in
- *  both its wordings, the judge's own query ("spaceship interior") and the maker's word for it (the kind's identity, "UFO" → "ufo interior"), so the run's
- *  lead search in the maker's word and the judge's kind both keep "interior" (the reviewer, design check: whole-phrase matching on the judge's wording alone sent
- *  "ufo interior" to the free library as bare "ufo", sky sightings). Nothing listed → nothing kept: the free library gets the bare place. Pure. */
+/** THE INSIDES THE JUDGE LISTED, FOR THE FREE LIBRARY (owner 2026-10-02: "The judge decides"), as pairs [said, asked]: a wording a search may hold, and what
+ *  the free library is asked when it does. Each listed "<thing> interior" is asked as itself, and so is the maker's word for a judged kind it names (the
+ *  kind's identity, the run's lead search: "UFO" → "ufo interior"; the reviewer, design check), article-blind ("a UFO" is "ufo"; the reviewer, build check). The judge's own
+ *  wording of that kind is asked as itself when its thing is one word ("spaceship interior"), else as the listed thing ("submarine hull interior" →
+ *  "submarine interior"; the reviewer, build check: the free library thrives on one or two words, owner 2026-08-15; dropping the long wording sent it bare, the outside). A
+ *  verdict that lists one inside names it by its lone kind and its query whatever their word ("limousine interior" for the maker's limo). Nothing listed →
+ *  nothing kept: the free library gets the bare place. Pure. */
 const _insideHead = (x) => { const m = String(x || "").toLowerCase().replace(/[^a-z0-9\s'-]+/g, " ").replace(/\s+/g, " ").trim().match(/^(?:the |a |an )?(.+?)\s+interior\b/); return m ? m[1].trim() : ""; };
 export function insidePhrases(verdicts = []) {
-  const out = new Set();
+  const out = new Map(), put = (said, asked) => { if (!out.has(said)) out.set(said, asked); };
   for (const v of Array.isArray(verdicts) ? verdicts : []) {
-    const ins = (Array.isArray(v?.inside) ? v.inside : []).map(_insideHead).filter(Boolean);
+    const ins = [...new Set((Array.isArray(v?.inside) ? v.inside : []).map(_insideHead).filter(Boolean))];
     if (!ins.length) continue;
-    for (const h of ins) out.add(`${h} interior`);
+    const lone = ins.length === 1 ? ins[0] : "", ask = (h, thing) => `${h.split(" ").length === 1 ? h : thing} interior`;
+    for (const h of ins) put(`${h} interior`, `${h} interior`);
     const kinds = Array.isArray(v?.reduction) ? v.reduction : [], ids = Array.isArray(v?.kindPair?.identity) ? v.kindPair.identity : [];
-    kinds.forEach((k, n) => { const kh = _insideHead(k), id = _norm(ids[n] || "").toLowerCase(); if ((kh || id) && ins.some((h) => h === kh || (!!id && h === id))) { if (kh) out.add(`${kh} interior`); if (id) out.add(`${id} interior`); } });
-    const qh = _insideHead(v?.query); if (qh && ins.includes(qh)) out.add(`${qh} interior`);
+    kinds.forEach((k, n) => {
+      const kh = _insideHead(k), id = _insideHead(`${ids[n] || ""} interior`), idOk = !!id && !_wordsOf(id).every((w) => _GENERIC_ID.has(w));   // a generic word names no kind (as makerWordSearch)
+      const thing = ins.find((h) => h === kh) || (idOk && ins.find((h) => h === id)) || (kinds.length === 1 ? lone : "");
+      if (!thing) return;
+      if (idOk) put(`${id} interior`, `${id} interior`);
+      if (kh) put(`${kh} interior`, ask(kh, thing));
+    });
+    const qh = _insideHead(v?.query), qt = qh ? (ins.find((h) => h === qh) || lone) : "";
+    if (qt) put(`${qh} interior`, ask(qh, qt));
   }
   return [...out].slice(0, 12);
 }
