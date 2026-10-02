@@ -430,20 +430,6 @@ export function placePair(qs = [], { place = "", words = [], tried = [] } = {}) 
   const ran = (Array.isArray(tried) ? tried : []).some((t) => same(t, place));
   return [qs[0] || place, ran ? `${qs[1] || qs[0]} ${place}`.replace(/\s+/g, " ").trim() : place];
 }
-/** THE EVERYDAY HOST WHEN THE OPENING KIND IS ANOTHER (owner 2026-10-02: the place a video model could least draw opens, and the everyday place is put
- *  into it). The run's plan always holds the everyday kind as its host and the opening kind as the place that enters it, however the judge labelled them
- *  (the reviewer, design check: "a ufo with a bar in it" gave the UFO as host and the bar as a thing, so a UFO with no photograph left no fallback): this is the
- *  kind the grammar's own hunt runs on when the opening kind has no photograph. With no opening kind, or one that is not the host, the host stands. Pure. */
-// …and only in the one shape that needs it (the reviewer, build check: a judge that echoed the host as "opens" flipped "a kitchen in a barn" and "a café on a beach",
-// and with three kinds the fallback could hunt an object): exactly two kinds, the other one entered as a THING (the grammar's "Y with X in it"). Any other
-// "opens" that names the host is an echo, and the host stands.
-export function hostForOpening({ kinds = [], host = "", opens = "", enters = [] } = {}) {
-  const ks = (Array.isArray(kinds) ? kinds : []).map(_norm).filter(Boolean), h = _norm(host), o = _norm(opens);
-  if (!o || !h || _key(o) !== _key(h) || ks.length !== 2) return h;
-  const other = ks.find((k) => _key(k) !== _key(o));
-  const asThing = (Array.isArray(enters) ? enters : []).some((e) => e && _key(typeof e === "string" ? e : e.query) === _key(other) && String(e?.as || "").toLowerCase() === "thing");
-  return other && asThing ? other : h;
-}
 /** THE RUN'S PLAN FOR A REDUCED SUBJECT OF TWO KINDS OR MORE (the host rule): the host frame zero hunts, the one kind that enters as a PLACE (its own
  *  photograph: the bag holds one second place, so a further one is written), the kinds that enter as THINGS (thing plates), each kind's identity word and
  *  the place built as both. A judge that named no entering kind leaves every other kind entering as a place: two kinds are two photographs. Null when
@@ -463,6 +449,11 @@ export function kindPairPlan({ kinds = [], all = [], host = "", pair = null, sub
   // …never a kind the judge entered as a THING ("a bar with a ufo in it": the craft parked inside is a thing; both build checks), as a view never opens
   const op = pair?.opens ? ks.find((k) => _key(k) === _key(pair.opens)) || "" : "";
   const opensPlace = !!op && _key(op) !== _key(h) && !judged.some((e) => _key(e.query) === _key(op) && e.as === "thing");
+  // …and when the opening kind IS the judge's own host ("a ufo with a bar in it": the grammar already stands the camera in it), nothing swaps: the host is
+  // hunted as frame zero with its full attempts, marked opensHost so its hunt is asked only for what names it; the everyday kind's furniture arrives with
+  // that kind's own photograph (the reviewer, design check). The run never turns another kind into the host (the owner, 2026-10-02: "A kitchen with a fireplace in
+  // it could end up hunting the fireplace is an issue"): code cannot tell a room entered as a thing from an object, so it never guesses.
+  const opensHost = !!op && _key(op) === _key(h);
   if (opensPlace) enters = [{ query: op, as: "place" }, ...enters.filter((e) => _key(e.query) !== _key(op))];
   if (!enters.length) return null;
   const places = enters.filter((e) => e.as !== "thing"), things = enters.filter((e) => e.as === "thing");
@@ -473,7 +464,7 @@ export function kindPairPlan({ kinds = [], all = [], host = "", pair = null, sub
            // the place built as both, the fallback only (owner: "themed version is fallback"), is worded HERE from the two kinds and never asked of the judge:
            // asking for it put "a themed venue exists" in front of the judge, which then called the whole place photographable as itself and never split it
            together: places[0] ? `${idOf(places[0].query) || kindName(places[0].query).replace(/\b(?:interior|exterior|inside|outside|room|view|surface)\b/gi, " ").replace(/\s+/g, " ").trim() || kindName(places[0].query)}-themed ${kindName(h)}` : null,   // the theme's own word, never "interior-themed" (the reviewer)
-           judged: !!(pair && pair.host && _key(pair.host) === _key(h)), opensPlace };
+           judged: !!(pair && pair.host && _key(pair.host) === _key(h)), opensPlace, opensHost };
 }
 /** THE PAIRS: a capture form judged against each place it must be found in. Only pairs of subjects actually asked are kept; a pair with no
  *  boolean "likely" is dropped (never acts). Pure. */
