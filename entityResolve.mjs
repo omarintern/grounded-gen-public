@@ -315,15 +315,16 @@ export function dropDerivatives(entities) {
 /** THE COMPREHENSION'S READING OF A TERM ANOTHER PASS WORDED (build check, the reviewer, 2026-10-02: the extractor's "the tall greys" and the comprehension's "tall
  *  greys" are two model outputs, and an exact-string join between them dropped the reading, so the look-up was asked with no sense and a place answer stood).
  *  The same words first, plural-blind ("Nordic" finds "nordics"); then a subject that OPENS the term ("tall greys" for "tall grey aliens"), or a term that
- *  CLOSES the subject with no preposition before it ("greys" for "the tall greys"). A word the subject merely contains is another thing: "Starbucks" is not
- *  "a Starbucks barista" and "bar" is not "the man in the bar" (the reviewer, confirm check: the venue was read as the person named after it and discarded). Pure. */
+ *  CLOSES the subject, or a subject that closes the term, with no preposition before it ("greys" for "the tall greys"; "nordics" for "alien nordics"). A
+ *  word the subject merely contains is another thing: "Starbucks" is not "a Starbucks barista" and "bar" is not "the man in the bar" (the reviewer, confirm check: the
+ *  venue was read as the person named after it and discarded). Pure. */
 const _PREP = /(?:^| )(?:in|on|at|of|with|from|by|inside|outside|near|under|behind|beside|into|onto|over|above|below|around|through|across|among|between|against|along|toward|towards|within|for|to)(?: |$)/;
 const _termKey = (x) => norm(x).replace(/^(?:the|a|an|some)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim().split(" ").map((w) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w)).join(" ");
 export const readingOf = (subjects, term) => {
   const k = _termKey(term), subs = (Array.isArray(subjects) ? subjects : []).filter((x) => x && _termKey(x.term));
   if (!k) return null;
   return subs.find((x) => _termKey(x.term) === k)
-    || subs.find((x) => { const s = _termKey(x.term); return k.startsWith(`${s} `) || (s.endsWith(` ${k}`) && !_PREP.test(s.slice(0, s.length - k.length))); }) || null;
+    || subs.find((x) => { const s = _termKey(x.term); return k.startsWith(`${s} `) || (s.endsWith(` ${k}`) && !_PREP.test(s.slice(0, s.length - k.length))) || (k.endsWith(` ${s}`) && !_PREP.test(k.slice(0, k.length - s.length))); }) || null;
 };
 /** ⭐⭐ A FIGURE STAYS A FIGURE (both design checks, 2026-10-02): a look-up that answers a PLACE for a term the maker's words read as a figure or a person did
  *  not find that figure ("nordics" → the Nordic countries), so the place is never its identity. Only the answer's own kind decides: a person or a mascot tied
@@ -379,7 +380,10 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   // in order and logs, caches and routes exactly as it always did. Job 801511b4 asked its four one after another, 16 to 30 seconds each.
   const _asked = new Map(), _canons = new Map();
   // each term asked in the sense the maker's sentence gives it, with the comprehension's reading of it (the sense law above)
-  const _readOf = (t) => readingOf(subjects, t);
+  // …and the work behind a ride noun reads as the maker's own phrase for it does ("the shining" for "The Shining ride": the queue probes the work, the
+  // comprehension read the phrase; the reviewer, confirm check)
+  const _phraseOf = new Map(queue.filter((q) => q.fallback).map((q) => [norm(q.term), q.fallback]));
+  const _readOf = (t) => readingOf(subjects, t) || (_phraseOf.has(norm(t)) ? readingOf(subjects, _phraseOf.get(norm(t))) : null);
   const _sense = (t) => ({ context: String(userPrompt || ""), kind: String(_readOf(t)?.search_kind || "") });
   // ⭐⭐ A FIGURE STAYS A FIGURE (both design checks): a look-up that answers a PLACE for a term the comprehension read as a figure or a person did not
   // find that figure ("nordics" → the Nordic countries), so the place is never its identity: no venue entity, no canonical name; the figure stays the maker's
