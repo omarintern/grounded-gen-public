@@ -315,20 +315,36 @@ export function dropDerivatives(entities) {
 /** THE COMPREHENSION'S READING OF A TERM ANOTHER PASS WORDED (build check, the reviewer, 2026-10-02: the extractor's "the tall greys" and the comprehension's "tall
  *  greys" are two model outputs, and an exact-string join between them dropped the reading, so the look-up was asked with no sense and a place answer stood).
  *  Three joins, each one the SAME thing under two wordings:
- *   · the same words, article- and plural-blind ("the Nordics", "Nordic" for "nordics");
- *   · a term that CLOSES the subject with no preposition before it: the subject's own head ("greys" for "the tall greys", "pier" for "the Santa Monica pier");
+ *   · its OWN subject: the same words, article-blind, then plural-blind ("the Nordics", "Nordic" for "nordics"). The same words win over a plural variant:
+ *     "Popeyes" is the chain "popeyes", never the figure "popeye" listed before it (the reviewer, last check);
+ *   · a term that CLOSES the subject with no preposition before it: the subject's own head ("greys" for "the tall greys", "pier" for "the Santa Monica
+ *     pier"). A BORROWED reading: the subject is longer than the term;
  *   · the extractor's own composed form, a name with the work it belongs to in parentheses ("wendy (The Shining)" reads as "wendy").
  *  A word a subject merely contains, or a longer term a subject merely opens or closes, is ANOTHER thing and finds no reading (the confirm checks, the reviewer: each
  *  of these read a venue as the figure named like it and discarded its place answer): "Starbucks" is not "a Starbucks barista", "bar" is not "the man in the
  *  bar", "Burger King" is not "a king", "Red Lobster" is not "a lobster", "Santa Monica" is not "Santa", "Wendy's" is not "wendy". A term with no reading is
  *  asked with the maker's sentence alone, and the cast's own probe defaults to a figure and guards. Pure. */
 const _PREP = /(?:^| )(?:in|on|at|of|with|from|by|inside|outside|near|under|behind|beside|into|onto|over|above|below|around|through|across|among|between|against|along|toward|towards|within|for|to)(?: |$)/;
-const _termKey = (x) => norm(x).replace(/^(?:the|a|an|some)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim().split(" ").map((w) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w)).join(" ");
+const _termWords = (x) => norm(x).replace(/^(?:the|a|an|some)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+const _termKey = (x) => _termWords(x).split(" ").map((w) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w)).join(" ");
+const _subsOf = (subjects) => (Array.isArray(subjects) ? subjects : []).filter((x) => x && _termKey(x.term));
+const _bareTerm = (term) => String(term || "").replace(/\s*\([^)]*\)\s*$/, "");
+const _ownSubject = (subs, raw) => { const w = _termWords(raw), k = _termKey(raw); return !k ? null : subs.find((x) => _termWords(x.term) === w) || subs.find((x) => _termKey(x.term) === k) || null; };
+const _headOf = (subs, raw) => { const k = _termKey(raw); return !k ? null : subs.find((x) => { const s = _termKey(x.term); return s.endsWith(` ${k}`) && !_PREP.test(s.slice(0, s.length - k.length)); }) || null; };
 export const readingOf = (subjects, term) => {
-  const subs = (Array.isArray(subjects) ? subjects : []).filter((x) => x && _termKey(x.term));
-  const find = (k) => (!k ? null : subs.find((x) => _termKey(x.term) === k) || subs.find((x) => { const s = _termKey(x.term); return s.endsWith(` ${k}`) && !_PREP.test(s.slice(0, s.length - k.length)); }) || null);
-  const raw = String(term || ""), bare = raw.replace(/\s*\([^)]*\)\s*$/, "");
-  return find(_termKey(raw)) || (bare !== raw ? find(_termKey(bare)) : null);
+  const subs = _subsOf(subjects), raw = String(term || ""), bare = _bareTerm(raw);
+  return _ownSubject(subs, raw) || _headOf(subs, raw) || (bare !== raw ? _ownSubject(subs, bare) || _headOf(subs, bare) : null);
+};
+/** the reading is the term's OWN (its own subject, as worded or in the extractor's composed form), never borrowed from a longer subject it closes. Pure. */
+export const ownReading = (subjects, term) => {
+  const subs = _subsOf(subjects), raw = String(term || ""), bare = _bareTerm(raw);
+  return !!(_ownSubject(subs, raw) || (!_headOf(subs, raw) && bare !== raw && _ownSubject(subs, bare)));
+};
+/** a subject the maker's words read as a PLACE holds the term whole ("the hilton lobby" names "Hilton"). Pure. */
+const _PLACE_KINDS = new Set(["named place", "chain", "kind of place"]);
+export const placeNames = (subjects, term) => {
+  const k = _termKey(_bareTerm(term));
+  return !!k && _subsOf(subjects).some((x) => _PLACE_KINDS.has(String(x.search_kind || "").toLowerCase()) && ` ${_termKey(x.term)} `.includes(` ${k} `));
 };
 /** ⭐⭐ A FIGURE STAYS A FIGURE (both design checks, 2026-10-02): a look-up that answers a PLACE for a term the maker's words read as a figure or a person did
  *  not find that figure ("nordics" → the Nordic countries), so the place is never its identity. Only the answer's own kind decides: a person or a mascot tied
@@ -391,7 +407,9 @@ export async function resolveEntities(userPrompt, { minConfidence = 0.7 } = {}) 
   const _sense = (t) => ({ context: String(userPrompt || ""), kind: String(_readOf(t)?.search_kind || "") });
   // ⭐⭐ A FIGURE STAYS A FIGURE (both design checks): a look-up that answers a PLACE for a term the comprehension read as a figure or a person did not
   // find that figure ("nordics" → the Nordic countries), so the place is never its identity: no venue entity, no canonical name; the figure stays the maker's
-  const _placeForFigure = (t, r) => placeForFigure(_readOf(t)?.search_kind, r);
+  // …and a BORROWED reading never discards a place that a place-kind subject names (the reviewer, last check: with "paris hilton" and "the hilton lobby", the term
+  // "Hilton" borrowed the person's reading and its venue answer was discarded). The term's own reading still does: the maker's word is the figure.
+  const _placeForFigure = (t, r) => placeForFigure(_readOf(t)?.search_kind, r) && (ownReading(subjects, t) || !placeNames(subjects, t));
   const _needs = (t) => !WORN_DEVICE.test(String(t || "")) && !(seatTerms.length && isSeatCastTerm(t, seatTerms)) && (process.env.FRESH_PROBE === "1" || store[norm(t)] === undefined);
   await Promise.all([...new Map(queue.filter(({ term }) => _needs(term)).map(({ term }) => [norm(term), term])).entries()].map(async ([k, term]) => { _asked.set(k, await probe(term, _sense(term))); }));   // one look-up per key, as the loop's store made it
   await Promise.all([..._asked.entries()].filter(([, a]) => a && !a.probeFailed && a.specific_entity_found && (Number(a.confidence) || 0) >= minConfidence && canonNeeded(a))
