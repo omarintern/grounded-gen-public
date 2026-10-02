@@ -29,15 +29,20 @@ const _content = (x) => [...new Set((String(x || "").toLowerCase().match(/[a-z0-
 // the words of a change that order it or stand for the figure: never part of a look
 const _ORDER = new Set(["make", "makes", "give", "gives", "turn", "turns", "change", "changes", "let", "put", "get", "gets", "dress", "paint", "color", "colour", "please", "him", "she", "they", "them", "look", "looks", "should",
   "must", "will", "remove", "take", "lose", "add", "become", "becomes", "wear"]);
-// one word in two forms: plural-blind, or the same base after -s, -es, -ed or -ing (wear, wearing; paint, painted; ride, riding). Never a shared stem:
-// "surfer" is not "surfboard" and "bear" is not "beard" (the reviewer, confirm check: a planner that removed the surfboard read as not having, and "a bear in a
-// suit" passed for "give him a beard")
+// one word in two forms: plural-blind, or the same base after -s, -es, -ed, -ing or -y, a doubled consonant undone (wear, wearing; paint, painted; ride,
+// riding; spot, spotted; spike, spiky; hair, hairy). Never a shared stem: "surfer" is not "surfboard" and "bear" is not "beard" (the reviewer, confirm check: a
+// planner that removed the surfboard read as not having, and "a bear in a suit" passed for "give him a beard"). And never without the doubling and the
+// -y (the reviewer, second confirm: "a spotted dog" + "remove the spots", done right, read as pending, and the right edit was refused).
+const _undoubled = (x) => (/([b-df-hj-np-tv-z])\1$/.test(x) ? [x, x.slice(0, -1)] : [x]);
 const _bases = (w) => [...new Set([w, ...(w.length > 3 && w.endsWith("s") ? [w.slice(0, -1)] : []), ...(w.length > 4 && w.endsWith("es") ? [w.slice(0, -2)] : []),
-  ...(w.length > 4 && w.endsWith("ed") ? [w.slice(0, -2), w.slice(0, -1)] : []), ...(w.length > 5 && w.endsWith("ing") ? [w.slice(0, -3), `${w.slice(0, -3)}e`] : [])])].filter((x) => x.length >= 3);
+  ...(w.length > 4 && w.endsWith("ed") ? [..._undoubled(w.slice(0, -2)), w.slice(0, -1)] : []), ...(w.length > 5 && w.endsWith("ing") ? [..._undoubled(w.slice(0, -3)), `${w.slice(0, -3)}e`] : []),
+  ...(w.length > 4 && w.endsWith("y") ? [..._undoubled(w.slice(0, -1)), `${w.slice(0, -1)}e`] : [])])].filter((x) => x.length >= 3);
 const _like = (a, b) => sameWord(a, b) || _bases(a).some((x) => _bases(b).includes(x));
 const _in = (words, w) => words.some((x) => _like(x, w));
-// a look's clauses: what stands between its commas and connectives, each a list of content words
-const _clauses = (x) => String(x || "").toLowerCase().split(/,|\b(?:and|with|in|on|under|wearing|holding|carrying|riding)\b/).map(_content).filter((c) => c.length);
+// a look's clauses: what stands between its commas and connectives, each with the connective that opens it and its content words
+const _clauses = (x) => { const parts = String(x || "").toLowerCase().split(/(,|\b(?:and|with|in|on|under|wearing|holding|carrying|riding)\b)/), out = []; let lead = "";
+  parts.forEach((p, i) => { if (i % 2) { lead = p.trim(); return; } const words = _content(p); if (words.length) out.push({ lead, words }); });
+  return out; };
 const _esc = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const _holds = (text, name) => new RegExp(`(?:^|[^a-z0-9])${_esc(String(name).toLowerCase())}(?:[^a-z0-9]|$)`).test(String(text || "").toLowerCase());
 
@@ -59,7 +64,9 @@ export function shownChange(look, parent, change) {
   const entered = wc.filter((w) => _in(w1, w) && !_in(w0, w)), left = wc.filter((w) => _in(w0, w) && !_in(w1, w));
   // a thing the change names takes its own clause of the parent's look with it ("…, wearing a tiny red hat" leaves whole when the hat goes), and nothing
   // else: the crest is in another clause than the surfboard (the reviewer, confirm check)
-  const gone = _clauses(parent).filter((c) => left.some((w) => _in(c, w))).flat();
+  // …and the clause that says where it sat goes with it ("a tiny red hat on its head"; the reviewer, second confirm)
+  const cl = _clauses(parent), gone = [];
+  cl.forEach((c, i) => { if (!left.some((w) => _in(c.words, w))) return; gone.push(...c.words); const nx = cl[i + 1]; if (nx && ["in", "on", "under"].includes(nx.lead)) gone.push(...nx.words); });
   return { shows: entered.length + left.length > 0, entered, left, lost: w0.filter((w) => !_in(w1, w) && !_in(all, w) && !_in(gone, w)), extra: w1.filter((w) => !_in(w0, w) && !_in(all, w)) };
 }
 
