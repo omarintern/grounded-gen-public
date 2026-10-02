@@ -315,16 +315,17 @@ export function dropDerivatives(entities) {
 /** THE COMPREHENSION'S READING OF A TERM ANOTHER PASS WORDED (build check, the reviewer, 2026-10-02: the extractor's "the tall greys" and the comprehension's "tall
  *  greys" are two model outputs, and an exact-string join between them dropped the reading, so the look-up was asked with no sense and a place answer stood).
  *  The same words first, plural-blind ("Nordic" finds "nordics"); then a subject that OPENS the term ("tall greys" for "tall grey aliens"), or a term that
- *  CLOSES the subject, or a subject that closes the term, with no preposition before it ("greys" for "the tall greys"; "nordics" for "alien nordics"). A
- *  word the subject merely contains is another thing: "Starbucks" is not "a Starbucks barista" and "bar" is not "the man in the bar" (the reviewer, confirm check: the
- *  venue was read as the person named after it and discarded). Pure. */
+ *  CLOSES the subject with no preposition before it ("greys" for "the tall greys"). A word the subject merely contains is another thing: "Starbucks" is not
+ *  "a Starbucks barista" and "bar" is not "the man in the bar" (the reviewer, confirm check: the venue was read as the person named after it and discarded). And a
+ *  subject never lends its reading to a longer term it merely closes: "Burger King" is not "a king", "Red Lobster" is not "a lobster" (the reviewer, final confirm;
+ *  the cost is that "alien nordics" finds no reading for "nordics" and is asked with the sentence alone, which the cast's own guard covers). Pure. */
 const _PREP = /(?:^| )(?:in|on|at|of|with|from|by|inside|outside|near|under|behind|beside|into|onto|over|above|below|around|through|across|among|between|against|along|toward|towards|within|for|to)(?: |$)/;
 const _termKey = (x) => norm(x).replace(/^(?:the|a|an|some)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim().split(" ").map((w) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w)).join(" ");
 export const readingOf = (subjects, term) => {
   const k = _termKey(term), subs = (Array.isArray(subjects) ? subjects : []).filter((x) => x && _termKey(x.term));
   if (!k) return null;
   return subs.find((x) => _termKey(x.term) === k)
-    || subs.find((x) => { const s = _termKey(x.term); return k.startsWith(`${s} `) || (s.endsWith(` ${k}`) && !_PREP.test(s.slice(0, s.length - k.length))) || (k.endsWith(` ${s}`) && !_PREP.test(k.slice(0, k.length - s.length))); }) || null;
+    || subs.find((x) => { const s = _termKey(x.term); return k.startsWith(`${s} `) || (s.endsWith(` ${k}`) && !_PREP.test(s.slice(0, s.length - k.length))); }) || null;
 };
 /** ⭐⭐ A FIGURE STAYS A FIGURE (both design checks, 2026-10-02): a look-up that answers a PLACE for a term the maker's words read as a figure or a person did
  *  not find that figure ("nordics" → the Nordic countries), so the place is never its identity. Only the answer's own kind decides: a person or a mascot tied
