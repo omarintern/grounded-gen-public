@@ -312,6 +312,11 @@ export const thingBlock = () => {
     // A PLACE AROUND THIS ONE (the host rule, owner 2026-10-01: "appropriation is first"): the photograph is the entering kind, and it lends the host its
     // walls, ceiling, windows and lights; the host's floor, furniture and people are its own; the take never goes there
     // (it is named by the maker's own word, the kind's identity, never the search phrase: "the UFO", not "UFO interior set or replica")
+    // …and one with NO photograph (2026-10-02, the reviewer's design check: job d5de4883's beats never said UFO): the writer is told the place around the room by its
+    // word, its walls, ceiling, windows and lights written as that place's own, standing where the host's own stood
+    if (t.kind === "place" && !t.plate) return `\u26a0\u26a0 THE ${String(t.name || t.subject).toUpperCase()} IS AROUND THIS PLACE (no photograph of it rides). Frame zero is ${host}: its floor, its furniture and its people are its own, and the ${t.name || t.subject} is around them from the first frame: ` +
+      `write its walls, ceiling, windows and lights as the ${t.name || t.subject}'s own, each standing where the host's own wall, ceiling, window or light stood, named in the grammar "<the piece> where <the host's piece> stood", a standing fact at [0s], never a change on screen. ` +
+      `The take never cuts away and never arrives anywhere: the room is inside the ${t.name || t.subject} from the first frame.`;
     if (t.kind === "place") return `\u26a0\u26a0 ONE OF THE REFERENCE PHOTOGRAPHS IS THE ${String(t.name || t.subject).toUpperCase()}, AROUND THIS PLACE, NOT A PLACE THE TAKE GOES. Frame zero is ${host}: its floor, its furniture and its people are its own, and the ${t.name || t.subject} is around them${seen.length ? ` (${seen.join(", ")})` : ""}, as that photograph shows it, its make, its texture and its light, ` +
       `${facts.length ? `each piece standing where the host's own piece stood, a standing fact at [0s], never a change on screen: ${facts.join(" | ")}. ` : `each of its pieces standing where the host's own wall, ceiling, window or light stood, named in the grammar "<the piece> where <the host's piece> stood". `}` +
       `The take never cuts to that photograph and never arrives there: it is a reference for what surrounds the room, and it surrounds the room from the first frame.`;
