@@ -453,7 +453,9 @@ export function kindPairPlan({ kinds = [], all = [], host = "", pair = null, sub
   // hunted as frame zero with its full attempts, marked opensHost so its hunt is asked only for what names it; the everyday kind's furniture arrives with
   // that kind's own photograph (the reviewer, design check). The run never turns another kind into the host (the owner, 2026-10-02: "A kitchen with a fireplace in
   // it could end up hunting the fireplace is an issue"): code cannot tell a room entered as a thing from an object, so it never guesses.
-  const opensHost = !!op && _key(op) === _key(h);
+  // …only in that shape: nothing enters as a place and the everyday kind arrives as a thing (both build checks: an echoed answer on "a kitchen in a barn" or
+  // "a café on a beach" stripped the host's own stove and counter from its hunt)
+  const opensHost = !!op && _key(op) === _key(h) && !enters.some((e) => e.as !== "thing") && enters.some((e) => e.as === "thing");
   if (opensPlace) enters = [{ query: op, as: "place" }, ...enters.filter((e) => _key(e.query) !== _key(op))];
   if (!enters.length) return null;
   const places = enters.filter((e) => e.as !== "thing"), things = enters.filter((e) => e.as === "thing");
