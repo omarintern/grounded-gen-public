@@ -41,7 +41,7 @@ const _like = (a, b) => sameWord(a, b) || _bases(a).some((x) => _bases(b).includ
 const _in = (words, w) => words.some((x) => _like(x, w));
 // a look's clauses: what stands between its commas and connectives, each with the connective that opens it and its content words
 const _clauses = (x) => { const parts = String(x || "").toLowerCase().split(/(,|\b(?:and|with|in|on|under|wearing|holding|carrying|riding)\b)/), out = []; let lead = "";
-  parts.forEach((p, i) => { if (i % 2) { lead = p.trim(); return; } const words = _content(p); if (words.length) out.push({ lead, words }); });
+  parts.forEach((p, i) => { if (i % 2) { lead = p.trim(); return; } const words = _content(p); if (words.length) out.push({ lead, words, raw: p.trim() }); });
   return out; };
 const _esc = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const _holds = (text, name) => new RegExp(`(?:^|[^a-z0-9])${_esc(String(name).toLowerCase())}(?:[^a-z0-9]|$)`).test(String(text || "").toLowerCase());
@@ -64,9 +64,11 @@ export function shownChange(look, parent, change) {
   const entered = wc.filter((w) => _in(w1, w) && !_in(w0, w)), left = wc.filter((w) => _in(w0, w) && !_in(w1, w));
   // a thing the change names takes its own clause of the parent's look with it ("…, wearing a tiny red hat" leaves whole when the hat goes), and nothing
   // else: the crest is in another clause than the surfboard (the reviewer, confirm check)
-  // …and the clause that says where it sat goes with it ("a tiny red hat on its head"; the reviewer, second confirm)
+  // …and the clause that says where it sat goes with it ("a tiny red hat on its head"; the reviewer, second confirm): one that opens on the figure's own part
+  // (its, his, her, their, the, one), never another thing the figure has ("round glasses in a brown suit": the suit stays; the reviewer, third confirm)
   const cl = _clauses(parent), gone = [];
-  cl.forEach((c, i) => { if (!left.some((w) => _in(c.words, w))) return; gone.push(...c.words); const nx = cl[i + 1]; if (nx && ["in", "on", "under"].includes(nx.lead)) gone.push(...nx.words); });
+  cl.forEach((c, i) => { if (!left.some((w) => _in(c.words, w))) return; gone.push(...c.words); const nx = cl[i + 1];
+    if (nx && ["in", "on", "under"].includes(nx.lead) && /^(?:its|his|her|their|the|one)\b/.test(nx.raw)) gone.push(...nx.words); });
   return { shows: entered.length + left.length > 0, entered, left, lost: w0.filter((w) => !_in(w1, w) && !_in(all, w) && !_in(gone, w)), extra: w1.filter((w) => !_in(w0, w) && !_in(all, w)) };
 }
 
@@ -120,10 +122,11 @@ export function lookShaped(change, names = []) {
   // a tail that points at something (an article, a pronoun, a possessive) is a look only when it opens as one: "with …", "without …", "in …", "wearing …"
   const refs = (t) => /\b(?:a|an|the|some|he|she|it|they|him|her|them|his|hers|its|their)\b/i.test(t);
   const led = (t) => /^(?:with|without|in|wearing|holding|carrying)\b/i.test(t);
-  const gone = s.match(/^(?:remove|take off|take away|lose|get rid of)\s+(.+)$/i);
+  // a THING taken away (it opens on an article or a possessive): "lose weight" is no thing, and "without weight" no look (the reviewer, third confirm)
+  const gone = s.match(/^(?:remove|take off|take away|lose|get rid of)\s+((?:the|a|an|his|her|its|their|that|those|all)\b.+)$/i);
   if (gone) { s = _say(gone[1]); return s.length >= 2 && !verbed(s) && !orders(s) ? `without ${s}` : ""; }
-  const having = strip(/^(?:give|add|put on|put|get)\b\s*/i);
-  if (!having) strip(/^(?:make|turn|change|let|paint|colou?r|dress)\b\s*/i);
+  const having = strip(/^(?:give|add|put on|put)\b\s*/i);
+  if (!having) strip(/^(?:make|turn|change|let|get|paint|colou?r|dress)\b\s*/i);   // "get older" is how it now is, never a thing it has (the reviewer, third confirm)
   figure();
   strip(/^(?:he|she|it|they)\b\s*/i);
   const has = strip(/^(?:has|have|gets)\b\s*/i);
