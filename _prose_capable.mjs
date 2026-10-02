@@ -26,7 +26,8 @@
 import { providerJson, textPart } from "./provider-llm.mjs";
 
 /**
- * Decide PROSE vs CHAR-REF for a figure, from its name alone (no image, no scrape).
+ * Decide PROSE vs CHAR-REF for a figure, from its name (no image, no scrape), in the sense the maker's sentence gives it when `opts.context` carries
+ * their words (owner 2026-10-02: "nordics" alone is a region; in their sentence, a being).
  * Returns { mode: "prose"|"charref", signatures: string[], reason: string } — never throws.
  */
 export async function proseCapable(name, opts = {}) {
@@ -35,7 +36,7 @@ export async function proseCapable(name, opts = {}) {
     const j = await providerJson([
       textPart(
         `Return ONLY JSON {"known":bool,"has_canonical_original":bool,"signatures":["..."],"note":"one short line"}. ` +
-        `The name is: "${name}". Answer from YOUR OWN knowledge — you are NOT being shown any picture.\n` +
+        `The name is: "${name}".${opts.context ? ` The maker wrote it in: "${String(opts.context).replace(/\s+/g, " ").trim().slice(0, 600)}" — a name with several senses means the one THE SENTENCE GIVES IT; answer for that thing.` : ""} Answer from YOUR OWN knowledge — you are NOT being shown any picture.\n` +
         `known = do you reliably know what this looks like from the name alone, well enough that an illustrator ` +
         `following your description would draw the RIGHT thing? Answer false if you are guessing or if the name ` +
         `could refer to many unrelated things.\n` +
