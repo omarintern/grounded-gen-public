@@ -311,8 +311,9 @@ export function shapeVerdicts(raw, subjects = []) {
  *  kind's identity, the run's lead search: "UFO" → "ufo interior"; the reviewer, design check), article-blind ("a UFO" is "ufo"; the reviewer, build check). The judge's own
  *  wording of that kind is asked as itself when its thing is one word ("spaceship interior"), else as the listed thing ("submarine hull interior" →
  *  "submarine interior"; the reviewer, build check: the free library thrives on one or two words, owner 2026-08-15; dropping the long wording sent it bare, the outside). A
- *  verdict that lists one inside names it by its lone kind and its query whatever their word ("limousine interior" for the maker's limo). Nothing listed →
- *  nothing kept: the free library gets the bare place. Pure. */
+ *  listed thing names a wording when it is the wording's thing or its head noun, the last word ("alien spaceship" is a spaceship; the reviewer, confirm); a verdict
+ *  that lists one inside also names its lone kind and its query when they are one word, a synonym ("limousine interior" for the maker's limo), never a
+ *  longer place ("underground parking garage" is no car; the reviewer, confirm). Nothing listed → nothing kept: the free library gets the bare place. Pure. */
 const _insideHead = (x) => { const m = String(x || "").toLowerCase().replace(/[^a-z0-9\s'-]+/g, " ").replace(/\s+/g, " ").trim().match(/^(?:the |a |an )?(.+?)\s+interior\b/); return m ? m[1].trim() : ""; };
 export function insidePhrases(verdicts = []) {
   const out = new Map(), put = (said, asked) => { if (!out.has(said)) out.set(said, asked); };
@@ -322,14 +323,16 @@ export function insidePhrases(verdicts = []) {
     const lone = ins.length === 1 ? ins[0] : "", ask = (h, thing) => `${h.split(" ").length === 1 ? h : thing} interior`;
     for (const h of ins) put(`${h} interior`, `${h} interior`);
     const kinds = Array.isArray(v?.reduction) ? v.reduction : [], ids = Array.isArray(v?.kindPair?.identity) ? v.kindPair.identity : [];
+    const headOf = (w) => (w ? ins.find((h) => h === w || w.endsWith(` ${h}`)) || "" : "");                // the listed thing, as the wording's thing or its head noun
+    const named = (w, alone) => headOf(w) || (alone && lone && w && !w.includes(" ") ? lone : "");     // …or the lone inside, onto one word alone
     kinds.forEach((k, n) => {
       const kh = _insideHead(k), id = _insideHead(`${ids[n] || ""} interior`), idOk = !!id && !_wordsOf(id).every((w) => _GENERIC_ID.has(w));   // a generic word names no kind (as makerWordSearch)
-      const thing = ins.find((h) => h === kh) || (idOk && ins.find((h) => h === id)) || (kinds.length === 1 ? lone : "");
+      const thing = named(kh, kinds.length === 1) || (idOk && headOf(id));
       if (!thing) return;
-      if (idOk) put(`${id} interior`, `${id} interior`);
+      if (idOk) put(`${id} interior`, ask(id, headOf(id) || thing));
       if (kh) put(`${kh} interior`, ask(kh, thing));
     });
-    const qh = _insideHead(v?.query), qt = qh ? (ins.find((h) => h === qh) || lone) : "";
+    const qh = _insideHead(v?.query), qt = named(qh, true);
     if (qt) put(`${qh} interior`, ask(qh, qt));
   }
   return [...out].slice(0, 12);
