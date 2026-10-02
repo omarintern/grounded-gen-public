@@ -137,6 +137,11 @@ function _digest(plan) {
       meme_in_context: typeof f?.meme_in_context === "boolean" ? f.meme_in_context : undefined,
       public_figure: typeof f?.public_figure === "boolean" ? f.public_figure : undefined,
       household_name: typeof f?.household_name === "boolean" ? f.household_name : undefined,
+      // HOW THE CAST'S BACKSTOP REALIZED A FIGURE THE PLANNER NEVER CAST (owner 2026-10-02: "execute the fix"; the reviewer, on the plan check: the record kept
+      // neither mark, so on a remix a backstop figure came back as a planner figure, was looked up again and, beside a word of dress, turned the hunt
+      // place-only). The three marks the backstop wrote ride with the record, exactly as the plan holds them: added by the backstop (cast_by), the maker's
+      // own (never looked up), carried in words (no photograph hunted, no slot held). A reframing remix adopts the figure the same way.
+      cast_by: f?.cast_by === "maker" ? "maker" : undefined, verified_generic: f?.verified_generic === true ? true : undefined, makers_own: f?.makers_own === true ? true : undefined,
       // a look this remix changed (owner 2026-09-26, the canon strip rule): a frame made before the change never carries the character again
       look_changed: f?.look_changed === true ? true : undefined,
     })),
