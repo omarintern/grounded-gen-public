@@ -44,17 +44,24 @@ export const OV_VANTAGE = /\b(?:iphone|footage|pov|p\.o\.v\.?|onboard|on-board|o
 // are its outside, and its inside is a place of its own. So that phrase IS the bare place the free library is asked for, on both roads (the shape here,
 // the core in scrape.mjs), and the lint lets it carry its word.
 const RIDDEN_THING = "car|cars|truck|van|minivan|bus|coach|train|subway|metro|tram|trolley|streetcar|plane|airplane|aeroplane|aircraft|jet|airliner|helicopter|boat|ship|yacht|ferry|limo|limousine|taxi|cab|rv|camper|motorhome|ambulance|spaceship|spacecraft|rocket|submarine|suv|pickup|jeep|tractor";
-// …and the inside of a craft one stands in but never drives past (2026-10-02, the reviewer: "ufo interior" must reach the free index whole): its inside only, never
-// a vehicle the plate must carry (the reviewer, build check: "cup and saucer" and "a ufo over the highway" are no vehicle a camera rides)
-const RIDDEN_CRAFT = "starship|mothership|ufo|flying saucer";
-const RIDDEN_INTERIOR = new RegExp(`\\b(?:${RIDDEN_THING}|${RIDDEN_CRAFT})\\s+interior\\b`, "i");
-/** "car interior", "bus interior": the inside of a thing you ride in, a place of its own. Pure. */
-export const isRiddenInterior = (q) => RIDDEN_INTERIOR.test(String(q || ""));
+// ⭐⭐ …AND WHICH INSIDE IS ITS OWN PLACE IS THE JUDGE'S ANSWER, NEVER A WORD LIST (owner 2026-10-02: "interior doesnt work as appendage in free library.
+// the free library is best with bare", then "The judge decides"). The sourceability judge lists each place that is the inside of a thing whose bare name shows its
+// outside (a car, a craft, a tent, a creature's belly); the run publishes the list (OV_INSIDE, both wordings) and these phrases alone reach the free library
+// whole. The vehicle and craft lists that stood here are gone: a list fixes the cases it names and misses the next. With no judge (SOURCEABILITY=0, the
+// escape switch, or a judge that could not answer) nothing is listed and every place goes bare, the owner's default; the paid index still gets every word.
+/** the judged insides this process carries (the run publishes them once the judge answers); read per call, never at load. */
+export const insideFromEnv = () => { try { const a = JSON.parse(process.env.OV_INSIDE || "[]"); return Array.isArray(a) ? a.map((x) => String(x || "").toLowerCase().trim()).filter((x) => /\binterior$/.test(x)) : []; } catch { return []; } };
+const _escQ = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** The judged inside a query names ("car interior at night" → "car interior"), lower-cased, or "": whole words, the longest first. Pure over its list. */
+export const riddenInteriorOf = (q, inside = []) => {
+  const t = ` ${String(q || "").toLowerCase().replace(/[^a-z0-9'-]+/g, " ").replace(/\s+/g, " ").trim()} `;
+  return [...(Array.isArray(inside) ? inside : [])].map((x) => String(x || "").toLowerCase().trim()).filter(Boolean).sort((a, b) => b.length - a.length).find((p) => new RegExp(` ${_escQ(p)} `).test(t)) || "";
+};
+/** a query naming a judged inside, a place of its own. Pure over its list. */
+export const isRiddenInterior = (q, inside = []) => !!riddenInteriorOf(q, inside);
 const VEHICLE = new RegExp(`\\b(?:${RIDDEN_THING})s?\\b`, "i");
 /** Does a place name a thing you ride in ("limousine interior", "a school bus", "race car")? "interstate" and "car wash lot" name none. Pure. */
 export const namesVehicle = (s) => VEHICLE.test(String(s || "").replace(/\bcar\s+(?:wash|park|lot|dealership|show)\b/gi, " "));
-/** The inside-of-a-ridden-thing phrase a query names ("car interior"), lower-cased, or "". Pure. */
-export const riddenInteriorOf = (q) => ((String(q || "").match(RIDDEN_INTERIOR) || [""])[0]).toLowerCase();
 /** "dark ride dark ride" → "dark ride": a phrase said twice in a row is said once. */
 export const collapseRepeats = (s) => String(s || "").replace(/\b(\w+(?:[\s-]+\w+){0,2})(?:\s+\1\b)+/gi, "$1");
 const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
@@ -122,11 +129,11 @@ export function baseQueries(spec = {}) {
 /** HOW ONE SOURCE IS ASKED. The free library gets the bare subject — it is a candid tag index and starves on every appendage
  *  (owner 2026-08-11: "footage isnt appended to the free library, because its a candid library itself"). A paid or general index gets
  *  exactly one appendage, by lane, and none when the base already declares a form. Pure. */
-export function shapeForSource(base, source, { lane = "candid" } = {}) {
+export function shapeForSource(base, source, { lane = "candid", inside = insideFromEnv() } = {}) {
   const b = _norm(base);
   if (!b) return "";
   const src = String(source || "").toLowerCase();
-  if (FREE_SOURCES.has(src)) return riddenInteriorOf(b) || _norm(collapseRepeats(b.replace(TRAILING_APPENDAGE, "").replace(/\s+interior$/i, "").replace(OV_VANTAGE, " ").replace(/\s+/g, " ").trim())) || b;
+  if (FREE_SOURCES.has(src)) return riddenInteriorOf(b, inside) || _norm(collapseRepeats(b.replace(TRAILING_APPENDAGE, "").replace(/\s+interior$/i, "").replace(OV_VANTAGE, " ").replace(/\s+/g, " ").trim())) || b;
   const app = APPENDAGE[String(lane || "candid").toLowerCase()] ?? "";
   if (!app || FORM_WORD.test(b)) return b;
   return `${b} ${app}`;
@@ -139,11 +146,11 @@ export function compileQueries(spec, source, opts = {}) {
 
 /** THE LINT — what a query must never carry, by the subject it serves. The battery's teeth and a loud line in the run; never a repair
  *  (a query is composed right or its builder is wrong). Returns [] when the string obeys the law. Pure. */
-export function queryLint(query, spec = {}, { source = "" } = {}) {
+export function queryLint(query, spec = {}, { source = "", inside = insideFromEnv() } = {}) {
   const q = _norm(query), s = subjectSpec(spec), out = [];
   if (!q) return ["an empty query"];
   const src = String(source || "").toLowerCase();
-  if (/\binterior\b/i.test(q) && s.kind !== "chain" && !isRiddenInterior(q)) out.push(`"interior" on a ${s.kind} — that word is for a chain venue only`);
+  if (/\binterior\b/i.test(q) && s.kind !== "chain" && !isRiddenInterior(q, inside)) out.push(`"interior" on a ${s.kind} — that word is for a chain venue only`);
   if (/\b(?:scenery photo|scenery|photograph|stock photo|wallpaper|hd|4k)\b/i.test(q)) out.push(`a stage word an index does not caption by ("${(q.match(/\b(?:scenery photo|scenery|photograph|stock photo|wallpaper|hd|4k)\b/i) || [""])[0]}")`);
   if (/\b(\w+)\s+\1\b/i.test(q)) out.push(`a doubled word ("${(q.match(/\b(\w+)\s+\1\b/i) || ["", ""])[0]}")`);
   if (FREE_SOURCES.has(src) && (TRAILING_APPENDAGE.test(q) || /\biphone\b/i.test(q))) out.push("an appendage on the free library, which is candid by construction");
