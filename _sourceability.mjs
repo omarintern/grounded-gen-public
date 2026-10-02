@@ -55,7 +55,7 @@ export const SOURCEABILITY_LAW =
   `A NAMED WORK WITHOUT FRAMES IS GROUNDED BY ITS MATERIAL CANON (owner 2026-09-27, the Odyssey ride): a poem, a myth, a novel never filmed, a painting or a piece of music has no frames to photograph, so its world is carried by the REAL OBJECTS that carry it in the world — the artifacts, replicas, sculptures, effigies, editions and stagings a camera has stood before — each a THING photographed as itself (a museum's Greek vase, a replica warship, a statue of the giant), and the things the planner derived from such a work are the work's own, never inventions. A canon thing's query names the object, never a medium word (illustration, painting, drawing) and never the room or the museum that houses it. ` +
   `A PLACE'S PEOPLE (owner 2026-09-26; 2026-10-02: a photograph's people are swapped for the story's figures, which renders better than figures added to an empty place): for a subject with role "world", "place" or "room", say whether this video, as the maker's words stage it, shows the place with people in it at that moment, the story's own figures counted: "peopled" true when the words fill it with people of any kind, or it is a place people fill at that moment by its nature; false when the words stage it empty (closed, abandoned, after hours) or put the figure alone in it; null when either reads right. ` +
   `Judge each subject on its own. Return ONLY JSON {"pairs":[{"form":string,"place":string,"likely":boolean,"confidence":0..1,"place_kind":string}],"subjects":[{"subject":string,"sourceable":boolean,"reduction":[string],"written":[string],"inferred":boolean,"confidence":0..1,"kind":"named place|work|kind of place|form|thing|private specific|invented|specific moment|abstraction|other","query":string|null,"held_by":string|null,"peopled":true|false|null,"host":string|null,"enters":[{"query":string,"as":"place|thing"}],"identity":[string],"opens":string|null,"why":string}]} ` +
-  `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists what no photograph of the place shows (the story's own people and events, the video's rendering style), never a quality of the place; "query", when sourceable, says the place in the maker's own words, their slang and descriptors included ("the hood", "dreamy forest"): a word may join them to keep it a place ("ghetto hood"), never replace them; "host", "enters", "identity" and "opens" are answered when "reduction" holds more than one kind, else null and empty; "confidence" is how sure you are.`;
+  `— "sourceable" is true when the subject can be photographed AS ITSELF; "reduction" lists the bare image queries for its photographable kind(s) when it cannot (NEVER empty: infer if you must, and set "inferred" true); "written" lists what no photograph of the place shows (the story's own people and events, the video's rendering style), never a quality of the place; "query", when sourceable, says the place in the maker's own words, their slang and descriptors included ("the hood", "dreamy forest"): a word may join them to keep it a place ("ghetto hood"), never replace them; "host", "enters" and "identity" are answered when "reduction" holds more than one kind, else null and empty; "opens" is null unless the opening-frame clause above holds; "confidence" is how sure you are.`;
 
 const _norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
 const _key = (s) => _norm(s).toLowerCase();
@@ -434,10 +434,15 @@ export function placePair(qs = [], { place = "", words = [], tried = [] } = {}) 
  *  into it). The run's plan always holds the everyday kind as its host and the opening kind as the place that enters it, however the judge labelled them
  *  (the reviewer, design check: "a ufo with a bar in it" gave the UFO as host and the bar as a thing, so a UFO with no photograph left no fallback): this is the
  *  kind the grammar's own hunt runs on when the opening kind has no photograph. With no opening kind, or one that is not the host, the host stands. Pure. */
-export function hostForOpening({ kinds = [], host = "", opens = "" } = {}) {
+// …and only in the one shape that needs it (the reviewer, build check: a judge that echoed the host as "opens" flipped "a kitchen in a barn" and "a café on a beach",
+// and with three kinds the fallback could hunt an object): exactly two kinds, the other one entered as a THING (the grammar's "Y with X in it"). Any other
+// "opens" that names the host is an echo, and the host stands.
+export function hostForOpening({ kinds = [], host = "", opens = "", enters = [] } = {}) {
   const ks = (Array.isArray(kinds) ? kinds : []).map(_norm).filter(Boolean), h = _norm(host), o = _norm(opens);
-  if (!o || !h || _key(o) !== _key(h)) return h;
-  return ks.find((k) => _key(k) !== _key(o)) || h;
+  if (!o || !h || _key(o) !== _key(h) || ks.length !== 2) return h;
+  const other = ks.find((k) => _key(k) !== _key(o));
+  const asThing = (Array.isArray(enters) ? enters : []).some((e) => e && _key(typeof e === "string" ? e : e.query) === _key(other) && String(e?.as || "").toLowerCase() === "thing");
+  return other && asThing ? other : h;
 }
 /** THE RUN'S PLAN FOR A REDUCED SUBJECT OF TWO KINDS OR MORE (the host rule): the host frame zero hunts, the one kind that enters as a PLACE (its own
  *  photograph: the bag holds one second place, so a further one is written), the kinds that enter as THINGS (thing plates), each kind's identity word and
@@ -454,9 +459,10 @@ export function kindPairPlan({ kinds = [], all = [], host = "", pair = null, sub
   const omitted = ks.filter((k) => _key(k) !== _key(h) && !judged.some((e) => _key(e.query) === _key(k))).map((k) => ({ query: k, as: "place" }));
   let enters = [...judged, ...omitted].filter((e) => _key(e.query) !== _key(h) && ks.some((k) => _key(k) === _key(e.query)));
   // ⭐⭐ THE OPENING KIND IS THE PLACE THAT ENTERS (owner 2026-10-02): marked opensPlace, so the run tries it as frame zero first and the host enters it as a
-  // thing; however the judge labelled it ("as": "thing", or left out), it is the place, so the fallback keeps it as the host's shell
+  // thing; left out of "enters" by the judge, it is still the place, so the fallback keeps it as the host's shell
+  // …never a kind the judge entered as a THING ("a bar with a ufo in it": the craft parked inside is a thing; both build checks), as a view never opens
   const op = pair?.opens ? ks.find((k) => _key(k) === _key(pair.opens)) || "" : "";
-  const opensPlace = !!op && _key(op) !== _key(h);
+  const opensPlace = !!op && _key(op) !== _key(h) && !judged.some((e) => _key(e.query) === _key(op) && e.as === "thing");
   if (opensPlace) enters = [{ query: op, as: "place" }, ...enters.filter((e) => _key(e.query) !== _key(op))];
   if (!enters.length) return null;
   const places = enters.filter((e) => e.as !== "thing"), things = enters.filter((e) => e.as === "thing");
