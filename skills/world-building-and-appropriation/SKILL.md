@@ -3,6 +3,8 @@ name: world-building-and-appropriation
 description: Use when a video request names a work, a film, a show, a myth or a venue, or a ride themed on one. Builds the world from that work's own scenes, or, when it was never filmed, from real photographs of the objects that carry it, so Seedance stays inside that world instead of making a generic version.
 ---
 
+[← All skills](../../README.md)
+
 # world-building-and-appropriation
 
 Ask Seedance for "the Odyssey" and it makes a theme-park Greece: generic columns, a generic ship. The way in is the work's own material. A filmed work has its own scenes. A poem, a myth or a novel that was never filmed is still carried by real things: the statues, vases, mosaics and replica ships that people have made of it, which a camera has stood in front of.
@@ -42,3 +44,16 @@ photograph's own set dressing remains, in any scene the ride passes.
 ```
 
 Seedance rendered the sculpture and the mosaic as the ride's own animatronics. The characters on screen are described by what they look like, never by name: "a massive cyclops with a highly muscular build… a single large blue eye", "a winged, woman-faced creature… perched on a rock beside the mast".
+
+## Rides
+
+A ride is this skill from a seat. The request names a ride, so the opening frame is a real photograph from a rider's seat, found before anything else, and the world reaches the ride along the track.
+
+- **A ride themed on a work:** the work's things take the seat photograph's own set pieces, as in the Odyssey example above, and the rest arrive along the track in story order.
+- **A ride with no work named:** the seat photograph carries the world. The stops the request names are found as places of their own, and figures no photograph exists for are described from the script.
+
+*"A dark ride through a haunted cruise ship. The cart passes a drowned captain animatronic who croaks abandon ship. The cart rolls through a flooded ballroom where skeletons waltz. The ride ends in the engine room where a ghost engineer bangs a pipe and screams she's gonna blow as steam blasts the riders."*
+
+<p align="center"><a href="examples/pirate-a.mp4"><img src="examples/pirate-a.webp" alt="A first-person dark ride: a skeleton captain beside the ride vehicle, then a ghost in a timbered passage" width="240"></a></p>
+
+No work is named, so the same rider's-seat photograph as the Odyssey carries the world. The captain, the waltzing skeletons and the ghost engineer have no photograph to find, so they are described from the beats.

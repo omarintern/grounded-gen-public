@@ -3,6 +3,8 @@ name: catch-it-on-a-device
 description: Use when a video request names a capture device such as CCTV, a security camera, a doorbell cam, a trail cam, a dashcam or a bodycam. Finds a real still from that device and writes the scene into it, so Seedance keeps the device's angle, lens and overlay instead of drawing its own idea of the camera.
 ---
 
+[← All skills](../../README.md)
+
 # catch-it-on-a-device
 
 Every device has its own way of seeing: a fixed corner high on a wall, a fisheye bent around a porch, a timestamp burned into the frame. Described in words, Seedance draws its idea of the device, and the camera floats. Handed a real still from one, it keeps the angle, the lens, the grain and the overlay. The video looks caught because the frame it starts from was.
@@ -12,7 +14,7 @@ Every device has its own way of seeing: a fixed corner high on a wall, a fisheye
 1. **Break the device into its parts:** lens, vantage, overlay. CCTV is a high fixed angle looking down, grainy and low in colour, with a timestamp or camera label. A bodycam is chest height, a wide lens, a battery and time bar.
 2. **Search the way the footage is posted.** A camera's generic name finds shop listings and installs. The words people title their footage with find the frame. The searches behind the examples below: "security camera footage of a kitchen", "front porch video doorbell footage", "Mount Everest trailcam footage". When the subject is something the device never caught, search for something it does catch in that place and swap it later. For the penguin on Everest, that was "snow leopard Mount Everest trailcam footage".
 3. **Keep the overlay.** A timestamp or a brand mark belongs to the footage. Don't reject a still for having one.
-4. **Make sure the still holds the place.** When the request names a place the device never saw, like the Oval Office on CCTV, find the camera and the place separately. Then write the place into the camera's frame, piece by piece: what stands where.
+4. **Make sure the still holds the place.** When the request names a place the device never saw, like the Oval Office on CCTV, find the camera and the place separately. Then write the place into the camera's frame, piece by piece: what stands where. That is the move from [world-building-and-appropriation](../world-building-and-appropriation/SKILL.md): the named place's things are mapped onto the photograph in a `Set:` line.
 5. **Write the event into the still.** Name the capture once at most, in the first beat ("CCTV footage shows…"). Add no shot words: no close-ups, pans or zooms. Seedance reads the camera from the still.
 6. **At night, the device needs its own light,** such as infrared, a porch light or headlights. With none, Seedance gets a silhouette and invents the subject.
 

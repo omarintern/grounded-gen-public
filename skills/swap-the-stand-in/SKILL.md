@@ -3,6 +3,8 @@ name: swap-the-stand-in
 description: Use when the photograph found for a scene already has a person or animal standing where the subject should be. The subject takes that figure's exact place, so the scene keeps the photograph's composition. Everyone else in the photograph stays as they are.
 ---
 
+[← All skills](../../README.md)
+
 # swap-the-stand-in
 
 A real photograph of a place usually has people in it. That's part of why it looks real. When one of them stands exactly where the subject should be, that figure is a stand-in. Write the subject into the stand-in's place and Seedance keeps the photograph's composition: the subject stands at the right size for that spot, in the photograph's own light. When no one stands there, the subject is written into the place, and the people around it stay as scenery.
