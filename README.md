@@ -1,6 +1,6 @@
-# Seedance tool – inspired by Sora
+# Realism on Seedance
 
-**Understanding Seedance: skills for directing it toward realism, learned building a video engine on it.**
+**Skills for directing Seedance toward realism, learned building a video engine on it.**
 
 <p align="center"><img src="docs/index/catch-it-on-a-device.webp" alt="CCTV footage of a bear grabbing a box of cereal in a kitchen" width="280"></p>
 
