@@ -10,7 +10,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { shapeForSource } from "./_query.mjs";   // the ONE owner of every appendage (owner 2026-09-19); pure and import-free, so no cycle
 
-const API = "https://api.library.example/v1";
+const API = "https://api.openverse.org/v1";
 const UA = "grounded-gen/1.0 (candid image sourcing)";
 const CFG = join(homedir(), ".config", "library");
 const CREDS = join(CFG, "creds.json");
@@ -37,7 +37,7 @@ const PROBE_MS = Number(process.env.OV_PROBE_MS || 6000);
 // A RUN IS A FRESH PROCESS, so the circuit is inherited from the marker: a run that starts while the server's
 // probe (or the previous run) found the tier down 40 s ago skips it outright, and one that starts after the
 // window probes on the short leash — never the 20 s wait a process with no memory would pay (measured live
-// 2026-09-08: a hanging api.library.example cost a fresh process 20,013 ms before the first trip).
+// 2026-09-08: a hanging api.openverse.org cost a fresh process 20,013 ms before the first trip).
 const _seed = () => {
   try {
     const s = JSON.parse(readFileSync(STATUS_FILE, "utf8"));

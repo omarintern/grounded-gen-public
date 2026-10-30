@@ -12,7 +12,15 @@ Each skill is a real skill file. Give one to your agent and it will write Seedan
 
 **To use a skill:** copy its folder into your agent's skills folder (for Claude Code, `~/.claude/skills/`).
 
+**Your own keys.** Nothing runs through this repository and nothing is stored in it. Your agent brings an Openverse client for the free photo library, an Apify token for the paid image searches, and a key from any provider that serves Seedance with reference images. [bring-your-own-keys](skills/bring-your-own-keys/SKILL.md) says where each is used.
+
 ## The skills
+
+### Before you start
+
+| | Skill | Use it when |
+| --- | --- | --- |
+| | [**bring-your-own-keys**](skills/bring-your-own-keys/SKILL.md) | Running any of this for real. Your Openverse client, your Apify token, your video API key: where each is used and how each is called. |
 
 ### Seeing
 
