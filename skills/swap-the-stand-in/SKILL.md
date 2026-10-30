@@ -1,6 +1,6 @@
 ---
 name: swap-the-stand-in
-description: Use when the photograph found for a scene already has a person or animal standing where the subject should be. The subject takes that figure's exact place, so the scene keeps the photograph's composition. Everyone else in the photograph stays as they are.
+description: Use when the photograph found for a scene already has a person or animal standing where the subject should be. The subject is written into that figure's place, so the figure is gone and the photograph's framing holds. Everyone else in the photograph stays as they are.
 ---
 
 [← All skills](../../README.md)
