@@ -1,4 +1,4 @@
-# grounded-gen
+# Seedance tool – inspired by Sora
 
 **A video engine built on realism. A Seedance adapter.**
 
