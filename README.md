@@ -1,73 +1,58 @@
 # Seedance tool – inspired by Sora
 
-**A video engine built on realism. A Seedance adapter.**
+**Understanding Seedance: skills for directing it toward realism, learned building a video engine on it.**
 
-Ask a video model for a place and it invents one. This engine never asks. It finds real photographs first (the place, the camera the video was "caught on", the figures), writes the scene to them, and hands Seedance both. The video looks caught because the ground under it was.
+<p align="center"><img src="docs/index/catch-it-on-a-device.webp" alt="CCTV footage of a bear grabbing a box of cereal in a kitchen" width="280"></p>
 
-Built on Seedance 2.0, updated to 2.5. This repo is a showcase of the engine's parts, not an installable tool: payment, capacity and deployment code was removed.
+Seedance is a strong video model with habits. Ask it for a place and it invents one. Ask it for CCTV and it draws its idea of CCTV. Hand it four references and it blends them as one set, whatever order they came in.
 
-## Two videos
+This engine was built by learning those habits on Seedance 2.0 and carrying them to 2.5. Each habit has a skill that answers it. Together they make one way of working: find the real world first, write the scene to it, and hand Seedance both.
 
-<table>
-<tr>
-<td align="center" width="50%"><a href="docs/examples/odyssey.mp4"><img src="docs/examples/odyssey.webp" alt="A first-person dark ride through the Odyssey: a giant cyclops, then Ulysses tied to the mast beside a Siren" width="260"></a></td>
-<td align="center" width="50%"><a href="docs/examples/pirate-a.mp4"><img src="docs/examples/pirate-a.webp" alt="A first-person dark ride: a skeleton captain beside the ride vehicle, then a ghost in a timbered passage" width="260"></a></td>
-</tr>
-<tr>
-<td valign="top"><b>"The Odyssey ride"</b><br>Three words. The engine read the poem and found its things: the Sperlonga sculpture of Polyphemus, a Roman mosaic of Ulysses and the Sirens, a reconstructed Greek trireme. A real ride seat is the opening frame, and those things line the track.</td>
-<td valign="top"><b>"A dark ride through a haunted cruise ship"</b><br>No work named, so a real dark-ride photograph carries the world. The captain, the waltzing skeletons and the ghost engineer have no real photo to find, so they're described from the script.</td>
-</tr>
-</table>
+Each skill is a real skill file. Give one to your agent and it will write Seedance prompts the same way. Every example is a finished video from the engine, shown with the photograph it was given and the lines it was written.
 
-## How it works
+**To use a skill:** copy its folder into your agent's skills folder (for Claude Code, `~/.claude/skills/`).
 
-<p align="center"><img src="docs/stack.svg" alt="The engine as four layers on the video model: reading, grounding, direction, the model; the gates and the remix beside it." width="960"></p>
+## The skills
 
-A sentence goes in at the top and a video comes out at the bottom.
+Three are written in full so far. The rest are named here and are being written.
 
-### 1. Reading
+### Seeing
 
-Decide once what the maker meant, before any search.
+| | Skill | Use it when |
+| --- | --- | --- |
+| <img src="docs/index/catch-it-on-a-device.webp" width="90" alt=""> | [**catch-it-on-a-device**](skills/catch-it-on-a-device/SKILL.md) | The request names a camera: CCTV, a doorbell, a trail cam, a dashcam, a bodycam. |
+| <img src="docs/index/find-the-place-first.webp" width="90" alt=""> | find-the-place-first | Always. Find a real photograph of the place before writing anything, then write the scene to what is in it. Even a bar inside a UFO starts as a real bar. |
+| | night-shots | The video is at night. A subject photographed in the dark is a silhouette, which Seedance can't animate. Unless the camera has its own light (a flash, infrared, headlights), find the empty place and write the subject in. |
 
-- **The camera.** A named device (CCTV, doorbell, dashcam, bodycam, trail cam) is searched as real footage from that device, so the angle, lens and overlay are right before anything is written.
-- **The world.** A named film, work or venue becomes the ground. A named ride is ridden: the seat is the first frame.
-- **The cast.** A meme's photo is found. A figure from myth is named. A celebrity or owned character is declined. Anyone else is described.
-- **The story.** Plot (an event with a payoff) or observation (a view held).
+### Worlds
 
-### 2. Grounding
+| | Skill | Use it when |
+| --- | --- | --- |
+| <img src="docs/index/world-building-and-appropriation.webp" width="90" alt=""> | [**world-building-and-appropriation**](skills/world-building-and-appropriation/SKILL.md) | The request names a work, a film, a myth or a venue. Its world becomes the ground. |
+| <a href="docs/examples/pirate-a.mp4"><img src="docs/index/ride-it.webp" width="90" alt=""></a> | &emsp;↳ ride-it | The request names a ride. The seat is the opening frame, and the work's things are placed along the track. |
+| <img src="docs/index/swap-the-stand-in.webp" width="90" alt=""> | [**swap-the-stand-in**](skills/swap-the-stand-in/SKILL.md) | The photograph already has someone where the subject should be. |
+| <img src="docs/index/sort-the-characters.webp" width="90" alt=""> | sort-the-characters | The request names characters. Each is handled by what it is: a meme has its photo found, a figure from myth or folklore is named, a celebrity or an owned character is declined, anyone else is described. |
 
-Find the real world first.
+### Telling
 
-- Each subject is checked first: can a real photo of it exist? If it can't, nothing is searched.
-- One module writes every search, in each index's own words.
-- Cheap judges throw out more than half of the candidates first. The survivors are checked for whether the photo can hold the story.
-- At night, with no light at the camera, only the empty place is found. A silhouette gives Seedance nothing to animate.
-
-### 3. Direction
-
-The scene is written to the photograph, never before it.
-
-- The writer reads the chosen photo: what's there, and who stands where the subject should be. That person or animal becomes the subject.
-- Each beat is stamped with its second.
-- Reviews catch a figure on screen at the wrong time or a climax cut short, and send it back once.
-
-### 4. Seedance
-
-What the engine knows about Seedance:
-
-- It reads all references as one flat set. At most four, and order doesn't matter.
-- No camera words in the prompt. Seedance takes the camera from the photographs.
-- A refusal is repaired a step at a time. Anything else is reported as the failure it is.
+| | Skill | Use it when |
+| --- | --- | --- |
+| <img src="docs/index/observation-or-plot.webp" width="90" alt=""> | observation-or-plot | Deciding whether the take is an observation (a view held, nothing has to happen) or a plot (an event with a payoff). |
+| | stamp-the-beats | Every take. Each beat lands on its second. |
+| | no-camera-directions | Every take. Write what happens, never how it's filmed: no close-ups, pans or zooms. Seedance takes the camera from the photographs, and camera words fight them. |
+| <img src="docs/index/one-bag-of-four.jpg" width="90" alt=""> | one-bag-of-four | Choosing references. Seedance reads them as one flat set. |
 
 ### Remix
 
-A sentence that changes a finished video. A small change (an action, a prop, a line) edits the script and reuses every photo. A big one (a new place, cast or style) runs the engine again, keeping what stays.
+A page about how the engine changes a finished video. It isn't a skill to install.
 
-## The full circuitry
+| | Page | What it covers |
+| --- | --- | --- |
+| <img src="docs/index/remix.webp" width="90" alt=""> | [**Remix**](engine/remix.md) | A sentence that changes a finished video, and how deep the change goes. |
 
-<p align="center"><img src="docs/circuitry.svg" alt="Every decision as a question and its arms: the door and its pre-check, reading and planning, sourcing, writing, rendering, and the remix lane." width="960"></p>
+## Inside the engine
 
-## What is here
+The modules here are the engine's own, the code that runs the skills above. A sentence goes in, a video comes out. The engine does not run from this repository: the modules that handle payment, capacity and deployment were removed.
 
 | Layer | Files |
 | --- | --- |
@@ -76,5 +61,7 @@ A sentence that changes a finished video. A small change (an action, a prop, a l
 | Direction | `_frame_zero.mjs` `_ground_prompt.mjs` `_beat_law.mjs` `_beat_edit.mjs` `_writer_contract.mjs` `_ride_writer.mjs` `_swap_check.mjs` |
 | Seedance | `_multiref_gen.mjs` `_leak_guard.mjs` |
 | Remix | `_remix_intent.mjs` `_carry_reader.mjs` `_strip_choice.mjs` `_gen_state.mjs` |
+
+Every decision the engine makes, drawn as a question and its arms: [the full circuitry](docs/circuitry.svg).
 
 The commits are real, daily from 2 August 2026. Removed files were taken out of every commit, and every message was set to one line.
