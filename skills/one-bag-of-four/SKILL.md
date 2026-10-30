@@ -13,7 +13,7 @@ Seedance conditions on every reference together. There is no "image 1 is the pla
 
 1. **At most four references,** places and characters together.
 2. **The place first,** the photograph the take opens on. Then the figures with photographs (see sort-the-characters), in the order the script needs them.
-3. **One place in the bag,** unless the take passes into another (a ride, a second room). Two photographs of the same kind of place read as one blended place.
+3. **One place in the bag,** unless the take passes into another. Two photographs of a place compete: in the haunted-ship ride under world-building-and-appropriation, a found mine scene won over the seat photograph, and the finished video never showed the seat.
 4. **Say in the script what each reference is in the frame,** by what it shows, never by its position: "the giant mushroom on the right is a monumental sculpture group…". A `Set:` line is where a reference becomes a thing in the take.
 5. **A thing with no reference is described,** and the description is its reference.
 

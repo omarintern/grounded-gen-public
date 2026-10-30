@@ -1,6 +1,6 @@
 ---
 name: observation-or-plot
-description: Use for every video request, before the beats are written. Decides whether the take is an observation (a view held, nothing has to happen) or a plot (an event with a payoff), from the maker's words. An observation gets two to four beats and no twist; a plot earns its payoff and gives its climax at least four seconds.
+description: Use for every video request, before the beats are written. Decides whether the take is an observation (a view held, nothing has to happen) or a plot (an event with a payoff), from the maker's words. An observation gets two or four beats and no twist; a plot builds to its payoff and gives its climax at least four seconds.
 ---
 
 [← All skills](../../README.md)
@@ -11,30 +11,31 @@ Not every video is a story. "A dark ride" is a view: the seat, the track, the ro
 
 ## Do this
 
-1. **Read the request for an event.** A thing that happens and pays off (he grabs the cereal, sees the camera, dances) is a plot. A place, a ride, a scene with people in it and nothing demanded of them is an observation.
-2. **An observation:** two to four beats, the view held. Things move in it, nothing turns.
-3. **A plot:** the beats build to one payoff, and the climax gets at least four seconds of the take. A climax cut short is a fault to fix before submitting.
-4. **A bare noun is a view** unless the words ask for an event. Don't add drama the maker didn't ask for.
+1. **Read the request for an event.** A thing that happens and pays off (he grabs the cereal, sees the camera, dances) is a plot. A place, a ride, a scene with figures in it and nothing demanded of them is an observation.
+2. **An observation:** two or four beats, the view held. Things move in it, nothing turns.
+3. **A plot:** three or six beats in a 9-second take, building to one payoff, and the climax gets at least four seconds. A climax cut short is a fault to fix before submitting.
+4. **A bare noun is a view** unless the words ask for an event.
 
 ## Two takes, one of each
 
 | | Found | Video |
 | --- | --- | --- |
-| **Observation.** *"liminal rollercoaster ride with haunted 1930's swing music, a bygone past themed ride. reflexivity in form and content"* | <img src="examples/ride-found.jpg" width="110" alt="A dark ride from the rider's seat: an ice cave, hands on the controllers"> <img src="examples/ballroom-found.jpg" width="130" alt="An empty old ballroom in black and white"> | <a href="examples/ride.mp4"><img src="examples/ride.webp" width="140" alt="The ride passes from the ice cave into the empty ballroom"></a> |
+| **Observation.** *"the nihilistic penguin and punch monkey on trailcam footage in everest-like mountains"* | <img src="examples/trail-found.jpg" width="220" alt="A snowy peak"> | <a href="examples/trail.mp4"><img src="examples/trail.webp" width="140" alt="A penguin and a monkey on the rocks below a peak, holding still"></a> |
 | **Plot.** *"cctv footage of a bear chasing a man for his cereal. the bear ends up grabbing the cereal and sees the camera and starts celebrating with tiktok dances"* | <img src="examples/cctvbear-found.jpg" width="220" alt="A kitchen from a high corner camera"> | <a href="examples/cctvbear.mp4"><img src="examples/cctvbear.webp" width="140" alt="The bear grabs the cereal and dances for the camera"></a> |
 
-The observation, three beats, a view held:
+The observation, four beats, a view held:
 
 ```
-[0s] The rollercoaster ride glides through a bygone past themed dark ride, moving
-along the rails of the artificial ice cave tunnel, past the restraint bar and the
-hands holding the controllers toward a pair of wooden double doors.
-[3s] The vehicle passes from the liminal empty corridor into a haunted 1930s
-ballroom where haunted 1930s swing music plays throughout the interior as a
-heavy mechanical click sounds from the track.
-[6s] The ride reaches a reflexive turn, banking sharply to the left where the
-track loops back toward the entrance, carrying the rollercoaster through the
-swinging doors as the rails run on.
+[0s] The environment is a harsh, high-altitude mountain range captured through
+grainy trailcam footage, where Nihilist Penguin stands among the boulders facing
+out toward the mountain while Punch the Monkey remains motionless beside it
+clutching his stuffed orange orangutan toy.
+[3s] Nihilist Penguin turns its head slowly toward the peak while a faint
+mechanical whir sounds nearby.
+[6s] Punch the Monkey's grip tightens slightly on the orangutan toy, but he is
+otherwise unmoving.
+[8s] Nihilist Penguin looks out and remains fixed on the distant mountain range,
+its flippers held out at its sides.
 ```
 
 The plot, six beats, the payoff from 5 s:

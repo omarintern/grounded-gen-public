@@ -12,7 +12,7 @@ A photograph of a figure at night is mostly dark. Seedance gets a silhouette, ha
 ## Do this
 
 1. **Never source the subject at night.** A dark photograph of the thing itself is worth less than none.
-2. **Find the empty place.** A photograph by day will do: the script sets the night (a single torch, moonlight on the floor) and Seedance lights it that way.
+2. **Find the empty place.** It need not be photographed at night: the bedchamber below was found by day, and the script set the torch and the moonlight.
 3. **A camera with its own light is the exception:** infrared, a flash, a porch light, headlights, a bodycam lamp. Then the place can be found at night, as that camera shows it, and the subject is written in.
 4. **Write the light into the first beats,** by its source: what is lit, and by what.
 

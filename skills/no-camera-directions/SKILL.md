@@ -12,9 +12,9 @@ The photograph is the camera. Its angle, its lens, its distance from the subject
 ## Do this
 
 1. **Write what happens, and where in the frame:** "at the right edge of the porch", "where the man in the bucket hat stood". Never how it is shot.
-2. **No shot words:** no close-up, wide, pan, zoom, tilt, tracking, hard cut, cut to, reveal, camera.
+2. **No shot words:** no close-up, wide shot, pan, zoom, tilt, tracking shot, reveal, or "the camera".
 3. **The capture is named once at most,** in the first beat, when the request names a device: "CCTV footage shows…". Then nothing more about the camera.
-4. **A new place is a new photograph,** not a cut. If the take must move (a ride passing into a ballroom), each place is found and the script says the vehicle passes into it.
+4. **A change of place is a second photograph.** Write the subject passing into it, and never cut to a place no photograph was found for.
 5. **Read the draft for a sentence about the video rather than in it,** and strike it.
 
 ## What a camera word does

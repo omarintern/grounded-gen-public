@@ -15,7 +15,7 @@ Seedance renders what it is shown and what it is told. A character with a photog
 2. **A figure from myth, folklore or a public-domain work:** name it in the plan, describe it in the script, never search for it. The cyclops is "a massive cyclops with a highly muscular build… a single large blue eye" (see world-building-and-appropriation).
 3. **A famous person or an owned character:** decline. A name the model merely associates with a work is not in the request, and a named work, show or venue is not a character.
 4. **Anyone else:** a nobody, described from the request ("a man, dressed in black bohemian clothes") and written into the beats.
-5. **Keep the cast small.** At most four characters from photographs, and the ones the maker named come before any the plan invented.
+5. **Keep the cast small.** The bag holds four references in all, the place included, so at most three characters come with photographs. The rest are described.
 
 ## Example: two memes on a trail camera
 

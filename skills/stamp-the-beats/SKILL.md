@@ -12,7 +12,7 @@ Seedance reads time from the script. A script that lists events without seconds 
 ## Do this
 
 1. **One beat per event,** in order, each opening with its second in brackets: `[5s]`.
-2. **Stamp the whole clip.** The first beat is `[0s]`; the last lands with time left for its action to finish. Most 9-second takes carry four to six beats; a view held gets fewer.
+2. **Stamp the whole clip.** The first beat is `[0s]`; the last lands with time left for its action to finish. A 9-second plot carries three or six beats; a view held carries two or four.
 3. **A beat says what happens, not how it is shot.** See no-camera-directions.
 4. **Dialogue gets its second** on its own line, with who speaks, to whom, and how: `Man to Raccoon (confused, annoyed) [3s]: "I didn't order anything."` A line lands on its beat.
 5. **A payoff needs room.** Give the climax at least four seconds (see observation-or-plot).

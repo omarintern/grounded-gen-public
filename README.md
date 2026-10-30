@@ -4,7 +4,7 @@
 
 <p align="center"><img src="docs/index/catch-it-on-a-device.webp" alt="CCTV footage of a bear grabbing a box of cereal in a kitchen" width="280"></p>
 
-Seedance is a strong video model with habits. Ask it for a place and it invents one. Ask it for CCTV and it draws its idea of CCTV. Hand it four references and it blends them as one set, whatever order they came in.
+Seedance is a strong video model with habits. Ask it for a place and it invents one. Ask it for CCTV and it draws its idea of CCTV. Hand it several references and it reads them as one set.
 
 This engine was built by learning those habits on Seedance 2.0 and carrying them to 2.5. Each habit has a skill that answers it. Together they make one way of working: find the real world first, write the scene to it, and hand Seedance both.
 
@@ -62,4 +62,4 @@ The modules here are the engine's own, the code that runs the skills above. A se
 
 Every decision the engine makes, drawn as a question and its arms: [the full circuitry](docs/circuitry.svg).
 
-The commits are real, daily from 2 August 2026. Removed files were taken out of every commit, and every message was set to one line.
+The commits are real, with their dates, from 2 August 2026. Removed files were taken out of every commit, and every message was set to one line.
