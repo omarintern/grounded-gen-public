@@ -2,7 +2,7 @@
 
 **A video engine built on realism. A Seedance adapter.**
 
-It was built on an understanding of Seedance 2.0 and updated to Seedance 2.5. It knows how Seedance handles its parameters: what it does with a set of references, how it reads a prompt, what it needs for aspect, duration and audio, how it refuses. It uses that knowledge to steer the output toward realism. It reads a sentence, finds the real world first, writes the scene to the photograph, and hands Seedance the photographs and the script.
+It was built on an understanding of Seedance 2.0 and updated to Seedance 2.5. It knows how Seedance handles its parameters: what it does with a set of references, how it reads a prompt, what it needs for aspect and duration, how it refuses. It uses that knowledge to steer the output toward realism. It reads a sentence, finds the real world first, writes the scene to the photograph, and hands Seedance the photographs and the script.
 
 A video model asked to invent a place invents it: the room is nobody's room, the street is a composite, the camera floats. This engine never asks it to. Before anything is written, real photographs are found of the place, of the media form the video was "caught on", and of the figures in it. The scene is then written to those photographs, and the model is handed the photographs and the script together. The result looks caught rather than generated, because the ground under it was.
 
@@ -99,7 +99,6 @@ The adapter's value is what it knows about Seedance, learned on 2.0 and carried 
 - **References.** Seedance conditions on all of its references together, as one flat set, with no per-image binding. The bag holds at most four sourced references, plates and characters together, and the order is not treated as meaningful because it was never shown to be.
 - **Aspect.** The world plate is padded to the requested aspect before it is sent, so Seedance outpaints the edges of a real place instead of cropping it.
 - **The prompt.** Beats are stamped with their second, a capture sentence names the camera once, and the prompt carries no framing words at all: Seedance reads the camera from the references, and prose about the camera fights them. The writer's contract holds every script to that shape.
-- **Audio.** Seedance writes its own audio track, and an empty audio slot is filled with invented, often copyrighted, music. The slot is always written.
 - **Resolution and duration** are per model and are sent as Seedance lists them, never assumed.
 - **What it invents.** Given a silhouette, Seedance has nothing to animate, so it invents the subject and then the whole frame; that is why the night rule sources the place alone. Given a produced frame of a named work, it stays in that world.
 - **Refusals.** A content-policy refusal is free and repairable; a trip of the output gate is walked back one feature at a time.
