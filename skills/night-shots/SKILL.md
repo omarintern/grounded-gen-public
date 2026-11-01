@@ -15,7 +15,7 @@ A photograph of a figure at night is mostly dark. Seedance gets a silhouette, ha
 2. **Find the empty place in the dark,** the way a camera there sees it: the yard below, lit by its streetlamp.
 3. **A camera with its own light is the exception:** infrared, a flash, a bodycam lamp, headlights. Then the place can be found at night as that camera shows it, and the subject written in.
 
-## Example
+## Examples
 
 ### A badger in a dark yard
 
@@ -32,3 +32,19 @@ The badger did not come from a photograph: the only one is the empty yard. The s
 ```
 
 The video holds the camera, the streetlamp, the timestamp and the label for the whole take.
+
+### A moose on an infrared trail camera
+
+*"A moose wanders past in the woods at night"*
+
+| Found | Video |
+| --- | --- |
+| <img src="examples/moose-found.jpg" width="300" alt="A forest at night through a trail camera's infrared, a deer among the trees, a timestamp in the corner"><br>**The place, at night.** A real trail camera's infrared frame of a forest, with its timestamp. A deer stands among the trees. | <a href="examples/moose.mp4"><img src="examples/moose.webp" width="300" alt="The same forest in infrared: a moose walking between the trees toward the camera"></a> |
+
+A trail camera has its own light, so the place could be found at night as the camera shows it (step 3). The moose did not come from a photograph: the only one is the forest, and the deer standing in it is gone from the video. The script, as written:
+
+```
+[0s] A moose slowly walks across the frame, stepping through the undergrowth.
+```
+
+The video keeps the camera's infrared look and the forest.
