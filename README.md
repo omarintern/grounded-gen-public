@@ -2,13 +2,13 @@
 
 **Skills for directing Seedance toward realism, learned building a video engine on it.**
 
-<p align="center"><img src="docs/index/catch-it-on-a-device.webp" alt="CCTV footage of a bear grabbing a box of cereal in a kitchen" width="280"></p>
+<p align="center"><a href="engine/remix.md"><img src="docs/index/cover.webp" alt="CCTV footage of a bear grabbing a box of cereal in a kitchen" width="280"></a></p>
 
 Seedance is a strong video model with habits. Ask it for a place and it invents one. Ask it for CCTV and it draws its idea of CCTV. Hand it several references and it reads them as one set.
 
 This engine was built by learning those habits on Seedance 2.0 and carrying them to 2.5. Each habit has a skill that answers it. Together they make one way of working: find the real world first, write the scene to it, and hand Seedance both.
 
-Each skill is a real skill file. Give one to your agent and it will write Seedance prompts the same way. Every example is a finished video from the engine, shown with the photograph it was given and the lines it was written.
+Each skill is a real skill file. Give one to your agent and it will write Seedance prompts the same way. Every example is a finished video from the engine, shown with the photograph it was given and the lines it was written, and no clip is used twice. [All the clips](#all-clips) are gathered at the end.
 
 **To use a skill:** copy its folder into your agent's skills folder (for Claude Code, `~/.claude/skills/`).
 
@@ -27,7 +27,7 @@ Each skill is a real skill file. Give one to your agent and it will write Seedan
 | | Skill | Use it when |
 | --- | --- | --- |
 | <img src="docs/index/catch-it-on-a-device.webp" width="90" alt=""> | [**catch-it-on-a-device**](skills/catch-it-on-a-device/SKILL.md) | The request names a camera: CCTV, a doorbell, a trail cam, a dashcam, a bodycam. |
-| <img src="docs/index/find-the-place-first.webp" width="90" alt=""> | [**find-the-place-first**](skills/find-the-place-first/SKILL.md) | Always. Find a real photograph of the place before writing anything, then write the scene to what is in it. Even a bar inside a UFO starts as a real bar. |
+| <img src="docs/index/find-the-place-first.webp" width="90" alt=""> | [**find-the-place-first**](skills/find-the-place-first/SKILL.md) | Always. Find a real photograph of the place before writing anything, then write the scene to what is in it. |
 | <img src="docs/index/night-shots.webp" width="90" alt=""> | [**night-shots**](skills/night-shots/SKILL.md) | The video is at night. A subject photographed in the dark is a silhouette, which Seedance can't animate. Unless the camera has its own light (a flash, infrared, headlights), find the empty place and write the subject in. |
 
 ### Worlds
@@ -46,7 +46,7 @@ Each skill is a real skill file. Give one to your agent and it will write Seedan
 | <img src="docs/index/observation-or-plot.webp" width="90" alt=""> | [**observation-or-plot**](skills/observation-or-plot/SKILL.md) | Deciding whether the take is an observation (a view held, nothing has to happen) or a plot (an event with a payoff). |
 | <img src="docs/index/stamp-the-beats.webp" width="90" alt=""> | [**stamp-the-beats**](skills/stamp-the-beats/SKILL.md) | Every take. Each beat lands on its second. |
 | <img src="docs/index/no-camera-directions.webp" width="90" alt=""> | [**no-camera-directions**](skills/no-camera-directions/SKILL.md) | Every take. Write what happens, never how it's filmed: no close-ups, pans or zooms. Seedance takes the camera from the photographs, and camera words fight them. |
-| <img src="docs/index/one-bag-of-four.jpg" width="90" alt=""> | [**one-bag-of-four**](skills/one-bag-of-four/SKILL.md) | Choosing references. Seedance reads them as one flat set. |
+| <img src="docs/index/one-bag-of-four.webp" width="90" alt=""> | [**one-bag-of-four**](skills/one-bag-of-four/SKILL.md) | Choosing references. Seedance reads them as one flat set. |
 
 ### Remix
 
@@ -56,9 +56,24 @@ A page about how the engine changes a finished video. It isn't a skill to instal
 | --- | --- | --- |
 | <img src="docs/index/remix.webp" width="90" alt=""> | [**Remix**](engine/remix.md) | A sentence that changes a finished video, and how deep the change goes. |
 
+## All clips
+
+<details>
+<summary><b>Open to see every clip</b>: sixteen finished videos, each linked to the page it is an example on.</summary>
+<br>
+
+| | | | |
+| --- | --- | --- | --- |
+| <a href="skills/catch-it-on-a-device/SKILL.md#the-oval-office-on-cctv"><img src="docs/clips/oval.webp" width="180" alt="The Oval Office on CCTV"></a><br>[The Oval Office on CCTV](skills/catch-it-on-a-device/SKILL.md#the-oval-office-on-cctv)<br><sub>catch-it-on-a-device</sub> | <a href="skills/catch-it-on-a-device/SKILL.md#a-doorbell-camera-on-a-patio"><img src="docs/clips/patio.webp" width="180" alt="A doorbell camera on a patio"></a><br>[A doorbell camera on a patio](skills/catch-it-on-a-device/SKILL.md#a-doorbell-camera-on-a-patio)<br><sub>catch-it-on-a-device</sub> | <a href="skills/find-the-place-first/SKILL.md#a-fox-in-a-real-kitchen"><img src="docs/clips/fox.webp" width="180" alt="A fox in a real kitchen"></a><br>[A fox in a real kitchen](skills/find-the-place-first/SKILL.md#a-fox-in-a-real-kitchen)<br><sub>find-the-place-first</sub> | <a href="skills/night-shots/SKILL.md#a-badger-in-a-dark-yard"><img src="docs/clips/badger.webp" width="180" alt="A badger in a dark yard"></a><br>[A badger in a dark yard](skills/night-shots/SKILL.md#a-badger-in-a-dark-yard)<br><sub>night-shots</sub> |
+| <a href="skills/world-building-and-appropriation/SKILL.md#the-odyssey-ride"><img src="docs/clips/odyssey.webp" width="180" alt="The Odyssey ride"></a><br>[The Odyssey ride](skills/world-building-and-appropriation/SKILL.md#the-odyssey-ride)<br><sub>world-building-and-appropriation</sub> | <a href="skills/world-building-and-appropriation/SKILL.md#a-haunted-cruise-ship-ride"><img src="docs/clips/haunted.webp" width="180" alt="A haunted cruise ship ride"></a><br>[A haunted cruise ship ride](skills/world-building-and-appropriation/SKILL.md#a-haunted-cruise-ship-ride)<br><sub>ride-it</sub> | <a href="skills/swap-the-stand-in/SKILL.md#same-photograph-two-scripts"><img src="docs/clips/no-swap.webp" width="180" alt="Stonk, no stand-in"></a><br>[Stonk, no stand-in](skills/swap-the-stand-in/SKILL.md#same-photograph-two-scripts)<br><sub>swap-the-stand-in</sub> | <a href="skills/swap-the-stand-in/SKILL.md#same-photograph-two-scripts"><img src="docs/clips/swap.webp" width="180" alt="Stonk, with a stand-in"></a><br>[Stonk, with a stand-in](skills/swap-the-stand-in/SKILL.md#same-photograph-two-scripts)<br><sub>swap-the-stand-in</sub> |
+| <a href="skills/sort-the-characters/SKILL.md#the-grim-reaper-at-a-bakery"><img src="docs/clips/reaper.webp" width="180" alt="The grim reaper at a bakery"></a><br>[The grim reaper at a bakery](skills/sort-the-characters/SKILL.md#the-grim-reaper-at-a-bakery)<br><sub>sort-the-characters</sub> | <a href="skills/observation-or-plot/SKILL.md#observation-two-memes-on-a-trail-camera"><img src="docs/clips/trail.webp" width="180" alt="Two memes on a trail camera"></a><br>[Two memes on a trail camera](skills/observation-or-plot/SKILL.md#observation-two-memes-on-a-trail-camera)<br><sub>observation-or-plot</sub> | <a href="skills/observation-or-plot/SKILL.md#plot-zeus-at-a-fuse-box"><img src="docs/clips/zeus.webp" width="180" alt="Zeus at a fuse box"></a><br>[Zeus at a fuse box](skills/observation-or-plot/SKILL.md#plot-zeus-at-a-fuse-box)<br><sub>observation-or-plot</sub> | <a href="skills/stamp-the-beats/SKILL.md#the-doorbell-raccoon"><img src="docs/clips/doorbell.webp" width="180" alt="The doorbell raccoon"></a><br>[The doorbell raccoon](skills/stamp-the-beats/SKILL.md#the-doorbell-raccoon)<br><sub>stamp-the-beats</sub> |
+| <a href="skills/no-camera-directions/SKILL.md#a-fishermans-hard-cut"><img src="docs/clips/fisherman.webp" width="180" alt="A fisherman's hard cut"></a><br>[A fisherman's hard cut](skills/no-camera-directions/SKILL.md#a-fishermans-hard-cut)<br><sub>no-camera-directions</sub> | <a href="skills/one-bag-of-four/SKILL.md#the-bar-in-the-ufo"><img src="docs/clips/ufo.webp" width="180" alt="The bar in the UFO"></a><br>[The bar in the UFO](skills/one-bag-of-four/SKILL.md#the-bar-in-the-ufo)<br><sub>one-bag-of-four</sub> | <a href="engine/remix.md#example-the-bear-becomes-a-t-rex"><img src="docs/clips/bear.webp" width="180" alt="The bear, before the remix"></a><br>[The bear, before the remix](engine/remix.md#example-the-bear-becomes-a-t-rex)<br><sub>Remix</sub> | <a href="engine/remix.md#example-the-bear-becomes-a-t-rex"><img src="docs/clips/trex.webp" width="180" alt="The T-rex, after it"></a><br>[The T-rex, after it](engine/remix.md#example-the-bear-becomes-a-t-rex)<br><sub>Remix</sub> |
+
+</details>
+
 ## Inside the engine
 
-The modules here are the engine's own, the code that runs the skills above. A sentence goes in, a video comes out. The engine does not run from this repository: the modules that handle payment, capacity and deployment were removed.
+The modules here are the engine's own, the parts that carry out the skills above. The engine does not run from this repository: the orchestrator that chains them, the planner, the search scrapers and the gate rules stay private, with the payment, capacity and deployment code they are woven through.
 
 | Layer | Files |
 | --- | --- |

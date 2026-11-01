@@ -15,15 +15,17 @@ Seedance reads time from the script. A script that lists events without seconds 
 2. **Stamp the whole clip.** The first beat is `[0s]`; the last lands with time left for its action to finish. A 9-second plot carries three or six beats; a view held carries two or four.
 3. **A beat says what happens, not how it is shot.** See no-camera-directions.
 4. **Dialogue gets its second** on its own line, with who speaks, to whom, and how: `Man to Raccoon (confused, annoyed) [3s]: "I didn't order anything."` A line lands on its beat.
-5. **A payoff needs room.** Give the climax at least four seconds (see observation-or-plot).
+5. **On a ride, the climax gets at least four seconds.**
 
-## Example: the doorbell raccoon
+## Example
+
+### The doorbell raccoon
 
 *"doorbell cam: a raccoon in a tiny delivery vest rings the bell holding a pizza box. the guy opens the door and says "i didn't order anything" and the raccoon shoves the box into his hands, says "you did now" and sprints off with his wallet"*
 
 | Found | Video |
 | --- | --- |
-| <img src="examples/doorbell-found.jpg" width="220" alt="A porch through a doorbell camera's fisheye"> | <a href="examples/doorbell.mp4"><img src="examples/doorbell.webp" width="150" alt="A raccoon in a delivery vest at the door, then up the tree with the wallet"></a> |
+| <img src="examples/doorbell-found.jpg" width="300" alt="A porch through a doorbell camera's fisheye"> | <a href="examples/doorbell.mp4"><img src="examples/doorbell.webp" width="300" alt="A raccoon in a delivery vest at the door, then up the tree with the wallet"></a> |
 
 The beats and the lines, as written:
 

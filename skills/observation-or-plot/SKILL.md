@@ -1,6 +1,6 @@
 ---
 name: observation-or-plot
-description: Use for every video request, before the beats are written. Decides whether the take is an observation (a view held, nothing has to happen) or a plot (an event with a payoff), from the maker's words. An observation gets two or four beats and no twist; a plot builds to its payoff and gives its climax at least four seconds.
+description: Use for every video request, before the beats are written. Decides whether the take is an observation (a view held, nothing has to happen) or a plot (an event with a payoff), from the maker's words. An observation gets two or four beats and no twist; a plot gets three, or six in a take of 9 seconds or more, and builds to its payoff.
 ---
 
 [← All skills](../../README.md)
@@ -11,19 +11,22 @@ Not every video is a story. "A dark ride" is a view: the seat, the track, the ro
 
 ## Do this
 
-1. **Read the request for an event.** A thing that happens and pays off (he grabs the cereal, sees the camera, dances) is a plot. A place, a ride, a scene with figures in it and nothing demanded of them is an observation.
+1. **Read the request for an event.** A thing that happens and pays off is a plot. A place, a ride, a scene with figures in it and nothing demanded of them is an observation.
 2. **An observation:** two or four beats, the view held. Things move in it, nothing turns.
-3. **A plot:** three or six beats in a 9-second take, building to one payoff, and the climax gets at least four seconds. A climax cut short is a fault to fix before submitting.
+3. **A plot:** three beats, or six in a take of 9 seconds or more, building to one payoff. On a ride, the climax gets at least four seconds.
 4. **A bare noun is a view** unless the words ask for an event.
 
-## Two takes, one of each
+## Examples
 
-| | Found | Video |
-| --- | --- | --- |
-| **Observation.** *"the nihilistic penguin and punch monkey on trailcam footage in everest-like mountains"* | <img src="examples/trail-found.jpg" width="220" alt="A snowy peak"> | <a href="examples/trail.mp4"><img src="examples/trail.webp" width="140" alt="A penguin and a monkey on the rocks below a peak, holding still"></a> |
-| **Plot.** *"cctv footage of a bear chasing a man for his cereal. the bear ends up grabbing the cereal and sees the camera and starts celebrating with tiktok dances"* | <img src="examples/cctvbear-found.jpg" width="220" alt="A kitchen from a high corner camera"> | <a href="examples/cctvbear.mp4"><img src="examples/cctvbear.webp" width="140" alt="The bear grabs the cereal and dances for the camera"></a> |
+### Observation: two memes on a trail camera
 
-The observation, four beats, a view held:
+*"the nihilistic penguin and punch monkey on trailcam footage in everest-like mountains"*
+
+| Found | Video |
+| --- | --- |
+| <img src="examples/trail-found.jpg" width="300" alt="A snowy peak"><br>**The place.** A snowy peak.<br><br><img src="examples/penguin-found.jpg" width="145" alt="A lone penguin walking across the ice"> <img src="examples/monkey-found.jpg" width="145" alt="A baby macaque holding an orange orangutan plush"><br>**The figures.** Two memes, so both were found as photographs (see [sort-the-characters](../sort-the-characters/SKILL.md)). | <a href="examples/trail.mp4"><img src="examples/trail.webp" width="300" alt="A penguin and a monkey on the rocks below a peak, holding still"></a> |
+
+The request asks for no event, and the plan recorded it as an observation. Four beats, a view held:
 
 ```
 [0s] The environment is a harsh, high-altitude mountain range captured through
@@ -38,15 +41,21 @@ otherwise unmoving.
 its flippers held out at its sides.
 ```
 
-The plot, six beats, the payoff from 5 s:
+### Plot: Zeus at a fuse box
+
+*"zeus fixing a fuse box in an apartment stairwell"*
+
+| Found | Video |
+| --- | --- |
+| <img src="examples/zeus-found.jpg" width="300" alt="An empty apartment stairwell"><br>**The place.** An empty apartment stairwell. | <a href="examples/zeus.mp4"><img src="examples/zeus.webp" width="300" alt="Zeus on the landing at the fuse box, then sparks"></a> |
+
+The request asks for an event, a repair, and the take builds to it: three beats in 6 seconds, the payoff last.
 
 ```
-[0s] CCTV footage shows a man sprinting through a suburban kitchen, followed
-closely by a large bear.
-[2s] The man drops a colorful cereal box as he escapes through a doorway.
-[4s] The bear skids to a halt on the linoleum, and it snatches the box in its jaws.
-[5s] Recognizing the lens of the overhead security camera, the bear looks
-directly into it.
-[6s] The bear stands on its hind legs while clutching the cereal.
-[8s] The bear performs a series of recognizable TikTok dance moves.
+[0s] Zeus [white beard · draped robe · lightning bolt] stands on the landing,
+poking the open fuse box on the wall with the tip of his lightning bolt.
+[3s] Zeus grumbles a low and taps a loose fuse inside the fuse box with his
+finger.
+[6s] Zeus presses the tip of his lightning bolt into the main switch, sending a
+shower of sparks out of the fuse box.
 ```

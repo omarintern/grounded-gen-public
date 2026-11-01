@@ -11,9 +11,9 @@ A remix is a sentence that changes a finished video. The engine reads what the s
 | Parent | Remix |
 | --- | --- |
 | *"cctv footage of a bear chasing a man for his cereal. the bear ends up grabbing the cereal and sees the camera and starts celebrating with tiktok dances"* | *"Its a T-rex instead of a bear and the man running holds the cereal box while running then drops it"* |
-| <a href="examples/cctvbear.mp4"><img src="examples/cctvbear.webp" width="180" alt="CCTV: a bear grabs the cereal"></a> | <a href="examples/trex.mp4"><img src="examples/trex.webp" width="180" alt="The same kitchen: a T-rex grabs the cereal"></a> |
+| <a href="examples/bear.mp4"><img src="examples/bear.webp" width="300" alt="CCTV: a bear grabs the cereal"></a> | <a href="examples/trex.mp4"><img src="examples/trex.webp" width="300" alt="The same kitchen: a T-rex grabs the cereal"></a> |
 
-<img src="examples/kitchen-found.jpg" width="260" alt="The kitchen CCTV still both videos were made from">
+<img src="examples/kitchen-found.jpg" width="360" alt="The kitchen CCTV still both videos were made from">
 
 The remix changed the figure and the action. The kitchen stayed: both videos were made from this same CCTV still.
 

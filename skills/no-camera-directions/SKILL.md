@@ -19,13 +19,15 @@ The photograph is the camera. Its angle, its lens, its distance from the subject
 
 ## What a camera word does
 
+### A fisherman's hard cut
+
 An early take, from before the rule.
 
 *"a fisherman on a small wooden pier reeling in something heavy at dusk"*
 
 | Found | Video |
 | --- | --- |
-| <img src="examples/pier-found.jpg" width="220" alt="A man silhouetted on a pier at sunset, seen from across the water"> | <a href="examples/fisherman.mp4"><img src="examples/fisherman.webp" width="150" alt="A close-up of a fisherman, an underwater anchor, then the pier from across the water"></a> |
+| <img src="examples/pier-found.jpg" width="300" alt="A man silhouetted on a pier at sunset, seen from across the water"> | <a href="examples/fisherman.mp4"><img src="examples/fisherman.webp" width="300" alt="A close-up of a fisherman, an underwater anchor, then the pier from across the water"></a> |
 
 ```
 [0s] A fisherman stands on the pier in place of the silhouetted person, reeling

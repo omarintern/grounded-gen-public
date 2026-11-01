@@ -7,34 +7,36 @@ description: Use when choosing the reference images for a Seedance take. Seedanc
 
 # one-bag-of-four
 
-Seedance conditions on every reference together. There is no "image 1 is the place, image 2 is the hero": it sees one set, and the script has to say what is what. Order was never shown to matter. So the bag is small and chosen: the place, the figures the script needs, and nothing that would read as a second place.
+Seedance conditions on every reference together. There is no "image 1 is the place, image 2 is the hero": it sees one set, and the script has to say what is what. Order was never shown to matter. So the bag is small and chosen: the place, the figures the script needs, and nothing that would read as another place.
 
 ## Do this
 
 1. **At most four references,** places and characters together.
-2. **The place first,** the photograph the take opens on. Then the figures with photographs (see sort-the-characters), in the order the script needs them.
-3. **One place in the bag,** unless the take passes into another. Two photographs of a place compete: in the haunted-ship ride under world-building-and-appropriation, a found mine scene won over the seat photograph, and the finished video never showed the seat.
-4. **Say in the script what each reference is in the frame,** by what it shows, never by its position: "the giant mushroom on the right is a monumental sculpture group…". A `Set:` line is where a reference becomes a thing in the take.
+2. **The place first,** the photograph the take opens on. Then the figures with photographs (see [sort-the-characters](../sort-the-characters/SKILL.md)), in the order the script needs them.
+3. **One place in the bag,** unless the take passes into another or puts one into another. Two photographs of a place compete: in the haunted-ship ride under [world-building-and-appropriation](../world-building-and-appropriation/SKILL.md#rides), a found mine scene won over the seat photograph, and the finished video never showed the seat.
+4. **Say in the script what each reference is in the frame,** by what it shows, never by its position.
 5. **A thing with no reference is described,** and the description is its reference.
 
-## Example: the Odyssey ride's four
+## Example
 
-*"The Odyssey ride"*
+### The bar in the UFO
 
-| | | | |
-| --- | --- | --- | --- |
-| <img src="examples/found-seat.jpg" width="170" alt="A dark-ride seat: a giant glowing mushroom beside the track"><br>**The seat.** The place the take opens on. | <img src="examples/found-polyphemus.jpg" width="170" alt="The Sperlonga sculpture group, the blinding of Polyphemus"><br>**The giant.** | <img src="examples/found-mosaic.jpg" width="170" alt="A Roman mosaic of Ulysses tied to the mast"><br>**The mast.** | <img src="examples/found-trireme.jpg" width="170" alt="The Olympias trireme under sail"><br>**The ship.** |
+*"A man in a bar in a ufo with nordics, tall greys, and mantids. The man plays a song on the guitar while the nordics, tall greys, and mantids drink beer and listen."*
 
-<p align="center"><a href="examples/odyssey.mp4"><img src="examples/odyssey.webp" width="240" alt="The Odyssey ride"></a></p>
+| The UFO | The bar | Video |
+| --- | --- | --- |
+| <img src="examples/ufo-found.jpg" width="220" alt="A dark curved room with a row of oval porthole windows at dusk"><br>A dark curved room with a row of oval porthole windows at dusk. The opening frame. | <img src="examples/bar-found.jpg" width="130" alt="A bar counter with leather stools and a lit back bar"><br>A real bar counter with its stools. | <a href="examples/ufo.mp4"><img src="examples/ufo.webp" width="260" alt="A man with a guitar at the bar under the portholes, three aliens with beers"></a> |
 
-The `Set:` line that tells Seedance what each reference is in the frame:
+Two photographs in one bag, and nothing in the bag says which is the room and which is the furniture. The script does: it puts the bar "where the row of oval porthole windows was". The first beat, as written:
 
 ```
-Set: for the whole take, the giant mushroom on the right is a monumental
-sculpture group depicting the blinding of Polyphemus; the character on the
-high stand is a Roman mosaic depicting Odysseus tied to the mast of his ship;
-the forest backdrop and trees on the far right is the show building's own
-black wall; the ride's own omnimover (its nose and lap bar in the foreground,
-the rows ahead) and the track bed stay as photographed; nothing of the
-photograph's own set dressing remains, in any scene the ride passes.
+[0s] A man, dressed in black bohemian clothes, stands with a guitar at the bar
+where the row of oval porthole windows was, before a tall, human-like Nordic
+alien with long straight blonde hair, pale skin, and striking blue eyes, a tall
+grey alien with a large bulbous head, oversized black almond-shaped eyes, and
+a slender grey body, and a tall insectoid mantis alien with a triangular head,
+large compound eyes, and segmented green limbs, each holding a glass of beer
+at the counter.
 ```
+
+Seedance kept the curved wall and its portholes, and put the bar's counter and stools beneath them. The aliens had no photographs: they are described.
