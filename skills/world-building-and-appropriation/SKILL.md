@@ -5,6 +5,8 @@ description: Use when a video request names a work, a film, a show, a myth or a 
 
 [← All skills](../../README.md)
 
+⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
+
 # world-building-and-appropriation
 
 Ask Seedance for "the Odyssey" and it draws its own idea of ancient Greece. The way in is the work's own material: a film's scenes, and the statues, mosaics and replica ships that people have made of the work, which a camera has stood in front of.

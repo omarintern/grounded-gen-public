@@ -5,6 +5,8 @@ description: Use for every video script. Writes the take as beats, each stamped 
 
 [← All skills](../../README.md)
 
+⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
+
 # stamp-the-beats
 
 Seedance reads time from the script. A script that lists events without seconds gets them spread out, run together or dropped. Stamped, each lands where it is written: the doorbell at 0 s, the door at 1 s, the line at 3 s, the shove at 5 s. The stamps are the edit.
@@ -13,7 +15,7 @@ Seedance reads time from the script. A script that lists events without seconds 
 
 1. **One beat per event,** in order, each opening with its second in brackets: `[5s]`.
 2. **Stamp the whole clip.** The first beat is `[0s]`; the last lands with time left for its action to finish. A 9-second plot carries three or six beats; a view held carries two or four.
-3. **A beat says what happens, not how it is shot.** See no-camera-directions.
+3. **A beat says what happens,** and where in the photograph it happens.
 4. **Dialogue gets its second** on its own line, with who speaks, to whom, and how: `Man to Raccoon (confused, annoyed) [3s]: "I didn't order anything."` A line lands on its beat.
 5. **On a ride, the climax gets at least four seconds.**
 

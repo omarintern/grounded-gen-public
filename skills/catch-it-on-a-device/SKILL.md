@@ -5,6 +5,8 @@ description: Use when a video request names a capture device such as CCTV, a sec
 
 [← All skills](../../README.md)
 
+⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
+
 # catch-it-on-a-device
 
 Every device has its own way of seeing: a fixed corner high on a wall, a fisheye bent around a porch, a timestamp burned into the frame. Described in words, Seedance draws its idea of the device, and the camera floats. Handed a real still from one, it keeps the angle and the lens. The video looks caught because the frame it starts from was.
@@ -15,7 +17,7 @@ Every device has its own way of seeing: a fixed corner high on a wall, a fisheye
 2. **Search the way the footage is posted.** A camera's generic name finds shop listings and installs. The words people title their footage with find the frame, like "front porch video doorbell footage" or "security camera footage of a kitchen". Device footage is on the open web, not in the free photo library, so search it on the paid routes or with your own web search (see [bring-your-own-keys](../bring-your-own-keys/SKILL.md)).
 3. **Keep the overlay.** A timestamp or a camera label belongs to the footage. Don't reject a still for having one.
 4. **Make sure the still holds the place.** When the request names a place the device never saw, like the Oval Office on CCTV, find the camera and the place separately. Then write the place into the camera's frame, piece by piece: what stands where. That is the move from [world-building-and-appropriation](../world-building-and-appropriation/SKILL.md): the named place's things are mapped onto the photograph.
-5. **Write the event into the still.** Name the capture once at most, in the first beat ("CCTV footage shows…"). Add no shot words: no close-ups, pans or zooms. Seedance reads the camera from the still.
+5. **Write the event into the still.** Describe what the still shows, never the device: no "CCTV footage shows…" caption, because the look is already in the pixels (see [frame-zero](../frame-zero/SKILL.md)). The device can be a thing in the scene, as when a subject looks straight into its lens.
 6. **At night, the device needs its own light** (see [night-shots](../night-shots/SKILL.md)).
 
 ## Examples

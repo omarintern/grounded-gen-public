@@ -5,6 +5,8 @@ description: Use when the video happens at night or in the dark. A subject photo
 
 [← All skills](../../README.md)
 
+⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
+
 # night-shots
 
 A photograph of a figure at night is mostly dark. Seedance gets a silhouette, has nothing to animate, and invents the subject, then invents the frame around it. The place can still be real. Find the empty place as the camera sees it in the dark, and write the subject into it.

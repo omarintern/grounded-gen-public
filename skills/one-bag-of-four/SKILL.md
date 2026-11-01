@@ -5,6 +5,8 @@ description: Use when choosing the reference images for a Seedance take. Seedanc
 
 [← All skills](../../README.md)
 
+⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
+
 # one-bag-of-four
 
 Seedance conditions on every reference together. There is no "image 1 is the place, image 2 is the hero": it sees one set, and the script has to say what is what. Order was never shown to matter. So the bag is small and chosen: the place, the figures the script needs, and nothing that would read as another place.
@@ -14,7 +16,7 @@ Seedance conditions on every reference together. There is no "image 1 is the pla
 1. **At most four references,** places and characters together.
 2. **The place first,** the photograph the take opens on. Then the figures with photographs (see [sort-the-characters](../sort-the-characters/SKILL.md)), in the order the script needs them.
 3. **One place in the bag,** unless the take passes into another or puts one into another. Two photographs of a place compete: in the haunted-ship ride under [world-building-and-appropriation](../world-building-and-appropriation/SKILL.md#rides), a found mine scene won over the seat photograph, and the finished video never showed the seat.
-4. **Say in the script what each reference is in the frame,** by what it shows, never by its position.
+4. **Say in the script what each reference is in the frame,** by what it shows.
 5. **A thing with no reference is described,** and the description is its reference.
 
 ## Example
