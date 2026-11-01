@@ -5,8 +5,6 @@ description: Use when choosing the reference images for a Seedance take. Seedanc
 
 [← All skills](../../README.md)
 
-⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
-
 # one-bag-of-four
 
 Seedance conditions on every reference together. There is no "image 1 is the place, image 2 is the hero": it sees one set, and the script has to say what is what. Order was never shown to matter. So the bag is small and chosen: the place, the figures the script needs, and nothing that would read as another place.

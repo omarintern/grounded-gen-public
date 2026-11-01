@@ -5,8 +5,6 @@ description: Use when a video request names a capture device such as CCTV, a sec
 
 [← All skills](../../README.md)
 
-⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
-
 # catch-it-on-a-device
 
 Every device has its own way of seeing: a fixed corner high on a wall, a fisheye bent around a porch, a timestamp burned into the frame. Described in words, Seedance draws its idea of the device, and the camera floats. Handed a real still from one, it keeps the angle and the lens. The video looks caught because the frame it starts from was.

@@ -5,8 +5,6 @@ description: Use for every video request, before the beats are written. Decides 
 
 [← All skills](../../README.md)
 
-⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
-
 # observation-or-plot
 
 Not every video is a story. "A dark ride" is a view: the seat, the track, the rooms passing. "A bear chasing a man for his cereal" is a plot: it has to end somewhere. Writing a twist into a view breaks it, and writing a plot in flat beats wastes it. So the kind of take is decided first, from the words, and the beats are held to it.

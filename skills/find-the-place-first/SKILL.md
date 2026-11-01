@@ -5,8 +5,6 @@ description: Use for every video request. Finds a real photograph of the place b
 
 [← All skills](../../README.md)
 
-⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
-
 # find-the-place-first
 
 Ask Seedance for a place and it draws nobody's place: a kitchen that is every kitchen, a street that is a composite. Hand it a photograph of a real place and it keeps that place, its light, its clutter, where things stand. So the place is found first, and the scene is written to the photograph, never before it.

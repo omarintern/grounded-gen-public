@@ -1,15 +1,15 @@
 ---
 name: frame-zero
-description: The rule over every other skill, for every video. The photograph handed to Seedance is the video's first frame, frame zero. The script must agree with it. The first beat describes the photograph as it is, with the subject already in it, and nothing the photograph contradicts is asked for later.
+description: Use for every take. The photograph handed to Seedance is the video's first frame, frame zero. The first beat describes that photograph as it is, with the subject already in it, and the script asks for nothing the photograph contradicts.
 ---
 
 [← All skills](../../README.md)
 
-# ⭐ frame-zero
+# frame-zero
 
-**The rule over every skill.** The photograph Seedance is handed is frame zero: the video starts from it. Seedance does not overturn what that photograph states. A script that asks for something the photograph contradicts gets a cut to a frame where that thing exists, and the take stops being one take.
+The photograph Seedance is handed is frame zero: the video starts from it. Seedance does not overturn what that photograph states. A script that asks for something the photograph contradicts gets a cut to a frame where that thing exists, and the take stops being one take.
 
-## The rule
+## Do this
 
 1. **The photograph is the first frame.** Write nothing that contradicts it.
 2. **For each thing the story needs, ask what the photograph does with it.**
@@ -20,7 +20,27 @@ description: The rule over every other skill, for every video. The photograph ha
 4. **Describe the photograph, never the device.** Write no "CCTV footage shows…" caption: the camera's look is already in the pixels. The device can still be a thing in the scene, as when a subject looks straight into its lens.
 5. **Check that the opening action fits.** A place that reads is not enough: a body has to fit the spot and be able to move there.
 
-## Across the examples
+## Example
+
+### The grim reaper at a bakery
+
+*"the grim reaper waiting his turn at a small bakery"*
+
+| Found | Video |
+| --- | --- |
+| <img src="examples/reaper-found.jpg" width="300" alt="A real bakery front on a snowy street, a passer-by in black walking past to the right of the door"><br>**Frame zero.** A real bakery front on a snowy street. A passer-by in black walks past to the right of the door. | <a href="examples/reaper.mp4"><img src="examples/reaper.webp" width="300" alt="The same bakery: the grim reaper on the sidewalk, a baker in the doorway"></a> |
+
+The first beat describes the photograph with both figures already in it. Every place it names, the sidewalk, the bakery entrance and the doorway, is in the photograph:
+
+```
+[0s] The Grim Reaper [skeleton · black hooded robe · scythe] stands on the
+sidewalk to the right of the bakery entrance, looking down at a small paper
+ticket in his hand, while a baker stands in the open doorway.
+```
+
+The video opens on the bakery as photographed and holds it for the whole take. The reaper stands where the passer-by was walking, and the passer-by, whom the script never mentions, is gone.
+
+## Elsewhere in the skills
 
 - **It permits:** in the doorbell raccoon under [stamp-the-beats](../stamp-the-beats/SKILL.md#the-doorbell-raccoon), the man is behind the door at frame zero. At 1 s, "the door at the right edge swings inward and the man steps into the frame".
 - **By the photograph's own names:** the stand-in under [swap-the-stand-in](../swap-the-stand-in/SKILL.md#same-photograph-two-scripts) is named the way the photograph shows him, "the man in the grey t-shirt, blue jeans and red cap".

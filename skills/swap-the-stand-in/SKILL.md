@@ -5,8 +5,6 @@ description: Use when the photograph found for a scene already has a person or a
 
 [← All skills](../../README.md)
 
-⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
-
 # swap-the-stand-in
 
 A real photograph of a place usually has people in it. That's part of why it looks real. When one of them stands where the subject should be, that figure is a stand-in. Write the subject into the stand-in's place, naming the stand-in, and the stand-in is gone from the video. Name a figure as staying, and it stays.

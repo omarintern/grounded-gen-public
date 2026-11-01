@@ -5,8 +5,6 @@ description: Use for every video script. Writes the take as beats, each stamped 
 
 [← All skills](../../README.md)
 
-⭐ **[frame-zero](../frame-zero/SKILL.md)** applies here, as it does to every skill.
-
 # stamp-the-beats
 
 Seedance reads time from the script. A script that lists events without seconds gets them spread out, run together or dropped. Stamped, each lands where it is written: the doorbell at 0 s, the door at 1 s, the line at 3 s, the shove at 5 s. The stamps are the edit.
