@@ -44,7 +44,7 @@ Each skill is a real skill file. Give one to your agent and it will write Seedan
 | | Skill | Use it when |
 | --- | --- | --- |
 | <img src="docs/index/observation-or-plot.webp" width="90" alt=""> | [**observation-or-plot**](skills/observation-or-plot/SKILL.md) | Deciding whether the take is an observation (a view held, nothing has to happen) or a plot (an event with a payoff). |
-| <img src="docs/index/frame-zero.webp" width="90" alt=""> | ⭐ [**frame-zero**](skills/frame-zero/SKILL.md) | Every take. The photograph is the video's first frame: the first beat describes it as it is, with the subject already in it, and nothing it contradicts is asked for. |
+| <img src="docs/index/frame-zero.webp" width="90" alt=""> | ⭐ [**frame-zero**](skills/frame-zero/SKILL.md) | Every take: the only universal rule in the pipeline for realism. It preserves the sourced photograph and prevents diffusion that moves the video away from its quality. The first beat describes the photograph as it is, with the subject already in it. |
 | <img src="docs/index/stamp-the-beats.webp" width="90" alt=""> | [**stamp-the-beats**](skills/stamp-the-beats/SKILL.md) | Every take. Each beat lands on its second. |
 | <img src="docs/index/one-bag-of-four.webp" width="90" alt=""> | [**one-bag-of-four**](skills/one-bag-of-four/SKILL.md) | Choosing references. Seedance reads them as one flat set. |
 

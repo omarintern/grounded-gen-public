@@ -1,11 +1,13 @@
 ---
 name: frame-zero
-description: Use for every take. The photograph handed to Seedance is the video's first frame, frame zero. The first beat describes that photograph as it is, with the subject already in it, and the script asks for nothing the photograph contradicts.
+description: Use for every take. The only universal rule in the pipeline for realism. The photograph handed to Seedance is the video's first frame, frame zero, and the rule preserves that sourced image and prevents diffusion that moves the video away from its quality. The first beat describes the photograph as it is, with the subject already in it, and the script asks for nothing the photograph contradicts.
 ---
 
 [← All skills](../../README.md)
 
 # frame-zero
+
+Frame zero is the only universal rule in the pipeline for realism: it holds in every take, whatever else the take uses. It seeks to preserve the image that was sourced, and to prevent diffusion that moves the video away from the source's quality.
 
 The photograph Seedance is handed is frame zero: the video starts from it. Seedance does not overturn what that photograph states. A script that asks for something the photograph contradicts gets a cut to a frame where that thing exists, and the take stops being one take.
 
